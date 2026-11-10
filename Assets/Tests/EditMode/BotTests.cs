@@ -111,6 +111,30 @@ namespace RailGame.Tests
         }
 
         [Test]
+        public void SmartBot_DecideDoesNotChangeTheGame()
+        {
+            var map = DemoMap();
+            var game = new Game(map, new[] { "Аня", "Борис" }, seed: 3);
+            var bot = new SmartBot(5);
+
+            for (int step = 0; step < 40 && game.Phase != GamePhase.GameOver; step++)
+            {
+                var phase = game.Phase;
+                int acting = game.ActingPlayerIndex;
+                int hand = game.Players[acting].HandSize;
+
+                var move = bot.Decide(game);
+                Assert.IsNotNull(move);
+                Assert.IsFalse(string.IsNullOrEmpty(move.Describe(game)));
+                Assert.AreEqual(phase, game.Phase, "Decide не должен делать ход");
+                Assert.AreEqual(acting, game.ActingPlayerIndex);
+                Assert.AreEqual(hand, game.Players[acting].HandSize);
+
+                Assert.IsTrue(move.Apply(game).Success);
+            }
+        }
+
+        [Test]
         public void SmartBot_BeatsRandomBot()
         {
             var map = DemoMap();

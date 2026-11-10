@@ -262,6 +262,39 @@ namespace RailGame.Tests
         }
 
         [Test]
+        public void Events_ClaimRaisesRouteClaimedThenTurnStarted()
+        {
+            var game = StartGame();
+            var events = new System.Collections.Generic.List<GameEvent>();
+            game.EventRaised += events.Add;
+            game.Debug_SetHand(0, CardColor.Red);
+
+            Assert.IsTrue(game.ClaimRoute("ab", CardColor.Red, 0).Success);
+
+            var kinds = events.Select(e => e.Kind).ToList();
+            Assert.AreEqual(GameEventKind.RouteClaimed, kinds.First());
+            Assert.AreEqual("ab", events[0].RouteId);
+            Assert.AreEqual(0, events[0].Player);
+            Assert.AreEqual(GameEventKind.TurnStarted, kinds.Last());
+            Assert.AreEqual(1, events.Last().Player);
+        }
+
+        [Test]
+        public void Events_FaceUpDrawReportsSlotAndCard()
+        {
+            var game = StartGame();
+            game.Debug_SetFaceUp(CardColor.Blue, CardColor.Red, CardColor.Red, CardColor.Green, CardColor.Yellow);
+            GameEvent seen = null;
+            game.EventRaised += e => { if (e.Kind == GameEventKind.CardTakenFaceUp) seen = e; };
+
+            Assert.IsTrue(game.DrawFaceUpCard(0).Success);
+
+            Assert.IsNotNull(seen);
+            Assert.AreEqual(0, seen.Slot);
+            Assert.AreEqual(CardColor.Blue, seen.Card);
+        }
+
+        [Test]
         public void RoutePointsTable()
         {
             var config = new GameConfig();

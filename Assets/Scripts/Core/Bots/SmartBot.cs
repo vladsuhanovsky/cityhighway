@@ -28,23 +28,37 @@ namespace RailGame.Core
 
         public ActionResult Act(Game game)
         {
+            var move = Decide(game);
+            return move == null ? ActionResult.Fail("Игра окончена.") : move.Apply(game);
+        }
+
+        /// <summary>Что бот сделал бы сейчас за игрока, чья очередь. null — игра окончена.</summary>
+        public BotMove Decide(Game game)
+        {
             switch (game.Phase)
             {
                 case GamePhase.SetupTickets:
                 {
                     var player = game.Players[game.ActingPlayerIndex];
                     var keep = ChooseTickets(game, player, game.Config.InitialTicketsMinKeep);
-                    return game.KeepInitialTickets(player.Index, keep);
+                    return BotMove.KeepInitial(player.Index, keep);
                 }
                 case GamePhase.ChoosingTickets:
-                    return game.KeepTickets(ChooseTickets(game, game.CurrentPlayer, game.Config.TicketsMinKeep));
+                    return BotMove.Keep(ChooseTickets(game, game.CurrentPlayer, game.Config.TicketsMinKeep));
                 case GamePhase.DrawingSecondCard:
                     return DrawBestCard(game, Analyze(game), isSecondCard: true);
                 case GamePhase.AwaitingAction:
                     return TakeTurn(game);
                 default:
-                    return ActionResult.Fail("Игра окончена.");
+                    return null;
             }
+        }
+
+        /// <summary>Маршруты, которые бот проложил бы под задания игрока (для подсветки «моего пути»).</summary>
+        public static List<Route> PlannedRoutes(Game game, int playerIndex)
+        {
+            var player = game.Players[playerIndex];
+            return new BotPlanner(game, playerIndex).BuildPlan(player.Tickets).RoutesToClaim;
         }
 
         // ================================================================== Выбор заданий
@@ -151,7 +165,7 @@ namespace RailGame.Core
 
         // ================================================================== Ход
 
-        ActionResult TakeTurn(Game game)
+        BotMove TakeTurn(Game game)
         {
             var a = Analyze(game);
             var me = a.Me;
@@ -175,7 +189,7 @@ namespace RailGame.Core
             {
                 bool calmGame = !game.Players.Any(p => p.TrainsLeft <= 12);
                 if (game.TicketDeckCount > 0 && me.TrainsLeft >= 14 && calmGame && !game.IsFinalRound)
-                    return game.DrawTickets();
+                    return BotMove.Tickets();
 
                 if (affordableDesired.Count > 0)
                 {
@@ -192,8 +206,8 @@ namespace RailGame.Core
             // При выборе бот оставит самое дешёвое (лучше всего — уже выполненное) задание.
             var fallback = Affordable(game, game.Map.Routes);
             if (fallback.Count > 0) return Claim(game, a, fallback.OrderByDescending(x => x.Key.Length).First());
-            if (game.TicketDeckCount > 0) return game.DrawTickets();
-            return game.Pass();
+            if (game.TicketDeckCount > 0) return BotMove.Tickets();
+            return BotMove.PassTurn();
         }
 
         static List<KeyValuePair<Route, IReadOnlyList<ClaimOption>>> Affordable(Game game, IEnumerable<Route> routes)
@@ -208,7 +222,7 @@ namespace RailGame.Core
         }
 
         /// <summary>Платим так, чтобы потратить меньше локомотивов и не трогать нужные дальше цвета.</summary>
-        static ActionResult Claim(Game game, Analysis a, KeyValuePair<Route, IReadOnlyList<ClaimOption>> choice)
+        static BotMove Claim(Game game, Analysis a, KeyValuePair<Route, IReadOnlyList<ClaimOption>> choice)
         {
             var route = choice.Key;
             var option = choice.Value
@@ -216,7 +230,7 @@ namespace RailGame.Core
                 .ThenBy(o => o.Locomotives)
                 .ThenByDescending(o => o.Color == CardColor.Locomotive ? 0 : SurplusAfter(a, route, o))
                 .First();
-            return game.ClaimRoute(route.Id, option.Color, option.Locomotives);
+            return BotMove.Claim(route.Id, option.Color, option.Locomotives);
         }
 
         static int SurplusAfter(Analysis a, Route route, ClaimOption option)
@@ -228,7 +242,7 @@ namespace RailGame.Core
 
         // ================================================================== Карты
 
-        ActionResult DrawBestCard(Game game, Analysis a, bool isSecondCard)
+        BotMove DrawBestCard(Game game, Analysis a, bool isSecondCard)
         {
             int totalDeficit = CardColors.Regular.Sum(c => Math.Max(0, NeedOf(a, c) - a.Me.CardCount(c)));
 
@@ -256,9 +270,10 @@ namespace RailGame.Core
             bool deckAvailable = game.DeckCount + game.DiscardCount > 0;
             const double deckValue = 1.0; // вслепую — в среднем «так себе» карта
 
-            if (bestSlot >= 0 && (bestScore >= 1.5 || !deckAvailable)) return game.DrawFaceUpCard(bestSlot);
-            if (deckAvailable) return game.DrawCardFromDeck();
-            return ActionResult.Fail("Нечего взять.");
+            if (bestSlot >= 0 && (bestScore >= 1.5 || !deckAvailable)) return BotMove.FaceUp(bestSlot);
+            // Брать нечего — такого не бывает (игра не даёт перейти ко второй карте), но ход из колоды
+            // хотя бы вернёт понятную ошибку, а не исключение.
+            return BotMove.Deck();
         }
 
         static double CardValue(Analysis a, CardColor color, int totalDeficit, CardColor grayColor, int grayDeficit)

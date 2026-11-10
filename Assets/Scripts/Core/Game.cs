@@ -40,6 +40,8 @@ namespace RailGame.Core
         public event Action<string> Log;
         /// <summary>Вызывается после каждого успешного действия — UI перерисовывается по нему.</summary>
         public event Action StateChanged;
+        /// <summary>Структурированные события (для анимаций, звуков, сети).</summary>
+        public event Action<GameEvent> EventRaised;
 
         public Game(MapDefinition map, IList<string> playerNames, GameConfig config = null, int? seed = null)
         {
@@ -184,6 +186,7 @@ namespace RailGame.Core
 
             ApplyKeptTickets(player, kept);
             Emit($"{player.Name} оставляет стартовых заданий: {kept.Count}.");
+            Raise(new GameEvent(GameEventKind.TicketsKept, player.Index, count: kept.Count));
             CheckSetupComplete();
             Changed();
             return ActionResult.Ok();
@@ -205,6 +208,7 @@ namespace RailGame.Core
             player.AddCard(card);
             _faceUp[slot] = _deck.TryDraw(out var replacement) ? replacement : (CardColor?)null;
             Emit($"{player.Name} берёт открытую карту: {CardColors.RussianName(card)}.");
+            Raise(new GameEvent(GameEventKind.CardTakenFaceUp, player.Index, slot, card));
             FixTooManyLocomotives();
 
             // Открытый локомотив первой картой заменяет обе карты.
@@ -227,6 +231,7 @@ namespace RailGame.Core
             var player = CurrentPlayer;
             player.AddCard(card);
             Emit($"{player.Name} берёт карту из колоды.");
+            Raise(new GameEvent(GameEventKind.CardTakenFromDeck, player.Index, card: card));
 
             if (Phase == GamePhase.DrawingSecondCard || !CanDrawSecondCard()) EndTurn();
             else
@@ -279,6 +284,7 @@ namespace RailGame.Core
             int points = Config.PointsForRouteLength(route.Length);
             player.RoutePoints += points;
             Emit($"{player.Name} занимает маршрут {CityName(route.CityA)} — {CityName(route.CityB)} (+{points}).");
+            Raise(new GameEvent(GameEventKind.RouteClaimed, player.Index, routeId: route.Id, count: points));
 
             EndTurn();
             return ActionResult.Ok();
@@ -293,6 +299,7 @@ namespace RailGame.Core
             player.PendingList.AddRange(_ticketDeck.Draw(Config.TicketsDrawn));
             Phase = GamePhase.ChoosingTickets;
             Emit($"{player.Name} тянет задания: {player.PendingTickets.Count} шт.");
+            Raise(new GameEvent(GameEventKind.TicketsDrawn, player.Index, count: player.PendingTickets.Count));
             Changed();
             return ActionResult.Ok();
         }
@@ -307,6 +314,7 @@ namespace RailGame.Core
 
             ApplyKeptTickets(player, kept);
             Emit($"{player.Name} оставляет заданий: {kept.Count}.");
+            Raise(new GameEvent(GameEventKind.TicketsKept, player.Index, count: kept.Count));
             EndTurn();
             return ActionResult.Ok();
         }
@@ -318,6 +326,7 @@ namespace RailGame.Core
             if (HasAnyLegalAction()) return ActionResult.Fail("Пропустить ход можно, только если нет других действий.");
 
             Emit($"{CurrentPlayer.Name} пропускает ход.");
+            Raise(new GameEvent(GameEventKind.Passed, CurrentPlayerIndex));
             _consecutivePasses++;
             if (_consecutivePasses >= _players.Count)
             {
@@ -394,6 +403,7 @@ namespace RailGame.Core
                 }
                 FillEmptySlots();
                 Emit("Открыто слишком много локомотивов — ряд выложен заново.");
+                Raise(new GameEvent(GameEventKind.FaceUpRowReset));
             }
         }
 
@@ -439,6 +449,8 @@ namespace RailGame.Core
             CurrentPlayerIndex = 0;
             TurnNumber = 1;
             Emit($"Игра началась. Ходит {CurrentPlayer.Name}.");
+            Raise(new GameEvent(GameEventKind.GameStarted));
+            Raise(new GameEvent(GameEventKind.TurnStarted, CurrentPlayerIndex));
         }
 
         void EndTurn(bool passed = false)
@@ -460,12 +472,14 @@ namespace RailGame.Core
                 // Каждый игрок, включая этого, делает ещё по одному ходу.
                 _finalTurnsLeft = _players.Count;
                 Emit($"У игрока {player.Name} осталось вагонов: {player.TrainsLeft}. Начинается последний круг.");
+                Raise(new GameEvent(GameEventKind.FinalRoundStarted, player.Index));
             }
 
             RefillFaceUpRow();
             CurrentPlayerIndex = (CurrentPlayerIndex + 1) % _players.Count;
             TurnNumber++;
             Phase = GamePhase.AwaitingAction;
+            Raise(new GameEvent(GameEventKind.TurnStarted, CurrentPlayerIndex));
             Changed();
         }
 
@@ -474,12 +488,15 @@ namespace RailGame.Core
             Phase = GamePhase.GameOver;
             Result = Scoring.Calculate(_players, Config);
             Emit("Игра окончена. Победа: " + string.Join(", ", Result.Winners.Select(w => w.PlayerName)) + ".");
+            Raise(new GameEvent(GameEventKind.GameOver));
             Changed();
         }
 
         string CityName(string cityId) => Map.GetCity(cityId)?.Name ?? cityId;
 
         void Emit(string message) => Log?.Invoke(message);
+
+        void Raise(GameEvent gameEvent) => EventRaised?.Invoke(gameEvent);
 
         void Changed() => StateChanged?.Invoke();
 
