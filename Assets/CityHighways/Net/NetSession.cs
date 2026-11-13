@@ -305,6 +305,9 @@ namespace CityHighways.Net
                 }
                 Seats[back].peer = key;
                 Seats[back].connected = true;
+                Seats[back].emblem = message.emblem ?? Seats[back].emblem;
+                Seats[back].title = message.title ?? Seats[back].title;
+                Seats[back].frame = message.frame ?? Seats[back].frame;
                 Seats[back].isBot = false;
                 Send(peer, StartMessage(back));
                 RaiseNotice($"{name} вернулся в партию.");
@@ -320,7 +323,7 @@ namespace CityHighways.Net
             // Одинаковые имена путают — добавляем номер.
             string unique = name;
             for (int n = 2; Seats.Any(s => s.name == unique); n++) unique = Clean(name, "Игрок") + " " + n;
-            Seats.Add(new NetSeat { name = unique, peer = key });
+            Seats.Add(new NetSeat { name = unique, peer = key, emblem = message.emblem ?? "", title = message.title ?? "", frame = message.frame ?? "" });
             BroadcastLobby();
         }
 
@@ -381,13 +384,19 @@ namespace CityHighways.Net
 
         public override bool IsHost => false;
         public bool Joined => Seats.Count > 0;
+        /// <summary>Оформление своего профиля — уходит хосту в hello.</summary>
+        public string Emblem = "", Title = "", Frame = "";
         public override bool AwaitingHost => _awaitingSince != DateTime.MinValue;
 
         void SendHello()
         {
             if (_helloSent) return;
             _helloSent = true;
-            Send(Transport.HostId, new NetMessage { type = NetMessage.Hello, version = NetCodec.ProtocolVersion, name = _name });
+            Send(Transport.HostId, new NetMessage
+            {
+                type = NetMessage.Hello, version = NetCodec.ProtocolVersion, name = _name,
+                emblem = Emblem, title = Title, frame = Frame
+            });
         }
 
         protected override void OnPeerConnected(ulong peer)

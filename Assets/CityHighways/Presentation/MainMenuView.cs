@@ -37,10 +37,11 @@ namespace CityHighways.Presentation
         readonly Label _hint;
         readonly VisualElement _overlay;
 
-        enum Page { Home, NewGame, Online, Rules, Stats, Settings }
+        enum Page { Home, NewGame, Online, Profile, Rules, Stats, Settings }
         readonly Dictionary<Page, VisualElement> _pages = new Dictionary<Page, VisualElement>();
         readonly VisualElement _pageHost;
         readonly MenuOnlinePage _online;
+        readonly MenuProfilePage _profile;
 
         public VisualElement Root { get; }
 
@@ -70,6 +71,8 @@ namespace CityHighways.Presentation
                 out _trainsValue, out _hideCardsButton, out _timerButton, out _hint);
             _online = new MenuOnlinePage(app, setup, () => ShowPage(Page.Home));
             _pages[Page.Online] = _online.Root;
+            _profile = new MenuProfilePage(setup, () => ShowPage(Page.Home), Refresh);
+            _pages[Page.Profile] = _profile.Root;
             _pages[Page.Rules] = MenuRulesPage.Build(new GameConfig(), () => ShowPage(Page.Home));
             _pages[Page.Stats] = MenuStatsPage.Build(() => ShowPage(Page.Home), () => ShowPage(Page.Stats), RebuildStats);
             _pages[Page.Settings] = BuildSettings(out _screenModeButton, out _resolutionButton, out _soundButton, out _volumeValue);
@@ -152,13 +155,14 @@ namespace CityHighways.Presentation
 
             void Add(string text, Action onClick, ButtonKind kind)
             {
-                var button = Ui.Button(text, onClick, kind, 22f);
-                button.style.height = 60f;
-                button.style.marginBottom = 12f;
+                var button = Ui.Button(text, onClick, kind, 21f);
+                button.style.height = 54f;
+                button.style.marginBottom = 10f;
                 buttons.Add(button);
             }
             Add("Новая игра", () => ShowPage(Page.NewGame), saved != null ? ButtonKind.Secondary : ButtonKind.Primary);
             Add("Сетевая игра", () => ShowPage(Page.Online), ButtonKind.Secondary);
+            Add("Профиль", () => { _profile.Rebuild(); ShowPage(Page.Profile); }, ButtonKind.Secondary);
             Add("Правила", () => ShowPage(Page.Rules), ButtonKind.Secondary);
             Add("Счётчик партий", () => ShowPage(Page.Stats), ButtonKind.Secondary);
             Add("Настройки", () => ShowPage(Page.Settings), ButtonKind.Secondary);

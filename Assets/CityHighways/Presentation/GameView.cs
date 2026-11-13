@@ -44,6 +44,33 @@ namespace CityHighways.Presentation
             public Label Stats;
             public CharacterIcon Icon;
             public Label Ability;
+            public ProfileBadge Badge;
+            public Label Title;
+        }
+
+        /// <summary>Оформление игроков из профилей (эмблема, титул, рамка): за одним компьютером — по имени, в сети — от хоста.</summary>
+        PlayerLook[] _looks = new PlayerLook[0];
+        /// <summary>Сколько влияния ушло в профили после партии — показывается в итогах.</summary>
+        List<Profiles.Credit> _profileCredits;
+
+        PlayerLook LookOf(int index) => index >= 0 && index < _looks.Length ? _looks[index] : PlayerLook.None;
+
+        void BuildLooks()
+        {
+            _looks = new PlayerLook[_game.Players.Count];
+            for (int i = 0; i < _looks.Length; i++)
+            {
+                if (Online)
+                {
+                    var seat = i < _net.Seats.Count ? _net.Seats[i] : null;
+                    _looks[i] = seat == null ? PlayerLook.None : new PlayerLook(seat.emblem, seat.title, seat.frame);
+                }
+                else
+                {
+                    bool bot = i < _setup.players.Count && _setup.players[i].isBot;
+                    _looks[i] = bot ? PlayerLook.None : Profiles.LookFor(_game.Players[i].Name);
+                }
+            }
         }
 
         sealed class Snapshot
@@ -859,8 +886,9 @@ namespace CityHighways.Presentation
             // Автосохранение после каждого хода; по окончании партии — запись статистики.
             if (finished)
             {
-                SaveSystem.Delete();
+                if (!Online) SaveSystem.Delete();
                 StatsLog.Append(_game, _setup, _playSeconds);
+                _profileCredits = Profiles.CreditAfterGame(_game, _setup, Online ? _net.LocalSeat : (int?)null);
             }
             else if (now.Phase != GamePhase.GameOver && !Online)
             {
@@ -1503,6 +1531,7 @@ namespace CityHighways.Presentation
 
         void BuildPlayerRows()
         {
+            BuildLooks();
             _playersBox.Clear();
             _playerRows = new PlayerRow[_game.Players.Count];
             foreach (var player in _game.Players)
@@ -1517,6 +1546,9 @@ namespace CityHighways.Presentation
                 var icon = new CharacterIcon(24f, player.Character, Palette.PlayerColor(player.Index));
                 icon.style.marginRight = 8f;
                 line.Add(icon);
+                var badge = new ProfileBadge(14f);
+                badge.style.marginRight = 5f;
+                line.Add(badge);
                 var name = Ui.Text("", 14f, null, true);
                 name.style.flexGrow = 1f;
                 name.style.flexShrink = 1f;
@@ -1529,13 +1561,17 @@ namespace CityHighways.Presentation
                 line.Add(stats);
                 row.Add(line);
 
+                var title = Ui.Text("", 10f, new Color(0.98f, 0.78f, 0.25f), true);
+                title.style.marginLeft = 32f;
+                row.Add(title);
+
                 var ability = Ui.Text("", 11f, Theme.TextDim);
                 ability.style.whiteSpace = WhiteSpace.Normal;
                 ability.style.marginLeft = 32f;
                 row.Add(ability);
 
                 _playersBox.Add(row);
-                _playerRows[player.Index] = new PlayerRow { Root = row, Name = name, Stats = stats, Icon = icon, Ability = ability };
+                _playerRows[player.Index] = new PlayerRow { Root = row, Name = name, Stats = stats, Icon = icon, Ability = ability, Badge = badge, Title = title };
             }
         }
 
@@ -1556,7 +1592,13 @@ namespace CityHighways.Presentation
                 row.Stats.text = $"{points} очк · {player.RoadPieces} уч · {player.HandSize} карт"
                                  + (_game.Config.InfluenceEnabled ? $" · {player.Influence} вл" : "");
                 row.Root.style.backgroundColor = active ? Theme.PanelHover : Theme.PanelLight;
-                Ui.Border(row.Root, active ? 2f : 1f, active ? Palette.PlayerColor(player.Index) : Theme.Line);
+                var look = LookOf(player.Index);
+                var frame = Profiles.FrameColor(look.Frame);
+                bool framed = frame.a > 0f;
+                Ui.Border(row.Root, active || framed ? 2f : 1f, active ? Palette.PlayerColor(player.Index) : framed ? frame : Theme.Line);
+                row.Badge.Set(look.Emblem, framed ? frame : new Color(0.98f, 0.78f, 0.25f));
+                row.Title.text = Profiles.TitleText(look.Title);
+                Ui.Show(row.Title, row.Title.text.Length > 0);
             }
         }
 
@@ -2492,9 +2534,19 @@ namespace CityHighways.Presentation
                 place++;
             }
 
+            if (_profileCredits != null && _profileCredits.Count > 0)
+            {
+                var credit = Ui.Text("В кошелёк профиля: " + string.Join(" · ", _profileCredits.Select(c => $"{c.Profile} +{c.Amount}"))
+                                     + " — тратится на оформление в «Профиле».", 14f, Theme.Accent, true);
+                credit.style.whiteSpace = WhiteSpace.Normal;
+                credit.style.unityTextAlign = TextAnchor.MiddleCenter;
+                credit.style.marginTop = 10f;
+                box.Add(credit);
+            }
+
             if (_game.Config.InfluenceEnabled)
             {
-                var influence = Ui.Text("Влияние на конец партии (в очки не входит): "
+                var influence = Ui.Text("Влияние на конец партии (в очки не входит, остаток людей уходит в профиль): "
                                         + string.Join(" · ", result.Ranking.Select(r => $"{r.PlayerName} — {r.Influence} (заработано {r.InfluenceEarned})")),
                     13f, Theme.TextDim);
                 influence.style.whiteSpace = WhiteSpace.Normal;

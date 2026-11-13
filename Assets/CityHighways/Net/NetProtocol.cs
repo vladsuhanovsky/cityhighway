@@ -18,6 +18,10 @@ namespace CityHighways.Net
         /// <summary>Сетевой id участника (строкой: JsonUtility плохо дружит с ulong). Пусто — хост или бот.</summary>
         public string peer = "";
         public bool connected = true;
+        /// <summary>Оформление из профиля игрока (эмблема, титул, рамка) — только для вида.</summary>
+        public string emblem = "";
+        public string title = "";
+        public string frame = "";
 
         public ulong PeerId => ulong.TryParse(peer, out var id) ? id : 0UL;
     }
@@ -53,12 +57,16 @@ namespace CityHighways.Net
         public string map;
         public int turnSeconds;
         public string text;
+        /// <summary>hello: оформление профиля подключающегося.</summary>
+        public string emblem;
+        public string title;
+        public string frame;
     }
 
     public static class NetCodec
     {
         /// <summary>Меняется при любой несовместимой правке протокола или правил: разные версии не играют вместе.</summary>
-        public const int ProtocolVersion = 4; // 2 — влияние, 3 — аукцион мэрии, 4 — взятки
+        public const int ProtocolVersion = 5; // 2 — влияние, 3 — аукцион мэрии, 4 — взятки, 5 — профили
 
         public static byte[] Encode(NetMessage message) => Encoding.UTF8.GetBytes(JsonUtility.ToJson(message));
 

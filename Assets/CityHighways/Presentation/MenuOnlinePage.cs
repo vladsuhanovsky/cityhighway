@@ -221,8 +221,7 @@ namespace CityHighways.Presentation
         {
             var steam = NetPlatforms.Steam;
             if (steam != null && steam.Available && !string.IsNullOrEmpty(steam.PersonaName)) return steam.PersonaName;
-            var first = _setup.players.FirstOrDefault(p => !p.isBot);
-            return first != null ? first.name : "Игрок";
+            return Profiles.Active.name;
         }
 
         string PlayerName => string.IsNullOrWhiteSpace(_nameField.value) ? "Игрок" : _nameField.value.Trim();
@@ -323,6 +322,20 @@ namespace CityHighways.Presentation
 
         void Open(NetSession session, string status)
         {
+            // Оформление из активного профиля: хосту — на своё место, клиенту — в приветствие.
+            var look = Profiles.Active.Look;
+            if (session is HostSession && session.Seats.Count > 0)
+            {
+                session.Seats[0].emblem = look.Emblem;
+                session.Seats[0].title = look.Title;
+                session.Seats[0].frame = look.Frame;
+            }
+            else if (session is ClientSession client)
+            {
+                client.Emblem = look.Emblem;
+                client.Title = look.Title;
+                client.Frame = look.Frame;
+            }
             _app.OpenNet(session);
             _session = session;
             session.SeatsChanged += () => { if (_session == session) RefreshLobby(); };
