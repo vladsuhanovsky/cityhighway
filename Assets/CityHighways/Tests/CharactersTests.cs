@@ -71,7 +71,9 @@ namespace CityHighways.Tests
             Assert.AreEqual(discard + 2, game.LuckDiscardCount, "Обе карты уходят в сброс");
 
             Assert.IsTrue(game.ChooseLuckCard(1).Success);
-            Assert.AreEqual(game.Config.LuckGrant, game.Players[0].LuckPoints);
+            // «Грант мэрии» при включённом влиянии даёт влияние вместо очков.
+            Assert.AreEqual(game.Config.LuckGrantInfluence, game.Players[0].Influence);
+            Assert.AreEqual(0, game.Players[0].LuckPoints);
             Assert.AreEqual(GamePhase.DrawingSecondCard, game.Phase);
             Assert.AreEqual(0, game.PendingLuckChoice.Count);
         }
@@ -94,7 +96,8 @@ namespace CityHighways.Tests
             game.Debug_PutLuckOnTop(LuckCardKind.Fine, LuckCardKind.Grant);
             Assert.IsTrue(game.DrawLuckCard().Success);
             Assert.IsTrue(new SmartBot(1).Act(game).Success);
-            Assert.AreEqual(game.Config.LuckGrant, game.Players[0].LuckPoints, "Бот оставил грант, а не штраф");
+            Assert.AreEqual(game.Config.LuckGrantInfluence, game.Players[0].Influence, "Бот оставил грант, а не штраф");
+            Assert.AreEqual(0, game.Players[0].LuckPoints);
         }
 
         [Test]

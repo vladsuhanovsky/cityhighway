@@ -103,7 +103,8 @@ namespace CityHighways.Tests
 
             Assert.IsTrue(game.DrawLuckCard().Success);
             Assert.AreEqual(GamePhase.DrawingSecondCard, game.Phase, "После удачи берут ещё одну карту ресурса");
-            Assert.AreEqual(5, game.Players[0].LuckPoints);
+            Assert.AreEqual(game.Config.LuckGrantInfluence, game.Players[0].Influence, "Грант даёт влияние вместо очков");
+            Assert.AreEqual(0, game.Players[0].LuckPoints);
             Assert.AreEqual(LuckCardKind.Grant, game.LastLuckCard);
             Assert.AreEqual(1, game.Players[0].LuckBuffs);
             Assert.AreEqual(0, game.Players[0].LuckDebuffs);
@@ -225,12 +226,13 @@ namespace CityHighways.Tests
         {
             var game = Fresh();
             ClearContracts(game);
-            game.Debug_PutLuckOnTop(LuckCardKind.Grant);
+            // Очки удачи в итоге — на «Проверке» (грант теперь даёт влияние, а оно в очки не входит).
+            game.Debug_PutLuckOnTop(LuckCardKind.Fine);
             Assert.IsTrue(game.DrawLuckCard().Success);
             game.Debug_Finish();
             var p0 = game.Result.Ranking.First(s => s.PlayerIndex == 0);
-            Assert.AreEqual(5, p0.LuckPoints);
-            Assert.AreEqual(p0.RoadPoints + p0.NetworkBonus + 5, p0.Total);
+            Assert.AreEqual(-game.Config.LuckFine, p0.LuckPoints);
+            Assert.AreEqual(p0.RoadPoints + p0.NetworkBonus - game.Config.LuckFine, p0.Total);
         }
 
         [Test]
@@ -278,7 +280,7 @@ namespace CityHighways.Tests
             CollectionAssert.AreEqual(new[] { "t2", "t3" }, restored.ActiveGoals.Select(g => g.Id).ToArray());
             Assert.AreEqual(1, restored.GoalOwner("t2"));
             Assert.AreEqual(4, restored.Players[1].GoalPoints);
-            Assert.AreEqual(5, restored.Players[0].LuckPoints);
+            Assert.AreEqual(game.Config.LuckGrantInfluence, restored.Players[0].Influence);
             Assert.AreEqual(1, restored.Players[0].LuckBuffs);
             Assert.IsTrue(restored.LuckTakenThisTurn);
             Assert.AreEqual(game.LuckDeckCount, restored.LuckDeckCount);
