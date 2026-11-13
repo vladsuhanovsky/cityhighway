@@ -114,6 +114,17 @@ namespace CityHighways.Core
         public int AuctionCandidates = 5;
         public int AuctionBonus = 5;
 
+        /// <summary>
+        /// Взятки чиновникам: тайно, раз в ход, за влияние. Раскрыта соперником, пока давший не начал следующий ход, —
+        /// штраф BribeFine очков за каждую взятку, разоблачителю +BribeWhistleReward влияния. Ложное обвинение — −FalseAccusationFine.
+        /// </summary>
+        public bool BribesEnabled = true;
+        public int BribeDiscountCost = 2;
+        public int BribeExtraCardCost = 2;
+        public int BribeFine = 6;
+        public int BribeWhistleReward = 2;
+        public int FalseAccusationFine = 3;
+
         /// <summary>Сколько общих целей мэрии открывается в начале партии (из пула карты).</summary>
         public int MayorGoalsDealt = 3;
 

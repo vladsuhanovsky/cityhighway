@@ -51,6 +51,11 @@ namespace CityHighways.Core
         /// <summary>Контракт, выигранный на аукционе мэрии (бонус в конце, если выполнен); null — нет.</summary>
         public string MayorContractId { get; internal set; }
 
+        /// <summary>Штрафы за раскрытые взятки и ложные обвинения (≤ 0).</summary>
+        public int PenaltyPoints { get; internal set; }
+        public int BribesGiven { get; internal set; }
+        public int BribesExposed { get; internal set; }
+
         /// <summary>Персонаж компании.</summary>
         public CharacterKind Character { get; internal set; }
         /// <summary>Сколько бесплатных строек осталось у Прораба.</summary>

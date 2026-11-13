@@ -238,6 +238,50 @@ namespace CityHighways.Core
             return null;
         }
 
+        // ================================================================== Взятки
+
+        /// <summary>
+        /// Обвинение: только когда в мэрии есть нераскрытые взятки и чей-то прошлый ход выглядел подозрительно
+        /// по открытым данным; и то не всегда (бот тоже боится ложного обвинения).
+        /// </summary>
+        ActionResult? TryAccuse(Game game)
+        {
+            if (!game.Config.BribesEnabled || game.ActiveBribes == 0 || game.AccusedThisTurn) return null;
+            var suspects = game.Players.Where(p => p.Index != game.CurrentPlayerIndex && game.LooksSuspicious(p.Index)).ToList();
+            if (suspects.Count == 0 || _rng.NextDouble() > 0.6) return null;
+            var target = suspects[_rng.Next(suspects.Count)];
+            return game.GetAccuseBlocker(target.Index) == null ? game.Accuse(target.Index) : (ActionResult?)null;
+        }
+
+        /// <summary>
+        /// Взятка: скидка — если нужная дорога не по карману ровно на одну карту; поставка — изредка, когда
+        /// до нужной дороги не хватает 1–2 карт. Влияния после взятки должно остаться хотя бы 2.
+        /// </summary>
+        ActionResult? TryBribe(Game game, Analysis a)
+        {
+            if (!game.Config.BribesEnabled || game.BribedThisTurn) return null;
+            var me = a.Me;
+            int discount = game.Config.BribeDiscountCost;
+            if (me.Influence >= discount + 2 && game.GetBribeBlocker(BribeKind.Discount) == null)
+            {
+                foreach (var road in a.Desired)
+                {
+                    if (game.GetPaymentOptions(road.Id).Count > 0 || game.GetRoadOwner(road.Id).HasValue || me.RoadPieces < road.Length) continue;
+                    if (game.GetBuildBlocker(road.Id) == null) continue;
+                    int cost = game.BuildCost(road, me);
+                    if (cost > 1 && CanPay(me, road, cost - 1) && !game.IsParadeClosed(road.Id) && !game.IsUnderRepair(road.Id))
+                        return game.Bribe(BribeKind.Discount);
+                }
+            }
+            int extra = game.Config.BribeExtraCardCost;
+            if (me.Influence >= extra + 2 && game.GetBribeBlocker(BribeKind.ExtraCard) == null && _rng.NextDouble() < 0.3)
+            {
+                int deficit = ResourceInfo.Building.Sum(x => Math.Max(0, a.Need[(int)x] - me.CardCount(x)));
+                if (a.HasGoals && deficit >= 1 && deficit <= 2) return game.Bribe(BribeKind.ExtraCard);
+            }
+            return null;
+        }
+
         static bool CanPay(PlayerState me, Road road, int cost)
         {
             int machinery = me.CardCount(Resource.Machinery);
@@ -317,6 +361,10 @@ namespace CityHighways.Core
                 var offer = TryPropose(game, a);
                 if (offer.HasValue) return offer.Value;
             }
+            var accusation = TryAccuse(game);
+            if (accusation.HasValue && accusation.Value.Success) return accusation.Value;
+            var bribe = TryBribe(game, a);
+            if (bribe.HasValue && bribe.Value.Success) return bribe.Value;
             var spent = TrySpendInfluence(game, a);
             if (spent.HasValue && spent.Value.Success) return spent.Value;
             bool endgame = game.IsFinalRound || game.Players.Any(p => p.RoadPieces <= EndgamePieces);

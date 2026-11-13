@@ -182,7 +182,10 @@ namespace CityHighways.Core
             return road != null && (Map.DistrictOf(road.A) == Config.ParadeDistrict || Map.DistrictOf(road.B) == Config.ParadeDistrict);
         }
 
-        public int BuildCost(Road road, PlayerState player)
+        public int BuildCost(Road road, PlayerState player) => ApplyBribeDiscount(BaseBuildCost(road, player), player);
+
+        /// <summary>Цена без взятки: снег, субсидия, Мостовик.</summary>
+        int BaseBuildCost(Road road, PlayerState player)
         {
             bool permit = _permitActive && player != null && player.Index == CurrentPlayerIndex;
             if (road.Resource == Resource.Gravel && CurrentEvent != null && CurrentEvent.Kind == CityEventKind.Snow && !permit)
@@ -347,6 +350,7 @@ namespace CityHighways.Core
 
             Pay(player, resource, resourceCards);
             Pay(player, Resource.Machinery, machinery);
+            if (cost < BaseBuildCost(road, player)) _turnPaidLess = true;
             PlaceRoad(player, road, "");
             return ActionResult.Ok();
         }
@@ -551,6 +555,7 @@ namespace CityHighways.Core
             Phase = GamePhase.AwaitingAction;
             CurrentPlayerIndex = 0;
             TurnNumber = 1;
+            _turnHandStart = CurrentPlayer.HandSize;
             Emit($"Игра началась. Ходит {CurrentPlayer.Name}.");
             StartRound();
         }
@@ -559,6 +564,7 @@ namespace CityHighways.Core
         {
             if (!passed) _consecutivePasses = 0;
             var player = CurrentPlayer;
+            RememberTurnEvidence(player);
 
             if (_finalTurnsLeft > 0)
             {
@@ -583,6 +589,8 @@ namespace CityHighways.Core
             _luckTakenThisTurn = false;
             _tradeUsedThisTurn = false;
             ResetInfluenceTurn();
+            BribeTurnPassed();
+            _turnHandStart = CurrentPlayer.HandSize;
             if (CurrentPlayerIndex == 0)
             {
                 StartRound();      // новый круг — новое событие

@@ -468,6 +468,8 @@ namespace CityHighways.Presentation
             _game.Log += AddLog;
             _lastTradeShown = _game.TradeNumber;
             _lastAuctionShown = _game.AuctionNumber;
+            _lastWhisperShown = _game.WhisperNumber;
+            _lastAccusationShown = _game.AccusationNumber;
             _game.StateChanged += OnStateChanged;
 
             _bots = new IBot[_game.Players.Count];
@@ -957,6 +959,24 @@ namespace CityHighways.Presentation
                 });
             }
 
+            // Взятки: шёпот в мэрии и итог обвинения — видно всем.
+            if (_game.WhisperNumber > _lastWhisperShown)
+            {
+                _lastWhisperShown = _game.WhisperNumber;
+                Toast("В мэрии кто-то шепчется…", Theme.TextDim);
+            }
+            if (_game.AccusationNumber > _lastAccusationShown && _game.LastAccusation != null)
+            {
+                _lastAccusationShown = _game.AccusationNumber;
+                var a = _game.LastAccusation;
+                string accuser = _game.Players[a.Accuser].Name, accused = _game.Players[a.Accused].Name;
+                Toast(a.Correct
+                        ? $"{accuser} разоблачает {accused}: взятка! −{_game.Config.BribeFine * a.Exposed}"
+                        : $"{accuser} ошибся: {accused} чист. −{_game.Config.FalseAccusationFine} обвинителю",
+                    a.Correct ? Theme.Danger : Theme.TextDim);
+                _app.Sound.Play(a.Correct ? Sfx.Horn : Sfx.Swish, 0.35f);
+            }
+
             // Аукцион мэрии: начало и итог.
             if (_game.AuctionNumber > _lastAuctionShown)
             {
@@ -1331,7 +1351,9 @@ namespace CityHighways.Presentation
                 _luckOdds.text = $"В колоде {_game.DeckCount} · контрактов {_game.ContractDeckCount} · удача {luckLeft}: шанс бафа {chance}%"
                                  + (_game.LuckWillReshuffle ? " (перемешается)" : "")
                                  + (_game.TradeUsedThisTurn ? " · сделка была" : "")
-                                 + (_game.InfluenceUsedThisTurn ? " · влияние потрачено" : "");
+                                 + (_game.InfluenceUsedThisTurn ? " · влияние потрачено" : "")
+                                 + (HumanToAct && _game.BribeDiscountActive ? " · скидка −1 карта" : "")
+                                 + (_game.ActiveBribes > 0 ? $" · шёпот в мэрии: {_game.ActiveBribes}" : "");
             }
             Ui.SetEnabled(_luckButton, HumanToAct && _game.CanDrawLuckCard());
             _contractsButton.text = "Контракты";
@@ -1341,10 +1363,32 @@ namespace CityHighways.Presentation
             Ui.SetEnabled(_tradeButton, HumanToAct && _game.CanProposeTrade());
             Ui.Show(_influenceButton, _game.Config.InfluenceEnabled);
             _influenceButton.text = $"Влияние {_game.Players[Viewer].Influence}";
-            Ui.SetEnabled(_influenceButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction && !_game.InfluenceUsedThisTurn);
+            Ui.SetEnabled(_influenceButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction);
         }
 
-        /// <summary>Траты влияния: две группы (город и рынок), у каждой — цена, описание и причина, если сейчас нельзя.</summary>
+        /// <summary>Строка действия в окне влияния: название, описание (или причина, почему нельзя) и кнопка с ценой.</summary>
+        VisualElement ActionLine(string title, string description, bool blocked, string price, Action onClick)
+        {
+            var row = Ui.Row();
+            row.style.alignItems = Align.Center;
+            row.style.marginBottom = 8f;
+            var texts = Ui.Column();
+            texts.style.flexGrow = 1f;
+            texts.style.flexShrink = 1f;
+            texts.Add(Ui.Text(title, 15f, Theme.Text, true));
+            var text = Ui.Text(description, 12f, blocked ? Theme.Danger : Theme.TextDim);
+            text.style.whiteSpace = WhiteSpace.Normal;
+            texts.Add(text);
+            row.Add(texts);
+            var button = Ui.Button(price, onClick, ButtonKind.Primary, 15f);
+            button.style.marginLeft = 12f;
+            button.style.minWidth = 80f;
+            Ui.SetEnabled(button, !blocked);
+            row.Add(button);
+            return row;
+        }
+
+        /// <summary>Траты влияния, взятки и разоблачения: у каждого — цена, описание и причина, если сейчас нельзя.</summary>
         void ShowInfluenceMenu()
         {
             if (!HumanToAct || _game.Phase != GamePhase.AwaitingAction) return;
@@ -1395,6 +1439,60 @@ namespace CityHighways.Presentation
             }
             Group("Влияние на город", true);
             Group("Контроль рынка", false);
+
+            if (_game.Config.BribesEnabled)
+            {
+                var bribeHeader = Ui.Text("Взятка чиновникам (тайно)", 15f, Theme.Text, true);
+                bribeHeader.style.marginTop = 6f;
+                box.Add(bribeHeader);
+                var bribeNote = Ui.Text($"Все увидят только «в мэрии кто-то шепчется». Пока вы не начали следующий ход, соперник может вас обвинить: " +
+                                        $"угадал — штраф −{_game.Config.BribeFine} за каждую взятку, ему +{_game.Config.BribeWhistleReward} влияния.", 12f, Theme.TextDim);
+                bribeNote.style.whiteSpace = WhiteSpace.Normal;
+                bribeNote.style.marginBottom = 6f;
+                box.Add(bribeNote);
+                foreach (var kind in BribeInfo.All)
+                {
+                    var chosen = kind;
+                    var blocker = _game.GetBribeBlocker(kind);
+                    box.Add(ActionLine(BribeInfo.Title(kind), blocker ?? BribeInfo.Describe(kind), blocker != null,
+                        $"{BribeInfo.Cost(kind, _game.Config)} вл.", () =>
+                        {
+                            HideOverlay();
+                            Act(() =>
+                            {
+                                var result = _game.Bribe(chosen);
+                                if (result.Success) Flash("Взятка дана. Не попадитесь до следующего хода.");
+                                return result;
+                            });
+                        }));
+                }
+
+                var accuseHeader = Ui.Text("Разоблачение", 15f, Theme.Text, true);
+                accuseHeader.style.marginTop = 6f;
+                box.Add(accuseHeader);
+                var accuseNote = Ui.Text(_game.ActiveBribes > 0
+                    ? $"Нераскрытых взяток сейчас: {_game.ActiveBribes}. Подозрительно, если у соперника рука выросла сильнее обычного или дорога обошлась дешевле. Ошибка — −{_game.Config.FalseAccusationFine} вам."
+                    : $"Сейчас никто не шептался — обвинять некого. Ложное обвинение — −{_game.Config.FalseAccusationFine} вам.", 12f, Theme.TextDim);
+                accuseNote.style.whiteSpace = WhiteSpace.Normal;
+                accuseNote.style.marginBottom = 6f;
+                box.Add(accuseNote);
+                var accuseRow = Ui.Row();
+                accuseRow.style.flexWrap = Wrap.Wrap;
+                foreach (var other in _game.Players.Where(p => p.Index != me.Index))
+                {
+                    int target = other.Index;
+                    var button = Ui.Button("Обвинить: " + other.Name, () =>
+                    {
+                        HideOverlay();
+                        Act(() => _game.Accuse(target));
+                    }, ButtonKind.Secondary, 13f);
+                    button.style.marginRight = 8f;
+                    button.style.marginBottom = 6f;
+                    Ui.SetEnabled(button, _game.GetAccuseBlocker(target) == null);
+                    accuseRow.Add(button);
+                }
+                box.Add(accuseRow);
+            }
 
             var close = Ui.Button("Закрыть", HideOverlay, ButtonKind.Ghost, 15f);
             close.style.alignSelf = Align.FlexEnd;
@@ -2047,6 +2145,8 @@ namespace CityHighways.Presentation
 
         int _lastTradeShown;
         int _lastAuctionShown;
+        int _lastWhisperShown;
+        int _lastAccusationShown;
 
         /// <summary>Тайная ставка на аукционе мэрии: контракт, бонус, своё влияние; кто уже поставил — без сумм.</summary>
         void ShowAuction()
@@ -2374,8 +2474,8 @@ namespace CityHighways.Presentation
             subtitle.style.marginBottom = 20f;
             box.Add(subtitle);
 
-            float[] widths = { 200f, 68f, 140f, 76f, 105f, 62f, 66f, 86f, 64f };
-            box.Add(ResultRow(new[] { "Компания", "Дороги", "Контракты", "Проезд", "Сеть", "Цели", "Удача", "Персонаж", "Итого" }, widths, Theme.TextDim, -1, false));
+            float[] widths = { 190f, 64f, 140f, 70f, 100f, 58f, 62f, 82f, 70f, 64f };
+            box.Add(ResultRow(new[] { "Компания", "Дороги", "Контракты", "Проезд", "Сеть", "Цели", "Удача", "Персонаж", "Штрафы", "Итого" }, widths, Theme.TextDim, -1, false));
 
             int place = 1;
             foreach (var s in result.Ranking)
@@ -2387,7 +2487,7 @@ namespace CityHighways.Presentation
                 string network = s.NetworkDistricts + " р." + (s.NetworkBonus > 0 ? $" (+{s.NetworkBonus})" : "");
                 string character = s.Character == CharacterKind.None ? "—" : s.CharacterPoints > 0 ? "+" + s.CharacterPoints : "0";
                 var cells = new[] { $"{place}. {s.PlayerName}", s.RoadPoints.ToString(), contracts, tolls, network,
-                    s.GoalPoints.ToString(), $"{s.LuckPoints:+#;-#;0}", character, s.Total.ToString() };
+                    s.GoalPoints.ToString(), $"{s.LuckPoints:+#;-#;0}", character, s.Penalties == 0 ? "—" : s.Penalties.ToString(), s.Total.ToString() };
                 box.Add(ResultRow(cells, widths, Theme.Text, s.PlayerIndex, place == 1));
                 place++;
             }

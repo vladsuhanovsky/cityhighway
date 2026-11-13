@@ -58,7 +58,7 @@ namespace CityHighways.Net
     public static class NetCodec
     {
         /// <summary>Меняется при любой несовместимой правке протокола или правил: разные версии не играют вместе.</summary>
-        public const int ProtocolVersion = 3; // 2 — влияние, 3 — аукцион мэрии
+        public const int ProtocolVersion = 4; // 2 — влияние, 3 — аукцион мэрии, 4 — взятки
 
         public static byte[] Encode(NetMessage message) => Encoding.UTF8.GetBytes(JsonUtility.ToJson(message));
 

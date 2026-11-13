@@ -191,7 +191,7 @@ namespace CityHighways.Core
         }
 
         /// <summary>Очки, которые видны всем во время партии (без контрактов, они секретны).</summary>
-        public int VisibleScore(PlayerState player) => player.RoadPoints + player.GoalPoints + player.LuckPoints;
+        public int VisibleScore(PlayerState player) => player.RoadPoints + player.GoalPoints + player.LuckPoints + player.PenaltyPoints;
 
         void ResetInfluenceTurn()
         {

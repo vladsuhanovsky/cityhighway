@@ -6,7 +6,7 @@ namespace CityHighways.Core
     [Serializable]
     public class GameSaveData
     {
-        public const int CurrentVersion = 8; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион
+        public const int CurrentVersion = 9; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки
         /// <summary>Самая старая версия, которую ещё можно загрузить (в v2 цели и удача начнутся заново).</summary>
         public const int OldestSupportedVersion = 2;
 
@@ -95,6 +95,22 @@ namespace CityHighways.Core
         public int lastAuctionWinner = -1;
         public int lastAuctionPrice;
         public int[] lastAuctionBids;
+
+        // Взятки (версия 9): нераскрытые взятки — игрок и вид, по парам.
+        public int[] bribePlayers;
+        public int[] bribeKinds;
+        public bool bribedThisTurn;
+        public bool accusedThisTurn;
+        public bool discountActive;
+        public int whisperNumber;
+        public int accusationNumber;
+        public int lastAccuser = -1;
+        public int lastAccused;
+        public bool lastAccusationCorrect;
+        public int lastAccusationExposed;
+        public int turnHandStart;
+        public bool turnPaidLess;
+        public bool[] suspicious;
     }
 
     [Serializable]
@@ -129,6 +145,9 @@ namespace CityHighways.Core
         public string[] rewardedContracts;
         public string[] influenceDistricts;
         public string mayorContract;
+        public int penaltyPoints;
+        public int bribesGiven;
+        public int bribesExposed;
     }
 
     [Serializable]
@@ -176,7 +195,10 @@ namespace CityHighways.Core
                     influenceSpent = p.InfluenceSpent,
                     rewardedContracts = p.RewardedContracts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
                     influenceDistricts = p.InfluenceDistricts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
-                    mayorContract = p.MayorContractId
+                    mayorContract = p.MayorContractId,
+                    penaltyPoints = p.PenaltyPoints,
+                    bribesGiven = p.BribesGiven,
+                    bribesExposed = p.BribesExposed
                 }).ToArray(),
                 drawPile = _deck.DrawPile.Select(c => (int)c).ToArray(),
                 discardPile = _deck.DiscardPile.Select(c => (int)c).ToArray(),
@@ -237,7 +259,21 @@ namespace CityHighways.Core
                 lastAuctionContract = LastAuction?.Contract.Id,
                 lastAuctionWinner = LastAuction?.Winner ?? -1,
                 lastAuctionPrice = LastAuction?.Price ?? 0,
-                lastAuctionBids = LastAuction?.Bids.ToArray()
+                lastAuctionBids = LastAuction?.Bids.ToArray(),
+                bribePlayers = _bribes.Select(b => b.Player).ToArray(),
+                bribeKinds = _bribes.Select(b => (int)b.Kind).ToArray(),
+                bribedThisTurn = _bribedThisTurn,
+                accusedThisTurn = _accusedThisTurn,
+                discountActive = _discountActive,
+                whisperNumber = WhisperNumber,
+                accusationNumber = AccusationNumber,
+                lastAccuser = LastAccusation?.Accuser ?? -1,
+                lastAccused = LastAccusation?.Accused ?? 0,
+                lastAccusationCorrect = LastAccusation?.Correct ?? false,
+                lastAccusationExposed = LastAccusation?.Exposed ?? 0,
+                turnHandStart = _turnHandStart,
+                turnPaidLess = _turnPaidLess,
+                suspicious = _suspicious?.ToArray()
             };
         }
 
@@ -344,6 +380,9 @@ namespace CityHighways.Core
                 foreach (var id in saved.rewardedContracts ?? new string[0]) player.RewardedContracts.Add(id);
                 foreach (var id in saved.influenceDistricts ?? new string[0]) player.InfluenceDistricts.Add(id);
                 player.MayorContractId = string.IsNullOrEmpty(saved.mayorContract) ? null : saved.mayorContract;
+                player.PenaltyPoints = saved.penaltyPoints;
+                player.BribesGiven = saved.bribesGiven;
+                player.BribesExposed = saved.bribesExposed;
                 game._players.Add(player);
             }
 
@@ -457,6 +496,25 @@ namespace CityHighways.Core
                 game._auctionContract = FindContract(data.auctionContract);
                 game._bids = data.bids.ToArray();
             }
+            var bribePlayers = data.bribePlayers ?? new int[0];
+            var bribeKinds = data.bribeKinds ?? new int[0];
+            if (bribePlayers.Length != bribeKinds.Length) throw new FormatException("Сохранение: неверные взятки.");
+            for (int i = 0; i < bribePlayers.Length; i++)
+            {
+                if (bribePlayers[i] < 0 || bribePlayers[i] >= players.Length || bribeKinds[i] < 0 || bribeKinds[i] > (int)BribeKind.ExtraCard)
+                    throw new FormatException("Сохранение: неверная взятка.");
+                game._bribes.Add(new BribeRecord { Player = bribePlayers[i], Kind = (BribeKind)bribeKinds[i] });
+            }
+            game._bribedThisTurn = data.bribedThisTurn;
+            game._accusedThisTurn = data.accusedThisTurn;
+            game._discountActive = data.discountActive;
+            game.WhisperNumber = data.whisperNumber;
+            game.AccusationNumber = data.accusationNumber;
+            if (data.lastAccuser >= 0)
+                game.LastAccusation = new AccusationResult(data.lastAccuser, data.lastAccused, data.lastAccusationCorrect, data.lastAccusationExposed);
+            game._turnHandStart = data.turnHandStart;
+            game._turnPaidLess = data.turnPaidLess;
+            game._suspicious = data.suspicious != null && data.suspicious.Length == players.Length ? data.suspicious.ToArray() : null;
             if (!string.IsNullOrEmpty(data.lastAuctionContract))
                 game.LastAuction = new AuctionResult(FindContract(data.lastAuctionContract), data.lastAuctionWinner,
                     data.lastAuctionPrice, (data.lastAuctionBids ?? new int[0]).ToArray());

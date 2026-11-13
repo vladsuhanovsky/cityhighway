@@ -47,9 +47,11 @@ namespace CityHighways.Core
         public int Influence { get; internal set; }
         /// <summary>Бонус за выполненный контракт мэрии (выигранный на аукционе).</summary>
         public int MayorBonus { get; internal set; }
+        /// <summary>Штрафы за взятки и ложные обвинения (≤ 0).</summary>
+        public int Penalties { get; internal set; }
         public int InfluenceEarned { get; internal set; }
 
-        public int Total => RoadPoints + ContractPoints - TollsPaid + TollsEarned + NetworkBonus + GoalPoints + LuckPoints + CharacterPoints + MayorBonus;
+        public int Total => RoadPoints + ContractPoints - TollsPaid + TollsEarned + NetworkBonus + GoalPoints + LuckPoints + CharacterPoints + MayorBonus + Penalties;
     }
 
     public sealed class GameResult
@@ -226,6 +228,7 @@ namespace CityHighways.Core
                 GoalPoints = p.GoalPoints,
                 LuckPoints = p.LuckPoints,
                 Influence = p.Influence,
+                Penalties = p.PenaltyPoints,
                 InfluenceEarned = p.InfluenceEarned,
                 Character = p.Character,
                 CharacterPoints = p.Character == CharacterKind.Bridger
