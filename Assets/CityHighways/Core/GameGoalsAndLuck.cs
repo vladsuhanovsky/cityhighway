@@ -145,7 +145,7 @@ namespace CityHighways.Core
             if (!LuckInfo.IsBuff(kind) && player.Character == CharacterKind.Insurer) return -Config.InsurerFine;
             switch (kind)
             {
-                case LuckCardKind.Grant: return Config.LuckGrant;
+                case LuckCardKind.Grant: return Config.InfluenceEnabled ? Config.LuckGrantInfluence : Config.LuckGrant;
                 case LuckCardKind.Supply: return 1.5 * Config.LuckSupply;
                 case LuckCardKind.Premium:
                     return Math.Min(Config.LuckPremiumMax,
@@ -171,6 +171,12 @@ namespace CityHighways.Core
             switch (kind)
             {
                 case LuckCardKind.Grant:
+                    if (Config.InfluenceEnabled)
+                    {
+                        player.Influence += Config.LuckGrantInfluence;
+                        player.InfluenceEarned += Config.LuckGrantInfluence;
+                        return $"+{Config.LuckGrantInfluence} влияния.";
+                    }
                     player.LuckPoints += Config.LuckGrant;
                     return $"+{Config.LuckGrant} очков.";
 
@@ -241,6 +247,7 @@ namespace CityHighways.Core
                 _goalOwners[goal.Id] = player.Index;
                 player.GoalPoints += goal.Points;
                 Emit($"{player.Name} первым выполняет цель мэрии «{goal.Name}» (+{goal.Points}).");
+                EarnInfluence(player, Config.InfluencePerGoal, "цель мэрии");
             }
         }
 

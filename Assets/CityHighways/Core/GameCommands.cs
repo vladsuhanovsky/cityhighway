@@ -24,6 +24,7 @@ namespace CityHighways.Core
         public const string Upgrade = "upgrade";
         public const string ProposeTradeKind = "propose_trade";
         public const string RespondTradeKind = "respond_trade";
+        public const string InfluenceKind = "influence";
 
         public string kind;
         /// <summary>Кто действует. Для всех команд, кроме keep_initial, — игрок, чей сейчас ход.</summary>
@@ -42,6 +43,10 @@ namespace CityHighways.Core
         public int getResource;
         public int getCount;
         public bool accept;
+        public int giveInfluence;
+        public int getInfluence;
+        /// <summary>Трата влияния: InfluenceAction как int.</summary>
+        public int option;
 
         public static GameCommand KeepInitialContracts(int player, IEnumerable<string> ids) =>
             new GameCommand { kind = KeepInitial, player = player, contracts = ids.ToArray() };
@@ -58,8 +63,11 @@ namespace CityHighways.Core
         public static GameCommand ChooseLuckCard(int player, int index) => new GameCommand { kind = ChooseLuck, player = player, index = index };
         public static GameCommand UpgradeRoad(int player, string road, Resource resource, int machinery) =>
             new GameCommand { kind = Upgrade, player = player, road = road, resource = (int)resource, machinery = machinery };
-        public static GameCommand ProposeTrade(int player, int to, Resource give, int giveCount, Resource get, int getCount) =>
-            new GameCommand { kind = ProposeTradeKind, player = player, to = to, giveResource = (int)give, giveCount = giveCount, getResource = (int)get, getCount = getCount };
+        public static GameCommand ProposeTrade(int player, int to, Resource give, int giveCount, Resource get, int getCount,
+            int giveInfluence = 0, int getInfluence = 0) =>
+            new GameCommand { kind = ProposeTradeKind, player = player, to = to, giveResource = (int)give, giveCount = giveCount, getResource = (int)get, getCount = getCount,
+                giveInfluence = giveInfluence, getInfluence = getInfluence };
+        public static GameCommand UseInfluence(int player, InfluenceAction action) => new GameCommand { kind = InfluenceKind, player = player, option = (int)action };
         public static GameCommand RespondTrade(int player, bool accept) => new GameCommand { kind = RespondTradeKind, player = player, accept = accept };
 
         public override string ToString()
@@ -77,7 +85,8 @@ namespace CityHighways.Core
                 case DrawLuck: return $"#{player} берёт карту удачи";
                 case ChooseLuck: return $"#{player} оставляет карту удачи {index}";
                 case Upgrade: return $"#{player} улучшает {road} за {(Resource)resource} + {machinery} техн.";
-                case ProposeTradeKind: return $"#{player} предлагает #{to}: {giveCount}×{(Resource)giveResource} за {getCount}×{(Resource)getResource}";
+                case ProposeTradeKind: return $"#{player} предлагает #{to}: {giveCount}×{(Resource)giveResource}+{giveInfluence}вл. за {getCount}×{(Resource)getResource}+{getInfluence}вл.";
+                case InfluenceKind: return $"#{player} тратит влияние: {(InfluenceAction)option}";
                 case RespondTradeKind: return $"#{player} {(accept ? "принимает" : "отклоняет")} сделку";
                 default: return $"#{player} {kind}";
             }
@@ -140,7 +149,11 @@ namespace CityHighways.Core
                 case GameCommand.ProposeTradeKind:
                     if (command.giveResource < 0 || command.giveResource >= ResourceInfo.Count
                         || command.getResource < 0 || command.getResource >= ResourceInfo.Count) return ActionResult.Fail("Неизвестный ресурс.");
-                    return ProposeTrade(command.to, (Resource)command.giveResource, command.giveCount, (Resource)command.getResource, command.getCount);
+                    return ProposeTrade(command.to, (Resource)command.giveResource, command.giveCount, (Resource)command.getResource, command.getCount,
+                        command.giveInfluence, command.getInfluence);
+                case GameCommand.InfluenceKind:
+                    if (command.option < 0 || command.option > (int)InfluenceAction.CancelEvent) return ActionResult.Fail("Неизвестная трата влияния.");
+                    return UseInfluence((InfluenceAction)command.option);
                 case GameCommand.RespondTradeKind: return RespondTrade(command.accept);
                 default: return ActionResult.Fail($"Неизвестная команда «{command.kind}».");
             }
@@ -186,8 +199,11 @@ namespace CityHighways.Core
         public ActionResult ChooseLuckCard(int index) => Recorded(CurrentPlayerIndex, DoChooseLuckCard(index), p => GameCommand.ChooseLuckCard(p, index));
         public ActionResult UpgradeRoad(string roadId, Resource resource, int machinery) =>
             Recorded(CurrentPlayerIndex, DoUpgradeRoad(roadId, resource, machinery), p => GameCommand.UpgradeRoad(p, roadId, resource, machinery));
-        public ActionResult ProposeTrade(int to, Resource give, int giveCount, Resource get, int getCount) =>
-            Recorded(CurrentPlayerIndex, DoProposeTrade(to, give, giveCount, get, getCount), p => GameCommand.ProposeTrade(p, to, give, giveCount, get, getCount));
+        public ActionResult ProposeTrade(int to, Resource give, int giveCount, Resource get, int getCount, int giveInfluence = 0, int getInfluence = 0) =>
+            Recorded(CurrentPlayerIndex, DoProposeTrade(to, give, giveCount, get, getCount, giveInfluence, getInfluence),
+                p => GameCommand.ProposeTrade(p, to, give, giveCount, get, getCount, giveInfluence, getInfluence));
+        public ActionResult UseInfluence(InfluenceAction action) =>
+            Recorded(CurrentPlayerIndex, DoUseInfluence(action), p => GameCommand.UseInfluence(p, action));
         /// <summary>Ответ на сделку даёт её получатель (ActingPlayerIndex), а не текущий игрок.</summary>
         public ActionResult RespondTrade(bool accept) =>
             Recorded(ActingPlayerIndex, DoRespondTrade(accept), p => GameCommand.RespondTrade(p, accept));

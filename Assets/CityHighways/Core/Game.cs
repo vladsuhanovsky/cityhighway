@@ -183,7 +183,8 @@ namespace CityHighways.Core
 
         public int BuildCost(Road road, PlayerState player)
         {
-            if (road.Resource == Resource.Gravel && CurrentEvent != null && CurrentEvent.Kind == CityEventKind.Snow)
+            bool permit = _permitActive && player != null && player.Index == CurrentPlayerIndex;
+            if (road.Resource == Resource.Gravel && CurrentEvent != null && CurrentEvent.Kind == CityEventKind.Snow && !permit)
                 return road.Length + Config.SnowExtraCost;
             if (!road.IsBridge) return road.Length;
             int cost = road.Length;
@@ -391,17 +392,19 @@ namespace CityHighways.Core
             if (CurrentEvent != null && CurrentEvent.Kind == CityEventKind.RushHour) _rushHourRoads.Add(road.Id);
             Emit($"{player.Name} строит{note} {ResourceInfo.RoadKind(road.Resource)} {Map.LocationName(road.A)} — {Map.LocationName(road.B)} (+{points}).");
             CheckGoals(player);
+            AwardInfluenceForRoad(player, road);
 
             EndTurn();
         }
 
-        ActionResult DoDrawContracts()
+        /// <param name="extra">Сколько контрактов сверх обычного (влияние «Контракты с выбором»).</param>
+        ActionResult DoDrawContracts(int extra = 0)
         {
             if (Phase != GamePhase.AwaitingAction) return ActionResult.Fail("Сейчас нельзя брать контракты.");
             if (_contractDeck.Count == 0) return ActionResult.Fail("Контракты закончились.");
 
             var player = CurrentPlayer;
-            player.PendingList.AddRange(_contractDeck.Draw(Config.ContractsDrawn));
+            player.PendingList.AddRange(_contractDeck.Draw(Config.ContractsDrawn + extra));
             Phase = GamePhase.ChoosingContracts;
             Emit($"{player.Name} берёт контракты: {player.PendingContracts.Count} шт.");
             Changed();
@@ -458,7 +461,8 @@ namespace CityHighways.Core
                 return owner == player.Index ? "Эта дорога уже ваша." : $"Дорогу уже построил {_players[owner].Name}.";
             if (!IsRoadOpen(road.Id)) return "Этот район ещё не открыт.";
             if (_repairRoads.Contains(road.Id)) return "Ремонт: участок закрыт до конца круга.";
-            if (IsParadeClosed(road.Id)) return "Парад: дороги у этого района закрыты до конца круга.";
+            if (IsParadeClosed(road.Id) && !(_permitActive && player.Index == CurrentPlayerIndex))
+                return "Парад: дороги у этого района закрыты до конца круга (разрешение мэрии снимает запрет).";
             if (player.RoadPieces < road.Length) return "Не хватает участков дороги.";
             return null;
         }
@@ -577,6 +581,7 @@ namespace CityHighways.Core
             Phase = GamePhase.AwaitingAction;
             _luckTakenThisTurn = false;
             _tradeUsedThisTurn = false;
+            ResetInfluenceTurn();
             if (CurrentPlayerIndex == 0) StartRound(); // новый круг — новое событие
             Changed();
         }
@@ -611,6 +616,7 @@ namespace CityHighways.Core
         /// <summary>Начало круга: прошлое событие заканчивается, открывается следующее.</summary>
         void StartRound()
         {
+            AwardCatchUpInfluence();
             _repairRoads.Clear();
             CurrentEvent = null;
             if (!Config.EventsEnabled) return;

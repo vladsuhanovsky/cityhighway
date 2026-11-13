@@ -43,6 +43,9 @@ namespace CityHighways.Core
         /// <summary>Персонаж и очки его способности в конце (Чиновник — за контракты, Мостовик — за мосты).</summary>
         public CharacterKind Character { get; internal set; }
         public int CharacterPoints { get; internal set; }
+        /// <summary>Влияние на конец партии — в очки не входит, уходит в кошелёк профиля.</summary>
+        public int Influence { get; internal set; }
+        public int InfluenceEarned { get; internal set; }
 
         public int Total => RoadPoints + ContractPoints - TollsPaid + TollsEarned + NetworkBonus + GoalPoints + LuckPoints + CharacterPoints;
     }
@@ -220,6 +223,8 @@ namespace CityHighways.Core
                 RoadPoints = p.RoadPoints,
                 GoalPoints = p.GoalPoints,
                 LuckPoints = p.LuckPoints,
+                Influence = p.Influence,
+                InfluenceEarned = p.InfluenceEarned,
                 Character = p.Character,
                 CharacterPoints = p.Character == CharacterKind.Bridger
                     ? config.BridgerPointsPerBridge * p.Roads.Count(r => r.IsBridge)

@@ -40,6 +40,14 @@ namespace CityHighways.Core
             }
         }
 
+        /// <summary>Влияние сейчас, всего заработано и потрачено за партию.</summary>
+        public int Influence { get; internal set; }
+        public int InfluenceEarned { get; internal set; }
+        public int InfluenceSpent { get; internal set; }
+        /// <summary>Контракты, за которые влияние уже начислено, и районы, где у компании есть дороги.</summary>
+        internal readonly HashSet<string> RewardedContracts = new HashSet<string>();
+        internal readonly HashSet<string> InfluenceDistricts = new HashSet<string>();
+
         /// <summary>Персонаж компании.</summary>
         public CharacterKind Character { get; internal set; }
         /// <summary>Сколько бесплатных строек осталось у Прораба.</summary>

@@ -47,6 +47,7 @@ namespace CityHighways.Presentation
                 ("События", () => Events(config)),
                 ("Цели мэрии и удача", () => GoalsAndLuck(config)),
                 ("Сделки и магистрали", () => Deals(config)),
+                ("Влияние", () => InfluenceSection(config)),
                 ("Персонажи", () => CharactersSection(config)),
                 ("Конец партии и очки", () => Ending(config))
             };
@@ -328,6 +329,18 @@ namespace CityHighways.Presentation
                 .Road("a", "b", Own, "обычная: проезд " + config.TollPerRoad)
                 .Road("b", "c", Own, "магистраль: проезд " + config.TollPerRoad * config.RushHourTollMultiplier, frame: true);
             Picture(s, diagram, "Магистраль на карте — с оранжевой рамкой. Так же выглядят дороги, построенные в час пик.");
+            return s;
+        }
+
+        static VisualElement InfluenceSection(GameConfig config)
+        {
+            var s = Section("Влияние");
+            Paragraph(s, "Влияние — особая валюта мэрии. В очки оно не превращается: его тратят во время партии, а остаток пригодится в профиле.");
+            Paragraph(s, $"Откуда берётся: выполненный контракт +{config.InfluencePerContract} (сложный +{config.InfluencePerComplexContract}); дорога в новый для вашей сети район +{config.InfluencePerNewDistrict} (кроме самой первой дороги); цель мэрии +{config.InfluencePerGoal}; «Грант мэрии» из колоды удачи +{config.LuckGrantInfluence}; в начале круга, если вы отстаёте от лидера на {config.InfluenceCatchUpGap} очков и больше, +{config.InfluenceCatchUp}.");
+            Paragraph(s, "Тратить можно раз в ход, до основного действия; ход это не занимает. Кнопка «Влияние» под открытыми картами:");
+            foreach (var action in InfluenceInfo.All)
+                Paragraph(s, $"• {InfluenceInfo.Title(action)} — {InfluenceInfo.Cost(action, config)} вл. {InfluenceInfo.Describe(action, config)}");
+            Paragraph(s, $"В сделках влиянием можно доплатить или купить карты: до {config.TradeMaxInfluence} влияния с каждой стороны.");
             return s;
         }
 

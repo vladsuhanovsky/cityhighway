@@ -166,10 +166,68 @@ namespace CityHighways.Core
             if (offer == null) return false;
             var a = Analyze(game, offer.To);
             var me = a.Me;
-            if (me.CardCount(offer.GetResource) < offer.GetCount || SurplusOf(a, offer.GetResource) < offer.GetCount) return false;
-            bool useful = a.Need[(int)offer.GiveResource] > me.CardCount(offer.GiveResource)
-                          || (a.LongestAnyNeed > 0 && offer.GiveResource != Resource.Machinery);
-            return useful || offer.GiveCount > offer.GetCount;
+            if (offer.GetCount > 0 && (me.CardCount(offer.GetResource) < offer.GetCount || SurplusOf(a, offer.GetResource) < offer.GetCount))
+                return false;
+            // Влияние бот отдаёт неохотно: не больше половины своего запаса.
+            if (offer.GetInfluence > me.Influence / 2) return false;
+            bool useful = offer.GiveCount > 0
+                          && (a.Need[(int)offer.GiveResource] > me.CardCount(offer.GiveResource)
+                              || (a.LongestAnyNeed > 0 && offer.GiveResource != Resource.Machinery));
+            if (useful) return offer.GetInfluence == 0 || offer.GiveCount >= offer.GetInfluence;
+            // Ненужное берём, только если получаем больше, чем отдаём (карта ≈ единица влияния).
+            return offer.GiveCount + offer.GiveInfluence > offer.GetCount + offer.GetInfluence;
+        }
+
+        // ================================================================== Влияние
+
+        /// <summary>
+        /// Траты влияния (как в модели Tools~/ch_influence.py): разрешение — если нужную дорогу закрыл парад
+        /// или удорожил снег, а с разрешением её можно оплатить; обновить рынок — если ресурсы нужны, а в ряду
+        /// нет ни одной полезной карты и строить нечего. Остальное влияние бот копит.
+        /// </summary>
+        ActionResult? TrySpendInfluence(Game game, Analysis a)
+        {
+            if (!game.Config.InfluenceEnabled || game.InfluenceUsedThisTurn) return null;
+            var me = a.Me;
+            var ev = game.CurrentEvent;
+            if (ev != null && (ev.Kind == CityEventKind.Parade || ev.Kind == CityEventKind.Snow)
+                && game.CanUseInfluence(InfluenceAction.Permit))
+            {
+                foreach (var road in a.Desired)
+                {
+                    if (game.GetPaymentOptions(road.Id).Count > 0 || me.RoadPieces < road.Length || game.GetRoadOwner(road.Id).HasValue) continue;
+                    bool paradeBlocked = game.IsParadeClosed(road.Id);
+                    bool snowCost = ev.Kind == CityEventKind.Snow && road.Resource == Resource.Gravel;
+                    if (!paradeBlocked && !snowCost) continue;
+                    int normalCost = road.IsBridge ? game.BuildCost(road, me) : road.Length;
+                    if (CanPay(me, road, normalCost)) return game.UseInfluence(InfluenceAction.Permit);
+                }
+            }
+            int refresh = game.Config.InfluenceRefreshCost;
+            if (me.Influence >= refresh + 1 && game.CanUseInfluence(InfluenceAction.RefreshMarket))
+            {
+                var want = ResourceInfo.Building.Where(x => a.Need[(int)x] > me.CardCount(x)).ToList();
+                bool usefulFaceUp = game.FaceUpCards.Any(c => c.HasValue && want.Contains(c.Value));
+                if (want.Count > 0 && !usefulFaceUp && Affordable(game, a.Desired).Count == 0)
+                    return game.UseInfluence(InfluenceAction.RefreshMarket);
+            }
+            return null;
+        }
+
+        static bool CanPay(PlayerState me, Road road, int cost)
+        {
+            int machinery = me.CardCount(Resource.Machinery);
+            if (road.Resource.HasValue) return me.CardCount(road.Resource.Value) + machinery >= cost;
+            return ResourceInfo.Building.Any(x => me.CardCount(x) + machinery >= cost) || machinery >= cost;
+        }
+
+        /// <summary>Взять контракты: при запасе влияния — с выбором на один больше.</summary>
+        ActionResult DrawContractsSmart(Game game)
+        {
+            if (game.CurrentPlayer.Influence >= game.Config.InfluenceExtraContractCost + 1
+                && game.CanUseInfluence(InfluenceAction.ExtraContracts))
+                return game.UseInfluence(InfluenceAction.ExtraContracts);
+            return game.DrawContracts();
         }
 
         sealed class Analysis
@@ -235,6 +293,8 @@ namespace CityHighways.Core
                 var offer = TryPropose(game, a);
                 if (offer.HasValue) return offer.Value;
             }
+            var spent = TrySpendInfluence(game, a);
+            if (spent.HasValue && spent.Value.Success) return spent.Value;
             bool endgame = game.IsFinalRound || game.Players.Any(p => p.RoadPieces <= EndgamePieces);
 
             // Прораб тратит бесплатную стройку на нужную дорогу полной длины (или на любую нужную в конце партии).
@@ -281,7 +341,7 @@ namespace CityHighways.Core
             {
                 bool calm = !game.Players.Any(p => p.RoadPieces <= 12);
                 if (game.ContractDeckCount > 0 && me.RoadPieces >= 14 && calm && !game.IsFinalRound)
-                    return game.DrawContracts();
+                    return DrawContractsSmart(game);
                 if (affordable.Count > 0)
                 {
                     var longest = Longest(affordable);

@@ -3,7 +3,10 @@ using System.Collections.Generic;
 
 namespace CityHighways.Core
 {
-    /// <summary>Предложение обмена: From отдаёт GiveCount карт GiveResource и получает GetCount карт GetResource от To.</summary>
+    /// <summary>
+    /// Предложение обмена: From отдаёт GiveCount карт GiveResource и GiveInfluence влияния, а получает от To
+    /// GetCount карт GetResource и GetInfluence влияния. Любая сторона может быть только картами или только влиянием.
+    /// </summary>
     public sealed class TradeOffer
     {
         public int From { get; }
@@ -12,8 +15,11 @@ namespace CityHighways.Core
         public int GiveCount { get; }
         public Resource GetResource { get; }
         public int GetCount { get; }
+        public int GiveInfluence { get; }
+        public int GetInfluence { get; }
 
-        public TradeOffer(int from, int to, Resource giveResource, int giveCount, Resource getResource, int getCount)
+        public TradeOffer(int from, int to, Resource giveResource, int giveCount, Resource getResource, int getCount,
+            int giveInfluence = 0, int getInfluence = 0)
         {
             From = from;
             To = to;
@@ -21,11 +27,21 @@ namespace CityHighways.Core
             GiveCount = giveCount;
             GetResource = getResource;
             GetCount = getCount;
+            GiveInfluence = giveInfluence;
+            GetInfluence = getInfluence;
+        }
+
+        public static string Side(int count, Resource resource, int influence)
+        {
+            var parts = new List<string>();
+            if (count > 0) parts.Add($"{count} × {ResourceInfo.RussianName(resource)}");
+            if (influence > 0) parts.Add($"{influence} влияния");
+            return parts.Count > 0 ? string.Join(" и ", parts) : "ничего";
         }
 
         public string Describe(Game game) =>
             $"{game.Players[From].Name} предлагает {game.Players[To].Name}: " +
-            $"{GiveCount} × {ResourceInfo.RussianName(GiveResource)} за {GetCount} × {ResourceInfo.RussianName(GetResource)}";
+            $"{Side(GiveCount, GiveResource, GiveInfluence)} за {Side(GetCount, GetResource, GetInfluence)}";
     }
 
     // Сделки между игроками и улучшение дорог.
@@ -47,26 +63,33 @@ namespace CityHighways.Core
         public bool CanProposeTrade() =>
             Config.TradesEnabled && Phase == GamePhase.AwaitingAction && !_tradeUsedThisTurn && _players.Count > 1;
 
-        ActionResult DoProposeTrade(int to, Resource giveResource, int giveCount, Resource getResource, int getCount)
+        ActionResult DoProposeTrade(int to, Resource giveResource, int giveCount, Resource getResource, int getCount,
+            int giveInfluence = 0, int getInfluence = 0)
         {
             if (!Config.TradesEnabled) return ActionResult.Fail("Сделки выключены.");
             if (Phase != GamePhase.AwaitingAction) return ActionResult.Fail("Сделку можно предложить только в начале хода.");
             if (_tradeUsedThisTurn) return ActionResult.Fail("Сделку можно предложить только одну за ход.");
             if (to < 0 || to >= _players.Count || to == CurrentPlayerIndex) return ActionResult.Fail("Выберите другого игрока.");
-            if (giveResource == getResource) return ActionResult.Fail("Меняют разные ресурсы.");
-            if (giveCount < 1 || giveCount > Config.TradeMaxCards || getCount < 1 || getCount > Config.TradeMaxCards)
-                return ActionResult.Fail($"В сделке от 1 до {Config.TradeMaxCards} карт с каждой стороны.");
+            int maxInfluence = Config.InfluenceEnabled ? Config.TradeMaxInfluence : 0;
+            if (giveCount < 0 || giveCount > Config.TradeMaxCards || getCount < 0 || getCount > Config.TradeMaxCards)
+                return ActionResult.Fail($"В сделке до {Config.TradeMaxCards} карт с каждой стороны.");
+            if (giveInfluence < 0 || giveInfluence > maxInfluence || getInfluence < 0 || getInfluence > maxInfluence)
+                return ActionResult.Fail(maxInfluence > 0 ? $"В сделке до {maxInfluence} влияния с каждой стороны." : "Влияние выключено.");
+            if (giveCount + giveInfluence == 0 || getCount + getInfluence == 0)
+                return ActionResult.Fail("Каждая сторона должна что-то отдать: карты или влияние.");
+            if (giveCount > 0 && getCount > 0 && giveResource == getResource) return ActionResult.Fail("Меняют разные ресурсы.");
             var me = CurrentPlayer;
-            if (me.CardCount(giveResource) < giveCount) return ActionResult.Fail("У вас нет столько карт.");
+            if (giveCount > 0 && me.CardCount(giveResource) < giveCount) return ActionResult.Fail("У вас нет столько карт.");
+            if (me.Influence < giveInfluence) return ActionResult.Fail("У вас нет столько влияния.");
 
             _tradeUsedThisTurn = true;
-            var offer = new TradeOffer(me.Index, to, giveResource, giveCount, getResource, getCount);
+            var offer = new TradeOffer(me.Index, to, giveResource, giveCount, getResource, getCount, giveInfluence, getInfluence);
             Emit(offer.Describe(this) + ".");
 
-            if (_players[to].CardCount(getResource) < getCount)
+            if ((getCount > 0 && _players[to].CardCount(getResource) < getCount) || _players[to].Influence < getInfluence)
             {
                 // Отвечать нечем — сделка не состоялась (без лишнего окна у получателя).
-                Emit($"У {_players[to].Name} не нашлось нужных карт — сделки нет.");
+                Emit($"У {_players[to].Name} не нашлось нужного — сделки нет.");
                 FinishTrade(offer, false);
                 Changed();
                 return ActionResult.Ok();
@@ -85,12 +108,15 @@ namespace CityHighways.Core
             var to = _players[offer.To];
             if (accept)
             {
-                if (from.CardCount(offer.GiveResource) < offer.GiveCount || to.CardCount(offer.GetResource) < offer.GetCount)
-                    return ActionResult.Fail("Для сделки не хватает карт.");
-                from.RemoveCards(offer.GiveResource, offer.GiveCount);
+                if (from.CardCount(offer.GiveResource) < offer.GiveCount || to.CardCount(offer.GetResource) < offer.GetCount
+                    || from.Influence < offer.GiveInfluence || to.Influence < offer.GetInfluence)
+                    return ActionResult.Fail("Для сделки не хватает карт или влияния.");
+                if (offer.GiveCount > 0) from.RemoveCards(offer.GiveResource, offer.GiveCount);
                 for (int i = 0; i < offer.GiveCount; i++) to.AddCard(offer.GiveResource);
-                to.RemoveCards(offer.GetResource, offer.GetCount);
+                if (offer.GetCount > 0) to.RemoveCards(offer.GetResource, offer.GetCount);
                 for (int i = 0; i < offer.GetCount; i++) from.AddCard(offer.GetResource);
+                from.Influence += offer.GetInfluence - offer.GiveInfluence;
+                to.Influence += offer.GiveInfluence - offer.GetInfluence;
                 Emit($"{to.Name} соглашается на сделку.");
             }
             else Emit($"{to.Name} отказывается от сделки.");

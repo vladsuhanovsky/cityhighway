@@ -82,6 +82,29 @@ namespace CityHighways.Core
         public bool TradesEnabled = true;
         public int TradeMaxCards = 3;
 
+        /// <summary>
+        /// Влияние — особая валюта. Начисляется за выполненные контракты, расширение сети в новые районы,
+        /// цели мэрии, «Грант» удачи и отставание; тратится раз в ход, не занимая ход. Очков в конце не даёт:
+        /// остаток уходит в кошелёк профиля. Числа подобраны на модели Tools~/ch_influence.py.
+        /// </summary>
+        public bool InfluenceEnabled = true;
+        public int InfluencePerContract = 1;
+        public int InfluencePerComplexContract = 2;
+        /// <summary>Дорога ведёт в район, где у компании ещё не было дорог (кроме самой первой дороги).</summary>
+        public int InfluencePerNewDistrict = 1;
+        public int InfluencePerGoal = 1;
+        /// <summary>В начале круга отстающим от лидера на InfluenceCatchUpGap очков и больше (по видимым очкам).</summary>
+        public int InfluenceCatchUp = 1;
+        public int InfluenceCatchUpGap = 6;
+        /// <summary>«Грант мэрии» при включённом влиянии даёт влияние вместо очков.</summary>
+        public int LuckGrantInfluence = 3;
+        public int InfluenceRefreshCost = 3;
+        public int InfluenceExtraContractCost = 1;
+        public int InfluencePermitCost = 1;
+        public int InfluenceCancelEventCost = 3;
+        /// <summary>Сколько влияния можно положить в сделку с каждой стороны.</summary>
+        public int TradeMaxInfluence = 5;
+
         /// <summary>Сколько общих целей мэрии открывается в начале партии (из пула карты).</summary>
         public int MayorGoalsDealt = 3;
 

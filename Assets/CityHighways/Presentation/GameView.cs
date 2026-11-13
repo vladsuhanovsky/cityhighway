@@ -32,7 +32,8 @@ namespace CityHighways.Presentation
             LuckChoice,
             TradeCompose,
             TradeRespond,
-            Upgrade
+            Upgrade,
+            Influence
         }
 
         sealed class PlayerRow
@@ -77,6 +78,7 @@ namespace CityHighways.Presentation
         readonly UnityEngine.UIElements.Button _deckButton;
         readonly UnityEngine.UIElements.Button _luckButton;
         readonly UnityEngine.UIElements.Button _tradeButton;
+        readonly UnityEngine.UIElements.Button _influenceButton;
 
         enum SideTab { Contracts, Goals, Log }
         SideTab _sideTab = SideTab.Contracts;
@@ -290,6 +292,7 @@ namespace CityHighways.Presentation
             _deckButton = ActionButton("Колода", () => Act(DrawFromDeck));
             _luckButton = ActionButton("Удача", () => Act(() => _game.DrawLuckCard()));
             _contractsButton = ActionButton("Контракты", () => Act(() => _game.DrawContracts()));
+            _influenceButton = ActionButton("Влияние", ShowInfluenceMenu);
             _tradeButton = ActionButton("Сделка", ShowTradeComposer, true);
             side.Add(drawRow);
             _luckOdds = Ui.Text("", 11f, Theme.TextDim);
@@ -1304,7 +1307,8 @@ namespace CityHighways.Presentation
                 int luckLeft = _game.LuckWillReshuffle ? _game.LuckDiscardCount : _game.LuckDeckCount;
                 _luckOdds.text = $"В колоде {_game.DeckCount} · контрактов {_game.ContractDeckCount} · удача {luckLeft}: шанс бафа {chance}%"
                                  + (_game.LuckWillReshuffle ? " (перемешается)" : "")
-                                 + (_game.TradeUsedThisTurn ? " · сделка была" : "");
+                                 + (_game.TradeUsedThisTurn ? " · сделка была" : "")
+                                 + (_game.InfluenceUsedThisTurn ? " · влияние потрачено" : "");
             }
             Ui.SetEnabled(_luckButton, HumanToAct && _game.CanDrawLuckCard());
             _contractsButton.text = "Контракты";
@@ -1312,6 +1316,68 @@ namespace CityHighways.Presentation
             Ui.Show(_tradeButton, _game.Config.TradesEnabled);
             _tradeButton.text = "Сделка";
             Ui.SetEnabled(_tradeButton, HumanToAct && _game.CanProposeTrade());
+            Ui.Show(_influenceButton, _game.Config.InfluenceEnabled);
+            _influenceButton.text = $"Влияние {_game.Players[Viewer].Influence}";
+            Ui.SetEnabled(_influenceButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction && !_game.InfluenceUsedThisTurn);
+        }
+
+        /// <summary>Траты влияния: две группы (город и рынок), у каждой — цена, описание и причина, если сейчас нельзя.</summary>
+        void ShowInfluenceMenu()
+        {
+            if (!HumanToAct || _game.Phase != GamePhase.AwaitingAction) return;
+            var me = _game.CurrentPlayer;
+            var box = DialogBox(600f);
+            Ui.Border(box, 2f, Theme.Accent);
+            box.Add(Ui.Text($"Влияние: {me.Influence}", 26f, Theme.Accent, true));
+            var note = Ui.Text("Раз в ход, до основного действия; ход не тратится (кроме «Контрактов с выбором» — это и есть ход). " +
+                               "Влияние дают выполненные контракты, новые районы сети, цели мэрии, «Грант» и отставание от лидера. " +
+                               "В очки оно не превращается.", 12f, Theme.TextDim);
+            note.style.whiteSpace = WhiteSpace.Normal;
+            note.style.marginBottom = 12f;
+            box.Add(note);
+
+            void Group(string caption, bool city)
+            {
+                var header = Ui.Text(caption, 15f, Theme.Text, true);
+                header.style.marginTop = 6f;
+                header.style.marginBottom = 6f;
+                box.Add(header);
+                foreach (var action in InfluenceInfo.All.Where(a => InfluenceInfo.IsCityAction(a) == city))
+                {
+                    var chosen = action;
+                    int cost = InfluenceInfo.Cost(action, _game.Config);
+                    var blocker = _game.GetInfluenceBlocker(action);
+                    var row = Ui.Row();
+                    row.style.alignItems = Align.Center;
+                    row.style.marginBottom = 8f;
+                    var texts = Ui.Column();
+                    texts.style.flexGrow = 1f;
+                    texts.style.flexShrink = 1f;
+                    texts.Add(Ui.Text(InfluenceInfo.Title(action), 15f, Theme.Text, true));
+                    var description = Ui.Text(blocker ?? InfluenceInfo.Describe(action, _game.Config), 12f, blocker != null ? Theme.Danger : Theme.TextDim);
+                    description.style.whiteSpace = WhiteSpace.Normal;
+                    texts.Add(description);
+                    row.Add(texts);
+                    var button = Ui.Button($"{cost} вл.", () =>
+                    {
+                        HideOverlay();
+                        Act(() => _game.UseInfluence(chosen));
+                    }, ButtonKind.Primary, 15f);
+                    button.style.marginLeft = 12f;
+                    button.style.minWidth = 80f;
+                    Ui.SetEnabled(button, blocker == null);
+                    row.Add(button);
+                    box.Add(row);
+                }
+            }
+            Group("Влияние на город", true);
+            Group("Контроль рынка", false);
+
+            var close = Ui.Button("Закрыть", HideOverlay, ButtonKind.Ghost, 15f);
+            close.style.alignSelf = Align.FlexEnd;
+            close.style.marginTop = 6f;
+            box.Add(close);
+            ShowOverlay(OverlayKind.Influence, Centered(box), Theme.Shade);
         }
 
         void BuildPlayerRows()
@@ -1366,7 +1432,8 @@ namespace CityHighways.Presentation
                     + (player.Character == CharacterKind.Foreman ? $" Осталось: {player.FreeRoadsLeft}." : "");
                 Ui.Show(row.Ability, active && player.Character != CharacterKind.None);
                 int points = player.RoadPoints + player.GoalPoints + player.LuckPoints;
-                row.Stats.text = $"{points} очк · {player.RoadPieces} уч · {player.HandSize} карт";
+                row.Stats.text = $"{points} очк · {player.RoadPieces} уч · {player.HandSize} карт"
+                                 + (_game.Config.InfluenceEnabled ? $" · {player.Influence} вл" : "");
                 row.Root.style.backgroundColor = active ? Theme.PanelHover : Theme.PanelLight;
                 Ui.Border(row.Root, active ? 2f : 1f, active ? Palette.PlayerColor(player.Index) : Theme.Line);
             }
@@ -1959,13 +2026,19 @@ namespace CityHighways.Presentation
             var resources = new[] { Resource.Asphalt, Resource.Concrete, Resource.Steel, Resource.Gravel, Resource.Machinery };
             var give = resources.FirstOrDefault(r => me.CardCount(r) > 0);
             var get = resources.First(r => r != give);
-            int giveCount = 1, getCount = 1;
+            int giveCount = 1, getCount = 1, giveInfluence = 0, getInfluence = 0;
             int max = _game.Config.TradeMaxCards;
+            bool influenceOn = _game.Config.InfluenceEnabled;
+            int maxInfluence = influenceOn ? _game.Config.TradeMaxInfluence : 0;
+            int minCards = influenceOn ? 0 : 1; // с влиянием одна из сторон может быть без карт
 
             var box = DialogBox(560f);
             Ui.Border(box, 2f, Theme.Accent);
             box.Add(Ui.Text("Сделка", 26f, Theme.Accent, true));
-            var note = Ui.Text("Одна сделка за ход, до основного действия. Ход она не тратит.", 13f, Theme.TextDim);
+            var note = Ui.Text(influenceOn
+                ? "Одна сделка за ход, до основного действия. Ход она не тратит. Можно доплатить влиянием или купить карты за влияние."
+                : "Одна сделка за ход, до основного действия. Ход она не тратит.", 13f, Theme.TextDim);
+            note.style.whiteSpace = WhiteSpace.Normal;
             note.style.marginBottom = 14f;
             box.Add(note);
 
@@ -1975,9 +2048,13 @@ namespace CityHighways.Presentation
 
             void RefreshSummary()
             {
-                summary.text = $"{_game.Players[to].Name} получит {giveCount} × {Palette.CardTitle(give)}, " +
-                               $"а вы — {getCount} × {Palette.CardTitle(get)}. У вас {Palette.CardTitle(give)}: {me.CardCount(give)}.";
-                Ui.SetEnabled(propose, give != get && me.CardCount(give) >= giveCount);
+                summary.text = $"{_game.Players[to].Name} получит {TradeOffer.Side(giveCount, give, giveInfluence)}, " +
+                               $"а вы — {TradeOffer.Side(getCount, get, getInfluence)}. У вас {Palette.CardTitle(give)}: {me.CardCount(give)}"
+                               + (influenceOn ? $", влияния: {me.Influence}." : ".");
+                bool valid = giveCount + giveInfluence > 0 && getCount + getInfluence > 0
+                             && !(giveCount > 0 && getCount > 0 && give == get)
+                             && me.CardCount(give) >= giveCount && me.Influence >= giveInfluence;
+                Ui.SetEnabled(propose, valid);
             }
 
             VisualElement Line(string caption, VisualElement content)
@@ -2005,7 +2082,7 @@ namespace CityHighways.Presentation
                 return button;
             }
 
-            VisualElement Counter(Func<int> value, Action<int> set)
+            VisualElement Counter(Func<int> value, Action<int> set, int low, int high)
             {
                 var row = Ui.Row();
                 row.style.alignItems = Align.Center;
@@ -2013,8 +2090,8 @@ namespace CityHighways.Presentation
                 var label = Ui.Text(value().ToString(), 16f, Theme.Text, true);
                 label.style.width = 28f;
                 label.style.unityTextAlign = TextAnchor.MiddleCenter;
-                var minus = Ui.Button("–", () => { set(Math.Max(1, value() - 1)); label.text = value().ToString(); RefreshSummary(); }, ButtonKind.Secondary, 16f);
-                var plus = Ui.Button("+", () => { set(Math.Min(max, value() + 1)); label.text = value().ToString(); RefreshSummary(); }, ButtonKind.Secondary, 16f);
+                var minus = Ui.Button("–", () => { set(Math.Max(low, value() - 1)); label.text = value().ToString(); RefreshSummary(); }, ButtonKind.Secondary, 16f);
+                var plus = Ui.Button("+", () => { set(Math.Min(high, value() + 1)); label.text = value().ToString(); RefreshSummary(); }, ButtonKind.Secondary, 16f);
                 row.Add(minus);
                 row.Add(label);
                 row.Add(plus);
@@ -2031,12 +2108,14 @@ namespace CityHighways.Presentation
             })));
             var giveRow = Ui.Row();
             giveRow.Add(Cycle(() => Palette.CardTitle(give), () => give = NextResource(give)));
-            giveRow.Add(Counter(() => giveCount, v => giveCount = v));
+            giveRow.Add(Counter(() => giveCount, v => giveCount = v, minCards, max));
             box.Add(Line("Отдаю", giveRow));
+            if (influenceOn) box.Add(Line("…и влияния", Counter(() => giveInfluence, v => giveInfluence = v, 0, maxInfluence)));
             var getRow = Ui.Row();
             getRow.Add(Cycle(() => Palette.CardTitle(get), () => get = NextResource(get)));
-            getRow.Add(Counter(() => getCount, v => getCount = v));
+            getRow.Add(Counter(() => getCount, v => getCount = v, minCards, max));
             box.Add(Line("Прошу", getRow));
+            if (influenceOn) box.Add(Line("…и влияния", Counter(() => getInfluence, v => getInfluence = v, 0, maxInfluence)));
 
             summary.style.marginTop = 6f;
             summary.style.marginBottom = 16f;
@@ -2050,7 +2129,7 @@ namespace CityHighways.Presentation
             propose.clicked += () =>
             {
                 HideOverlay();
-                Act(() => _game.ProposeTrade(to, give, giveCount, get, getCount));
+                Act(() => _game.ProposeTrade(to, give, giveCount, get, getCount, giveInfluence, getInfluence));
             };
             buttons.Add(propose);
             box.Add(buttons);
@@ -2071,8 +2150,10 @@ namespace CityHighways.Presentation
             var who = Ui.Text(_game.Players[offer.From].Name, 30f, Palette.PlayerColor(offer.From), true);
             who.style.marginTop = 4f;
             box.Add(who);
-            var text = Ui.Text($"Вы получите {offer.GiveCount} × {Palette.CardTitle(offer.GiveResource)}\n" +
-                               $"и отдадите {offer.GetCount} × {Palette.CardTitle(offer.GetResource)} (у вас {me.CardCount(offer.GetResource)}).", 17f, Theme.Text);
+            string mine = offer.GetCount > 0 ? $"у вас {me.CardCount(offer.GetResource)} × {Palette.CardTitle(offer.GetResource)}" : "";
+            if (offer.GetInfluence > 0) mine += (mine.Length > 0 ? ", " : "") + $"влияния {me.Influence}";
+            var text = Ui.Text($"Вы получите {TradeOffer.Side(offer.GiveCount, offer.GiveResource, offer.GiveInfluence)}\n" +
+                               $"и отдадите {TradeOffer.Side(offer.GetCount, offer.GetResource, offer.GetInfluence)} ({mine}).", 17f, Theme.Text);
             text.style.unityTextAlign = TextAnchor.MiddleCenter;
             text.style.marginTop = 14f;
             text.style.marginBottom = 20f;
@@ -2213,6 +2294,17 @@ namespace CityHighways.Presentation
                     s.GoalPoints.ToString(), $"{s.LuckPoints:+#;-#;0}", character, s.Total.ToString() };
                 box.Add(ResultRow(cells, widths, Theme.Text, s.PlayerIndex, place == 1));
                 place++;
+            }
+
+            if (_game.Config.InfluenceEnabled)
+            {
+                var influence = Ui.Text("Влияние на конец партии (в очки не входит): "
+                                        + string.Join(" · ", result.Ranking.Select(r => $"{r.PlayerName} — {r.Influence} (заработано {r.InfluenceEarned})")),
+                    13f, Theme.TextDim);
+                influence.style.whiteSpace = WhiteSpace.Normal;
+                influence.style.unityTextAlign = TextAnchor.MiddleCenter;
+                influence.style.marginTop = 10f;
+                box.Add(influence);
             }
 
             box.Add(GameSummary(result));

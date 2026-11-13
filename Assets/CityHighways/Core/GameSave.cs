@@ -6,7 +6,7 @@ namespace CityHighways.Core
     [Serializable]
     public class GameSaveData
     {
-        public const int CurrentVersion = 6; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки
+        public const int CurrentVersion = 7; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние
         /// <summary>Самая старая версия, которую ещё можно загрузить (в v2 цели и удача начнутся заново).</summary>
         public const int OldestSupportedVersion = 2;
 
@@ -76,6 +76,14 @@ namespace CityHighways.Core
         public int lastGetResource;
         public int lastGetCount;
         public bool lastTradeAccepted;
+
+        // Влияние (версия 7)
+        public bool influenceUsed;
+        public bool permitActive;
+        public int pendingGiveInfluence;
+        public int pendingGetInfluence;
+        public int lastGiveInfluence;
+        public int lastGetInfluence;
     }
 
     [Serializable]
@@ -103,6 +111,12 @@ namespace CityHighways.Core
         public string[] roads;
         public string[] contracts;
         public string[] pendingContracts;
+        // Влияние (версия 7)
+        public int influence;
+        public int influenceEarned;
+        public int influenceSpent;
+        public string[] rewardedContracts;
+        public string[] influenceDistricts;
     }
 
     [Serializable]
@@ -144,7 +158,12 @@ namespace CityHighways.Core
                     hand = Enumerable.Range(0, ResourceInfo.Count).Select(r => p.CardCount((Resource)r)).ToArray(),
                     roads = p.Roads.Select(r => r.Id).ToArray(),
                     contracts = p.Contracts.Select(c => c.Id).ToArray(),
-                    pendingContracts = p.PendingContracts.Select(c => c.Id).ToArray()
+                    pendingContracts = p.PendingContracts.Select(c => c.Id).ToArray(),
+                    influence = p.Influence,
+                    influenceEarned = p.InfluenceEarned,
+                    influenceSpent = p.InfluenceSpent,
+                    rewardedContracts = p.RewardedContracts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
+                    influenceDistricts = p.InfluenceDistricts.OrderBy(id => id, StringComparer.Ordinal).ToArray()
                 }).ToArray(),
                 drawPile = _deck.DrawPile.Select(c => (int)c).ToArray(),
                 discardPile = _deck.DiscardPile.Select(c => (int)c).ToArray(),
@@ -190,7 +209,13 @@ namespace CityHighways.Core
                 lastGiveCount = LastTrade?.GiveCount ?? 0,
                 lastGetResource = LastTrade != null ? (int)LastTrade.GetResource : 0,
                 lastGetCount = LastTrade?.GetCount ?? 0,
-                lastTradeAccepted = LastTradeAccepted
+                lastTradeAccepted = LastTradeAccepted,
+                influenceUsed = _influenceUsedThisTurn,
+                permitActive = _permitActive,
+                pendingGiveInfluence = PendingTrade?.GiveInfluence ?? 0,
+                pendingGetInfluence = PendingTrade?.GetInfluence ?? 0,
+                lastGiveInfluence = LastTrade?.GiveInfluence ?? 0,
+                lastGetInfluence = LastTrade?.GetInfluence ?? 0
             };
         }
 
@@ -232,7 +257,8 @@ namespace CityHighways.Core
                    && mine.players.Length == data.players.Length
                    && mine.players.Zip(data.players, (a, b) => a.roadPoints == b.roadPoints && a.roadPieces == b.roadPieces
                                                               && Same(a.hand, b.hand) && Same(a.roads, b.roads)
-                                                              && Same(a.contracts, b.contracts)).All(x => x);
+                                                              && Same(a.contracts, b.contracts)
+                                                              && (data.version < 7 || a.influence == b.influence)).All(x => x);
         }
 
         static bool Same<T>(T[] a, T[] b) => (a ?? new T[0]).SequenceEqual(b ?? new T[0]);
@@ -290,6 +316,11 @@ namespace CityHighways.Core
                 foreach (var id in saved.roads ?? new string[0]) player.AddRoad(FindRoad(id));
                 foreach (var id in saved.contracts ?? new string[0]) player.ContractList.Add(FindContract(id));
                 foreach (var id in saved.pendingContracts ?? new string[0]) player.PendingList.Add(FindContract(id));
+                player.Influence = saved.influence;
+                player.InfluenceEarned = saved.influenceEarned;
+                player.InfluenceSpent = saved.influenceSpent;
+                foreach (var id in saved.rewardedContracts ?? new string[0]) player.RewardedContracts.Add(id);
+                foreach (var id in saved.influenceDistricts ?? new string[0]) player.InfluenceDistricts.Add(id);
                 game._players.Add(player);
             }
 
@@ -377,20 +408,36 @@ namespace CityHighways.Core
             game.StartInfo = data.version >= 5 && data.start != null && data.start.players != null && data.start.players.Length > 0 ? data.start : null;
             game._history.AddRange(data.history ?? new GameCommand[0]);
 
-            TradeOffer ReadTrade(int from, int to, int give, int giveCount, int get, int getCount)
+            TradeOffer ReadTrade(int from, int to, int give, int giveCount, int get, int getCount, int giveInfluence, int getInfluence)
             {
                 if (from < 0) return null;
                 if (from >= players.Length || to < 0 || to >= players.Length || to == from
                     || give < 0 || give >= ResourceInfo.Count || get < 0 || get >= ResourceInfo.Count)
                     throw new FormatException("Сохранение: неверная сделка.");
-                return new TradeOffer(from, to, (Resource)give, giveCount, (Resource)get, getCount);
+                return new TradeOffer(from, to, (Resource)give, giveCount, (Resource)get, getCount, giveInfluence, getInfluence);
             }
             game._tradeUsedThisTurn = data.tradeUsed;
             game.TradeNumber = data.tradeNumber;
             game.PendingTrade = ReadTrade(data.pendingTradeFrom, data.pendingTradeTo, data.pendingGiveResource,
-                data.pendingGiveCount, data.pendingGetResource, data.pendingGetCount);
+                data.pendingGiveCount, data.pendingGetResource, data.pendingGetCount, data.pendingGiveInfluence, data.pendingGetInfluence);
             game.LastTrade = ReadTrade(data.lastTradeFrom, data.lastTradeTo, data.lastGiveResource,
-                data.lastGiveCount, data.lastGetResource, data.lastGetCount);
+                data.lastGiveCount, data.lastGetResource, data.lastGetCount, data.lastGiveInfluence, data.lastGetInfluence);
+            game._influenceUsedThisTurn = data.influenceUsed;
+            game._permitActive = data.permitActive;
+            if (data.version < 7)
+            {
+                // Старая партия: влияние начинается с нуля, уже выполненное и освоенное за прошлое не начисляется.
+                foreach (var player in game._players)
+                {
+                    foreach (var road in player.Roads)
+                    {
+                        player.InfluenceDistricts.Add(map.DistrictOf(road.A));
+                        player.InfluenceDistricts.Add(map.DistrictOf(road.B));
+                    }
+                    foreach (var contract in player.Contracts)
+                        if (game.CheckContract(player.Index, contract).Completed) player.RewardedContracts.Add(contract.Id);
+                }
+            }
             game.LastTradeAccepted = data.lastTradeAccepted;
             if (game.Phase == GamePhase.RespondingTrade && game.PendingTrade == null)
                 throw new FormatException("Сохранение: ответ на сделку без сделки.");

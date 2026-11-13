@@ -43,7 +43,7 @@ namespace CityHighways.Core
         {
             switch (kind)
             {
-                case LuckCardKind.Grant: return $"+{config.LuckGrant} очков.";
+                case LuckCardKind.Grant: return config.InfluenceEnabled ? $"+{config.LuckGrantInfluence} влияния." : $"+{config.LuckGrant} очков.";
                 case LuckCardKind.Supply: return $"+{config.LuckSupply} карты ресурсов из колоды.";
                 case LuckCardKind.Premium:
                     return $"+{config.LuckPremiumPerContract} очка за каждый выполненный контракт (не больше {config.LuckPremiumMax}).";
