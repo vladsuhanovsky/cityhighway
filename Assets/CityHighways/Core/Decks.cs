@@ -118,6 +118,9 @@ namespace CityHighways.Core
 
         public void ReturnToBottom(IEnumerable<Contract> contracts) => _cards.AddRange(contracts);
 
+        /// <summary>Забрать конкретный контракт из колоды (для аукциона мэрии).</summary>
+        public bool Remove(Contract contract) => _cards.Remove(contract);
+
         /// <summary>Положить контракты наверх колоды (новые контракты открывшегося района).</summary>
         public void PutOnTop(IEnumerable<Contract> contracts) => _cards.InsertRange(0, contracts);
     }

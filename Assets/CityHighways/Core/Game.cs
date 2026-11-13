@@ -118,6 +118,7 @@ namespace CityHighways.Core
             {
                 if (Phase == GamePhase.GameOver) return -1;
                 if (Phase == GamePhase.RespondingTrade && PendingTrade != null) return PendingTrade.To;
+                if (Phase == GamePhase.Bidding) return AuctionBidder;
                 if (Phase == GamePhase.SetupContracts)
                 {
                     foreach (var p in _players)
@@ -582,7 +583,11 @@ namespace CityHighways.Core
             _luckTakenThisTurn = false;
             _tradeUsedThisTurn = false;
             ResetInfluenceTurn();
-            if (CurrentPlayerIndex == 0) StartRound(); // новый круг — новое событие
+            if (CurrentPlayerIndex == 0)
+            {
+                StartRound();      // новый круг — новое событие
+                TryStartAuction(); // и, раз за партию, аукцион мэрии
+            }
             Changed();
         }
 

@@ -59,6 +59,8 @@ namespace CityHighways.Core
                     return TakeTurn(game);
                 case GamePhase.RespondingTrade:
                     return game.RespondTrade(UseTrades && Accepts(game, game.PendingTrade));
+                case GamePhase.Bidding:
+                    return game.Bid(ChooseBid(game, game.Players[game.ActingPlayerIndex], game.AuctionContract));
                 case GamePhase.ChoosingLuck:
                 {
                     // Везунчик оставляет карту, которая сейчас выгоднее; при равенстве — первую.
@@ -121,6 +123,28 @@ namespace CityHighways.Core
 
             var chosen = best ?? fallback ?? pending.Take(required).ToList();
             return chosen.Select(c => c.Id).ToList();
+        }
+
+        // ================================================================== Аукцион мэрии
+
+        /// <summary>
+        /// Тайная ставка: сколько стоит контракт мэрии с учётом пути — очки + бонус − Lambda × новые участки − проезд.
+        /// Недостижимый или не влезающий в запас участков — 0. Иначе ставим около трети ценности,
+        /// но не больше двух третей своего влияния (остальное ещё пригодится).
+        /// </summary>
+        int ChooseBid(Game game, PlayerState me, Contract contract)
+        {
+            if (contract == null || me.Influence <= 0) return 0;
+            var planner = new BotPlanner(game, me.Index, ForeignCost);
+            var basePlan = planner.BuildPlan(me.Contracts);
+            var plan = planner.BuildPlan(me.Contracts.Concat(new[] { contract }));
+            if (plan.Unreachable.Contains(contract) || plan.PiecesNeeded > me.RoadPieces - PieceReserve) return 0;
+            int extra = plan.PiecesNeeded - basePlan.PiecesNeeded;
+            int extraToll = plan.TollsExpected - basePlan.TollsExpected;
+            double value = contract.Points + game.Config.AuctionBonus - Lambda * extra - extraToll;
+            if (value <= 0) return 0;
+            int bid = (int)Math.Round(value / 3.0);
+            return Math.Max(0, Math.Min(bid, me.Influence * 2 / 3));
         }
 
         // ================================================================== Анализ позиции

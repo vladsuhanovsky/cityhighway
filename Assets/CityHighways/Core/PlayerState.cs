@@ -48,6 +48,9 @@ namespace CityHighways.Core
         internal readonly HashSet<string> RewardedContracts = new HashSet<string>();
         internal readonly HashSet<string> InfluenceDistricts = new HashSet<string>();
 
+        /// <summary>Контракт, выигранный на аукционе мэрии (бонус в конце, если выполнен); null — нет.</summary>
+        public string MayorContractId { get; internal set; }
+
         /// <summary>Персонаж компании.</summary>
         public CharacterKind Character { get; internal set; }
         /// <summary>Сколько бесплатных строек осталось у Прораба.</summary>

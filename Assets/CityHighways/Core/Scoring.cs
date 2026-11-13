@@ -45,9 +45,11 @@ namespace CityHighways.Core
         public int CharacterPoints { get; internal set; }
         /// <summary>Влияние на конец партии — в очки не входит, уходит в кошелёк профиля.</summary>
         public int Influence { get; internal set; }
+        /// <summary>Бонус за выполненный контракт мэрии (выигранный на аукционе).</summary>
+        public int MayorBonus { get; internal set; }
         public int InfluenceEarned { get; internal set; }
 
-        public int Total => RoadPoints + ContractPoints - TollsPaid + TollsEarned + NetworkBonus + GoalPoints + LuckPoints + CharacterPoints;
+        public int Total => RoadPoints + ContractPoints - TollsPaid + TollsEarned + NetworkBonus + GoalPoints + LuckPoints + CharacterPoints + MayorBonus;
     }
 
     public sealed class GameResult
@@ -247,6 +249,7 @@ namespace CityHighways.Core
 
                     score.ContractPoints += contract.Points;
                     score.CompletedContracts++;
+                    if (contract.Id == player.MayorContractId) score.MayorBonus += config.AuctionBonus;
                     if (player.Character == CharacterKind.Official) score.CharacterPoints += config.OfficialBonusPerContract;
                     foreach (var road in check.ForeignRoads)
                     {

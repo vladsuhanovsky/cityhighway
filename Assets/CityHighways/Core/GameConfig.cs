@@ -105,6 +105,15 @@ namespace CityHighways.Core
         /// <summary>Сколько влияния можно положить в сделку с каждой стороны.</summary>
         public int TradeMaxInfluence = 5;
 
+        /// <summary>
+        /// Аукцион мэрии: раз за партию, в начале круга после того, как кто-то построил AuctionTriggerShare своих
+        /// участков. Разыгрывается самый дорогой из AuctionCandidates верхних контрактов колоды; выполнен — +AuctionBonus.
+        /// </summary>
+        public bool AuctionEnabled = true;
+        public float AuctionTriggerShare = 0.34f;
+        public int AuctionCandidates = 5;
+        public int AuctionBonus = 5;
+
         /// <summary>Сколько общих целей мэрии открывается в начале партии (из пула карты).</summary>
         public int MayorGoalsDealt = 3;
 

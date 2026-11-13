@@ -25,6 +25,7 @@ namespace CityHighways.Core
         public const string ProposeTradeKind = "propose_trade";
         public const string RespondTradeKind = "respond_trade";
         public const string InfluenceKind = "influence";
+        public const string BidKind = "bid";
 
         public string kind;
         /// <summary>Кто действует. Для всех команд, кроме keep_initial, — игрок, чей сейчас ход.</summary>
@@ -47,6 +48,8 @@ namespace CityHighways.Core
         public int getInfluence;
         /// <summary>Трата влияния: InfluenceAction как int.</summary>
         public int option;
+        /// <summary>Ставка на аукционе мэрии.</summary>
+        public int bid;
 
         public static GameCommand KeepInitialContracts(int player, IEnumerable<string> ids) =>
             new GameCommand { kind = KeepInitial, player = player, contracts = ids.ToArray() };
@@ -68,6 +71,7 @@ namespace CityHighways.Core
             new GameCommand { kind = ProposeTradeKind, player = player, to = to, giveResource = (int)give, giveCount = giveCount, getResource = (int)get, getCount = getCount,
                 giveInfluence = giveInfluence, getInfluence = getInfluence };
         public static GameCommand UseInfluence(int player, InfluenceAction action) => new GameCommand { kind = InfluenceKind, player = player, option = (int)action };
+        public static GameCommand Bid(int player, int amount) => new GameCommand { kind = BidKind, player = player, bid = amount };
         public static GameCommand RespondTrade(int player, bool accept) => new GameCommand { kind = RespondTradeKind, player = player, accept = accept };
 
         public override string ToString()
@@ -87,6 +91,7 @@ namespace CityHighways.Core
                 case Upgrade: return $"#{player} улучшает {road} за {(Resource)resource} + {machinery} техн.";
                 case ProposeTradeKind: return $"#{player} предлагает #{to}: {giveCount}×{(Resource)giveResource}+{giveInfluence}вл. за {getCount}×{(Resource)getResource}+{getInfluence}вл.";
                 case InfluenceKind: return $"#{player} тратит влияние: {(InfluenceAction)option}";
+                case BidKind: return $"#{player} ставит {bid} на аукционе";
                 case RespondTradeKind: return $"#{player} {(accept ? "принимает" : "отклоняет")} сделку";
                 default: return $"#{player} {kind}";
             }
@@ -154,6 +159,7 @@ namespace CityHighways.Core
                 case GameCommand.InfluenceKind:
                     if (command.option < 0 || command.option > (int)InfluenceAction.CancelEvent) return ActionResult.Fail("Неизвестная трата влияния.");
                     return UseInfluence((InfluenceAction)command.option);
+                case GameCommand.BidKind: return Bid(command.bid);
                 case GameCommand.RespondTradeKind: return RespondTrade(command.accept);
                 default: return ActionResult.Fail($"Неизвестная команда «{command.kind}».");
             }
@@ -202,6 +208,8 @@ namespace CityHighways.Core
         public ActionResult ProposeTrade(int to, Resource give, int giveCount, Resource get, int getCount, int giveInfluence = 0, int getInfluence = 0) =>
             Recorded(CurrentPlayerIndex, DoProposeTrade(to, give, giveCount, get, getCount, giveInfluence, getInfluence),
                 p => GameCommand.ProposeTrade(p, to, give, giveCount, get, getCount, giveInfluence, getInfluence));
+        /// <summary>Ставку делает тот, чья очередь на аукционе (ActingPlayerIndex).</summary>
+        public ActionResult Bid(int amount) => Recorded(ActingPlayerIndex, DoBid(amount), p => GameCommand.Bid(p, amount));
         public ActionResult UseInfluence(InfluenceAction action) =>
             Recorded(CurrentPlayerIndex, DoUseInfluence(action), p => GameCommand.UseInfluence(p, action));
         /// <summary>Ответ на сделку даёт её получатель (ActingPlayerIndex), а не текущий игрок.</summary>

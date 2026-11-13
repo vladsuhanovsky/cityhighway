@@ -42,6 +42,8 @@ namespace CityHighways.Core
                     return game.RespondTrade(_rng.Next(2) == 0);
                 case GamePhase.ChoosingLuck:
                     return game.ChooseLuckCard(_rng.Next(game.PendingLuckChoice.Count));
+                case GamePhase.Bidding:
+                    return game.Bid(_rng.Next(Math.Min(3, game.Players[game.ActingPlayerIndex].Influence) + 1));
                 default:
                     return ActionResult.Fail("Игра окончена.");
             }

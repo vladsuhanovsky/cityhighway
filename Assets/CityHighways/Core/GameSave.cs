@@ -6,7 +6,7 @@ namespace CityHighways.Core
     [Serializable]
     public class GameSaveData
     {
-        public const int CurrentVersion = 7; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние
+        public const int CurrentVersion = 8; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион
         /// <summary>Самая старая версия, которую ещё можно загрузить (в v2 цели и удача начнутся заново).</summary>
         public const int OldestSupportedVersion = 2;
 
@@ -84,6 +84,17 @@ namespace CityHighways.Core
         public int pendingGetInfluence;
         public int lastGiveInfluence;
         public int lastGetInfluence;
+
+        // Аукцион мэрии (версия 8)
+        public bool auctionHeld;
+        public string auctionContract;
+        public int[] bids;
+        public int auctionStarter;
+        public int auctionNumber;
+        public string lastAuctionContract;
+        public int lastAuctionWinner = -1;
+        public int lastAuctionPrice;
+        public int[] lastAuctionBids;
     }
 
     [Serializable]
@@ -117,6 +128,7 @@ namespace CityHighways.Core
         public int influenceSpent;
         public string[] rewardedContracts;
         public string[] influenceDistricts;
+        public string mayorContract;
     }
 
     [Serializable]
@@ -163,7 +175,8 @@ namespace CityHighways.Core
                     influenceEarned = p.InfluenceEarned,
                     influenceSpent = p.InfluenceSpent,
                     rewardedContracts = p.RewardedContracts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
-                    influenceDistricts = p.InfluenceDistricts.OrderBy(id => id, StringComparer.Ordinal).ToArray()
+                    influenceDistricts = p.InfluenceDistricts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
+                    mayorContract = p.MayorContractId
                 }).ToArray(),
                 drawPile = _deck.DrawPile.Select(c => (int)c).ToArray(),
                 discardPile = _deck.DiscardPile.Select(c => (int)c).ToArray(),
@@ -215,7 +228,16 @@ namespace CityHighways.Core
                 pendingGiveInfluence = PendingTrade?.GiveInfluence ?? 0,
                 pendingGetInfluence = PendingTrade?.GetInfluence ?? 0,
                 lastGiveInfluence = LastTrade?.GiveInfluence ?? 0,
-                lastGetInfluence = LastTrade?.GetInfluence ?? 0
+                lastGetInfluence = LastTrade?.GetInfluence ?? 0,
+                auctionHeld = _auctionHeld,
+                auctionContract = _auctionContract?.Id,
+                bids = _bids?.ToArray(),
+                auctionStarter = _auctionStarter,
+                auctionNumber = AuctionNumber,
+                lastAuctionContract = LastAuction?.Contract.Id,
+                lastAuctionWinner = LastAuction?.Winner ?? -1,
+                lastAuctionPrice = LastAuction?.Price ?? 0,
+                lastAuctionBids = LastAuction?.Bids.ToArray()
             };
         }
 
@@ -321,6 +343,7 @@ namespace CityHighways.Core
                 player.InfluenceSpent = saved.influenceSpent;
                 foreach (var id in saved.rewardedContracts ?? new string[0]) player.RewardedContracts.Add(id);
                 foreach (var id in saved.influenceDistricts ?? new string[0]) player.InfluenceDistricts.Add(id);
+                player.MayorContractId = string.IsNullOrEmpty(saved.mayorContract) ? null : saved.mayorContract;
                 game._players.Add(player);
             }
 
@@ -424,6 +447,19 @@ namespace CityHighways.Core
                 data.lastGiveCount, data.lastGetResource, data.lastGetCount, data.lastGiveInfluence, data.lastGetInfluence);
             game._influenceUsedThisTurn = data.influenceUsed;
             game._permitActive = data.permitActive;
+            game._auctionHeld = data.auctionHeld;
+            game.AuctionNumber = data.auctionNumber;
+            game._auctionStarter = data.auctionStarter;
+            if (game.Phase == GamePhase.Bidding)
+            {
+                if (string.IsNullOrEmpty(data.auctionContract) || data.bids == null || data.bids.Length != players.Length)
+                    throw new FormatException("Сохранение: аукцион без контракта или ставок.");
+                game._auctionContract = FindContract(data.auctionContract);
+                game._bids = data.bids.ToArray();
+            }
+            if (!string.IsNullOrEmpty(data.lastAuctionContract))
+                game.LastAuction = new AuctionResult(FindContract(data.lastAuctionContract), data.lastAuctionWinner,
+                    data.lastAuctionPrice, (data.lastAuctionBids ?? new int[0]).ToArray());
             if (data.version < 7)
             {
                 // Старая партия: влияние начинается с нуля, уже выполненное и освоенное за прошлое не начисляется.

@@ -33,7 +33,8 @@ namespace CityHighways.Presentation
             TradeCompose,
             TradeRespond,
             Upgrade,
-            Influence
+            Influence,
+            Auction
         }
 
         sealed class PlayerRow
@@ -466,6 +467,7 @@ namespace CityHighways.Presentation
             _playSeconds = playSeconds;
             _game.Log += AddLog;
             _lastTradeShown = _game.TradeNumber;
+            _lastAuctionShown = _game.AuctionNumber;
             _game.StateChanged += OnStateChanged;
 
             _bots = new IBot[_game.Players.Count];
@@ -753,6 +755,9 @@ namespace CityHighways.Presentation
                 case GamePhase.RespondingTrade:
                     Flash("Сначала ответьте на сделку.");
                     return;
+                case GamePhase.Bidding:
+                    Flash("Сначала сделайте ставку на аукционе мэрии.");
+                    return;
             }
 
             // Своя дорога — предлагаем улучшить её до магистрали.
@@ -950,6 +955,24 @@ namespace CityHighways.Presentation
                     _map.Repaint();
                     GlowEventCard(color);
                 });
+            }
+
+            // Аукцион мэрии: начало и итог.
+            if (_game.AuctionNumber > _lastAuctionShown)
+            {
+                _lastAuctionShown = _game.AuctionNumber;
+                if (_game.Phase == GamePhase.Bidding && _game.AuctionContract != null)
+                {
+                    Toast("Аукцион мэрии: " + ContractTitle(_game.AuctionContract), Theme.Accent);
+                    _app.Sound.Play(Sfx.Fanfare, 0.3f);
+                }
+                else if (_game.LastAuction != null)
+                {
+                    var auction = _game.LastAuction;
+                    Toast(auction.Winner >= 0
+                        ? $"Аукцион: {_game.Players[auction.Winner].Name} забирает контракт за {auction.Price} вл."
+                        : "Аукцион: ставок нет, контракт ушёл под колоду", auction.Winner >= 0 ? Theme.Success : Theme.TextDim);
+                }
             }
 
             // Итог сделки.
@@ -1571,6 +1594,8 @@ namespace CityHighways.Presentation
 
             var texts = Ui.Column();
             texts.style.flexGrow = 1f;
+            if (contract.Id == _game.Players[playerIndex].MayorContractId)
+                texts.Add(Ui.Text($"★ КОНТРАКТ МЭРИИ · выполнен — ещё +{_game.Config.AuctionBonus}", 10f, Theme.Accent, true));
             if (contract.IsComplex)
             {
                 string kind = contract.Kind == ContractKind.Transit ? "ТРАНЗИТ" : "УЗЕЛ";
@@ -1775,6 +1800,8 @@ namespace CityHighways.Presentation
                     return "Везунчик: выберите одну из двух карт удачи.";
                 case GamePhase.RespondingTrade:
                     return "Вам предлагают сделку — примите или откажитесь.";
+                case GamePhase.Bidding:
+                    return "Аукцион мэрии: сделайте тайную ставку влиянием.";
                 default:
                     return "";
             }
@@ -1844,6 +1871,12 @@ namespace CityHighways.Presentation
                 return;
             }
             if (_overlayKind == OverlayKind.TradeRespond) HideOverlay();
+            if (_game.Phase == GamePhase.Bidding && HumanToAct)
+            {
+                if (_overlayKind != OverlayKind.Auction || _overlayPlayer != _game.ActingPlayerIndex) ShowAuction();
+                return;
+            }
+            if (_overlayKind == OverlayKind.Auction) HideOverlay();
             if ((_overlayKind == OverlayKind.TradeCompose || _overlayKind == OverlayKind.Upgrade)
                 && (!HumanToAct || _game.Phase != GamePhase.AwaitingAction)) HideOverlay();
             if (_overlayKind == OverlayKind.Payment && (!HumanToAct || _game.Phase != GamePhase.AwaitingAction)) HideOverlay();
@@ -2013,6 +2046,67 @@ namespace CityHighways.Presentation
         }
 
         int _lastTradeShown;
+        int _lastAuctionShown;
+
+        /// <summary>Тайная ставка на аукционе мэрии: контракт, бонус, своё влияние; кто уже поставил — без сумм.</summary>
+        void ShowAuction()
+        {
+            var contract = _game.AuctionContract;
+            if (contract == null) return;
+            int bidder = _game.ActingPlayerIndex;
+            var me = _game.Players[bidder];
+            int bid = Math.Min(me.Influence, Math.Max(1, me.Influence / 3));
+
+            var box = DialogBox(580f);
+            box.style.alignItems = Align.Center;
+            Ui.Border(box, 3f, Theme.Accent);
+            box.Add(Ui.Text("АУКЦИОН МЭРИИ · РАЗ ЗА ПАРТИЮ", 13f, Theme.TextDim, true));
+            var title = Ui.Text(ContractTitle(contract), 26f, Theme.Accent, true);
+            title.style.marginTop = 6f;
+            title.style.unityTextAlign = TextAnchor.MiddleCenter;
+            title.style.whiteSpace = WhiteSpace.Normal;
+            box.Add(title);
+            var value = Ui.Text($"{contract.Points} очков, а выполнен к концу партии — ещё +{_game.Config.AuctionBonus}. Не выполнен — −{contract.Points}, как обычный контракт.", 15f, Theme.Text);
+            value.style.whiteSpace = WhiteSpace.Normal;
+            value.style.unityTextAlign = TextAnchor.MiddleCenter;
+            value.style.marginTop = 8f;
+            box.Add(value);
+            var rules = Ui.Text("Каждый делает одну тайную ставку влиянием. Побеждает самая высокая (при равенстве — отстающий по очкам) и платит свою ставку; остальные не платят ничего.", 12f, Theme.TextDim);
+            rules.style.whiteSpace = WhiteSpace.Normal;
+            rules.style.unityTextAlign = TextAnchor.MiddleCenter;
+            rules.style.marginTop = 8f;
+            box.Add(rules);
+
+            var done = _game.Players.Where(p => p.Index != bidder && _game.HasBid(p.Index)).Select(p => p.Name).ToList();
+            var status = Ui.Text(done.Count > 0 ? "Уже поставили: " + string.Join(", ", done) : "Вы ставите первым.", 12f, Theme.TextDim);
+            status.style.marginTop = 6f;
+            box.Add(status);
+
+            var row = Ui.Row();
+            row.style.alignItems = Align.Center;
+            row.style.marginTop = 16f;
+            var amount = Ui.Text("", 30f, Theme.Text, true);
+            amount.style.width = 110f;
+            amount.style.unityTextAlign = TextAnchor.MiddleCenter;
+            UnityEngine.UIElements.Button place = null;
+            void Refresh()
+            {
+                amount.text = bid + " вл.";
+                place.text = bid > 0 ? $"Поставить {bid}" : "Не участвовать";
+            }
+            row.Add(Ui.Button("–", () => { bid = Math.Max(0, bid - 1); Refresh(); }, ButtonKind.Secondary, 20f));
+            row.Add(amount);
+            row.Add(Ui.Button("+", () => { bid = Math.Min(me.Influence, bid + 1); Refresh(); }, ButtonKind.Secondary, 20f));
+            box.Add(row);
+            box.Add(Ui.Text($"Ваше влияние: {me.Influence}", 13f, Theme.TextDim));
+
+            place = Ui.Button("", () => { HideOverlay(); Act(() => _game.Bid(bid)); }, ButtonKind.Primary, 17f);
+            place.style.marginTop = 16f;
+            box.Add(place);
+            Refresh();
+            ShowOverlay(OverlayKind.Auction, Centered(box), Theme.Shade);
+            _overlayPlayer = bidder;
+        }
 
         // ================================================================== Сделки и улучшение
 
@@ -2273,7 +2367,8 @@ namespace CityHighways.Presentation
             var title = Ui.Text("Победа: " + string.Join(", ", result.Winners.Select(w => w.PlayerName)), 34f, Theme.Accent, true);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
             box.Add(title);
-            var subtitle = Ui.Text("Дороги + контракты ± плата за проезд + «Крупнейшая сеть» + цели мэрии ± удача + способность персонажа (Чиновник — за контракты, Мостовик — за мосты)", 13f, Theme.TextDim);
+            var subtitle = Ui.Text("Дороги + контракты (★ — бонус контракта мэрии) ± плата за проезд + «Крупнейшая сеть» + цели мэрии ± удача + способность персонажа (Чиновник — за контракты, Мостовик — за мосты)", 13f, Theme.TextDim);
+            subtitle.style.whiteSpace = WhiteSpace.Normal;
             subtitle.style.unityTextAlign = TextAnchor.MiddleCenter;
             subtitle.style.marginTop = 6f;
             subtitle.style.marginBottom = 20f;
@@ -2285,7 +2380,8 @@ namespace CityHighways.Presentation
             int place = 1;
             foreach (var s in result.Ranking)
             {
-                string contracts = $"{s.ContractPoints:+#;-#;0} ({s.CompletedContracts} из {s.CompletedContracts + s.FailedContracts})";
+                string contracts = $"{s.ContractPoints:+#;-#;0} ({s.CompletedContracts} из {s.CompletedContracts + s.FailedContracts})"
+                                   + (s.MayorBonus > 0 ? $" ★+{s.MayorBonus}" : "");
                 int tollBalance = s.TollsEarned - s.TollsPaid;
                 string tolls = $"{tollBalance:+#;-#;0}";
                 string network = s.NetworkDistricts + " р." + (s.NetworkBonus > 0 ? $" (+{s.NetworkBonus})" : "");

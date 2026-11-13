@@ -341,6 +341,7 @@ namespace CityHighways.Presentation
             foreach (var action in InfluenceInfo.All)
                 Paragraph(s, $"• {InfluenceInfo.Title(action)} — {InfluenceInfo.Cost(action, config)} вл. {InfluenceInfo.Describe(action, config)}");
             Paragraph(s, $"В сделках влиянием можно доплатить или купить карты: до {config.TradeMaxInfluence} влияния с каждой стороны.");
+            Paragraph(s, $"Аукцион мэрии — раз за партию, в начале круга, когда кто-то построил треть своих участков. Мэрия выставляет самый дорогой из верхних контрактов колоды. Каждый делает одну тайную ставку влиянием; самая высокая забирает контракт и платит свою ставку (при равенстве — отстающий по очкам), остальные не платят. Выполнен к концу партии — +{config.AuctionBonus} очков сверх обычного, не выполнен — штраф как у любого контракта. Ставок нет — контракт уходит под колоду.");
             return s;
         }
 
