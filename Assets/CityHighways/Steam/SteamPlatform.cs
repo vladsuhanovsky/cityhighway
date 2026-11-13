@@ -299,6 +299,12 @@ namespace CityHighways.Steam
             if (CanInvite) SteamFriends.ActivateGameOverlayInviteDialog(_lobby);
         }
 
+        public void SetJoinable(bool joinable)
+        {
+            // Лобби не закрываем — иначе отключившийся друг не вернётся; просто помечаем, что партия идёт.
+            if (IsHost && _lobby.IsValid()) SteamMatchmaking.SetLobbyData(_lobby, "started", joinable ? "0" : "1");
+        }
+
         public void Dispose()
         {
             if (_disposed) return;

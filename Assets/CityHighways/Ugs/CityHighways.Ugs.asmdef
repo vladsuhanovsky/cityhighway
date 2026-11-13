@@ -1,0 +1,30 @@
+{
+    "name": "CityHighways.Ugs",
+    "rootNamespace": "CityHighways.Ugs",
+    "references": [
+        "CityHighways.Core",
+        "CityHighways.Net",
+        "Unity.Services.Core",
+        "Unity.Services.Authentication",
+        "Unity.Services.Multiplayer",
+        "Unity.Networking.Transport",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "CH_UGS"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.multiplayer",
+            "expression": "1.0.0",
+            "define": "CH_UGS"
+        }
+    ],
+    "noEngineReferences": false
+}

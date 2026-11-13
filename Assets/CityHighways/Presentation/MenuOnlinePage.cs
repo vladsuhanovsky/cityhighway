@@ -23,6 +23,8 @@ namespace CityHighways.Presentation
         readonly TextField _addressField;
         readonly Label _status;
         readonly VisualElement _friends;
+        readonly TextField _codeField;
+        readonly VisualElement _openLobbies;
 
         readonly Label _lobbyTitle;
         readonly Label _lobbyHint;
@@ -66,6 +68,47 @@ namespace CityHighways.Presentation
             var columns = Ui.Row();
             columns.style.alignItems = Align.FlexStart;
             _connectView.Add(columns);
+
+            // Unity Relay + Lobby — через интернет из любых сетей.
+            var ugsCard = Ui.Card(18f);
+            ugsCard.style.flexGrow = 1f;
+            ugsCard.style.flexBasis = 0f;
+            ugsCard.style.marginRight = 14f;
+            ugsCard.Add(Ui.Text("Через интернет", 22f, Theme.Accent, true));
+            if (NetPlatforms.Ugs == null)
+            {
+                ugsCard.Add(Note("Нужен пакет Multiplayer Services и привязка проекта к Unity Cloud — как настроить, написано в README, раздел «Unity Relay и Lobby»."));
+            }
+            else
+            {
+                ugsCard.Add(Note("Серверы Unity (Relay): играть можно из разных сетей, без настройки роутера."));
+                var hostUgs = Ui.Button("Создать лобби", HostUgs, ButtonKind.Primary, 17f);
+                hostUgs.style.marginTop = 10f;
+                ugsCard.Add(hostUgs);
+                var codeRow = Ui.Row();
+                codeRow.style.alignItems = Align.Center;
+                codeRow.style.marginTop = 14f;
+                _codeField = Field("", 12);
+                _codeField.style.flexGrow = 1f;
+                codeRow.Add(_codeField);
+                var byCode = Ui.Button("Войти по коду", () => JoinUgs(_codeField.value, true), ButtonKind.Secondary, 15f);
+                byCode.style.marginLeft = 10f;
+                codeRow.Add(byCode);
+                ugsCard.Add(codeRow);
+                var listHeader = Ui.Row();
+                listHeader.style.alignItems = Align.Center;
+                listHeader.style.marginTop = 16f;
+                var listTitle = Ui.Text("Открытые игры", 15f, Theme.Text, true);
+                listTitle.style.flexGrow = 1f;
+                listHeader.Add(listTitle);
+                listHeader.Add(Ui.Button("Обновить", RefreshOpenLobbies, ButtonKind.Ghost, 13f));
+                ugsCard.Add(listHeader);
+                _openLobbies = Ui.Column();
+                _openLobbies.style.marginTop = 6f;
+                _openLobbies.Add(Note("Нажмите «Обновить», чтобы найти игры."));
+                ugsCard.Add(_openLobbies);
+            }
+            columns.Add(ugsCard);
 
             // Steam
             var steamCard = Ui.Card(18f);
@@ -192,6 +235,67 @@ namespace CityHighways.Presentation
         {
             PlayerPrefs.SetString(AddressKey, _addressField.value);
             Open(new ClientSession(TcpTransport.Connect(_addressField.value), CityHighwaysApp.LoadMap, PlayerName), "Подключаемся…");
+        }
+
+        void HostUgs()
+        {
+            var transport = NetPlatforms.Ugs?.CreateHost($"{PlayerName} · City Highways", NetSession.MaxSeats);
+            if (transport == null)
+            {
+                ShowConnect("Unity Relay недоступен.");
+                return;
+            }
+            Open(new HostSession(transport, CityHighwaysApp.LoadMap, PlayerName), "Создаём лобби на серверах Unity…");
+        }
+
+        void JoinUgs(string codeOrId, bool byCode)
+        {
+            if (byCode && string.IsNullOrWhiteSpace(codeOrId))
+            {
+                ShowConnect("Введите код лобби — его видит хост в своём лобби.");
+                return;
+            }
+            var transport = byCode ? NetPlatforms.Ugs?.JoinByCode(codeOrId) : NetPlatforms.Ugs?.JoinById(codeOrId);
+            if (transport == null)
+            {
+                ShowConnect("Unity Relay недоступен.");
+                return;
+            }
+            Open(new ClientSession(transport, CityHighwaysApp.LoadMap, PlayerName), "Входим в лобби…");
+        }
+
+        void RefreshOpenLobbies()
+        {
+            if (_openLobbies == null || NetPlatforms.Ugs == null) return;
+            _openLobbies.Clear();
+            _openLobbies.Add(Note("Ищем…"));
+            NetPlatforms.Ugs.QueryLobbies((lobbies, error) =>
+            {
+                _openLobbies.Clear();
+                if (error != null)
+                {
+                    _openLobbies.Add(Note("Не удалось получить список: " + error));
+                    return;
+                }
+                if (lobbies.Count == 0)
+                {
+                    _openLobbies.Add(Note("Открытых игр нет. Создайте свою или войдите по коду."));
+                    return;
+                }
+                foreach (var lobby in lobbies)
+                {
+                    var row = Ui.Row();
+                    row.style.alignItems = Align.Center;
+                    row.style.marginBottom = 6f;
+                    var name = Ui.Text($"{lobby.Name}  ({lobby.Players}/{lobby.MaxPlayers})", 14f, Theme.Text);
+                    name.style.flexGrow = 1f;
+                    name.style.whiteSpace = WhiteSpace.Normal;
+                    row.Add(name);
+                    string id = lobby.Id;
+                    row.Add(Ui.Button("Войти", () => JoinUgs(id, false), ButtonKind.Secondary, 14f));
+                    _openLobbies.Add(row);
+                }
+            });
         }
 
         void HostSteam()

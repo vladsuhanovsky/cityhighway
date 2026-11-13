@@ -33,6 +33,12 @@ namespace CityHighways.Net
         /// <summary>Можно ли пригласить друга (оверлей Steam).</summary>
         bool CanInvite { get; }
         void Invite();
+
+        /// <summary>
+        /// Хост: показывать ли лобби как открытое для новых игроков. После старта — нет (лобби пропадает из
+        /// списков), но канал остаётся: отключившийся игрок может вернуться на своё место.
+        /// </summary>
+        void SetJoinable(bool joinable);
     }
 
     /// <summary>Друг, который сейчас в лобби City Highways (для списка «К кому подключиться»).</summary>
@@ -64,8 +70,33 @@ namespace CityHighways.Net
         void Shutdown();
     }
 
+    /// <summary>Открытое лобби Unity (для списка «К кому подключиться»).</summary>
+    public struct OpenLobby
+    {
+        public string Name;
+        public string Id;
+        public int Players;
+        public int MaxPlayers;
+    }
+
+    /// <summary>
+    /// Unity Gaming Services: Lobby (поиск игры, код лобби) и Relay (связь через серверы Unity, без проброса
+    /// портов). Реализация — в сборке CityHighways.Ugs, которая собирается только при установленном пакете
+    /// Multiplayer Services (com.unity.services.multiplayer) и сама регистрируется здесь.
+    /// </summary>
+    public interface IUgsPlatform
+    {
+        /// <summary>Создать лобби и выделить Relay; код лобби появится в ConnectHint, когда канал будет готов.</summary>
+        INetTransport CreateHost(string lobbyName, int maxPlayers);
+        INetTransport JoinByCode(string code);
+        INetTransport JoinById(string lobbyId);
+        /// <summary>Открытые лобби с местами; done(список, ошибка) вызывается в главном потоке.</summary>
+        void QueryLobbies(Action<List<OpenLobby>, string> done);
+    }
+
     public static class NetPlatforms
     {
         public static ISteamPlatform Steam;
+        public static IUgsPlatform Ugs;
     }
 }

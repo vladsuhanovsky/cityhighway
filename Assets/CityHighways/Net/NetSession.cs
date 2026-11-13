@@ -195,6 +195,7 @@ namespace CityHighways.Net
             Game = BuildGame(start, null);
             _sent = Game.History.Count;
             InGame = true;
+            Transport.SetJoinable(false); // новых игроков в идущую партию не пускаем (вернуться можно)
             for (int i = 0; i < Seats.Count; i++)
             {
                 var s = Seats[i];

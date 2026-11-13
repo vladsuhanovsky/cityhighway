@@ -74,6 +74,7 @@ namespace CityHighways.Net
         public string ConnectHint => "";
         public bool CanInvite => false;
         public void Invite() { }
+        public void SetJoinable(bool joinable) { }
 
         public event Action Ready;
         public event Action<ulong> PeerConnected;
