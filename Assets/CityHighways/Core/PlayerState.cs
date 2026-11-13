@@ -1,0 +1,77 @@
+using System;
+using System.Collections.Generic;
+
+namespace CityHighways.Core
+{
+    /// <summary>Состояние игрока (дорожной компании). Снаружи только читается; меняет его Game.</summary>
+    public sealed class PlayerState
+    {
+        readonly int[] _hand = new int[ResourceInfo.Count];
+        readonly List<Road> _roads = new List<Road>();
+        readonly List<Contract> _contracts = new List<Contract>();
+        readonly List<Contract> _pending = new List<Contract>();
+
+        public int Index { get; }
+        public string Name { get; }
+        /// <summary>Сколько участков дороги ещё можно построить.</summary>
+        public int RoadPieces { get; internal set; }
+        /// <summary>Очки за построенные дороги (контракты, плата за проезд и бонус — в конце).</summary>
+        public int RoadPoints { get; internal set; }
+        /// <summary>Очки за выполненные первым общие цели мэрии.</summary>
+        public int GoalPoints { get; internal set; }
+        /// <summary>Очки карт удачи (гранты, премии, штрафы); может быть меньше нуля.</summary>
+        public int LuckPoints { get; internal set; }
+        /// <summary>Сколько бафов и дебафов вытянул игрок — для сводки в итогах.</summary>
+        public int LuckBuffs { get; internal set; }
+        public int LuckDebuffs { get; internal set; }
+
+        public IReadOnlyList<Road> Roads => _roads;
+        public IReadOnlyList<Contract> Contracts => _contracts;
+        /// <summary>Контракты, из которых игрок сейчас выбирает.</summary>
+        public IReadOnlyList<Contract> PendingContracts => _pending;
+
+        public int HandSize
+        {
+            get
+            {
+                int sum = 0;
+                foreach (int n in _hand) sum += n;
+                return sum;
+            }
+        }
+
+        /// <summary>Персонаж компании.</summary>
+        public CharacterKind Character { get; internal set; }
+        /// <summary>Сколько бесплатных строек осталось у Прораба.</summary>
+        public int FreeRoadsLeft { get; internal set; }
+
+        internal PlayerState(int index, string name, int roadPieces)
+        {
+            Index = index;
+            Name = name;
+            RoadPieces = roadPieces;
+        }
+
+        public int CardCount(Resource resource) => _hand[(int)resource];
+
+        internal void AddCard(Resource resource, int count = 1) => _hand[(int)resource] += count;
+
+        internal void RemoveCards(Resource resource, int count)
+        {
+            if (count > _hand[(int)resource])
+                throw new InvalidOperationException($"У игрока {Name} нет {count} карт «{ResourceInfo.RussianName(resource)}».");
+            _hand[(int)resource] -= count;
+        }
+
+        internal void ClearHand()
+        {
+            for (int i = 0; i < _hand.Length; i++) _hand[i] = 0;
+        }
+
+        internal void AddRoad(Road road) => _roads.Add(road);
+        internal List<Contract> ContractList => _contracts;
+        internal List<Contract> PendingList => _pending;
+
+        public override string ToString() => Name;
+    }
+}

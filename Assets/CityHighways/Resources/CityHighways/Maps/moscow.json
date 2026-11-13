@@ -1,0 +1,1964 @@
+{
+ "name": "Москва",
+ "districts": [
+  {
+   "id": "center",
+   "name": "Центр"
+  },
+  {
+   "id": "zamoskvorechye",
+   "name": "Замоскворечье"
+  },
+  {
+   "id": "vokzaly",
+   "name": "Вокзалы"
+  },
+  {
+   "id": "north",
+   "name": "Север"
+  },
+  {
+   "id": "northeast",
+   "name": "Северо-Восток"
+  },
+  {
+   "id": "northwest",
+   "name": "Северо-Запад"
+  },
+  {
+   "id": "city",
+   "name": "Москва-Сити"
+  },
+  {
+   "id": "west",
+   "name": "Запад"
+  },
+  {
+   "id": "southwest",
+   "name": "Юго-Запад"
+  },
+  {
+   "id": "south",
+   "name": "Юг"
+  },
+  {
+   "id": "east",
+   "name": "Восток"
+  },
+  {
+   "id": "southeast",
+   "name": "Юго-Восток"
+  },
+  {
+   "id": "newmoscow",
+   "name": "Новая Москва"
+  },
+  {
+   "id": "airports",
+   "name": "Аэропорты"
+  },
+  {
+   "id": "zelenograd",
+   "name": "Зеленоград",
+   "expansion": true
+  },
+  {
+   "id": "nekrasovka",
+   "name": "Некрасовка",
+   "expansion": true
+  },
+  {
+   "id": "troitsk",
+   "name": "Троицк",
+   "expansion": true
+  }
+ ],
+ "locations": [
+  {
+   "id": "kremlin",
+   "name": "Кремль",
+   "district": "center",
+   "x": 0.5,
+   "y": 0.48
+  },
+  {
+   "id": "lubyanka",
+   "name": "Лубянка",
+   "district": "center",
+   "x": 0.563,
+   "y": 0.417
+  },
+  {
+   "id": "arbat",
+   "name": "Арбат",
+   "district": "center",
+   "x": 0.421,
+   "y": 0.48
+  },
+  {
+   "id": "pushkinskaya",
+   "name": "Пушкинская",
+   "district": "center",
+   "x": 0.468,
+   "y": 0.385
+  },
+  {
+   "id": "tretyakovka",
+   "name": "Третьяковка",
+   "district": "zamoskvorechye",
+   "x": 0.532,
+   "y": 0.575
+  },
+  {
+   "id": "oktyabrskaya",
+   "name": "Октябрьская",
+   "district": "zamoskvorechye",
+   "x": 0.469,
+   "y": 0.636
+  },
+  {
+   "id": "paveletsky",
+   "name": "Павелецкий",
+   "district": "zamoskvorechye",
+   "x": 0.592,
+   "y": 0.633
+  },
+  {
+   "id": "komsomolskaya",
+   "name": "Комсомольская",
+   "district": "vokzaly",
+   "x": 0.606,
+   "y": 0.314
+  },
+  {
+   "id": "kursky",
+   "name": "Курский",
+   "district": "vokzaly",
+   "x": 0.649,
+   "y": 0.435
+  },
+  {
+   "id": "savyolovsky",
+   "name": "Савёловский",
+   "district": "north",
+   "x": 0.455,
+   "y": 0.239
+  },
+  {
+   "id": "ostankino",
+   "name": "Останкино",
+   "district": "north",
+   "x": 0.528,
+   "y": 0.139
+  },
+  {
+   "id": "vdnh",
+   "name": "ВДНХ",
+   "district": "north",
+   "x": 0.596,
+   "y": 0.125
+  },
+  {
+   "id": "sokol",
+   "name": "Сокол",
+   "district": "northwest",
+   "x": 0.359,
+   "y": 0.226
+  },
+  {
+   "id": "rechnoy",
+   "name": "Речной вокзал",
+   "district": "northwest",
+   "x": 0.337,
+   "y": 0.104
+  },
+  {
+   "id": "shchukinskaya",
+   "name": "Щукинская",
+   "district": "northwest",
+   "x": 0.26,
+   "y": 0.291
+  },
+  {
+   "id": "city",
+   "name": "Сити",
+   "district": "city",
+   "x": 0.314,
+   "y": 0.437
+  },
+  {
+   "id": "presnya",
+   "name": "Пресня",
+   "district": "city",
+   "x": 0.365,
+   "y": 0.39
+  },
+  {
+   "id": "kievsky",
+   "name": "Киевский",
+   "district": "west",
+   "x": 0.326,
+   "y": 0.552
+  },
+  {
+   "id": "kutuzovsky",
+   "name": "Кутузовский",
+   "district": "west",
+   "x": 0.253,
+   "y": 0.506
+  },
+  {
+   "id": "luzhniki",
+   "name": "Лужники",
+   "district": "southwest",
+   "x": 0.381,
+   "y": 0.658
+  },
+  {
+   "id": "mgu",
+   "name": "МГУ",
+   "district": "southwest",
+   "x": 0.363,
+   "y": 0.782
+  },
+  {
+   "id": "vernadskogo",
+   "name": "Вернадского",
+   "district": "southwest",
+   "x": 0.276,
+   "y": 0.753
+  },
+  {
+   "id": "teply_stan",
+   "name": "Тёплый Стан",
+   "district": "southwest",
+   "x": 0.292,
+   "y": 0.885
+  },
+  {
+   "id": "tulskaya",
+   "name": "Тульская",
+   "district": "south",
+   "x": 0.53,
+   "y": 0.722
+  },
+  {
+   "id": "nagatino",
+   "name": "Нагатино",
+   "district": "south",
+   "x": 0.585,
+   "y": 0.792
+  },
+  {
+   "id": "kolomenskoe",
+   "name": "Коломенское",
+   "district": "south",
+   "x": 0.657,
+   "y": 0.814
+  },
+  {
+   "id": "chertanovo",
+   "name": "Чертаново",
+   "district": "south",
+   "x": 0.474,
+   "y": 0.922
+  },
+  {
+   "id": "baumanskaya",
+   "name": "Бауманская",
+   "district": "east",
+   "x": 0.696,
+   "y": 0.382
+  },
+  {
+   "id": "sokolniki",
+   "name": "Сокольники",
+   "district": "east",
+   "x": 0.678,
+   "y": 0.26
+  },
+  {
+   "id": "izmaylovo",
+   "name": "Измайлово",
+   "district": "east",
+   "x": 0.793,
+   "y": 0.363
+  },
+  {
+   "id": "perovo",
+   "name": "Перово",
+   "district": "east",
+   "x": 0.81,
+   "y": 0.48
+  },
+  {
+   "id": "taganka",
+   "name": "Таганка",
+   "district": "southeast",
+   "x": 0.649,
+   "y": 0.54
+  },
+  {
+   "id": "volgogradsky",
+   "name": "Волгоградский",
+   "district": "southeast",
+   "x": 0.725,
+   "y": 0.613
+  },
+  {
+   "id": "kuzminki",
+   "name": "Кузьминки",
+   "district": "southeast",
+   "x": 0.783,
+   "y": 0.645
+  },
+  {
+   "id": "maryino",
+   "name": "Марьино",
+   "district": "southeast",
+   "x": 0.726,
+   "y": 0.813
+  },
+  {
+   "id": "timiryazevskaya",
+   "name": "Тимирязевская",
+   "district": "north",
+   "x": 0.418,
+   "y": 0.123
+  },
+  {
+   "id": "otradnoe",
+   "name": "Отрадное",
+   "district": "northeast",
+   "x": 0.526,
+   "y": 0.029
+  },
+  {
+   "id": "medvedkovo",
+   "name": "Медведково",
+   "district": "northeast",
+   "x": 0.657,
+   "y": 0.057
+  },
+  {
+   "id": "losiny",
+   "name": "Лосиный остров",
+   "district": "northeast",
+   "x": 0.746,
+   "y": 0.175
+  },
+  {
+   "id": "rizhskaya",
+   "name": "Рижский",
+   "district": "vokzaly",
+   "x": 0.56,
+   "y": 0.227
+  },
+  {
+   "id": "belorussky",
+   "name": "Белорусский",
+   "district": "vokzaly",
+   "x": 0.409,
+   "y": 0.313
+  },
+  {
+   "id": "tushino",
+   "name": "Тушино",
+   "district": "northwest",
+   "x": 0.226,
+   "y": 0.206
+  },
+  {
+   "id": "strogino",
+   "name": "Строгино",
+   "district": "northwest",
+   "x": 0.163,
+   "y": 0.349
+  },
+  {
+   "id": "fili",
+   "name": "Фили",
+   "district": "west",
+   "x": 0.229,
+   "y": 0.406
+  },
+  {
+   "id": "krylatskoe",
+   "name": "Крылатское",
+   "district": "west",
+   "x": 0.153,
+   "y": 0.491
+  },
+  {
+   "id": "profsoyuznaya",
+   "name": "Профсоюзная",
+   "district": "southwest",
+   "x": 0.432,
+   "y": 0.861
+  },
+  {
+   "id": "yasenevo",
+   "name": "Ясенево",
+   "district": "southwest",
+   "x": 0.392,
+   "y": 0.959
+  },
+  {
+   "id": "troparevo",
+   "name": "Тропарёво",
+   "district": "southwest",
+   "x": 0.214,
+   "y": 0.799
+  },
+  {
+   "id": "solntsevo",
+   "name": "Солнцево",
+   "district": "newmoscow",
+   "x": 0.135,
+   "y": 0.709
+  },
+  {
+   "id": "kommunarka",
+   "name": "Коммунарка",
+   "district": "newmoscow",
+   "x": 0.275,
+   "y": 0.974
+  },
+  {
+   "id": "tsaritsyno",
+   "name": "Царицыно",
+   "district": "south",
+   "x": 0.588,
+   "y": 0.922
+  },
+  {
+   "id": "biryulevo",
+   "name": "Бирюлёво",
+   "district": "south",
+   "x": 0.512,
+   "y": 0.985
+  },
+  {
+   "id": "lyublino",
+   "name": "Люблино",
+   "district": "southeast",
+   "x": 0.709,
+   "y": 0.715
+  },
+  {
+   "id": "kapotnya",
+   "name": "Капотня",
+   "district": "southeast",
+   "x": 0.833,
+   "y": 0.705
+  },
+  {
+   "id": "lefortovo",
+   "name": "Лефортово",
+   "district": "east",
+   "x": 0.747,
+   "y": 0.48
+  },
+  {
+   "id": "novogireevo",
+   "name": "Новогиреево",
+   "district": "east",
+   "x": 0.87,
+   "y": 0.48
+  },
+  {
+   "id": "golyanovo",
+   "name": "Гольяново",
+   "district": "east",
+   "x": 0.876,
+   "y": 0.344
+  },
+  {
+   "id": "zelenograd",
+   "name": "Зеленоград",
+   "district": "zelenograd",
+   "x": 0.075,
+   "y": 0.166
+  },
+  {
+   "id": "kryukovo",
+   "name": "Крюково",
+   "district": "zelenograd",
+   "x": 0.036,
+   "y": 0.288
+  },
+  {
+   "id": "kosino",
+   "name": "Косино",
+   "district": "nekrasovka",
+   "x": 0.937,
+   "y": 0.551
+  },
+  {
+   "id": "nekrasovka",
+   "name": "Некрасовка",
+   "district": "nekrasovka",
+   "x": 0.955,
+   "y": 0.652
+  },
+  {
+   "id": "troitsk",
+   "name": "Троицк",
+   "district": "troitsk",
+   "x": 0.058,
+   "y": 0.972
+  },
+  {
+   "id": "vatutinki",
+   "name": "Ватутинки",
+   "district": "troitsk",
+   "x": 0.193,
+   "y": 0.985
+  },
+  {
+   "id": "sheremetyevo",
+   "name": "Шереметьево",
+   "district": "airports",
+   "x": 0.32,
+   "y": 0.015
+  },
+  {
+   "id": "vnukovo",
+   "name": "Внуково",
+   "district": "airports",
+   "x": 0.133,
+   "y": 0.888
+  },
+  {
+   "id": "domodedovo",
+   "name": "Домодедово",
+   "district": "airports",
+   "x": 0.644,
+   "y": 0.985
+  }
+ ],
+ "roads": [
+  {
+   "id": "r01",
+   "from": "kremlin",
+   "to": "lubyanka",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r02",
+   "from": "kremlin",
+   "to": "arbat",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r03",
+   "from": "kremlin",
+   "to": "pushkinskaya",
+   "length": 1,
+   "resource": "concrete"
+  },
+  {
+   "id": "r04",
+   "from": "lubyanka",
+   "to": "pushkinskaya",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r05",
+   "from": "arbat",
+   "to": "pushkinskaya",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r06",
+   "from": "kremlin",
+   "to": "tretyakovka",
+   "length": 1,
+   "resource": "steel"
+  },
+  {
+   "id": "r07",
+   "from": "arbat",
+   "to": "kievsky",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r08",
+   "from": "tretyakovka",
+   "to": "oktyabrskaya",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r09",
+   "from": "tretyakovka",
+   "to": "paveletsky",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r10",
+   "from": "oktyabrskaya",
+   "to": "paveletsky",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r11",
+   "from": "lubyanka",
+   "to": "komsomolskaya",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r12",
+   "from": "lubyanka",
+   "to": "kursky",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r13",
+   "from": "komsomolskaya",
+   "to": "kursky",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r14",
+   "from": "kursky",
+   "to": "taganka",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r15",
+   "from": "taganka",
+   "to": "paveletsky",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r16",
+   "from": "kremlin",
+   "to": "taganka",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r17",
+   "from": "pushkinskaya",
+   "to": "savyolovsky",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r18",
+   "from": "savyolovsky",
+   "to": "ostankino",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r19",
+   "from": "ostankino",
+   "to": "vdnh",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r20",
+   "from": "komsomolskaya",
+   "to": "sokolniki",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r21",
+   "from": "sokolniki",
+   "to": "vdnh",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r22",
+   "from": "komsomolskaya",
+   "to": "vdnh",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r23",
+   "from": "savyolovsky",
+   "to": "komsomolskaya",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r24",
+   "from": "sokol",
+   "to": "rechnoy",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r25",
+   "from": "rechnoy",
+   "to": "sheremetyevo",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r26",
+   "from": "sokol",
+   "to": "shchukinskaya",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r27",
+   "from": "savyolovsky",
+   "to": "sokol",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r28",
+   "from": "vdnh",
+   "to": "sheremetyevo",
+   "length": 5,
+   "resource": "gravel"
+  },
+  {
+   "id": "r29",
+   "from": "city",
+   "to": "presnya",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r30",
+   "from": "presnya",
+   "to": "pushkinskaya",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r31",
+   "from": "presnya",
+   "to": "arbat",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r32",
+   "from": "shchukinskaya",
+   "to": "city",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r33",
+   "from": "city",
+   "to": "kutuzovsky",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r34",
+   "from": "kievsky",
+   "to": "kutuzovsky",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r35",
+   "from": "kievsky",
+   "to": "luzhniki",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r36",
+   "from": "arbat",
+   "to": "luzhniki",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r37",
+   "from": "luzhniki",
+   "to": "mgu",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r38",
+   "from": "luzhniki",
+   "to": "oktyabrskaya",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r39",
+   "from": "oktyabrskaya",
+   "to": "mgu",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r40",
+   "from": "mgu",
+   "to": "vernadskogo",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r41",
+   "from": "vernadskogo",
+   "to": "teply_stan",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r42",
+   "from": "teply_stan",
+   "to": "vnukovo",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r43",
+   "from": "paveletsky",
+   "to": "tulskaya",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r44",
+   "from": "oktyabrskaya",
+   "to": "tulskaya",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r45",
+   "from": "tulskaya",
+   "to": "nagatino",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r46",
+   "from": "tulskaya",
+   "to": "chertanovo",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r47",
+   "from": "nagatino",
+   "to": "kolomenskoe",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r48",
+   "from": "kolomenskoe",
+   "to": "maryino",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r49",
+   "from": "chertanovo",
+   "to": "teply_stan",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r50",
+   "from": "kursky",
+   "to": "baumanskaya",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r51",
+   "from": "baumanskaya",
+   "to": "sokolniki",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r52",
+   "from": "baumanskaya",
+   "to": "izmaylovo",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r53",
+   "from": "izmaylovo",
+   "to": "perovo",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r55",
+   "from": "taganka",
+   "to": "volgogradsky",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r56",
+   "from": "volgogradsky",
+   "to": "kuzminki",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r57",
+   "from": "kuzminki",
+   "to": "maryino",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r58",
+   "from": "perovo",
+   "to": "kuzminki",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r59",
+   "from": "timiryazevskaya",
+   "to": "savyolovsky",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r60",
+   "from": "timiryazevskaya",
+   "to": "sokol",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r61",
+   "from": "timiryazevskaya",
+   "to": "ostankino",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r62",
+   "from": "otradnoe",
+   "to": "timiryazevskaya",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r63",
+   "from": "otradnoe",
+   "to": "medvedkovo",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r64",
+   "from": "otradnoe",
+   "to": "ostankino",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r65",
+   "from": "medvedkovo",
+   "to": "vdnh",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r66",
+   "from": "medvedkovo",
+   "to": "losiny",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r67",
+   "from": "losiny",
+   "to": "sokolniki",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r68",
+   "from": "losiny",
+   "to": "golyanovo",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r69",
+   "from": "rizhskaya",
+   "to": "savyolovsky",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r71",
+   "from": "rizhskaya",
+   "to": "ostankino",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r72",
+   "from": "rizhskaya",
+   "to": "sokolniki",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r73",
+   "from": "belorussky",
+   "to": "pushkinskaya",
+   "length": 1,
+   "resource": "concrete"
+  },
+  {
+   "id": "r74",
+   "from": "belorussky",
+   "to": "presnya",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r75",
+   "from": "belorussky",
+   "to": "savyolovsky",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r76",
+   "from": "belorussky",
+   "to": "sokol",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r77",
+   "from": "tushino",
+   "to": "shchukinskaya",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r78",
+   "from": "tushino",
+   "to": "rechnoy",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r79",
+   "from": "tushino",
+   "to": "strogino",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r80",
+   "from": "strogino",
+   "to": "shchukinskaya",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r81",
+   "from": "strogino",
+   "to": "krylatskoe",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r82",
+   "from": "krylatskoe",
+   "to": "kutuzovsky",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r83",
+   "from": "fili",
+   "to": "kutuzovsky",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r84",
+   "from": "fili",
+   "to": "city",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r85",
+   "from": "fili",
+   "to": "shchukinskaya",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r86",
+   "from": "mgu",
+   "to": "profsoyuznaya",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r88",
+   "from": "profsoyuznaya",
+   "to": "yasenevo",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r89",
+   "from": "yasenevo",
+   "to": "teply_stan",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r90",
+   "from": "yasenevo",
+   "to": "chertanovo",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r91",
+   "from": "troparevo",
+   "to": "vernadskogo",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r92",
+   "from": "troparevo",
+   "to": "solntsevo",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r93",
+   "from": "troparevo",
+   "to": "teply_stan",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r94",
+   "from": "kutuzovsky",
+   "to": "solntsevo",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r95",
+   "from": "krylatskoe",
+   "to": "solntsevo",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r96",
+   "from": "solntsevo",
+   "to": "vnukovo",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r97",
+   "from": "teply_stan",
+   "to": "kommunarka",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r98",
+   "from": "yasenevo",
+   "to": "kommunarka",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r99",
+   "from": "kommunarka",
+   "to": "vnukovo",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r100",
+   "from": "chertanovo",
+   "to": "tsaritsyno",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r101",
+   "from": "nagatino",
+   "to": "tsaritsyno",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r102",
+   "from": "tsaritsyno",
+   "to": "biryulevo",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r103",
+   "from": "biryulevo",
+   "to": "chertanovo",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r104",
+   "from": "tsaritsyno",
+   "to": "domodedovo",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r105",
+   "from": "biryulevo",
+   "to": "domodedovo",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r106",
+   "from": "volgogradsky",
+   "to": "lyublino",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r107",
+   "from": "lyublino",
+   "to": "kuzminki",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r108",
+   "from": "lyublino",
+   "to": "maryino",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r109",
+   "from": "nagatino",
+   "to": "lyublino",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r110",
+   "from": "kuzminki",
+   "to": "kapotnya",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r111",
+   "from": "kapotnya",
+   "to": "maryino",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r112",
+   "from": "kursky",
+   "to": "lefortovo",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r113",
+   "from": "baumanskaya",
+   "to": "lefortovo",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r114",
+   "from": "lefortovo",
+   "to": "volgogradsky",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r115",
+   "from": "lefortovo",
+   "to": "perovo",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r116",
+   "from": "perovo",
+   "to": "novogireevo",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r117",
+   "from": "novogireevo",
+   "to": "kuzminki",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r118",
+   "from": "novogireevo",
+   "to": "golyanovo",
+   "length": 3,
+   "resource": "any"
+  },
+  {
+   "id": "r119",
+   "from": "izmaylovo",
+   "to": "golyanovo",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r120",
+   "from": "zelenograd",
+   "to": "kryukovo",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r121",
+   "from": "zelenograd",
+   "to": "sheremetyevo",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r122",
+   "from": "zelenograd",
+   "to": "tushino",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r123",
+   "from": "kryukovo",
+   "to": "strogino",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r124",
+   "from": "kosino",
+   "to": "nekrasovka",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r125",
+   "from": "kosino",
+   "to": "novogireevo",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r126",
+   "from": "nekrasovka",
+   "to": "kapotnya",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r127",
+   "from": "nekrasovka",
+   "to": "kuzminki",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r128",
+   "from": "troitsk",
+   "to": "vatutinki",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r129",
+   "from": "vatutinki",
+   "to": "kommunarka",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r130",
+   "from": "troitsk",
+   "to": "vnukovo",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r131",
+   "from": "vatutinki",
+   "to": "solntsevo",
+   "length": 4,
+   "resource": "gravel"
+  }
+ ],
+ "contracts": [
+  {
+   "id": "c01",
+   "from": "newmoscow",
+   "to": "south",
+   "points": 7
+  },
+  {
+   "id": "c02",
+   "from": "airports",
+   "to": "west",
+   "points": 7
+  },
+  {
+   "id": "c03",
+   "from": "city",
+   "to": "zamoskvorechye",
+   "points": 5
+  },
+  {
+   "id": "c04",
+   "from": "southeast",
+   "to": "southwest",
+   "points": 7
+  },
+  {
+   "id": "c05",
+   "from": "northwest",
+   "to": "zamoskvorechye",
+   "points": 7
+  },
+  {
+   "id": "c06",
+   "from": "northeast",
+   "to": "northwest",
+   "points": 5
+  },
+  {
+   "id": "c07",
+   "from": "airports",
+   "to": "southwest",
+   "points": 5
+  },
+  {
+   "id": "c08",
+   "from": "north",
+   "to": "west",
+   "points": 7
+  },
+  {
+   "id": "c09",
+   "from": "southwest",
+   "to": "vokzaly",
+   "points": 6
+  },
+  {
+   "id": "c10",
+   "from": "city",
+   "to": "newmoscow",
+   "points": 7
+  },
+  {
+   "id": "c11",
+   "from": "center",
+   "to": "south",
+   "points": 5
+  },
+  {
+   "id": "c12",
+   "from": "north",
+   "to": "zamoskvorechye",
+   "points": 6
+  },
+  {
+   "id": "c13",
+   "from": "airports",
+   "to": "center",
+   "points": 13
+  },
+  {
+   "id": "c14",
+   "from": "northwest",
+   "to": "southwest",
+   "points": 9
+  },
+  {
+   "id": "c15",
+   "from": "east",
+   "to": "southwest",
+   "points": 12
+  },
+  {
+   "id": "c16",
+   "from": "city",
+   "to": "south",
+   "points": 8
+  },
+  {
+   "id": "c17",
+   "from": "center",
+   "to": "northeast",
+   "points": 8
+  },
+  {
+   "id": "c18",
+   "from": "east",
+   "to": "west",
+   "points": 9
+  },
+  {
+   "id": "c19",
+   "from": "airports",
+   "to": "city",
+   "points": 9
+  },
+  {
+   "id": "c20",
+   "from": "south",
+   "to": "west",
+   "points": 8
+  },
+  {
+   "id": "c21",
+   "from": "northwest",
+   "to": "southeast",
+   "points": 8
+  },
+  {
+   "id": "c22",
+   "from": "newmoscow",
+   "to": "vokzaly",
+   "points": 9
+  },
+  {
+   "id": "c23",
+   "from": "newmoscow",
+   "to": "north",
+   "points": 13
+  },
+  {
+   "id": "c24",
+   "from": "center",
+   "to": "newmoscow",
+   "points": 9
+  },
+  {
+   "id": "c25",
+   "from": "northeast",
+   "to": "southeast",
+   "points": 12
+  },
+  {
+   "id": "c26",
+   "from": "newmoscow",
+   "to": "zamoskvorechye",
+   "points": 12
+  },
+  {
+   "id": "c27",
+   "from": "northwest",
+   "to": "south",
+   "points": 12
+  },
+  {
+   "id": "c28",
+   "from": "northeast",
+   "to": "zamoskvorechye",
+   "points": 12
+  },
+  {
+   "id": "c29",
+   "from": "northeast",
+   "to": "southwest",
+   "points": 14
+  },
+  {
+   "id": "c30",
+   "from": "newmoscow",
+   "to": "northeast",
+   "points": 20
+  },
+  {
+   "id": "c31",
+   "from": "newmoscow",
+   "to": "southeast",
+   "points": 14
+  },
+  {
+   "id": "c32",
+   "from": "northeast",
+   "to": "south",
+   "points": 15
+  },
+  {
+   "id": "c33",
+   "from": "airports",
+   "to": "zamoskvorechye",
+   "points": 14
+  },
+  {
+   "id": "c34",
+   "from": "east",
+   "to": "newmoscow",
+   "points": 20
+  },
+  {
+   "id": "c35",
+   "from": "zelenograd",
+   "to": "center",
+   "points": 15
+  },
+  {
+   "id": "c36",
+   "from": "zelenograd",
+   "to": "vokzaly",
+   "points": 14
+  },
+  {
+   "id": "c37",
+   "from": "zelenograd",
+   "to": "west",
+   "points": 7
+  },
+  {
+   "id": "c38",
+   "from": "nekrasovka",
+   "to": "center",
+   "points": 14
+  },
+  {
+   "id": "c39",
+   "from": "nekrasovka",
+   "to": "city",
+   "points": 20
+  },
+  {
+   "id": "c40",
+   "from": "nekrasovka",
+   "to": "south",
+   "points": 9
+  },
+  {
+   "id": "c41",
+   "from": "troitsk",
+   "to": "center",
+   "points": 15
+  },
+  {
+   "id": "c42",
+   "from": "troitsk",
+   "to": "north",
+   "points": 20
+  },
+  {
+   "id": "c43",
+   "from": "troitsk",
+   "to": "southwest",
+   "points": 7
+  },
+  {
+   "id": "c44",
+   "from": "northwest",
+   "to": "southeast",
+   "points": 10,
+   "kind": "transit",
+   "third": "center"
+  },
+  {
+   "id": "c45",
+   "from": "west",
+   "to": "east",
+   "points": 11,
+   "kind": "transit",
+   "third": "center"
+  },
+  {
+   "id": "c46",
+   "from": "north",
+   "to": "south",
+   "points": 11,
+   "kind": "transit",
+   "third": "zamoskvorechye"
+  },
+  {
+   "id": "c47",
+   "from": "city",
+   "to": "east",
+   "points": 10,
+   "kind": "transit",
+   "third": "vokzaly"
+  },
+  {
+   "id": "c48",
+   "from": "northeast",
+   "to": "southwest",
+   "points": 16,
+   "kind": "transit",
+   "third": "center"
+  },
+  {
+   "id": "c49",
+   "from": "northwest",
+   "to": "newmoscow",
+   "points": 9,
+   "kind": "transit",
+   "third": "west"
+  },
+  {
+   "id": "c50",
+   "from": "airports",
+   "to": "city",
+   "points": 11,
+   "kind": "transit",
+   "third": "west"
+  },
+  {
+   "id": "c51",
+   "from": "southeast",
+   "to": "north",
+   "points": 11,
+   "kind": "transit",
+   "third": "east"
+  },
+  {
+   "id": "c52",
+   "from": "vokzaly",
+   "to": "airports",
+   "points": 16,
+   "kind": "hub",
+   "third": "northeast"
+  },
+  {
+   "id": "c53",
+   "from": "city",
+   "to": "southwest",
+   "points": 10,
+   "kind": "hub",
+   "third": "north"
+  },
+  {
+   "id": "c54",
+   "from": "center",
+   "to": "airports",
+   "points": 25,
+   "kind": "hub",
+   "third": "newmoscow"
+  },
+  {
+   "id": "c55",
+   "from": "south",
+   "to": "west",
+   "points": 13,
+   "kind": "hub",
+   "third": "southeast"
+  },
+  {
+   "id": "c56",
+   "from": "east",
+   "to": "northeast",
+   "points": 13,
+   "kind": "hub",
+   "third": "zamoskvorechye"
+  },
+  {
+   "id": "c57",
+   "from": "west",
+   "to": "northwest",
+   "points": 13,
+   "kind": "hub",
+   "third": "south"
+  }
+ ],
+ "river": [
+  {
+   "x": 0.054,
+   "y": 0.419
+  },
+  {
+   "x": 0.153,
+   "y": 0.426
+  },
+  {
+   "x": 0.205,
+   "y": 0.445
+  },
+  {
+   "x": 0.244,
+   "y": 0.461
+  },
+  {
+   "x": 0.281,
+   "y": 0.473
+  },
+  {
+   "x": 0.314,
+   "y": 0.494
+  },
+  {
+   "x": 0.364,
+   "y": 0.555
+  },
+  {
+   "x": 0.36,
+   "y": 0.628
+  },
+  {
+   "x": 0.376,
+   "y": 0.692
+  },
+  {
+   "x": 0.418,
+   "y": 0.704
+  },
+  {
+   "x": 0.446,
+   "y": 0.65
+  },
+  {
+   "x": 0.461,
+   "y": 0.59
+  },
+  {
+   "x": 0.484,
+   "y": 0.536
+  },
+  {
+   "x": 0.532,
+   "y": 0.528
+  },
+  {
+   "x": 0.586,
+   "y": 0.542
+  },
+  {
+   "x": 0.628,
+   "y": 0.593
+  },
+  {
+   "x": 0.645,
+   "y": 0.655
+  },
+  {
+   "x": 0.653,
+   "y": 0.731
+  },
+  {
+   "x": 0.678,
+   "y": 0.77
+  },
+  {
+   "x": 0.683,
+   "y": 0.82
+  },
+  {
+   "x": 0.7,
+   "y": 0.879
+  },
+  {
+   "x": 0.781,
+   "y": 0.858
+  },
+  {
+   "x": 0.87,
+   "y": 0.809
+  },
+  {
+   "x": 0.972,
+   "y": 0.831
+  }
+ ],
+ "goals": [
+  {
+   "id": "g1",
+   "name": "Воздушные ворота",
+   "kind": "locations",
+   "district": "airports",
+   "count": 2,
+   "points": 8
+  },
+  {
+   "id": "g2",
+   "name": "Мостостроитель",
+   "kind": "bridges",
+   "count": 3,
+   "points": 7
+  },
+  {
+   "id": "g3",
+   "name": "Городская сеть",
+   "kind": "network",
+   "count": 8,
+   "points": 8
+  },
+  {
+   "id": "g4",
+   "name": "Загородные трассы",
+   "kind": "resource_pieces",
+   "resource": "gravel",
+   "count": 10,
+   "points": 6
+  },
+  {
+   "id": "g5",
+   "name": "Дальнобой",
+   "kind": "long_roads",
+   "length": 4,
+   "count": 3,
+   "points": 7
+  },
+  {
+   "id": "g6",
+   "name": "Сердце Москвы",
+   "kind": "locations",
+   "district": "center",
+   "count": 4,
+   "points": 9
+  },
+  {
+   "id": "g7",
+   "name": "Вокзальная площадь",
+   "kind": "locations",
+   "district": "vokzaly",
+   "count": 3,
+   "points": 6
+  }
+ ]
+}
