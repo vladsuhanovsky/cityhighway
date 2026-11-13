@@ -59,6 +59,7 @@ namespace CityHighways.Presentation
             Root.style.backgroundColor = Theme.Background;
 
             AddDecorations();
+            Profiles.SyncSteam();
 
             _pageHost = Ui.Column();
             _pageHost.style.width = 1120f;
@@ -84,6 +85,9 @@ namespace CityHighways.Presentation
             _overlay.style.alignItems = Align.Center;
             _overlay.style.justifyContent = Justify.Center;
             Ui.Show(_overlay, false);
+
+            _profileCorner = BuildProfileCorner();
+            Root.Add(_profileCorner);
             Root.Add(_overlay);
 
             ShowPage(Page.Home);
@@ -100,6 +104,67 @@ namespace CityHighways.Presentation
         void ShowPage(Page page)
         {
             foreach (var pair in _pages) Ui.Show(pair.Value, pair.Key == page);
+            if (_profileCorner != null)
+            {
+                // Аватар в углу — на главной; на остальных страницах он только мешал бы.
+                Ui.Show(_profileCorner, page == Page.Home);
+                if (page == Page.Home) RefreshProfileCorner();
+            }
+        }
+
+        VisualElement _profileCorner;
+        AvatarView _cornerAvatar;
+        Label _cornerName;
+        Label _cornerWallet;
+
+        /// <summary>Аватар профиля в левом нижнем углу главного меню: клик — страница «Профиль».</summary>
+        VisualElement BuildProfileCorner()
+        {
+            var corner = Ui.Row();
+            corner.style.position = Position.Absolute;
+            corner.style.left = 28f;
+            corner.style.bottom = 28f;
+            corner.style.alignItems = Align.Center;
+            corner.style.backgroundColor = Theme.Panel;
+            Ui.Radius(corner, 14f);
+            Ui.Padding(corner, 10f, 12f);
+            Ui.Border(corner, 1f, Theme.Line);
+            corner.pickingMode = PickingMode.Position;
+
+            _cornerAvatar = new AvatarView(64f);
+            _cornerAvatar.style.marginRight = 12f;
+            corner.Add(_cornerAvatar);
+            var texts = Ui.Column();
+            texts.pickingMode = PickingMode.Ignore;
+            _cornerName = Ui.Text("", 17f, Theme.Text, true);
+            _cornerName.pickingMode = PickingMode.Ignore;
+            texts.Add(_cornerName);
+            _cornerWallet = Ui.Text("", 13f, Theme.Accent);
+            _cornerWallet.pickingMode = PickingMode.Ignore;
+            texts.Add(_cornerWallet);
+            var hint = Ui.Text("Профиль и оформление", 11f, Theme.TextDim);
+            hint.pickingMode = PickingMode.Ignore;
+            texts.Add(hint);
+            corner.Add(texts);
+
+            corner.RegisterCallback<ClickEvent>(_ =>
+            {
+                _profile.Rebuild();
+                ShowPage(Page.Profile);
+            });
+            corner.RegisterCallback<PointerEnterEvent>(_ => corner.style.backgroundColor = Theme.PanelHover);
+            corner.RegisterCallback<PointerLeaveEvent>(_ => corner.style.backgroundColor = Theme.Panel);
+            // Аватар Steam приходит не сразу — подтягиваем, пока не появится.
+            corner.schedule.Execute(RefreshProfileCorner).Every(1000);
+            return corner;
+        }
+
+        void RefreshProfileCorner()
+        {
+            var profile = Profiles.Active;
+            _cornerAvatar.Set(profile);
+            _cornerName.text = profile.name;
+            _cornerWallet.text = $"Кошелёк: {profile.wallet} влияния";
         }
 
         /// <summary>Счётчик партий пересобирается после сброса статистики.</summary>
@@ -162,7 +227,6 @@ namespace CityHighways.Presentation
             }
             Add("Новая игра", () => ShowPage(Page.NewGame), saved != null ? ButtonKind.Secondary : ButtonKind.Primary);
             Add("Сетевая игра", () => ShowPage(Page.Online), ButtonKind.Secondary);
-            Add("Профиль", () => { _profile.Rebuild(); ShowPage(Page.Profile); }, ButtonKind.Secondary);
             Add("Правила", () => ShowPage(Page.Rules), ButtonKind.Secondary);
             Add("Счётчик партий", () => ShowPage(Page.Stats), ButtonKind.Secondary);
             Add("Настройки", () => ShowPage(Page.Settings), ButtonKind.Secondary);

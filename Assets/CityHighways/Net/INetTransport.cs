@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace CityHighways.Net
 {
@@ -59,6 +60,10 @@ namespace CityHighways.Net
         /// <summary>Почему недоступен (для подсказки в меню).</summary>
         string Problem { get; }
         string PersonaName { get; }
+        /// <summary>Свой SteamID строкой (для привязки профиля).</summary>
+        string SteamId { get; }
+        /// <summary>Большой аватар из Steam; null — ещё грузится или его нет (спросите позже).</summary>
+        Texture2D Avatar { get; }
         INetTransport CreateHost(int maxMembers);
         INetTransport Join(ulong lobby);
         List<JoinableLobby> FriendsInLobbies();

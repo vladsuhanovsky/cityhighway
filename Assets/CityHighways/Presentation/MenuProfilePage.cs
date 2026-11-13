@@ -49,6 +49,68 @@ namespace CityHighways.Presentation
             _content.Clear();
             var profile = Profiles.Active;
 
+            // ---------------------------------------------------------------- Аватар
+            var avatarCard = Ui.Card(14f);
+            avatarCard.style.marginBottom = 12f;
+            avatarCard.style.flexDirection = FlexDirection.Row;
+            avatarCard.style.alignItems = Align.Center;
+            var avatar = new AvatarView(96f);
+            avatar.Set(profile);
+            avatar.style.marginRight = 18f;
+            avatarCard.Add(avatar);
+            var avatarSide = Ui.Column();
+            avatarSide.style.flexGrow = 1f;
+            avatarSide.Add(Ui.Text(profile.name, 24f, Theme.Text, true));
+            var avatarNote = Ui.Text(profile.IsSteam
+                ? "Профиль Steam: ник и аватар берутся из Steam. Можно поставить и свою картинку — она заменит аватар Steam."
+                : "Загрузите картинку PNG или JPG — она обрежется до квадрата по центру.", 12f, Theme.TextDim);
+            avatarNote.style.whiteSpace = WhiteSpace.Normal;
+            avatarNote.style.marginTop = 4f;
+            avatarSide.Add(avatarNote);
+            var avatarButtons = Ui.Row();
+            avatarButtons.style.marginTop = 10f;
+            avatarButtons.style.alignItems = Align.Center;
+            if (FilePicker.Supported)
+            {
+                avatarButtons.Add(Ui.Button("Загрузить картинку…", () =>
+                {
+                    string path = FilePicker.PickImage();
+                    if (path == null) return;
+                    _status = Profiles.ImportAvatar(profile, path) ?? "Аватар обновлён.";
+                    Rebuild();
+                }, ButtonKind.Primary, 14f));
+            }
+            else
+            {
+                var pathField = new TextField { value = "" };
+                pathField.style.width = 360f;
+                avatarButtons.Add(pathField);
+                var load = Ui.Button("Загрузить по пути", () =>
+                {
+                    _status = Profiles.ImportAvatar(profile, pathField.value) ?? "Аватар обновлён.";
+                    Rebuild();
+                }, ButtonKind.Primary, 14f);
+                load.style.marginLeft = 8f;
+                avatarButtons.Add(load);
+            }
+            if (!string.IsNullOrEmpty(profile.avatar))
+            {
+                var removeAvatar = Ui.Button(profile.IsSteam ? "Вернуть аватар Steam" : "Убрать картинку", () =>
+                {
+                    Profiles.RemoveAvatar(profile);
+                    _status = "Картинка убрана.";
+                    Rebuild();
+                }, ButtonKind.Ghost, 14f);
+                removeAvatar.style.marginLeft = 10f;
+                avatarButtons.Add(removeAvatar);
+            }
+            avatarSide.Add(avatarButtons);
+            avatarCard.Add(avatarSide);
+            _content.Add(avatarCard);
+            // Аватар Steam мог ещё не догрузиться — заглянем ещё раз.
+            if (profile.IsSteam && Profiles.AvatarOf(profile) == null)
+                avatar.schedule.Execute(() => avatar.Set(profile)).Every(500).Until(() => Profiles.AvatarOf(profile) != null);
+
             // ---------------------------------------------------------------- Выбор профиля
             var chooser = Ui.Card(14f);
             chooser.style.marginBottom = 12f;

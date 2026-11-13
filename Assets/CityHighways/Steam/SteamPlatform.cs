@@ -96,6 +96,39 @@ namespace CityHighways.Steam
 
         public string PersonaName => Available ? SteamFriends.GetPersonaName() : "";
 
+        public string SteamId => Available ? SteamUser.GetSteamID().m_SteamID.ToString() : "";
+
+        Texture2D _avatar;
+
+        /// <summary>
+        /// Большой аватар (184×184). Steam может отдать его не сразу: GetLargeFriendAvatar вернёт -1 и догрузит
+        /// в фоне, поэтому интерфейс спрашивает ещё раз через полсекунды.
+        /// </summary>
+        public Texture2D Avatar
+        {
+            get
+            {
+                if (!Available) return null;
+                if (_avatar != null) return _avatar;
+                int handle = SteamFriends.GetLargeFriendAvatar(SteamUser.GetSteamID());
+                if (handle <= 0) return null;
+                if (!SteamUtils.GetImageSize(handle, out uint width, out uint height) || width == 0 || height == 0) return null;
+                int size = (int)(width * height * 4);
+                var raw = new byte[size];
+                if (!SteamUtils.GetImageRGBA(handle, raw, size)) return null;
+                // Строки у Steam сверху вниз, у текстуры Unity — снизу вверх.
+                var flipped = new byte[size];
+                int row = (int)width * 4;
+                for (int y = 0; y < height; y++)
+                    Buffer.BlockCopy(raw, y * row, flipped, ((int)height - 1 - y) * row, row);
+                var texture = new Texture2D((int)width, (int)height, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+                texture.LoadRawTextureData(flipped);
+                texture.Apply();
+                _avatar = texture;
+                return _avatar;
+            }
+        }
+
         public INetTransport CreateHost(int maxMembers) => Available ? new SteamTransport(true, 0, maxMembers) : null;
 
         public INetTransport Join(ulong lobby) => Available ? new SteamTransport(false, lobby, 0) : null;

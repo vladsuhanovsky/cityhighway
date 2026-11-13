@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CityHighways.Core;
+using CityHighways.Net;
 using UnityEngine;
 
 namespace CityHighways.Presentation
@@ -22,6 +23,12 @@ namespace CityHighways.Presentation
         public string emblem = "";
         public string title = "";
         public string frame = "";
+        /// <summary>Своя картинка аватара (файл в папке avatars); пусто — нет.</summary>
+        public string avatar = "";
+        /// <summary>Профиль привязан к аккаунту Steam: ник и аватар берутся оттуда.</summary>
+        public string steamId = "";
+
+        public bool IsSteam => !string.IsNullOrEmpty(steamId);
 
         public bool Owns(string id) => owned.Contains(id);
 
@@ -207,6 +214,127 @@ namespace CityHighways.Presentation
         {
             Book.profiles.Remove(profile);
             if (Key(Book.active) == Key(profile.name)) Book.active = Book.profiles.FirstOrDefault()?.name ?? "";
+            Save();
+        }
+
+        // ================================================================== Аватар
+
+        public static string AvatarFolder => Path.Combine(Application.persistentDataPath, "avatars");
+        const int AvatarSize = 256;
+        static readonly Dictionary<string, Texture2D> AvatarCache = new Dictionary<string, Texture2D>();
+
+        /// <summary>Картинка аватара: своя загруженная, иначе из Steam (для профиля Steam), иначе null.</summary>
+        public static Texture2D AvatarOf(PlayerProfile profile)
+        {
+            if (profile == null) return null;
+            if (!string.IsNullOrEmpty(profile.avatar))
+            {
+                if (AvatarCache.TryGetValue(profile.avatar, out var cached) && cached != null) return cached;
+                string path = Path.Combine(AvatarFolder, profile.avatar);
+                if (File.Exists(path))
+                {
+                    var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                    if (texture.LoadImage(File.ReadAllBytes(path)))
+                    {
+                        texture.wrapMode = TextureWrapMode.Clamp;
+                        AvatarCache[profile.avatar] = texture;
+                        return texture;
+                    }
+                }
+            }
+            var steam = NetPlatforms.Steam;
+            if (profile.IsSteam && steam != null && steam.Available) return steam.Avatar;
+            return null;
+        }
+
+        /// <summary>
+        /// Загрузить картинку (PNG/JPG) на аватар: обрезается по центру до квадрата, уменьшается до 256×256
+        /// и сохраняется в папку профилей. Возвращает текст ошибки или null.
+        /// </summary>
+        public static string ImportAvatar(PlayerProfile profile, string sourcePath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath)) return "Файл не найден.";
+                if (new FileInfo(sourcePath).Length > 20 * 1024 * 1024) return "Файл больше 20 МБ.";
+                var source = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (!source.LoadImage(File.ReadAllBytes(sourcePath))) return "Это не PNG и не JPG.";
+
+                int side = Mathf.Min(source.width, source.height);
+                int x0 = (source.width - side) / 2, y0 = (source.height - side) / 2;
+                int size = Mathf.Min(AvatarSize, side);
+                var result = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                var pixels = new Color[size * size];
+                for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float u = (x0 + (x + 0.5f) * side / size) / source.width;
+                    float v = (y0 + (y + 0.5f) * side / size) / source.height;
+                    pixels[y * size + x] = source.GetPixelBilinear(u, v);
+                }
+                result.SetPixels(pixels);
+                result.Apply();
+                UnityEngine.Object.Destroy(source);
+
+                Directory.CreateDirectory(AvatarFolder);
+                string file = $"avatar_{Guid.NewGuid():N}.png";
+                File.WriteAllBytes(Path.Combine(AvatarFolder, file), result.EncodeToPNG());
+                RemoveAvatarFile(profile);
+                profile.avatar = file;
+                result.wrapMode = TextureWrapMode.Clamp;
+                AvatarCache[file] = result;
+                Save();
+                return null;
+            }
+            catch (Exception e)
+            {
+                return "Не удалось загрузить картинку: " + e.Message;
+            }
+        }
+
+        public static void RemoveAvatar(PlayerProfile profile)
+        {
+            RemoveAvatarFile(profile);
+            profile.avatar = "";
+            Save();
+        }
+
+        static void RemoveAvatarFile(PlayerProfile profile)
+        {
+            if (string.IsNullOrEmpty(profile.avatar)) return;
+            AvatarCache.Remove(profile.avatar);
+            try
+            {
+                string path = Path.Combine(AvatarFolder, profile.avatar);
+                if (File.Exists(path)) File.Delete(path);
+            }
+            catch (Exception)
+            {
+                // старый файл останется — не страшно
+            }
+        }
+
+        // ================================================================== Steam
+
+        /// <summary>
+        /// Если Steam запущен — активным становится профиль этого аккаунта Steam (создаётся при первом запуске),
+        /// и его имя всегда совпадает с ником в Steam.
+        /// </summary>
+        public static void SyncSteam()
+        {
+            var steam = NetPlatforms.Steam;
+            if (steam == null || !steam.Available || string.IsNullOrEmpty(steam.SteamId)) return;
+            var profile = Book.profiles.FirstOrDefault(p => p.steamId == steam.SteamId);
+            string persona = string.IsNullOrWhiteSpace(steam.PersonaName) ? "Игрок Steam" : steam.PersonaName.Trim();
+            if (profile == null)
+            {
+                // Профиль с таким именем уже был (до Steam) — привязываем его, иначе создаём новый.
+                profile = Find(persona) ?? new PlayerProfile { name = persona };
+                if (!Book.profiles.Contains(profile)) Book.profiles.Add(profile);
+                profile.steamId = steam.SteamId;
+            }
+            profile.name = persona;
+            Book.active = profile.name;
             Save();
         }
 
