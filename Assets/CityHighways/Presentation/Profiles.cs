@@ -210,6 +210,22 @@ namespace CityHighways.Presentation
             Save();
         }
 
+        /// <summary>Переименовать профиль (не Steam). Возвращает текст ошибки или null.</summary>
+        public static string Rename(PlayerProfile profile, string newName)
+        {
+            if (profile.IsSteam) return "Имя профиля Steam берётся из Steam.";
+            newName = (newName ?? "").Trim();
+            if (newName.Length == 0) return "Имя не может быть пустым.";
+            if (newName.Length > 16) newName = newName.Substring(0, 16);
+            var other = Find(newName);
+            if (other != null && other != profile) return "Профиль с таким именем уже есть.";
+            bool active = Key(Book.active) == Key(profile.name);
+            profile.name = newName;
+            if (active) Book.active = newName;
+            Save();
+            return null;
+        }
+
         public static void Remove(PlayerProfile profile)
         {
             Book.profiles.Remove(profile);

@@ -60,7 +60,37 @@ namespace CityHighways.Presentation
             avatarCard.Add(avatar);
             var avatarSide = Ui.Column();
             avatarSide.style.flexGrow = 1f;
-            avatarSide.Add(Ui.Text(profile.name, 24f, Theme.Text, true));
+            if (profile.IsSteam)
+            {
+                avatarSide.Add(Ui.Text(profile.name, 24f, Theme.Text, true));
+            }
+            else
+            {
+                // Имя можно поменять: поле с текущим именем и кнопка «Сохранить имя».
+                var renameRow = Ui.Row();
+                renameRow.style.alignItems = Align.Center;
+                var renameField = Field(profile.name, 16);
+                renameField.style.width = 280f;
+                renameRow.Add(renameField);
+                var rename = Ui.Button("Сохранить имя", () =>
+                {
+                    string oldName = profile.name;
+                    var error = Profiles.Rename(profile, renameField.value);
+                    if (error == null)
+                    {
+                        // Если этим именем звали игрока в «Новой игре», переименуем и его.
+                        foreach (var slot in _setup.players)
+                            if (!slot.isBot && string.Equals(slot.name, oldName, StringComparison.OrdinalIgnoreCase)) slot.name = profile.name;
+                        _setup.Save();
+                        _setupChanged?.Invoke();
+                    }
+                    _status = error ?? $"Имя изменено: «{profile.name}».";
+                    Rebuild();
+                }, ButtonKind.Secondary, 14f);
+                rename.style.marginLeft = 10f;
+                renameRow.Add(rename);
+                avatarSide.Add(renameRow);
+            }
             var avatarNote = Ui.Text(profile.IsSteam
                 ? "Профиль Steam: ник и аватар берутся из Steam. Можно поставить и свою картинку — она заменит аватар Steam."
                 : "Загрузите картинку PNG или JPG — она обрежется до квадрата по центру.", 12f, Theme.TextDim);
@@ -82,7 +112,7 @@ namespace CityHighways.Presentation
             }
             else
             {
-                var pathField = new TextField { value = "" };
+                var pathField = Field("", 260);
                 pathField.style.width = 360f;
                 avatarButtons.Add(pathField);
                 var load = Ui.Button("Загрузить по пути", () =>
@@ -133,9 +163,9 @@ namespace CityHighways.Presentation
             var createRow = Ui.Row();
             createRow.style.alignItems = Align.Center;
             createRow.style.marginTop = 8f;
-            var nameField = new TextField { value = "", maxLength = 16 };
+            var nameField = Field("", 16);
             nameField.style.width = 260f;
-            nameField.style.fontSize = 15f;
+            nameField.textEdition.placeholder = "Имя нового профиля";
             createRow.Add(nameField);
             var create = Ui.Button("Новый профиль", () =>
             {
@@ -221,6 +251,38 @@ namespace CityHighways.Presentation
             Shop(profile, ShopKind.Emblem, "Эмблемы — у имени");
             Shop(profile, ShopKind.Title, "Титулы — под именем");
             Shop(profile, ShopKind.Frame, "Рамки — вокруг строки игрока");
+
+            // В прокрутке блоки не должны сжиматься: иначе заголовки наезжают на содержимое.
+            NoShrink(_content);
+        }
+
+        /// <summary>В колонках детям запрещаем сжиматься по высоте; в строках не трогаем (там текст должен переноситься).</summary>
+        static void NoShrink(VisualElement element)
+        {
+            bool row = element.style.flexDirection.keyword == StyleKeyword.Undefined
+                       && element.style.flexDirection.value == FlexDirection.Row;
+            foreach (var child in element.Children())
+            {
+                if (!row) child.style.flexShrink = 0f;
+                NoShrink(child);
+            }
+        }
+
+        /// <summary>Поле ввода в стиле меню: заметный фон, рамка и светлый текст.</summary>
+        static TextField Field(string value, int maxLength)
+        {
+            var field = new TextField { value = value, maxLength = maxLength };
+            field.style.fontSize = 16f;
+            field.style.color = Theme.Text;
+            Ui.Margin(field, 0f);
+            var input = field.Q(className: TextField.inputUssClassName) ?? field;
+            input.style.backgroundColor = Theme.PanelLight;
+            input.style.color = Theme.Text;
+            input.style.minHeight = 36f;
+            Ui.Radius(input, 8f);
+            Ui.Border(input, 1f, Theme.TextDim);
+            Ui.Padding(input, 6f, 10f);
+            return field;
         }
 
         void Shop(PlayerProfile profile, ShopKind kind, string caption)
