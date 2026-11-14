@@ -20,6 +20,7 @@ namespace CityHighways.Presentation
         public int failedContracts;
         public int tollsPaid;
         public int tollsEarned;
+        public int jamFees;
         public int networkDistricts;
         public int roadPiecesLeft;
         public bool winner;
@@ -68,6 +69,7 @@ namespace CityHighways.Presentation
                         failedContracts = s.FailedContracts,
                         tollsPaid = s.TollsPaid,
                         tollsEarned = s.TollsEarned,
+                        jamFees = s.JamFees,
                         networkDistricts = s.NetworkDistricts,
                         roadPiecesLeft = game.Players[s.PlayerIndex].RoadPieces,
                         winner = winners.Contains(s.PlayerIndex),

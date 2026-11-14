@@ -48,6 +48,8 @@ namespace CityHighways.Core
         public bool accept;
         public int giveInfluence;
         public int getInfluence;
+        public bool givePass;
+        public bool getPass;
         /// <summary>Трата влияния: InfluenceAction как int.</summary>
         public int option;
         /// <summary>Ставка на аукционе мэрии.</summary>
@@ -69,9 +71,9 @@ namespace CityHighways.Core
         public static GameCommand UpgradeRoad(int player, string road, Resource resource, int machinery) =>
             new GameCommand { kind = Upgrade, player = player, road = road, resource = (int)resource, machinery = machinery };
         public static GameCommand ProposeTrade(int player, int to, Resource give, int giveCount, Resource get, int getCount,
-            int giveInfluence = 0, int getInfluence = 0) =>
+            int giveInfluence = 0, int getInfluence = 0, bool givePass = false, bool getPass = false) =>
             new GameCommand { kind = ProposeTradeKind, player = player, to = to, giveResource = (int)give, giveCount = giveCount, getResource = (int)get, getCount = getCount,
-                giveInfluence = giveInfluence, getInfluence = getInfluence };
+                giveInfluence = giveInfluence, getInfluence = getInfluence, givePass = givePass, getPass = getPass };
         public static GameCommand UseInfluence(int player, InfluenceAction action) => new GameCommand { kind = InfluenceKind, player = player, option = (int)action };
         public static GameCommand Bid(int player, int amount) => new GameCommand { kind = BidKind, player = player, bid = amount };
         public static GameCommand Bribe(int player, BribeKind bribe) => new GameCommand { kind = BribeKindName, player = player, option = (int)bribe };
@@ -93,7 +95,7 @@ namespace CityHighways.Core
                 case DrawLuck: return $"#{player} берёт карту удачи";
                 case ChooseLuck: return $"#{player} оставляет карту удачи {index}";
                 case Upgrade: return $"#{player} улучшает {road} за {(Resource)resource} + {machinery} техн.";
-                case ProposeTradeKind: return $"#{player} предлагает #{to}: {giveCount}×{(Resource)giveResource}+{giveInfluence}вл. за {getCount}×{(Resource)getResource}+{getInfluence}вл.";
+                case ProposeTradeKind: return $"#{player} предлагает #{to}: {giveCount}×{(Resource)giveResource}+{giveInfluence}вл.{(givePass ? "+пропуск" : "")} за {getCount}×{(Resource)getResource}+{getInfluence}вл.{(getPass ? "+пропуск" : "")}";
                 case InfluenceKind: return $"#{player} тратит влияние: {(InfluenceAction)option}";
                 case BidKind: return $"#{player} ставит {bid} на аукционе";
                 case BribeKindName: return $"#{player} даёт взятку: {(BribeKind)option}";
@@ -161,7 +163,7 @@ namespace CityHighways.Core
                     if (command.giveResource < 0 || command.giveResource >= ResourceInfo.Count
                         || command.getResource < 0 || command.getResource >= ResourceInfo.Count) return ActionResult.Fail("Неизвестный ресурс.");
                     return ProposeTrade(command.to, (Resource)command.giveResource, command.giveCount, (Resource)command.getResource, command.getCount,
-                        command.giveInfluence, command.getInfluence);
+                        command.giveInfluence, command.getInfluence, command.givePass, command.getPass);
                 case GameCommand.InfluenceKind:
                     if (command.option < 0 || command.option > (int)InfluenceAction.CancelEvent) return ActionResult.Fail("Неизвестная трата влияния.");
                     return UseInfluence((InfluenceAction)command.option);
@@ -215,9 +217,10 @@ namespace CityHighways.Core
         public ActionResult ChooseLuckCard(int index) => Recorded(CurrentPlayerIndex, DoChooseLuckCard(index), p => GameCommand.ChooseLuckCard(p, index));
         public ActionResult UpgradeRoad(string roadId, Resource resource, int machinery) =>
             Recorded(CurrentPlayerIndex, DoUpgradeRoad(roadId, resource, machinery), p => GameCommand.UpgradeRoad(p, roadId, resource, machinery));
-        public ActionResult ProposeTrade(int to, Resource give, int giveCount, Resource get, int getCount, int giveInfluence = 0, int getInfluence = 0) =>
-            Recorded(CurrentPlayerIndex, DoProposeTrade(to, give, giveCount, get, getCount, giveInfluence, getInfluence),
-                p => GameCommand.ProposeTrade(p, to, give, giveCount, get, getCount, giveInfluence, getInfluence));
+        public ActionResult ProposeTrade(int to, Resource give, int giveCount, Resource get, int getCount, int giveInfluence = 0, int getInfluence = 0,
+            bool givePass = false, bool getPass = false) =>
+            Recorded(CurrentPlayerIndex, DoProposeTrade(to, give, giveCount, get, getCount, giveInfluence, getInfluence, givePass, getPass),
+                p => GameCommand.ProposeTrade(p, to, give, giveCount, get, getCount, giveInfluence, getInfluence, givePass, getPass));
         /// <summary>Ставку делает тот, чья очередь на аукционе (ActingPlayerIndex).</summary>
         public ActionResult Bid(int amount) => Recorded(ActingPlayerIndex, DoBid(amount), p => GameCommand.Bid(p, amount));
         public ActionResult Bribe(BribeKind kind) => Recorded(CurrentPlayerIndex, DoBribe(kind), p => GameCommand.Bribe(p, kind));

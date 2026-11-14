@@ -56,6 +56,20 @@ namespace CityHighways.Core
         public int BribesGiven { get; internal set; }
         public int BribesExposed { get; internal set; }
 
+        /// <summary>
+        /// Проезд, оплаченный по ходу партии (маршрут фиксируется, когда контракт выполнен): заплачено соперникам,
+        /// получено от соперников и сгорело в пробках.
+        /// </summary>
+        public int TollsPaid { get; internal set; }
+        public int TollsEarned { get; internal set; }
+        public int JamFees { get; internal set; }
+        /// <summary>Зафиксированные маршруты выполненных контрактов (по Id контракта).</summary>
+        internal readonly Dictionary<string, PaidRoute> PaidRoutes = new Dictionary<string, PaidRoute>();
+        public IReadOnlyDictionary<string, PaidRoute> PaidRouteList => PaidRoutes;
+        /// <summary>Чьи дороги для этой компании бесплатны (пропуска, купленные в сделках).</summary>
+        internal readonly HashSet<int> PassesFrom = new HashSet<int>();
+        public IEnumerable<int> Passes => PassesFrom;
+
         /// <summary>Персонаж компании.</summary>
         public CharacterKind Character { get; internal set; }
         /// <summary>Сколько бесплатных строек осталось у Прораба.</summary>

@@ -131,6 +131,7 @@ namespace CityHighways.Core
                 player.ContractList.Add(contract);
                 player.MayorContractId = contract.Id;
                 Emit($"Аукцион выигрывает {player.Name} за {best} влияния (ставки: {bids}).");
+                SettleContracts();
             }
             else
             {

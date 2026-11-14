@@ -682,6 +682,16 @@ namespace CityHighways.Presentation
                     p.Stroke();
                 }
 
+                // Пробка: пульсирующая красная рамка (поверх магистрали её не бывает).
+                if (isBuilt && _game.IsJammed(road.Id))
+                {
+                    float jam = 0.55f + 0.35f * Mathf.Sin(PulseTime * 3f);
+                    p.strokeColor = new Color(0.95f, 0.22f, 0.18f, jam);
+                    p.lineWidth = 2.4f;
+                    SegmentPath(p, segment, isBridge ? 5f : 3.5f, Vector2.zero);
+                    p.Stroke();
+                }
+
                 // Ремонт и парад: красно-белые полосы поперёк участка.
                 if (!owner.HasValue && (_game.IsUnderRepair(road.Id) || _game.IsParadeClosed(road.Id))) DrawRepairStripes(p, segment);
             }
@@ -968,11 +978,14 @@ namespace CityHighways.Presentation
                 float length = Mathf.Max(1f, (end - start).magnitude);
                 int cars = road.Length >= 4 ? 2 : 1;
                 bool busy = _game.IsRushHourRoad(road.Id);
+                bool jammed = _game.IsJammed(road.Id);
                 if (busy) cars++;
+                // Загрузка видна по машинкам: каждый маршрут соперника — ещё одна (не больше шести), в пробке они ползут.
+                cars = Mathf.Min(6, cars + _game.TrafficOn(road.Id));
                 int seed = road.Id.GetHashCode();
                 for (int k = 0; k < cars; k++)
                 {
-                    float speed = (busy ? 70f : 45f) / length;
+                    float speed = (jammed ? 9f : busy ? 70f : 45f) / length;
                     float t = Mathf.PingPong(PulseTime * speed + Hash(seed, k, 13) * 2f, 1f);
                     bool forward = Mathf.Repeat(PulseTime * speed + Hash(seed, k, 13) * 2f, 2f) < 1f;
                     var pos = Vector2.Lerp(start, end, t);

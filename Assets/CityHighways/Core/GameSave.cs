@@ -6,7 +6,7 @@ namespace CityHighways.Core
     [Serializable]
     public class GameSaveData
     {
-        public const int CurrentVersion = 9; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки
+        public const int CurrentVersion = 10; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки, 10 — проезд при выполнении, пробки, пропуска
         /// <summary>Самая старая версия, которую ещё можно загрузить (в v2 цели и удача начнутся заново).</summary>
         public const int OldestSupportedVersion = 2;
 
@@ -111,6 +111,24 @@ namespace CityHighways.Core
         public int turnHandStart;
         public bool turnPaidLess;
         public bool[] suspicious;
+
+        // Пропуска в сделках (версия 10)
+        public bool pendingGivePass;
+        public bool pendingGetPass;
+        public bool lastGivePass;
+        public bool lastGetPass;
+    }
+
+    /// <summary>Оплаченный маршрут выполненного контракта (версия 10): путь и проезды по чужим дорогам.</summary>
+    [Serializable]
+    public class PaidRouteSave
+    {
+        public string contract;
+        public string[] path;
+        public string[] roads;
+        public int[] owners;
+        public int[] tolls;
+        public int[] jamFees;
     }
 
     [Serializable]
@@ -148,6 +166,12 @@ namespace CityHighways.Core
         public int penaltyPoints;
         public int bribesGiven;
         public int bribesExposed;
+        // Проезд и пропуска (версия 10)
+        public int tollsPaid;
+        public int tollsEarned;
+        public int jamFees;
+        public PaidRouteSave[] paidRoutes;
+        public int[] passesFrom;
     }
 
     [Serializable]
@@ -198,7 +222,20 @@ namespace CityHighways.Core
                     mayorContract = p.MayorContractId,
                     penaltyPoints = p.PenaltyPoints,
                     bribesGiven = p.BribesGiven,
-                    bribesExposed = p.BribesExposed
+                    bribesExposed = p.BribesExposed,
+                    tollsPaid = p.TollsPaid,
+                    tollsEarned = p.TollsEarned,
+                    jamFees = p.JamFees,
+                    paidRoutes = p.PaidRoutes.Values.OrderBy(r => r.ContractId, StringComparer.Ordinal).Select(r => new PaidRouteSave
+                    {
+                        contract = r.ContractId,
+                        path = r.Path.ToArray(),
+                        roads = r.Passages.Select(x => x.RoadId).ToArray(),
+                        owners = r.Passages.Select(x => x.Owner).ToArray(),
+                        tolls = r.Passages.Select(x => x.Toll).ToArray(),
+                        jamFees = r.Passages.Select(x => x.JamFee).ToArray()
+                    }).ToArray(),
+                    passesFrom = p.PassesFrom.OrderBy(i => i).ToArray()
                 }).ToArray(),
                 drawPile = _deck.DrawPile.Select(c => (int)c).ToArray(),
                 discardPile = _deck.DiscardPile.Select(c => (int)c).ToArray(),
@@ -251,6 +288,10 @@ namespace CityHighways.Core
                 pendingGetInfluence = PendingTrade?.GetInfluence ?? 0,
                 lastGiveInfluence = LastTrade?.GiveInfluence ?? 0,
                 lastGetInfluence = LastTrade?.GetInfluence ?? 0,
+                pendingGivePass = PendingTrade?.GivePass ?? false,
+                pendingGetPass = PendingTrade?.GetPass ?? false,
+                lastGivePass = LastTrade?.GivePass ?? false,
+                lastGetPass = LastTrade?.GetPass ?? false,
                 auctionHeld = _auctionHeld,
                 auctionContract = _auctionContract?.Id,
                 bids = _bids?.ToArray(),
@@ -316,7 +357,8 @@ namespace CityHighways.Core
                    && mine.players.Zip(data.players, (a, b) => a.roadPoints == b.roadPoints && a.roadPieces == b.roadPieces
                                                               && Same(a.hand, b.hand) && Same(a.roads, b.roads)
                                                               && Same(a.contracts, b.contracts)
-                                                              && (data.version < 7 || a.influence == b.influence)).All(x => x);
+                                                              && (data.version < 7 || a.influence == b.influence)
+                                                              && (data.version < 10 || (a.tollsPaid == b.tollsPaid && a.tollsEarned == b.tollsEarned))).All(x => x);
         }
 
         static bool Same<T>(T[] a, T[] b) => (a ?? new T[0]).SequenceEqual(b ?? new T[0]);
@@ -383,6 +425,32 @@ namespace CityHighways.Core
                 player.PenaltyPoints = saved.penaltyPoints;
                 player.BribesGiven = saved.bribesGiven;
                 player.BribesExposed = saved.bribesExposed;
+                player.TollsPaid = saved.tollsPaid;
+                player.TollsEarned = saved.tollsEarned;
+                player.JamFees = saved.jamFees;
+                foreach (var route in saved.paidRoutes ?? new PaidRouteSave[0])
+                {
+                    var contract = FindContract(route.contract);
+                    int n = route.roads?.Length ?? 0;
+                    if (route.owners == null || route.tolls == null || route.jamFees == null
+                        || route.owners.Length != n || route.tolls.Length != n || route.jamFees.Length != n)
+                        throw new FormatException($"Сохранение: неверный маршрут контракта {route.contract}.");
+                    foreach (var id in route.path ?? new string[0]) FindRoad(id);
+                    var passages = new System.Collections.Generic.List<PaidPassage>();
+                    for (int k = 0; k < n; k++)
+                    {
+                        FindRoad(route.roads[k]);
+                        if (route.owners[k] < -1 || route.owners[k] >= players.Length)
+                            throw new FormatException($"Сохранение: неверный владелец дороги {route.roads[k]}.");
+                        passages.Add(new PaidPassage(route.roads[k], route.owners[k], route.tolls[k], route.jamFees[k]));
+                    }
+                    player.PaidRoutes[contract.Id] = new PaidRoute(contract.Id, (route.path ?? new string[0]).ToList(), passages);
+                }
+                foreach (int owner in saved.passesFrom ?? new int[0])
+                {
+                    if (owner < 0 || owner >= players.Length || owner == i) throw new FormatException("Сохранение: неверный пропуск.");
+                    player.PassesFrom.Add(owner);
+                }
                 game._players.Add(player);
             }
 
@@ -470,20 +538,23 @@ namespace CityHighways.Core
             game.StartInfo = data.version >= 5 && data.start != null && data.start.players != null && data.start.players.Length > 0 ? data.start : null;
             game._history.AddRange(data.history ?? new GameCommand[0]);
 
-            TradeOffer ReadTrade(int from, int to, int give, int giveCount, int get, int getCount, int giveInfluence, int getInfluence)
+            TradeOffer ReadTrade(int from, int to, int give, int giveCount, int get, int getCount, int giveInfluence, int getInfluence,
+                bool givePass, bool getPass)
             {
                 if (from < 0) return null;
                 if (from >= players.Length || to < 0 || to >= players.Length || to == from
                     || give < 0 || give >= ResourceInfo.Count || get < 0 || get >= ResourceInfo.Count)
                     throw new FormatException("Сохранение: неверная сделка.");
-                return new TradeOffer(from, to, (Resource)give, giveCount, (Resource)get, getCount, giveInfluence, getInfluence);
+                return new TradeOffer(from, to, (Resource)give, giveCount, (Resource)get, getCount, giveInfluence, getInfluence, givePass, getPass);
             }
             game._tradeUsedThisTurn = data.tradeUsed;
             game.TradeNumber = data.tradeNumber;
             game.PendingTrade = ReadTrade(data.pendingTradeFrom, data.pendingTradeTo, data.pendingGiveResource,
-                data.pendingGiveCount, data.pendingGetResource, data.pendingGetCount, data.pendingGiveInfluence, data.pendingGetInfluence);
+                data.pendingGiveCount, data.pendingGetResource, data.pendingGetCount, data.pendingGiveInfluence, data.pendingGetInfluence,
+                data.pendingGivePass, data.pendingGetPass);
             game.LastTrade = ReadTrade(data.lastTradeFrom, data.lastTradeTo, data.lastGiveResource,
-                data.lastGiveCount, data.lastGetResource, data.lastGetCount, data.lastGiveInfluence, data.lastGetInfluence);
+                data.lastGiveCount, data.lastGetResource, data.lastGetCount, data.lastGiveInfluence, data.lastGetInfluence,
+                data.lastGivePass, data.lastGetPass);
             game._influenceUsedThisTurn = data.influenceUsed;
             game._permitActive = data.permitActive;
             game._auctionHeld = data.auctionHeld;
@@ -537,6 +608,9 @@ namespace CityHighways.Core
                 throw new FormatException("Сохранение: ответ на сделку без сделки.");
             if (game.Phase == GamePhase.ChoosingLuck && game._luckChoice.Count == 0)
                 throw new FormatException("Сохранение: выбор карты удачи без карт.");
+            game.RebuildTraffic();
+            // Старая партия: уже выполненные контракты платят проезд сейчас, по нынешним ценам.
+            if (data.version < 10 && game.Phase != GamePhase.GameOver) game.SettleContracts(quiet: true);
             return game;
         }
     }

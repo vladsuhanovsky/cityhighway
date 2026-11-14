@@ -131,9 +131,17 @@ namespace CityHighways.Core
 
         public bool CanDrawAnyCard() => _deck.AvailableCount > 0 || _faceUp.Any(c => c.HasValue);
 
-        /// <summary>Выполнен ли контракт игрока прямо сейчас и сколько чужих дорог на пути (для интерфейса и ботов).</summary>
-        public ContractCheck CheckContract(int playerIndex, Contract contract) =>
-            Scoring.CheckContract(Map, contract, playerIndex, GetRoadOwner, Config.MaxForeignRoadsPerContract, TollFor);
+        /// <summary>
+        /// Выполнен ли контракт игрока и сколько чужих дорог на пути (для интерфейса и ботов). Выполненный контракт
+        /// показывается по зафиксированному маршруту; невыполненный — по самому дешёвому пути сейчас (с пропусками и пробками).
+        /// </summary>
+        public ContractCheck CheckContract(int playerIndex, Contract contract)
+        {
+            var paid = PaidRouteOf(playerIndex, contract);
+            if (paid != null) return CheckFromPaid(contract, paid);
+            return Scoring.CheckContract(Map, contract, playerIndex, GetRoadOwner, Config.MaxForeignRoadsPerContract,
+                id => TollFor(id, playerIndex), JamFeeFor);
+        }
 
         // ---------------------------------------------------------------- Карта с учётом событий
 
@@ -398,6 +406,7 @@ namespace CityHighways.Core
             Emit($"{player.Name} строит{note} {ResourceInfo.RoadKind(road.Resource)} {Map.LocationName(road.A)} — {Map.LocationName(road.B)} (+{points}).");
             CheckGoals(player);
             AwardInfluenceForRoad(player, road);
+            SettleContracts();
 
             EndTurn();
         }
@@ -544,6 +553,7 @@ namespace CityHighways.Core
                 else returned.Add(contract);
             }
             player.PendingList.Clear();
+            SettleContracts(); // новый контракт мог оказаться уже выполненным
             _contractDeck.ReturnToBottom(returned);
         }
 
@@ -602,6 +612,7 @@ namespace CityHighways.Core
         void FinishGame()
         {
             Phase = GamePhase.GameOver;
+            SettleContracts();
             Result = Scoring.Calculate(Map, _players, GetRoadOwner, TollFor, Config);
             Emit("Игра окончена. Победа: " + string.Join(", ", Result.Winners.Select(w => w.PlayerName)) + ".");
             Changed();

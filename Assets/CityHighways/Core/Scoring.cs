@@ -13,8 +13,12 @@ namespace CityHighways.Core
         public IReadOnlyList<Road> ForeignRoads { get; internal set; } = new Road[0];
         /// <summary>Весь найденный путь (пусто, если контракт не выполнен).</summary>
         public IReadOnlyList<Road> Path { get; internal set; } = new Road[0];
-        /// <summary>Сколько очков стоит проезд по чужим участкам этого пути.</summary>
+        /// <summary>Сколько очков стоит проезд по чужим участкам этого пути (владельцам).</summary>
         public int Toll { get; internal set; }
+        /// <summary>Сколько сверх того сгорает в пробках на этом пути.</summary>
+        public int JamFee { get; internal set; }
+        /// <summary>Маршрут зафиксирован и оплачен (контракт выполнен по ходу партии).</summary>
+        public bool Paid { get; internal set; }
         /// <summary>Сколько плеч контракта уже выполнено (у обычного и транзита плечо одно, у узла — два).</summary>
         public int LegsCompleted { get; internal set; }
         public int LegsTotal { get; internal set; }
@@ -50,8 +54,10 @@ namespace CityHighways.Core
         /// <summary>Штрафы за взятки и ложные обвинения (≤ 0).</summary>
         public int Penalties { get; internal set; }
         public int InfluenceEarned { get; internal set; }
+        /// <summary>Сгорело в пробках (положительное число).</summary>
+        public int JamFees { get; internal set; }
 
-        public int Total => RoadPoints + ContractPoints - TollsPaid + TollsEarned + NetworkBonus + GoalPoints + LuckPoints + CharacterPoints + MayorBonus + Penalties;
+        public int Total => RoadPoints + ContractPoints - TollsPaid - JamFees + TollsEarned + NetworkBonus + GoalPoints + LuckPoints + CharacterPoints + MayorBonus + Penalties;
     }
 
     public sealed class GameResult
@@ -82,9 +88,11 @@ namespace CityHighways.Core
         /// Путь и чужие участки — объединение по плечам; чужой участок, общий для двух плеч узла,
         /// оплачивается один раз.
         /// </summary>
+        /// <param name="jamOf">Доплата за пробку на дороге (городу); null — без пробок. Путь выбирается по сумме.</param>
         public static ContractCheck CheckContract(CityMap map, Contract contract, int playerIndex,
-            Func<string, int?> ownerOf, int maxForeign, Func<string, int> tollOf)
+            Func<string, int?> ownerOf, int maxForeign, Func<string, int> tollOf, Func<string, int> jamOf = null)
         {
+            Func<string, int> costOf = jamOf == null ? tollOf : id => tollOf(id) + jamOf(id);
             var result = new ContractCheck { Contract = contract, LegsTotal = contract.Legs.Count };
             var path = new List<Road>();
             var foreign = new List<Road>();
@@ -92,7 +100,7 @@ namespace CityHighways.Core
             bool all = true;
             foreach (var leg in contract.Legs)
             {
-                var legPath = CheckLeg(map, leg, playerIndex, ownerOf, maxForeign, tollOf);
+                var legPath = CheckLeg(map, leg, playerIndex, ownerOf, maxForeign, costOf);
                 if (legPath == null)
                 {
                     all = false;
@@ -112,6 +120,7 @@ namespace CityHighways.Core
             result.Path = path;
             result.ForeignRoads = foreign;
             result.Toll = foreign.Sum(r => tollOf(r.Id));
+            result.JamFee = jamOf == null ? 0 : foreign.Sum(r => jamOf(r.Id));
             return result;
         }
 
@@ -242,6 +251,18 @@ namespace CityHighways.Core
                 var score = scores[player.Index];
                 foreach (var contract in player.Contracts)
                 {
+                    // Контракт, выполненный по ходу партии, уже заплатил проезд по своему маршруту.
+                    if (player.PaidRoutes.TryGetValue(contract.Id, out var paid))
+                    {
+                        AddContract(score, player, contract, config);
+                        foreach (var passage in paid.Passages)
+                        {
+                            score.TollsPaid += passage.Toll;
+                            score.JamFees += passage.JamFee;
+                            if (passage.Owner >= 0 && passage.Owner < scores.Count) scores[passage.Owner].TollsEarned += passage.Toll;
+                        }
+                        continue;
+                    }
                     var check = CheckContract(map, contract, player.Index, ownerOf, config.MaxForeignRoadsPerContract, tollOf);
                     if (!check.Completed)
                     {
@@ -250,10 +271,7 @@ namespace CityHighways.Core
                         continue;
                     }
 
-                    score.ContractPoints += contract.Points;
-                    score.CompletedContracts++;
-                    if (contract.Id == player.MayorContractId) score.MayorBonus += config.AuctionBonus;
-                    if (player.Character == CharacterKind.Official) score.CharacterPoints += config.OfficialBonusPerContract;
+                    AddContract(score, player, contract, config);
                     foreach (var road in check.ForeignRoads)
                     {
                         int toll = tollOf(road.Id);
@@ -270,6 +288,14 @@ namespace CityHighways.Core
                     if (score.NetworkDistricts == best) score.NetworkBonus = config.NetworkBonus;
 
             return new GameResult(scores);
+        }
+
+        static void AddContract(PlayerScore score, PlayerState player, Contract contract, GameConfig config)
+        {
+            score.ContractPoints += contract.Points;
+            score.CompletedContracts++;
+            if (contract.Id == player.MayorContractId) score.MayorBonus += config.AuctionBonus;
+            if (player.Character == CharacterKind.Official) score.CharacterPoints += config.OfficialBonusPerContract;
         }
     }
 

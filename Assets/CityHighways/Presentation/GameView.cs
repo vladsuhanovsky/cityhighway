@@ -95,6 +95,17 @@ namespace CityHighways.Presentation
             public int EventNumber;
             public int LuckNumber;
             public readonly Dictionary<string, int> GoalOwners = new Dictionary<string, int>();
+            /// <summary>Сколько каждому заплатили за проезд и какие дороги в пробке.</summary>
+            public int[] Earned;
+            public readonly HashSet<string> Jammed = new HashSet<string>();
+        }
+
+        static string Plural(int n, string one, string few, string many)
+        {
+            int m10 = n % 10, m100 = n % 100;
+            if (m10 == 1 && m100 != 11) return one;
+            if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+            return many;
         }
 
         readonly CityHighwaysApp _app;
@@ -863,9 +874,19 @@ namespace CityHighways.Presentation
                 text += "\nПостроил: " + _game.Players[owner.Value].Name;
                 if (_game.IsRushHourRoad(road.Id))
                     text += $"\n<color=#FF9A33>Загруженная магистраль (час пик): проезд ×{_game.Config.RushHourTollMultiplier}</color>";
+                int traffic = _game.TrafficOn(road.Id);
+                if (traffic > 0) text += $"\nЗагрузка: {traffic} {Plural(traffic, "маршрут", "маршрута", "маршрутов")} соперников";
+                if (_game.IsJammed(road.Id))
+                    text += $"\n<color=#FF6B5B>Пробка: проезд ещё +{_game.Config.JamFee} очк. городу. Владелец может улучшить дорогу до магистрали.</color>";
+                else if (_game.Config.JamThreshold > 0 && !_game.IsRushHourRoad(road.Id) && traffic == _game.Config.JamThreshold - 1)
+                    text += "\n<color=#FFB35B>Ещё один маршрут — и здесь пробка</color>";
                 int viewer = Viewer;
                 if (owner.Value != viewer && !IsBot(viewer))
-                    text += $"\nПроезд для вас: −{_game.TollFor(road.Id)} очк. владельцу";
+                {
+                    if (_game.HasPass(viewer, owner.Value)) text += "\nУ вас пропуск: проезд владельцу бесплатно";
+                    else text += $"\nПроезд для вас: −{_game.TollFor(road.Id, viewer)} очк. владельцу";
+                    if (_game.IsJammed(road.Id)) text += $" и −{_game.JamFeeFor(road.Id)} городу";
+                }
                 return text;
             }
             if (_game.IsUnderRepair(road.Id)) text += "\n<color=#FF6B6B>Ремонт: закрыт до конца круга</color>";
@@ -916,7 +937,8 @@ namespace CityHighways.Presentation
                 Phase = _game.Phase,
                 ContractDeck = _game.ContractDeckCount,
                 EventNumber = _game.EventNumber,
-                LuckNumber = _game.LuckNumber
+                LuckNumber = _game.LuckNumber,
+                Earned = _game.Players.Select(p => p.TollsEarned).ToArray()
             };
             foreach (var goal in _game.ActiveGoals)
             {
@@ -935,6 +957,7 @@ namespace CityHighways.Presentation
             {
                 var owner = _game.GetRoadOwner(route.Id);
                 if (owner.HasValue) s.Owners[route.Id] = owner.Value;
+                if (owner.HasValue && _game.IsJammed(route.Id)) s.Jammed.Add(route.Id);
             }
             return s;
         }
@@ -1064,6 +1087,26 @@ namespace CityHighways.Presentation
                 });
             }
 
+            // Проезд по дорогам того, кто сидит за экраном, и новые пробки.
+            int me = Viewer;
+            if (before.Earned != null && now.Earned != null && me >= 0 && me < now.Earned.Length && me < before.Earned.Length
+                && !IsBot(me) && now.Earned[me] > before.Earned[me])
+            {
+                int gain = now.Earned[me] - before.Earned[me];
+                _app.Tweener.After(claimDuration + 0.3f, () =>
+                    Toast($"Соперник проехал по вашим дорогам: +{gain} очк.", Theme.Accent));
+            }
+            foreach (var roadId in now.Jammed)
+            {
+                if (before.Jammed.Contains(roadId)) continue;
+                var jammedRoad = _game.Map.GetRoad(roadId);
+                if (jammedRoad == null) continue;
+                bool mine = now.Owners.TryGetValue(roadId, out var jamOwner) && jamOwner == me && !IsBot(me);
+                string text = $"Пробка: {LocationName(jammedRoad.A)} — {LocationName(jammedRoad.B)}" +
+                              (mine ? ". Улучшите дорогу до магистрали, чтобы её разгрузить" : $" — проезд дороже на {_game.Config.JamFee}");
+                _app.Tweener.After(claimDuration + 0.5f, () => Toast(text, Theme.Danger));
+            }
+
             // Выполненные контракты того, кто сидит за экраном.
             foreach (var key in now.Completed)
             {
@@ -1075,10 +1118,11 @@ namespace CityHighways.Presentation
 
                 var contract = _game.Players[playerIndex].Contracts.FirstOrDefault(c => c.Id == contractId);
                 if (contract == null) continue;
-                int contractToll = _game.CheckContract(playerIndex, contract).Toll;
+                var paidCheck = _game.CheckContract(playerIndex, contract);
+                int contractToll = paidCheck.Toll + paidCheck.JamFee;
                 _app.Tweener.After(claimDuration, () =>
                 {
-                    string toll = contractToll > 0 ? $"  (проезд −{contractToll})" : "";
+                    string toll = contractToll > 0 ? $"  (проезд −{contractToll}{(paidCheck.JamFee > 0 ? ", с пробкой" : "")})" : "";
                     Toast($"Контракт выполнен: {ContractTitle(contract)}  +{contract.Points}{toll}", Theme.Success);
                     // Салют над районами контракта.
                     foreach (var district in contract.Districts)
@@ -1605,7 +1649,8 @@ namespace CityHighways.Presentation
                 row.Ability.text = player.Character == CharacterKind.None ? "" : Characters.Ability(player.Character, _game.Config)
                     + (player.Character == CharacterKind.Foreman ? $" Осталось: {player.FreeRoadsLeft}." : "");
                 Ui.Show(row.Ability, active && player.Character != CharacterKind.None);
-                int points = player.RoadPoints + player.GoalPoints + player.LuckPoints;
+                // Видимые очки: дороги, цели, удача, штрафы и проезд (он платится по ходу партии). Контракты секретны.
+                int points = _game.VisibleScore(player);
                 row.Stats.text = $"{points} очк · {player.RoadPieces} уч · {player.HandSize} карт"
                                  + (_game.Config.InfluenceEnabled ? $" · {player.Influence} вл" : "");
                 row.Root.style.backgroundColor = active ? Theme.PanelHover : Theme.PanelLight;
@@ -1762,7 +1807,11 @@ namespace CityHighways.Presentation
             }
             texts.Add(DistrictPair(contract, statusStyle && marked ? Theme.TextDim : Theme.Text));
             if (statusStyle && marked && foreign > 0)
-                texts.Add(Ui.Text($"через {foreign} чужих уч. · проезд −{toll}", 11f, Theme.Accent));
+            {
+                string jam = check.JamFee > 0 ? $" · пробка −{check.JamFee}" : "";
+                string paid = check.Paid ? "оплачено: " : "";
+                texts.Add(Ui.Text($"{paid}через {foreign} чужих уч. · проезд −{toll}{jam}", 11f, Theme.Accent));
+            }
             row.Add(texts);
 
             bool pinned = statusStyle && IsPinned(playerIndex, contract);
@@ -2283,14 +2332,17 @@ namespace CityHighways.Presentation
             int max = _game.Config.TradeMaxCards;
             bool influenceOn = _game.Config.InfluenceEnabled;
             int maxInfluence = influenceOn ? _game.Config.TradeMaxInfluence : 0;
-            int minCards = influenceOn ? 0 : 1; // с влиянием одна из сторон может быть без карт
+            bool passesOn = _game.Config.PassesEnabled;
+            bool givePass = false, getPass = false;
+            int minCards = influenceOn || passesOn ? 0 : 1; // с влиянием или пропуском одна из сторон может быть без карт
 
             var box = DialogBox(560f);
             Ui.Border(box, 2f, Theme.Accent);
             box.Add(Ui.Text("Сделка", 26f, Theme.Accent, true));
-            var note = Ui.Text(influenceOn
-                ? "Одна сделка за ход, до основного действия. Ход она не тратит. Можно доплатить влиянием или купить карты за влияние."
-                : "Одна сделка за ход, до основного действия. Ход она не тратит.", 13f, Theme.TextDim);
+            var note = Ui.Text("Одна сделка за ход, до основного действия. Ход она не тратит."
+                               + (influenceOn ? " Можно доплатить влиянием или купить карты за влияние." : "")
+                               + (passesOn ? " Пропуск — бесплатный проезд по всем дорогам продавца до конца партии (пробочный сбор городу остаётся)." : ""),
+                13f, Theme.TextDim);
             note.style.whiteSpace = WhiteSpace.Normal;
             note.style.marginBottom = 14f;
             box.Add(note);
@@ -2301,12 +2353,15 @@ namespace CityHighways.Presentation
 
             void RefreshSummary()
             {
-                summary.text = $"{_game.Players[to].Name} получит {TradeOffer.Side(giveCount, give, giveInfluence)}, " +
-                               $"а вы — {TradeOffer.Side(getCount, get, getInfluence)}. У вас {Palette.CardTitle(give)}: {me.CardCount(give)}"
-                               + (influenceOn ? $", влияния: {me.Influence}." : ".");
-                bool valid = giveCount + giveInfluence > 0 && getCount + getInfluence > 0
+                string passProblem = givePass && _game.HasPass(to, me.Index) ? $" У {_game.Players[to].Name} уже есть ваш пропуск."
+                    : getPass && _game.HasPass(me.Index, to) ? $" У вас уже есть пропуск {_game.Players[to].Name}." : "";
+                summary.text = $"{_game.Players[to].Name} получит {TradeOffer.Side(giveCount, give, giveInfluence, givePass)}, " +
+                               $"а вы — {TradeOffer.Side(getCount, get, getInfluence, getPass)}. У вас {Palette.CardTitle(give)}: {me.CardCount(give)}"
+                               + (influenceOn ? $", влияния: {me.Influence}." : ".") + passProblem;
+                bool valid = (giveCount + giveInfluence > 0 || givePass) && (getCount + getInfluence > 0 || getPass)
                              && !(giveCount > 0 && getCount > 0 && give == get)
-                             && me.CardCount(give) >= giveCount && me.Influence >= giveInfluence;
+                             && me.CardCount(give) >= giveCount && me.Influence >= giveInfluence
+                             && passProblem.Length == 0;
                 Ui.SetEnabled(propose, valid);
             }
 
@@ -2364,11 +2419,13 @@ namespace CityHighways.Presentation
             giveRow.Add(Counter(() => giveCount, v => giveCount = v, minCards, max));
             box.Add(Line("Отдаю", giveRow));
             if (influenceOn) box.Add(Line("…и влияния", Counter(() => giveInfluence, v => giveInfluence = v, 0, maxInfluence)));
+            if (passesOn) box.Add(Line("…и пропуск", Cycle(() => givePass ? "Мой пропуск: да" : "Мой пропуск: нет", () => givePass = !givePass)));
             var getRow = Ui.Row();
             getRow.Add(Cycle(() => Palette.CardTitle(get), () => get = NextResource(get)));
             getRow.Add(Counter(() => getCount, v => getCount = v, minCards, max));
             box.Add(Line("Прошу", getRow));
             if (influenceOn) box.Add(Line("…и влияния", Counter(() => getInfluence, v => getInfluence = v, 0, maxInfluence)));
+            if (passesOn) box.Add(Line("…и пропуск", Cycle(() => getPass ? "Его пропуск: да" : "Его пропуск: нет", () => getPass = !getPass)));
 
             summary.style.marginTop = 6f;
             summary.style.marginBottom = 16f;
@@ -2382,7 +2439,7 @@ namespace CityHighways.Presentation
             propose.clicked += () =>
             {
                 HideOverlay();
-                Act(() => _game.ProposeTrade(to, give, giveCount, get, getCount, giveInfluence, getInfluence));
+                Act(() => _game.ProposeTrade(to, give, giveCount, get, getCount, giveInfluence, getInfluence, givePass, getPass));
             };
             buttons.Add(propose);
             box.Add(buttons);
@@ -2405,8 +2462,12 @@ namespace CityHighways.Presentation
             box.Add(who);
             string mine = offer.GetCount > 0 ? $"у вас {me.CardCount(offer.GetResource)} × {Palette.CardTitle(offer.GetResource)}" : "";
             if (offer.GetInfluence > 0) mine += (mine.Length > 0 ? ", " : "") + $"влияния {me.Influence}";
-            var text = Ui.Text($"Вы получите {TradeOffer.Side(offer.GiveCount, offer.GiveResource, offer.GiveInfluence)}\n" +
-                               $"и отдадите {TradeOffer.Side(offer.GetCount, offer.GetResource, offer.GetInfluence)} ({mine}).", 17f, Theme.Text);
+            string passNote = offer.GivePass || offer.GetPass
+                ? "\n<size=13>Пропуск — бесплатный проезд по всем дорогам продавца до конца партии.</size>" : "";
+            var text = Ui.Text($"Вы получите {TradeOffer.Side(offer.GiveCount, offer.GiveResource, offer.GiveInfluence, offer.GivePass)}\n" +
+                               $"и отдадите {TradeOffer.Side(offer.GetCount, offer.GetResource, offer.GetInfluence, offer.GetPass)}" +
+                               (mine.Length > 0 ? $" ({mine})" : "") + "." + passNote, 17f, Theme.Text);
+            text.style.whiteSpace = WhiteSpace.Normal;
             text.style.unityTextAlign = TextAnchor.MiddleCenter;
             text.style.marginTop = 14f;
             text.style.marginBottom = 20f;
@@ -2433,7 +2494,8 @@ namespace CityHighways.Presentation
             Ui.Border(box, 2f, new Color(1f, 0.60f, 0.20f));
 
             box.Add(Ui.Text($"{LocationName(route.A)} — {LocationName(route.B)}: улучшить до магистрали?", 15f, null, true));
-            var info = Ui.Text($"Стоит {cost} карт(ы), занимает ход. +{_game.Config.UpgradePoints} очка, проезд для соперников ×{_game.Config.RushHourTollMultiplier}.", 12f, Theme.TextDim);
+            var info = Ui.Text($"Стоит {cost} карт(ы), занимает ход. +{_game.Config.UpgradePoints} очка, дальше проезд для соперников ×{_game.Config.RushHourTollMultiplier}" +
+                               (_game.IsJammed(route.Id) ? ", и пробка на ней исчезнет." : ". Магистраль не встаёт в пробку."), 12f, Theme.TextDim);
             info.style.whiteSpace = WhiteSpace.Normal;
             info.style.marginTop = 4f;
             box.Add(info);
@@ -2556,8 +2618,8 @@ namespace CityHighways.Presentation
             {
                 string contracts = $"{s.ContractPoints:+#;-#;0} ({s.CompletedContracts} из {s.CompletedContracts + s.FailedContracts})"
                                    + (s.MayorBonus > 0 ? $" ★+{s.MayorBonus}" : "");
-                int tollBalance = s.TollsEarned - s.TollsPaid;
-                string tolls = $"{tollBalance:+#;-#;0}";
+                int tollBalance = s.TollsEarned - s.TollsPaid - s.JamFees;
+                string tolls = $"{tollBalance:+#;-#;0}" + (s.JamFees > 0 ? $" (пробки −{s.JamFees})" : "");
                 string network = s.NetworkDistricts + " р." + (s.NetworkBonus > 0 ? $" (+{s.NetworkBonus})" : "");
                 string character = s.Character == CharacterKind.None ? "—" : s.CharacterPoints > 0 ? "+" + s.CharacterPoints : "0";
                 var cells = new[] { $"{place}. {s.PlayerName}", s.RoadPoints.ToString(), contracts, tolls, network,

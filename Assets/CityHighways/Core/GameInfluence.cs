@@ -190,8 +190,9 @@ namespace CityHighways.Core
                 if (visible[i] == worst) EarnInfluence(_players[i], Config.InfluenceCatchUp, "поддержка отстающих");
         }
 
-        /// <summary>Очки, которые видны всем во время партии (без контрактов, они секретны).</summary>
-        public int VisibleScore(PlayerState player) => player.RoadPoints + player.GoalPoints + player.LuckPoints + player.PenaltyPoints;
+        /// <summary>Очки, которые видны всем во время партии (без контрактов, они секретны; проезд платится открыто).</summary>
+        public int VisibleScore(PlayerState player) => player.RoadPoints + player.GoalPoints + player.LuckPoints + player.PenaltyPoints
+                                                       + player.TollsEarned - player.TollsPaid - player.JamFees;
 
         void ResetInfluenceTurn()
         {

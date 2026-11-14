@@ -194,6 +194,16 @@ namespace CityHighways.Core
                 return false;
             // Влияние бот отдаёт неохотно: не больше половины своего запаса.
             if (offer.GetInfluence > me.Influence / 2) return false;
+            if (offer.GivePass || offer.GetPass)
+            {
+                // Пропуск бот оценивает по тому, сколько раз уже ездили друг по другу: каждый проезд ≈ одна плата.
+                int theyUseMine = TimesUsed(game, offer.From, me.Index);
+                int iUseTheirs = TimesUsed(game, me.Index, offer.From);
+                int toll = game.Config.TollPerRoad;
+                int value = offer.GiveCount + offer.GiveInfluence + (offer.GivePass ? 1 + toll * iUseTheirs : 0);
+                int cost = offer.GetCount + offer.GetInfluence + (offer.GetPass ? 2 + toll * theyUseMine : 0);
+                return value > cost;
+            }
             bool useful = offer.GiveCount > 0
                           && (a.Need[(int)offer.GiveResource] > me.CardCount(offer.GiveResource)
                               || (a.LongestAnyNeed > 0 && offer.GiveResource != Resource.Machinery));
@@ -201,6 +211,10 @@ namespace CityHighways.Core
             // Ненужное берём, только если получаем больше, чем отдаём (карта ≈ единица влияния).
             return offer.GiveCount + offer.GiveInfluence > offer.GetCount + offer.GetInfluence;
         }
+
+        /// <summary>Сколько раз игрок user уже платил за проезд по дорогам owner.</summary>
+        static int TimesUsed(Game game, int user, int owner) =>
+            game.Players[user].PaidRouteList.Values.Sum(r => r.Passages.Count(p => p.Owner == owner));
 
         // ================================================================== Влияние
 
@@ -388,13 +402,16 @@ namespace CityHighways.Core
                 var any = Affordable(game, game.Map.Roads);
                 if (any.Count > 0) return Build(game, a, Longest(any));
 
-                // Строить нечего — улучшаем самую «проезжую» свою дорогу (больше всего соседних дорог).
+                // Строить нечего — улучшаем свою дорогу: сначала ту, что в пробке, потом самую загруженную,
+                // потом самую «проезжую» (больше всего соседних дорог).
                 if (UseUpgrades)
                 {
                     var upgrade = me.Roads
                         .Select(r => (road: r, options: game.GetUpgradeOptions(r.Id)))
                         .Where(x => x.options.Count > 0)
-                        .OrderByDescending(x => game.Map.RoadsAt(x.road.A).Count() + game.Map.RoadsAt(x.road.B).Count())
+                        .OrderByDescending(x => game.IsJammed(x.road.Id))
+                        .ThenByDescending(x => game.TrafficOn(x.road.Id))
+                        .ThenByDescending(x => game.Map.RoadsAt(x.road.A).Count() + game.Map.RoadsAt(x.road.B).Count())
                         .ThenByDescending(x => x.road.Length)
                         .ThenByDescending(x => x.road.Id, StringComparer.Ordinal)
                         .FirstOrDefault();

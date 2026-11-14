@@ -4,8 +4,9 @@ using System.Collections.Generic;
 namespace CityHighways.Core
 {
     /// <summary>
-    /// Предложение обмена: From отдаёт GiveCount карт GiveResource и GiveInfluence влияния, а получает от To
-    /// GetCount карт GetResource и GetInfluence влияния. Любая сторона может быть только картами или только влиянием.
+    /// Предложение обмена: From отдаёт GiveCount карт GiveResource, GiveInfluence влияния и (GivePass) пропуск по своим
+    /// дорогам, а получает от To GetCount карт GetResource, GetInfluence влияния и (GetPass) пропуск по дорогам To.
+    /// Каждая сторона может состоять из чего угодно из этого, но не из пустоты.
     /// </summary>
     public sealed class TradeOffer
     {
@@ -17,10 +18,15 @@ namespace CityHighways.Core
         public int GetCount { get; }
         public int GiveInfluence { get; }
         public int GetInfluence { get; }
+        /// <summary>From даёт To пропуск по своим дорогам / просит у To пропуск по его дорогам.</summary>
+        public bool GivePass { get; }
+        public bool GetPass { get; }
 
         public TradeOffer(int from, int to, Resource giveResource, int giveCount, Resource getResource, int getCount,
-            int giveInfluence = 0, int getInfluence = 0)
+            int giveInfluence = 0, int getInfluence = 0, bool givePass = false, bool getPass = false)
         {
+            GivePass = givePass;
+            GetPass = getPass;
             From = from;
             To = to;
             GiveResource = giveResource;
@@ -31,17 +37,18 @@ namespace CityHighways.Core
             GetInfluence = getInfluence;
         }
 
-        public static string Side(int count, Resource resource, int influence)
+        public static string Side(int count, Resource resource, int influence, bool pass = false)
         {
             var parts = new List<string>();
             if (count > 0) parts.Add($"{count} × {ResourceInfo.RussianName(resource)}");
             if (influence > 0) parts.Add($"{influence} влияния");
+            if (pass) parts.Add("пропуск по дорогам");
             return parts.Count > 0 ? string.Join(" и ", parts) : "ничего";
         }
 
         public string Describe(Game game) =>
             $"{game.Players[From].Name} предлагает {game.Players[To].Name}: " +
-            $"{Side(GiveCount, GiveResource, GiveInfluence)} за {Side(GetCount, GetResource, GetInfluence)}";
+            $"{Side(GiveCount, GiveResource, GiveInfluence, GivePass)} за {Side(GetCount, GetResource, GetInfluence, GetPass)}";
     }
 
     // Сделки между игроками и улучшение дорог.
@@ -64,7 +71,7 @@ namespace CityHighways.Core
             Config.TradesEnabled && Phase == GamePhase.AwaitingAction && !_tradeUsedThisTurn && _players.Count > 1;
 
         ActionResult DoProposeTrade(int to, Resource giveResource, int giveCount, Resource getResource, int getCount,
-            int giveInfluence = 0, int getInfluence = 0)
+            int giveInfluence = 0, int getInfluence = 0, bool givePass = false, bool getPass = false)
         {
             if (!Config.TradesEnabled) return ActionResult.Fail("Сделки выключены.");
             if (Phase != GamePhase.AwaitingAction) return ActionResult.Fail("Сделку можно предложить только в начале хода.");
@@ -75,15 +82,19 @@ namespace CityHighways.Core
                 return ActionResult.Fail($"В сделке до {Config.TradeMaxCards} карт с каждой стороны.");
             if (giveInfluence < 0 || giveInfluence > maxInfluence || getInfluence < 0 || getInfluence > maxInfluence)
                 return ActionResult.Fail(maxInfluence > 0 ? $"В сделке до {maxInfluence} влияния с каждой стороны." : "Влияние выключено.");
-            if (giveCount + giveInfluence == 0 || getCount + getInfluence == 0)
-                return ActionResult.Fail("Каждая сторона должна что-то отдать: карты или влияние.");
+            if ((givePass || getPass) && !Config.PassesEnabled) return ActionResult.Fail("Пропуска выключены.");
+            if (givePass && HasPass(to, CurrentPlayerIndex)) return ActionResult.Fail($"У {_players[to].Name} уже есть ваш пропуск.");
+            if (getPass && HasPass(CurrentPlayerIndex, to)) return ActionResult.Fail($"У вас уже есть пропуск {_players[to].Name}.");
+            if ((giveCount + giveInfluence == 0 && !givePass) || (getCount + getInfluence == 0 && !getPass))
+                return ActionResult.Fail("Каждая сторона должна что-то отдать: карты, влияние или пропуск.");
             if (giveCount > 0 && getCount > 0 && giveResource == getResource) return ActionResult.Fail("Меняют разные ресурсы.");
             var me = CurrentPlayer;
             if (giveCount > 0 && me.CardCount(giveResource) < giveCount) return ActionResult.Fail("У вас нет столько карт.");
             if (me.Influence < giveInfluence) return ActionResult.Fail("У вас нет столько влияния.");
 
             _tradeUsedThisTurn = true;
-            var offer = new TradeOffer(me.Index, to, giveResource, giveCount, getResource, getCount, giveInfluence, getInfluence);
+            var offer = new TradeOffer(me.Index, to, giveResource, giveCount, getResource, getCount, giveInfluence, getInfluence,
+                givePass, getPass);
             Emit(offer.Describe(this) + ".");
 
             if ((getCount > 0 && _players[to].CardCount(getResource) < getCount) || _players[to].Influence < getInfluence)
@@ -117,7 +128,11 @@ namespace CityHighways.Core
                 for (int i = 0; i < offer.GetCount; i++) from.AddCard(offer.GetResource);
                 from.Influence += offer.GetInfluence - offer.GiveInfluence;
                 to.Influence += offer.GiveInfluence - offer.GetInfluence;
+                if (offer.GivePass) to.PassesFrom.Add(from.Index);
+                if (offer.GetPass) from.PassesFrom.Add(to.Index);
                 Emit($"{to.Name} соглашается на сделку.");
+                if (offer.GivePass) Emit($"{to.Name} теперь ездит по дорогам {from.Name} бесплатно.");
+                if (offer.GetPass) Emit($"{from.Name} теперь ездит по дорогам {to.Name} бесплатно.");
             }
             else Emit($"{to.Name} отказывается от сделки.");
 

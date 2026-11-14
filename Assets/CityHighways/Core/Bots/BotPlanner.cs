@@ -94,7 +94,7 @@ namespace CityHighways.Core
                     {
                         if (foreignUsed + 1 > maxForeign) continue;
                         // Магистраль часа пик дороже — во столько же раз дороже и для планировщика.
-                        weight = _foreignCost * _game.TollFor(road.Id) / _game.Config.TollPerRoad;
+                        weight = _foreignCost * _game.PassageCost(road.Id, _me) / _game.Config.TollPerRoad; // с пропуском и пробкой
                         nextForeign = foreignUsed + 1;
                         nextOwn = hasOwn;
                     }
@@ -157,7 +157,7 @@ namespace CityHighways.Core
                         }
                         else if (owner.Value != _me)
                         {
-                            tolls[road.Id] = _game.TollFor(road.Id);
+                            tolls[road.Id] = _game.PassageCost(road.Id, _me);
                         }
                     }
                 }

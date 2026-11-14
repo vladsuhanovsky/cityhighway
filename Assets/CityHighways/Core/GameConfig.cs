@@ -125,6 +125,17 @@ namespace CityHighways.Core
         public int BribeWhistleReward = 2;
         public int FalseAccusationFine = 3;
 
+        /// <summary>
+        /// Пробки: контракт платит проезд в момент выполнения, его маршрут фиксируется. Обычная дорога, по которой едут
+        /// JamThreshold и больше маршрутов соперников владельца, — в пробке: следующий проезд стоит ещё JamFee очков
+        /// (они сгорают). Магистраль в пробку не встаёт. 0 — без пробок. Подобрано на модели Tools~/ch_traffic.py:
+        /// за столом на 4 к концу партии в пробке около трёх дорог, в дуэли — меньше одной.
+        /// </summary>
+        public int JamThreshold = 2;
+        public int JamFee = 2;
+        /// <summary>Пропуск: в сделке можно отдать бесплатный проезд по всем своим дорогам до конца партии.</summary>
+        public bool PassesEnabled = true;
+
         /// <summary>Сколько общих целей мэрии открывается в начале партии (из пула карты).</summary>
         public int MayorGoalsDealt = 3;
 
