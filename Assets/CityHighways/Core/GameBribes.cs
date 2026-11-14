@@ -48,11 +48,13 @@ namespace CityHighways.Core
     }
 
     /// <summary>
-    /// Взятки и разоблачения. Взятку даёт текущий игрок тайно: в журнале все видят только «в мэрии кто-то
-    /// шепчется», без имени. Следы взятки держатся до начала следующего хода давшего — до тех пор любой
-    /// соперник в свой ход может обвинить его. Угадал — давший платит штраф за каждую раскрытую взятку,
-    /// а обвинитель получает влияние; ошибся — штраф платит обвинитель. Улики — то, что видно всем:
-    /// рука выросла сильнее обычного, дорога обошлась дешевле.
+    /// Взятки и разоблачения (только при BribesMinPlayers игроках и больше). Взятку даёт текущий игрок тайно:
+    /// в момент взятки никто ничего не видит. В начале следующего круга объявляется только число взяток
+    /// прошлого круга — без имён и без того, когда это было. Раскрыть взятку можно до конца круга после неё:
+    /// любой в свой ход может обвинить любого соперника. Угадал — давший платит штраф (BribeFineFor) за каждую
+    /// раскрытую взятку, а обвинитель получает влияние; ошибся — штраф платит обвинитель. Улики — то, что видно
+    /// всем: рука за ход выросла на 3 карты и больше, дорога обошлась дешевле своей длины (так бывает и честно:
+    /// сделка, «Поставка», субсидия, Мостовик).
     /// </summary>
     public sealed partial class Game
     {
@@ -60,17 +62,28 @@ namespace CityHighways.Core
         {
             public int Player;
             public BribeKind Kind;
+            /// <summary>Круг, в котором дана взятка.</summary>
+            public int Round;
         }
+
+        /// <summary>Номер круга (растёт в начале каждого круга).</summary>
+        public int RoundNumber { get; private set; }
 
         readonly List<BribeRecord> _bribes = new List<BribeRecord>();
         bool _bribedThisTurn;
         bool _accusedThisTurn;
         bool _discountActive;
 
-        /// <summary>Сколько взяток сейчас «на виду» (их можно раскрыть). Число открытое: каждая взятка объявляется шёпотом.</summary>
-        public int ActiveBribes => _bribes.Count;
-        /// <summary>Растёт с каждой взяткой — интерфейс показывает «кто-то шепчется».</summary>
+        /// <summary>Все нераскрытые взятки — тайна, только для тестов.</summary>
+        internal int ActiveBribes => _bribes.Count;
+        /// <summary>Сколько взяток прошлого круга ещё не раскрыто — это число объявлено всем.</summary>
+        public int AnnouncedBribes => BribesAllowed ? _bribes.Count(b => b.Round == RoundNumber - 1) : 0;
+        /// <summary>Сколько взяток было объявлено в начале этого круга.</summary>
+        public int LastWhisperCount { get; private set; }
+        /// <summary>Растёт, когда в начале круга объявляют о взятках прошлого круга.</summary>
         public int WhisperNumber { get; private set; }
+        /// <summary>Взятки вообще возможны в этой партии.</summary>
+        public bool BribesAllowed => Config.BribesEnabled && Config.InfluenceEnabled && _players.Count >= Config.BribesMinPlayers;
         public bool BribedThisTurn => _bribedThisTurn;
         public bool AccusedThisTurn => _accusedThisTurn;
         /// <summary>У текущего игрока в этот ход скидка от взятки (видно только ему в интерфейсе).</summary>
@@ -81,6 +94,7 @@ namespace CityHighways.Core
         public string GetBribeBlocker(BribeKind kind)
         {
             if (!Config.BribesEnabled || !Config.InfluenceEnabled) return "Взятки выключены.";
+            if (!BribesAllowed) return $"Взятки — только когда игроков {Config.BribesMinPlayers} и больше.";
             if (Phase != GamePhase.AwaitingAction) return "Взятку дают в начале хода, до основного действия.";
             if (_bribedThisTurn) return "Одна взятка за ход.";
             int cost = BribeInfo.Cost(kind, Config);
@@ -99,11 +113,10 @@ namespace CityHighways.Core
             player.InfluenceSpent += cost;
             player.BribesGiven++;
             _bribedThisTurn = true;
-            _bribes.Add(new BribeRecord { Player = player.Index, Kind = kind });
+            _bribes.Add(new BribeRecord { Player = player.Index, Kind = kind, Round = RoundNumber });
             if (kind == BribeKind.Discount) _discountActive = true;
             else if (_deck.TryDraw(out var card)) player.AddCard(card);
-            WhisperNumber++;
-            Emit("В мэрии кто-то шепчется: дана взятка. Её можно раскрыть, пока давший не начал свой следующий ход.");
+            // В журнал ничего: о взятке узнают только в начале следующего круга — числом, без имени.
             Changed();
             return ActionResult.Ok();
         }
@@ -111,6 +124,7 @@ namespace CityHighways.Core
         public string GetAccuseBlocker(int accused)
         {
             if (!Config.BribesEnabled || !Config.InfluenceEnabled) return "Взятки выключены.";
+            if (!BribesAllowed) return $"Взятки — только когда игроков {Config.BribesMinPlayers} и больше.";
             if (Phase != GamePhase.AwaitingAction) return "Обвинить можно в начале своего хода.";
             if (_accusedThisTurn) return "Одно обвинение за ход.";
             if (accused < 0 || accused >= _players.Count || accused == CurrentPlayerIndex) return "Выберите соперника.";
@@ -127,7 +141,7 @@ namespace CityHighways.Core
             int exposed = _bribes.RemoveAll(b => b.Player == accused);
             if (exposed > 0)
             {
-                int fine = Config.BribeFine * exposed;
+                int fine = Config.BribeFineFor(_players.Count) * exposed;
                 suspect.PenaltyPoints -= fine;
                 suspect.BribesExposed += exposed;
                 EarnInfluence(accuser, Config.BribeWhistleReward, "разоблачение");
@@ -144,32 +158,61 @@ namespace CityHighways.Core
             return ActionResult.Ok();
         }
 
-        /// <summary>Конец хода: сброс флагов; у игрока, чей ход начинается, следы его взяток пропадают.</summary>
+        /// <summary>Конец хода: сброс флагов этого хода. Сами взятки живут до конца круга после них.</summary>
         void BribeTurnPassed()
         {
             _bribedThisTurn = false;
             _accusedThisTurn = false;
             _discountActive = false;
-            _bribes.RemoveAll(b => b.Player == CurrentPlayerIndex);
         }
 
-        // Улики — только то, что видно всем: насколько выросла рука за ход и не обошлась ли дорога дешевле.
+        /// <summary>
+        /// Начало круга: взятки позапрошлого круга раскрыть уже нельзя, о взятках прошлого объявляется числом.
+        /// </summary>
+        void AnnounceBribes()
+        {
+            RoundNumber++;
+            _bribes.RemoveAll(b => b.Round < RoundNumber - 1);
+            LastWhisperCount = AnnouncedBribes;
+            if (LastWhisperCount == 0) return;
+            WhisperNumber++;
+            Emit($"В прошлом круге в мэрии шептались: взяток — {LastWhisperCount}. Кто — неизвестно; раскрыть можно до конца этого круга.");
+        }
+
+        // Улики — только то, что видно всем: насколько выросла рука за ход и не обошлась ли дорога дешевле длины.
         int _turnHandStart;
         bool _turnPaidLess;
         bool[] _suspicious;
+        /// <summary>Чем подозрителен прошлый ход: SuspicionHand | SuspicionCheap.</summary>
+        int[] _suspicionFlags;
+        const int SuspicionHand = 1, SuspicionCheap = 2;
 
         void RememberTurnEvidence(PlayerState player)
         {
             if (_suspicious == null || _suspicious.Length != _players.Count) _suspicious = new bool[_players.Count];
-            _suspicious[player.Index] = player.HandSize - _turnHandStart >= 3 || _turnPaidLess;
+            if (_suspicionFlags == null || _suspicionFlags.Length != _players.Count) _suspicionFlags = new int[_players.Count];
+            int flags = (player.HandSize - _turnHandStart >= 3 ? SuspicionHand : 0) | (_turnPaidLess ? SuspicionCheap : 0);
+            _suspicionFlags[player.Index] = flags;
+            _suspicious[player.Index] = flags != 0;
             _turnPaidLess = false;
         }
 
         /// <summary>
         /// Выглядел ли прошлый ход игрока подозрительно по открытым данным (рука выросла на 3+ карты или дорога
-        /// дешевле обычного). Это не доказательство: так бывает и после сделки или «Поставки».
+        /// дешевле своей длины). Это не доказательство: так бывает и после сделки, «Поставки», субсидии, у Мостовика.
         /// </summary>
         public bool LooksSuspicious(int player) => _suspicious != null && player >= 0 && player < _suspicious.Length && _suspicious[player];
+
+        /// <summary>Улики прошлого хода игрока словами; пусто — ничего подозрительного.</summary>
+        public string SuspicionText(int player)
+        {
+            if (!LooksSuspicious(player)) return "";
+            int flags = _suspicionFlags != null && player < _suspicionFlags.Length ? _suspicionFlags[player] : 0;
+            var parts = new List<string>();
+            if ((flags & SuspicionHand) != 0) parts.Add("рука выросла на 3+ карты");
+            if ((flags & SuspicionCheap) != 0) parts.Add("дорога дешевле своей длины");
+            return parts.Count > 0 ? string.Join(", ", parts) : "ход выглядел странно";
+        }
 
         int ApplyBribeDiscount(int cost, PlayerState player) =>
             _discountActive && player != null && player.Index == CurrentPlayerIndex ? Math.Max(1, cost - 1) : cost;

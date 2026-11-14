@@ -6,7 +6,7 @@ namespace CityHighways.Core
     [Serializable]
     public class GameSaveData
     {
-        public const int CurrentVersion = 10; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки, 10 — проезд при выполнении, пробки, пропуска
+        public const int CurrentVersion = 11; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки, 10 — проезд при выполнении, пробки, пропуска, 11 — тайный шёпот, цена обновления рынка
         /// <summary>Самая старая версия, которую ещё можно загрузить (в v2 цели и удача начнутся заново).</summary>
         public const int OldestSupportedVersion = 2;
 
@@ -117,6 +117,12 @@ namespace CityHighways.Core
         public bool pendingGetPass;
         public bool lastGivePass;
         public bool lastGetPass;
+
+        // Тайный шёпот (версия 11): круг каждой взятки, номер круга, улики словами.
+        public int[] bribeRounds;
+        public int round;
+        public int lastWhisperCount;
+        public int[] suspicionFlags;
     }
 
     /// <summary>Оплаченный маршрут выполненного контракта (версия 10): путь и проезды по чужим дорогам.</summary>
@@ -160,6 +166,7 @@ namespace CityHighways.Core
         public int influence;
         public int influenceEarned;
         public int influenceSpent;
+        public int refreshes;
         public string[] rewardedContracts;
         public string[] influenceDistricts;
         public string mayorContract;
@@ -217,6 +224,7 @@ namespace CityHighways.Core
                     influence = p.Influence,
                     influenceEarned = p.InfluenceEarned,
                     influenceSpent = p.InfluenceSpent,
+                    refreshes = p.Refreshes,
                     rewardedContracts = p.RewardedContracts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
                     influenceDistricts = p.InfluenceDistricts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
                     mayorContract = p.MayorContractId,
@@ -314,7 +322,11 @@ namespace CityHighways.Core
                 lastAccusationExposed = LastAccusation?.Exposed ?? 0,
                 turnHandStart = _turnHandStart,
                 turnPaidLess = _turnPaidLess,
-                suspicious = _suspicious?.ToArray()
+                suspicious = _suspicious?.ToArray(),
+                bribeRounds = _bribes.Select(b => b.Round).ToArray(),
+                round = RoundNumber,
+                lastWhisperCount = LastWhisperCount,
+                suspicionFlags = _suspicionFlags?.ToArray()
             };
         }
 
@@ -419,6 +431,7 @@ namespace CityHighways.Core
                 player.Influence = saved.influence;
                 player.InfluenceEarned = saved.influenceEarned;
                 player.InfluenceSpent = saved.influenceSpent;
+                player.Refreshes = saved.refreshes;
                 foreach (var id in saved.rewardedContracts ?? new string[0]) player.RewardedContracts.Add(id);
                 foreach (var id in saved.influenceDistricts ?? new string[0]) player.InfluenceDistricts.Add(id);
                 player.MayorContractId = string.IsNullOrEmpty(saved.mayorContract) ? null : saved.mayorContract;
@@ -567,14 +580,19 @@ namespace CityHighways.Core
                 game._auctionContract = FindContract(data.auctionContract);
                 game._bids = data.bids.ToArray();
             }
+            // До версии 11 номера круга не было: восстанавливаем его по номеру хода.
+            game.RoundNumber = data.version >= 11 ? data.round : (game.TurnNumber - 1) / Math.Max(1, players.Length) + 1;
+            game.LastWhisperCount = data.lastWhisperCount;
             var bribePlayers = data.bribePlayers ?? new int[0];
             var bribeKinds = data.bribeKinds ?? new int[0];
+            var bribeRounds = data.bribeRounds ?? new int[0];
             if (bribePlayers.Length != bribeKinds.Length) throw new FormatException("Сохранение: неверные взятки.");
             for (int i = 0; i < bribePlayers.Length; i++)
             {
                 if (bribePlayers[i] < 0 || bribePlayers[i] >= players.Length || bribeKinds[i] < 0 || bribeKinds[i] > (int)BribeKind.ExtraCard)
                     throw new FormatException("Сохранение: неверная взятка.");
-                game._bribes.Add(new BribeRecord { Player = bribePlayers[i], Kind = (BribeKind)bribeKinds[i] });
+                game._bribes.Add(new BribeRecord { Player = bribePlayers[i], Kind = (BribeKind)bribeKinds[i],
+                    Round = i < bribeRounds.Length ? bribeRounds[i] : game.RoundNumber });
             }
             game._bribedThisTurn = data.bribedThisTurn;
             game._accusedThisTurn = data.accusedThisTurn;
@@ -586,6 +604,7 @@ namespace CityHighways.Core
             game._turnHandStart = data.turnHandStart;
             game._turnPaidLess = data.turnPaidLess;
             game._suspicious = data.suspicious != null && data.suspicious.Length == players.Length ? data.suspicious.ToArray() : null;
+            game._suspicionFlags = data.suspicionFlags != null && data.suspicionFlags.Length == players.Length ? data.suspicionFlags.ToArray() : null;
             if (!string.IsNullOrEmpty(data.lastAuctionContract))
                 game.LastAuction = new AuctionResult(FindContract(data.lastAuctionContract), data.lastAuctionWinner,
                     data.lastAuctionPrice, (data.lastAuctionBids ?? new int[0]).ToArray());

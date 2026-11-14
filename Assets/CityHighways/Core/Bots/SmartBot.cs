@@ -129,8 +129,9 @@ namespace CityHighways.Core
 
         /// <summary>
         /// Тайная ставка: сколько стоит контракт мэрии с учётом пути — очки + бонус − Lambda × новые участки − проезд.
-        /// Недостижимый или не влезающий в запас участков — 0. Иначе ставим около трети ценности,
-        /// но не больше двух третей своего влияния (остальное ещё пригодится).
+        /// Недостижимый или не влезающий в запас участков — 0. Иначе ставим половину ценности, но не больше трёх
+        /// четвертей своего влияния. Модель (Tools~/ch_politics.py): при трети ценности контракт уходил за ~2,6 влияния,
+        /// и бот, ставящий больше, выигрывал заметно чаще.
         /// </summary>
         int ChooseBid(Game game, PlayerState me, Contract contract)
         {
@@ -143,8 +144,8 @@ namespace CityHighways.Core
             int extraToll = plan.TollsExpected - basePlan.TollsExpected;
             double value = contract.Points + game.Config.AuctionBonus - Lambda * extra - extraToll;
             if (value <= 0) return 0;
-            int bid = (int)Math.Round(value / 3.0);
-            return Math.Max(0, Math.Min(bid, me.Influence * 2 / 3));
+            int bid = (int)Math.Round(value / 2.0);
+            return Math.Max(0, Math.Min(bid, me.Influence * 3 / 4));
         }
 
         // ================================================================== Анализ позиции
@@ -241,7 +242,7 @@ namespace CityHighways.Core
                     if (CanPay(me, road, normalCost)) return game.UseInfluence(InfluenceAction.Permit);
                 }
             }
-            int refresh = game.Config.InfluenceRefreshCost;
+            int refresh = game.InfluenceCost(InfluenceAction.RefreshMarket);
             if (me.Influence >= refresh + 1 && game.CanUseInfluence(InfluenceAction.RefreshMarket))
             {
                 var want = ResourceInfo.Building.Where(x => a.Need[(int)x] > me.CardCount(x)).ToList();
@@ -255,12 +256,13 @@ namespace CityHighways.Core
         // ================================================================== Взятки
 
         /// <summary>
-        /// Обвинение: только когда в мэрии есть нераскрытые взятки и чей-то прошлый ход выглядел подозрительно
-        /// по открытым данным; и то не всегда (бот тоже боится ложного обвинения).
+        /// Обвинение: только когда объявлено о нераскрытых взятках прошлого круга и чей-то прошлый ход выглядел
+        /// подозрительно по открытым данным; и то не всегда (бот тоже боится ложного обвинения). Сами взятки
+        /// бот не видит — только то же, что и люди.
         /// </summary>
         ActionResult? TryAccuse(Game game)
         {
-            if (!game.Config.BribesEnabled || game.ActiveBribes == 0 || game.AccusedThisTurn) return null;
+            if (!game.BribesAllowed || game.AnnouncedBribes == 0 || game.AccusedThisTurn) return null;
             var suspects = game.Players.Where(p => p.Index != game.CurrentPlayerIndex && game.LooksSuspicious(p.Index)).ToList();
             if (suspects.Count == 0 || _rng.NextDouble() > 0.6) return null;
             var target = suspects[_rng.Next(suspects.Count)];
@@ -273,7 +275,7 @@ namespace CityHighways.Core
         /// </summary>
         ActionResult? TryBribe(Game game, Analysis a)
         {
-            if (!game.Config.BribesEnabled || game.BribedThisTurn) return null;
+            if (!game.BribesAllowed || game.BribedThisTurn) return null;
             var me = a.Me;
             int discount = game.Config.BribeDiscountCost;
             if (me.Influence >= discount + 2 && game.GetBribeBlocker(BribeKind.Discount) == null)

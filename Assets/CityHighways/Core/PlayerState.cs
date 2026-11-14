@@ -44,6 +44,8 @@ namespace CityHighways.Core
         public int Influence { get; internal set; }
         public int InfluenceEarned { get; internal set; }
         public int InfluenceSpent { get; internal set; }
+        /// <summary>Сколько раз игрок обновлял рынок: каждое следующее обновление дороже.</summary>
+        public int Refreshes { get; internal set; }
         /// <summary>Контракты, за которые влияние уже начислено, и районы, где у компании есть дороги.</summary>
         internal readonly HashSet<string> RewardedContracts = new HashSet<string>();
         internal readonly HashSet<string> InfluenceDistricts = new HashSet<string>();

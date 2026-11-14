@@ -358,7 +358,7 @@ namespace CityHighways.Core
 
             Pay(player, resource, resourceCards);
             Pay(player, Resource.Machinery, machinery);
-            if (cost < BaseBuildCost(road, player)) _turnPaidLess = true;
+            if (cost < road.Length) _turnPaidLess = true; // улика: дешевле длины (взятка — или честная субсидия, Мостовик)
             PlaceRoad(player, road, "");
             return ActionResult.Ok();
         }
@@ -640,6 +640,7 @@ namespace CityHighways.Core
         /// <summary>Начало круга: прошлое событие заканчивается, открывается следующее.</summary>
         void StartRound()
         {
+            AnnounceBribes();
             AwardCatchUpInfluence();
             _repairRoads.Clear();
             CurrentEvent = null;

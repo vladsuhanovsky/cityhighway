@@ -125,6 +125,34 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void RefreshMarket_GetsPricierEachTime_PerPlayer()
+        {
+            var game = Fresh();
+            int first = game.Config.InfluenceRefreshCost, step = game.Config.InfluenceRefreshStep;
+            Assert.AreEqual(4, first);
+            Assert.AreEqual(2, step);
+            game.Debug_SetInfluence(0, 30);
+            game.Debug_SetInfluence(1, 30);
+            Assert.AreEqual(first, game.InfluenceCost(InfluenceAction.RefreshMarket));
+            Assert.IsTrue(game.UseInfluence(InfluenceAction.RefreshMarket).Success);
+            Assert.AreEqual(30 - first, game.Players[0].Influence);
+            Assert.AreEqual(1, game.Players[0].Refreshes);
+            Assert.AreEqual(first + step, game.InfluenceCost(InfluenceAction.RefreshMarket, 0));
+            Assert.AreEqual(first, game.InfluenceCost(InfluenceAction.RefreshMarket, 1), "У соперника цена своя");
+            Assert.AreEqual(game.Config.InfluencePermitCost, game.InfluenceCost(InfluenceAction.Permit, 0), "Другие траты не дорожают");
+
+            SkipTurn(game);
+            SkipTurn(game);
+            Assert.IsTrue(game.UseInfluence(InfluenceAction.RefreshMarket).Success);
+            Assert.AreEqual(30 - first - (first + step), game.Players[0].Influence, "Второе обновление дороже");
+
+            var data = JsonUtility.FromJson<GameSaveData>(JsonUtility.ToJson(game.CreateSave()));
+            var restored = Game.FromSave(game.Map, data);
+            Assert.AreEqual(2, restored.Players[0].Refreshes);
+            Assert.AreEqual(first + 2 * step, restored.InfluenceCost(InfluenceAction.RefreshMarket, 0));
+        }
+
+        [Test]
         public void Spending_WithoutEnoughInfluence_Fails()
         {
             var game = Fresh();

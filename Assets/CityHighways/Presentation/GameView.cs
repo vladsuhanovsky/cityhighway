@@ -1020,11 +1020,11 @@ namespace CityHighways.Presentation
                 });
             }
 
-            // Взятки: шёпот в мэрии и итог обвинения — видно всем.
+            // Взятки: в начале круга — сколько шептались в прошлом (без имён), и итог обвинения — видно всем.
             if (_game.WhisperNumber > _lastWhisperShown)
             {
                 _lastWhisperShown = _game.WhisperNumber;
-                Toast("В мэрии кто-то шепчется…", Theme.TextDim);
+                Toast($"В прошлом круге в мэрии шептались: взяток — {_game.LastWhisperCount}. Кто — неизвестно", Theme.TextDim);
             }
             if (_game.AccusationNumber > _lastAccusationShown && _game.LastAccusation != null)
             {
@@ -1032,7 +1032,7 @@ namespace CityHighways.Presentation
                 var a = _game.LastAccusation;
                 string accuser = _game.Players[a.Accuser].Name, accused = _game.Players[a.Accused].Name;
                 Toast(a.Correct
-                        ? $"{accuser} разоблачает {accused}: взятка! −{_game.Config.BribeFine * a.Exposed}"
+                        ? $"{accuser} разоблачает {accused}: взятка! −{_game.Config.BribeFineFor(_game.Players.Count) * a.Exposed}"
                         : $"{accuser} ошибся: {accused} чист. −{_game.Config.FalseAccusationFine} обвинителю",
                     a.Correct ? Theme.Danger : Theme.TextDim);
                 _app.Sound.Play(a.Correct ? Sfx.Horn : Sfx.Swish, 0.35f);
@@ -1435,7 +1435,7 @@ namespace CityHighways.Presentation
                                  + (_game.TradeUsedThisTurn ? " · сделка была" : "")
                                  + (_game.InfluenceUsedThisTurn ? " · влияние потрачено" : "")
                                  + (HumanToAct && _game.BribeDiscountActive ? " · скидка −1 карта" : "")
-                                 + (_game.ActiveBribes > 0 ? $" · шёпот в мэрии: {_game.ActiveBribes}" : "");
+                                 + (_game.AnnouncedBribes > 0 ? $" · нераскрытых взяток прошлого круга: {_game.AnnouncedBribes}" : "");
             }
             Ui.SetEnabled(_luckButton, HumanToAct && _game.CanDrawLuckCard());
             _contractsButton.text = "Контракты";
@@ -1494,7 +1494,7 @@ namespace CityHighways.Presentation
                 foreach (var action in InfluenceInfo.All.Where(a => InfluenceInfo.IsCityAction(a) == city))
                 {
                     var chosen = action;
-                    int cost = InfluenceInfo.Cost(action, _game.Config);
+                    int cost = _game.InfluenceCost(action);
                     var blocker = _game.GetInfluenceBlocker(action);
                     var row = Ui.Row();
                     row.style.alignItems = Align.Center;
@@ -1522,13 +1522,15 @@ namespace CityHighways.Presentation
             Group("Влияние на город", true);
             Group("Контроль рынка", false);
 
-            if (_game.Config.BribesEnabled)
+            if (_game.BribesAllowed)
             {
+                int fine = _game.Config.BribeFineFor(_game.Players.Count);
                 var bribeHeader = Ui.Text("Взятка чиновникам (тайно)", 15f, Theme.Text, true);
                 bribeHeader.style.marginTop = 6f;
                 box.Add(bribeHeader);
-                var bribeNote = Ui.Text($"Все увидят только «в мэрии кто-то шепчется». Пока вы не начали следующий ход, соперник может вас обвинить: " +
-                                        $"угадал — штраф −{_game.Config.BribeFine} за каждую взятку, ему +{_game.Config.BribeWhistleReward} влияния.", 12f, Theme.TextDim);
+                var bribeNote = Ui.Text($"Сейчас никто ничего не увидит. В начале следующего круга объявят только, сколько было взяток, — без имён. " +
+                                        $"До конца того круга вас могут обвинить: угадал — штраф −{fine} за каждую взятку, ему +{_game.Config.BribeWhistleReward} влияния. " +
+                                        "Улики против вас — рука выросла на 3+ карты или дорога дешевле своей длины.", 12f, Theme.TextDim);
                 bribeNote.style.whiteSpace = WhiteSpace.Normal;
                 bribeNote.style.marginBottom = 6f;
                 box.Add(bribeNote);
@@ -1543,7 +1545,7 @@ namespace CityHighways.Presentation
                             Act(() =>
                             {
                                 var result = _game.Bribe(chosen);
-                                if (result.Success) Flash("Взятка дана. Не попадитесь до следующего хода.");
+                                if (result.Success) Flash("Взятка дана. О ней узнают в начале следующего круга — но не кто дал.");
                                 return result;
                             });
                         }));
@@ -1552,9 +1554,9 @@ namespace CityHighways.Presentation
                 var accuseHeader = Ui.Text("Разоблачение", 15f, Theme.Text, true);
                 accuseHeader.style.marginTop = 6f;
                 box.Add(accuseHeader);
-                var accuseNote = Ui.Text(_game.ActiveBribes > 0
-                    ? $"Нераскрытых взяток сейчас: {_game.ActiveBribes}. Подозрительно, если у соперника рука выросла сильнее обычного или дорога обошлась дешевле. Ошибка — −{_game.Config.FalseAccusationFine} вам."
-                    : $"Сейчас никто не шептался — обвинять некого. Ложное обвинение — −{_game.Config.FalseAccusationFine} вам.", 12f, Theme.TextDim);
+                var accuseNote = Ui.Text(_game.AnnouncedBribes > 0
+                    ? $"Нераскрытых взяток прошлого круга: {_game.AnnouncedBribes}. Взятку этого круга тоже можно угадать. Ошибка — −{_game.Config.FalseAccusationFine} вам."
+                    : $"О взятках прошлого круга не объявляли, но взятку этого круга угадать можно. Ошибка — −{_game.Config.FalseAccusationFine} вам.", 12f, Theme.TextDim);
                 accuseNote.style.whiteSpace = WhiteSpace.Normal;
                 accuseNote.style.marginBottom = 6f;
                 box.Add(accuseNote);
@@ -1563,15 +1565,22 @@ namespace CityHighways.Presentation
                 foreach (var other in _game.Players.Where(p => p.Index != me.Index))
                 {
                     int target = other.Index;
+                    var cell = Ui.Column();
+                    cell.style.marginRight = 8f;
+                    cell.style.marginBottom = 6f;
                     var button = Ui.Button("Обвинить: " + other.Name, () =>
                     {
                         HideOverlay();
                         Act(() => _game.Accuse(target));
                     }, ButtonKind.Secondary, 13f);
-                    button.style.marginRight = 8f;
-                    button.style.marginBottom = 6f;
                     Ui.SetEnabled(button, _game.GetAccuseBlocker(target) == null);
-                    accuseRow.Add(button);
+                    cell.Add(button);
+                    string evidence = _game.SuspicionText(target);
+                    var hint = Ui.Text(evidence.Length > 0 ? "Улика: " + evidence : "Прошлый ход — без улик", 11f,
+                        evidence.Length > 0 ? Theme.Accent : Theme.TextDim);
+                    hint.style.marginTop = 2f;
+                    cell.Add(hint);
+                    accuseRow.Add(cell);
                 }
                 box.Add(accuseRow);
             }

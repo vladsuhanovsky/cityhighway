@@ -98,7 +98,13 @@ namespace CityHighways.Core
         public int InfluenceCatchUpGap = 6;
         /// <summary>«Грант мэрии» при включённом влиянии даёт влияние вместо очков.</summary>
         public int LuckGrantInfluence = 3;
-        public int InfluenceRefreshCost = 3;
+        /// <summary>
+        /// Обновить рынок: первое — InfluenceRefreshCost, каждое следующее у того же игрока на InfluenceRefreshStep дороже.
+        /// Модель (Tools~/ch_influence.py): при 3 за любое обновление бот, который обновляет рынок, выигрывал ~59% дуэлей
+        /// и ~41% партий на троих; при 4 и +2 — ~54% и ~37%, на четверых ~28% (база 50/33/25%).
+        /// </summary>
+        public int InfluenceRefreshCost = 4;
+        public int InfluenceRefreshStep = 2;
         public int InfluenceExtraContractCost = 1;
         public int InfluencePermitCost = 1;
         public int InfluenceCancelEventCost = 3;
@@ -121,7 +127,15 @@ namespace CityHighways.Core
         public bool BribesEnabled = true;
         public int BribeDiscountCost = 2;
         public int BribeExtraCardCost = 2;
-        public int BribeFine = 6;
+        /// <summary>
+        /// Штраф за раскрытую взятку по числу игроков (индекс — число игроков). Подобрано на модели Tools~/ch_politics.py
+        /// так, чтобы ни «всегда давать», ни «никогда не давать», ни «обвинять при каждой улике» не выигрывали заметно чаще.
+        /// Больше нуля в BribeFine — один штраф для всех.
+        /// </summary>
+        public int[] BribeFineByPlayers = { 0, 0, 0, 6, 4, 4 };
+        public int BribeFine;
+        /// <summary>Взятки — только когда игроков не меньше: вдвоём улики выдают взятку почти всегда, тайны не выходит.</summary>
+        public int BribesMinPlayers = 3;
         public int BribeWhistleReward = 2;
         public int FalseAccusationFine = 3;
 
@@ -178,6 +192,15 @@ namespace CityHighways.Core
             if (RoadPiecesOverride > 0) return RoadPiecesOverride;
             int index = Math.Max(0, Math.Min(players, RoadPiecesByPlayers.Length - 1));
             return RoadPiecesByPlayers[index];
+        }
+
+        /// <summary>Штраф за одну раскрытую взятку при таком числе игроков.</summary>
+        public int BribeFineFor(int players)
+        {
+            if (BribeFine > 0) return BribeFine;
+            if (BribeFineByPlayers == null || BribeFineByPlayers.Length == 0) return 4;
+            int index = Math.Max(0, Math.Min(players, BribeFineByPlayers.Length - 1));
+            return BribeFineByPlayers[index] > 0 ? BribeFineByPlayers[index] : 4;
         }
 
         public int PointsForLength(int length) =>

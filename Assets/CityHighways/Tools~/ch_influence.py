@@ -9,7 +9,7 @@ class InfCfg(Cfg):
         # Начисление
         s.inf_contract=1; s.inf_complex=2; s.inf_district=1; s.inf_goal=1; s.inf_catchup=1; s.catchup_gap=6; s.grant_inf=3
         # Траты (раз в ход, не тратит ход)
-        s.cost_refresh=3; s.cost_plus=1; s.cost_permit=1; s.cost_cancel=3
+        s.cost_refresh=4; s.refresh_step=2; s.cost_plus=1; s.cost_permit=1; s.cost_cancel=3
         super().__init__(**kw)
 
 def complex_(c): return len(c)>4 and c[4] in ("transit","hub")
@@ -59,9 +59,13 @@ class InfGame(Game):
     def can_spend(s,cost): return s.phase=="await" and not s.inf_used and s.players[s.cur].inf>=cost
     def spend(s,cost,why):
         p=s.players[s.cur]; p.inf-=cost; p.inf_spent[why]+=cost; s.inf_used=True
+    def refresh_cost(s,p):
+        # Каждое следующее обновление рынка этим игроком дороже на refresh_step.
+        return s.cfg.cost_refresh+s.cfg.refresh_step*getattr(p,"refreshes",0)
     def refresh(s):
-        if not s.can_spend(s.cfg.cost_refresh): return False
-        s.spend(s.cfg.cost_refresh,"refresh")
+        p=s.players[s.cur]; cost=s.refresh_cost(p)
+        if not s.can_spend(cost): return False
+        s.spend(cost,"refresh"); p.refreshes=getattr(p,"refreshes",0)+1
         for i,c in enumerate(s.face):
             if c is not None: s.disc.append(c); s.face[i]=None
         s.refill(); return True
@@ -102,7 +106,7 @@ class InfBot(SmartBot):
                     g.permit=False
                     if ok: g.buy_permit()
             # Обновить рынок: ресурсы нужны, а в открытом ряду нет ни одной полезной карты.
-            elif g.can_spend(g.cfg.cost_refresh) and me.inf>=g.cfg.cost_refresh+1:
+            elif g.can_spend(g.refresh_cost(me)) and me.inf>=g.refresh_cost(me)+1:
                 need=a["need"]; want=[x for x in BUILDING if need[x]>me.hand[x]]
                 if want and not any(c in want for c in g.face if c is not None) and not [r for r in a["desired"] if g.options(r[0])]:
                     g.refresh()

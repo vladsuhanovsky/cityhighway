@@ -5,7 +5,10 @@ using UnityEngine;
 
 namespace CityHighways.Tests
 {
-    /// <summary>Взятки и разоблачения: эффект, тайна, окно раскрытия, штрафы, награда, сохранение.</summary>
+    /// <summary>
+    /// Взятки и разоблачения: эффект, тайна (объявление числом в начале следующего круга), окно раскрытия
+    /// до конца следующего круга, улики, штрафы по числу игроков, взяток нет в дуэли, сохранение.
+    /// </summary>
     public class BribeTests
     {
         static Game Fresh(int players = 3) => TestCities.Started(TestCities.Small(), players);
@@ -15,6 +18,13 @@ namespace CityHighways.Tests
             int player = game.CurrentPlayerIndex;
             while (game.CurrentPlayerIndex == player && game.Phase != GamePhase.GameOver)
                 Assert.IsTrue(game.DrawCardFromDeck().Success);
+        }
+
+        /// <summary>Доиграть ходами «взять карты» до начала следующего круга.</summary>
+        static void SkipToNextRound(Game game)
+        {
+            int round = game.RoundNumber;
+            while (game.RoundNumber == round && game.Phase != GamePhase.GameOver) SkipTurn(game);
         }
 
         [Test]
@@ -33,6 +43,8 @@ namespace CityHighways.Tests
             game.Debug_SetHand(0, Resource.Concrete, Resource.Concrete);
             Assert.IsTrue(game.BuildRoad("r4", Resource.Concrete, 0).Success, "Хватает двух карт вместо трёх");
             Assert.IsFalse(game.BribeDiscountActive, "Скидка — только на этот ход");
+            Assert.IsTrue(game.LooksSuspicious(0), "Улика: дорога дешевле своей длины");
+            StringAssert.Contains("дешевле", game.SuspicionText(0));
         }
 
         [Test]
@@ -47,19 +59,36 @@ namespace CityHighways.Tests
             Assert.AreEqual(GamePhase.AwaitingAction, game.Phase);
             Assert.IsFalse(game.Bribe(BribeKind.Discount).Success, "Одна взятка за ход");
             Assert.AreEqual(1, game.ActiveBribes);
-            Assert.AreEqual(1, game.WhisperNumber);
+            Assert.AreEqual(0, game.WhisperNumber, "Сразу никто ничего не узнаёт");
+            Assert.AreEqual(0, game.AnnouncedBribes);
+
+            SkipTurn(game); // взятая карта + две обычные = рука выросла на 3
+            Assert.IsTrue(game.LooksSuspicious(0));
+            StringAssert.Contains("рука", game.SuspicionText(0));
+            Assert.IsFalse(game.LooksSuspicious(1));
+            Assert.AreEqual("", game.SuspicionText(1));
         }
 
         [Test]
-        public void Bribe_IsSecretInLog()
+        public void Bribe_IsSilent_ThenAnnouncedNextRoundWithoutName()
         {
             var game = Fresh();
-            game.Debug_SetInfluence(0, 5);
-            string log = null;
-            game.Log += text => log = text;
+            game.Debug_SetInfluence(1, 5);
+            var log = new System.Collections.Generic.List<string>();
+            game.Log += log.Add;
+            SkipTurn(game);
+            Assert.AreEqual(1, game.CurrentPlayerIndex);
+            int before = log.Count;
             Assert.IsTrue(game.Bribe(BribeKind.ExtraCard).Success);
-            StringAssert.Contains("кто-то", log);
-            StringAssert.DoesNotContain(game.Players[0].Name, log, "Имя давшего не раскрывается");
+            Assert.AreEqual(before, log.Count, "В момент взятки в журнале ничего");
+
+            SkipToNextRound(game);
+            Assert.AreEqual(1, game.WhisperNumber);
+            Assert.AreEqual(1, game.LastWhisperCount);
+            Assert.AreEqual(1, game.AnnouncedBribes);
+            var whisper = log.Last(l => l.Contains("шептались"));
+            StringAssert.Contains("1", whisper);
+            foreach (var player in game.Players) StringAssert.DoesNotContain(player.Name, whisper, "Имён нет");
         }
 
         [Test]
@@ -69,9 +98,10 @@ namespace CityHighways.Tests
             game.Debug_SetInfluence(0, 6);
             Assert.IsTrue(game.Bribe(BribeKind.ExtraCard).Success);
             SkipTurn(game);
-            Assert.IsTrue(game.Accuse(0).Success);
+            Assert.IsTrue(game.Accuse(0).Success, "Угадать взятку можно и до объявления");
             Assert.IsTrue(game.LastAccusation.Correct);
-            Assert.AreEqual(-game.Config.BribeFine, game.Players[0].PenaltyPoints);
+            Assert.AreEqual(-game.Config.BribeFineFor(3), game.Players[0].PenaltyPoints);
+            Assert.AreEqual(6, game.Config.BribeFineFor(3));
             Assert.AreEqual(game.Config.BribeWhistleReward, game.Players[1].Influence);
             Assert.AreEqual(0, game.ActiveBribes, "Раскрытая взятка больше не висит");
             Assert.IsFalse(game.Accuse(2).Success, "Одно обвинение за ход");
@@ -90,34 +120,66 @@ namespace CityHighways.Tests
         }
 
         [Test]
-        public void BribeTraces_DisappearWhenBriberStartsNextTurn()
+        public void Bribe_CanBeExposedUntilEndOfNextRound()
         {
-            var game = Fresh(2);
+            var game = Fresh();
             game.Debug_SetInfluence(0, 6);
-            Assert.IsTrue(game.Bribe(BribeKind.ExtraCard).Success);
-            SkipTurn(game); // ход игрока 0 закончился
-            Assert.AreEqual(1, game.ActiveBribes, "Сопернику ещё можно раскрыть");
-            SkipTurn(game); // игрок 1 не обвинил — снова ход игрока 0
-            Assert.AreEqual(0, game.ActiveBribes, "Следы пропали");
+            Assert.IsTrue(game.Bribe(BribeKind.ExtraCard).Success); // круг 1
+            SkipToNextRound(game);                                  // круг 2: объявлено
+            Assert.AreEqual(1, game.ActiveBribes, "Ход давшего не стирает следы");
+            SkipTurn(game);
+            SkipTurn(game);
+            Assert.AreEqual(1, game.ActiveBribes, "До конца круга 2 ещё можно раскрыть");
+            SkipToNextRound(game);                                  // круг 3
+            Assert.AreEqual(0, game.ActiveBribes, "Поздно: следы пропали");
+            Assert.AreEqual(0, game.AnnouncedBribes);
             SkipTurn(game);
             Assert.IsTrue(game.Accuse(0).Success);
-            Assert.IsFalse(game.LastAccusation.Correct, "Поздно: обвинение уже ложное");
+            Assert.IsFalse(game.LastAccusation.Correct, "Обвинение уже ложное");
         }
 
         [Test]
         public void AccusationFinesEveryActiveBribe()
         {
-            var game = Fresh(2);
+            var game = Fresh();
             game.Debug_SetInfluence(0, 10);
-            Assert.IsTrue(game.Bribe(BribeKind.ExtraCard).Success);
-            SkipTurn(game);
-            SkipTurn(game);
-            // Новый ход игрока 0: старая взятка пропала, даём новую.
-            Assert.IsTrue(game.Bribe(BribeKind.Discount).Success);
+            Assert.IsTrue(game.Bribe(BribeKind.ExtraCard).Success); // круг 1
+            SkipToNextRound(game);
+            Assert.IsTrue(game.Bribe(BribeKind.Discount).Success);   // круг 2, снова игрок 0
             SkipTurn(game);
             Assert.IsTrue(game.Accuse(0).Success);
-            Assert.AreEqual(1, game.LastAccusation.Exposed);
-            Assert.AreEqual(-game.Config.BribeFine, game.Players[0].PenaltyPoints);
+            Assert.AreEqual(2, game.LastAccusation.Exposed, "Раскрываются обе: прошлого круга и этого");
+            Assert.AreEqual(-2 * game.Config.BribeFineFor(3), game.Players[0].PenaltyPoints);
+        }
+
+        [Test]
+        public void Duel_HasNoBribes()
+        {
+            var game = Fresh(2);
+            game.Debug_SetInfluence(0, 10);
+            Assert.IsFalse(game.BribesAllowed);
+            Assert.IsFalse(game.Bribe(BribeKind.ExtraCard).Success);
+            Assert.IsNotNull(game.GetBribeBlocker(BribeKind.Discount));
+            Assert.IsFalse(game.Accuse(1).Success);
+            Assert.AreEqual(0, game.AnnouncedBribes);
+        }
+
+        [Test]
+        public void Fine_DependsOnPlayerCount()
+        {
+            var config = new GameConfig();
+            Assert.AreEqual(6, config.BribeFineFor(3));
+            Assert.AreEqual(4, config.BribeFineFor(4));
+            Assert.AreEqual(4, config.BribeFineFor(5));
+            config.BribeFine = 5;
+            Assert.AreEqual(5, config.BribeFineFor(3), "Явный штраф — для всех");
+
+            var game = Fresh(4);
+            game.Debug_SetInfluence(0, 6);
+            Assert.IsTrue(game.Bribe(BribeKind.ExtraCard).Success);
+            SkipTurn(game);
+            Assert.IsTrue(game.Accuse(0).Success);
+            Assert.AreEqual(-4, game.Players[0].PenaltyPoints);
         }
 
         [Test]
@@ -140,9 +202,12 @@ namespace CityHighways.Tests
             var data = JsonUtility.FromJson<GameSaveData>(JsonUtility.ToJson(game.CreateSave()));
             var restored = Game.FromSave(game.Map, data);
             Assert.AreEqual(1, restored.ActiveBribes);
+            Assert.AreEqual(game.RoundNumber, restored.RoundNumber);
             Assert.IsTrue(restored.BribeDiscountActive);
             Assert.IsTrue(restored.BribedThisTurn);
             Assert.AreEqual(2, restored.BuildCost(restored.Map.GetRoad("r4")));
+            SkipToNextRound(restored);
+            Assert.AreEqual(1, restored.AnnouncedBribes, "Круг взятки сохранился — объявление вовремя");
         }
 
         [Test]
@@ -153,6 +218,7 @@ namespace CityHighways.Tests
             for (int step = 0; step < 5000 && game.Phase != GamePhase.GameOver; step++)
                 Assert.IsTrue(bots[game.ActingPlayerIndex].Act(game).Success);
             Assert.AreEqual(GamePhase.GameOver, game.Phase);
+            Assert.Greater(game.Players.Sum(p => p.BribesGiven), 0, "Боты дают взятки");
             var replayed = Game.Replay(game.Map, game.StartInfo, game.History);
             Assert.AreEqual(JsonUtility.ToJson(game.CreateSave()), JsonUtility.ToJson(replayed.CreateSave()));
         }

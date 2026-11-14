@@ -77,7 +77,7 @@ namespace CityHighways.Core
             if (!Config.InfluenceEnabled) return "Влияние выключено.";
             if (Phase != GamePhase.AwaitingAction) return "Влияние тратят в начале хода, до основного действия.";
             if (_influenceUsedThisTurn) return "Влияние уже тратилось в этот ход.";
-            int cost = InfluenceInfo.Cost(action, Config);
+            int cost = InfluenceCost(action);
             if (CurrentPlayer.Influence < cost) return $"Нужно влияния: {cost}, у вас {CurrentPlayer.Influence}.";
             switch (action)
             {
@@ -101,12 +101,24 @@ namespace CityHighways.Core
 
         public bool CanUseInfluence(InfluenceAction action) => GetInfluenceBlocker(action) == null;
 
+        /// <summary>Цена траты для игрока: обновление рынка дорожает с каждым разом (InfluenceRefreshStep).</summary>
+        public int InfluenceCost(InfluenceAction action, int playerIndex)
+        {
+            int cost = InfluenceInfo.Cost(action, Config);
+            if (action == InfluenceAction.RefreshMarket && playerIndex >= 0 && playerIndex < _players.Count)
+                cost += Config.InfluenceRefreshStep * _players[playerIndex].Refreshes;
+            return cost;
+        }
+
+        /// <summary>Цена траты для текущего игрока.</summary>
+        public int InfluenceCost(InfluenceAction action) => InfluenceCost(action, CurrentPlayerIndex);
+
         ActionResult DoUseInfluence(InfluenceAction action)
         {
             var blocker = GetInfluenceBlocker(action);
             if (blocker != null) return ActionResult.Fail(blocker);
             var player = CurrentPlayer;
-            int cost = InfluenceInfo.Cost(action, Config);
+            int cost = InfluenceCost(action);
             player.Influence -= cost;
             player.InfluenceSpent += cost;
             _influenceUsedThisTurn = true;
@@ -121,7 +133,8 @@ namespace CityHighways.Core
                         _faceUp[i] = null;
                     }
                     RefillFaceUpRow();
-                    Emit($"{player.Name} тратит {cost} влияния: рынок выложен заново.");
+                    player.Refreshes++;
+                    Emit($"{player.Name} тратит {cost} влияния: рынок выложен заново (следующее обновление — {InfluenceCost(action)}).");
                     Changed();
                     break;
                 case InfluenceAction.ExtraContracts:
