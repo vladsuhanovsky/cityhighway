@@ -107,7 +107,7 @@ public static class CityHighwaysBuildTools
             }
         }
 
-        if (Object.FindFirstObjectByType<CityHighwaysApp>() == null)
+        if (Object.FindAnyObjectByType<CityHighwaysApp>() == null)
             new GameObject("Game").AddComponent<CityHighwaysApp>();
 
         // Event System нужен UI Toolkit, если в проекте включена только новая система ввода.

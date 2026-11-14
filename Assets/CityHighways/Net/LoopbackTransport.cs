@@ -80,7 +80,8 @@ namespace CityHighways.Net
         public event Action<ulong> PeerConnected;
         public event Action<ulong> PeerDisconnected;
         public event Action<ulong, byte[]> Received;
-        public event Action<string> Failed;
+        /// <summary>Внутри процесса связь не рвётся: событие нужно интерфейсу, но никогда не срабатывает.</summary>
+        public event Action<string> Failed { add { } remove { } }
 
         internal void Enqueue(Action action) => _inbox.Enqueue(action);
         internal void RaiseReady() { IsReady = true; Ready?.Invoke(); }
@@ -104,7 +105,6 @@ namespace CityHighways.Net
         public void Dispose()
         {
             _hub.Remove(this);
-            Failed = null;
         }
     }
 }

@@ -228,7 +228,7 @@ namespace CityHighways.Presentation
 
     /// <summary>
     /// Сборщик текстурированных четырёхугольников для UI Toolkit: копит вершины по текстурам и отдаёт их
-    /// одним MeshGenerationContext.Allocate на текстуру. Учитывает uvRegion (текстура может лечь в атлас),
+    /// одним MeshGenerationContext.Allocate на текстуру. Текстура может лечь в атлас — UV в атлас переводит рендерер,
     /// поэтому UV каждого четырёхугольника — в пределах 0..1, без повтора.
     /// </summary>
     public sealed class TexturedQuads
@@ -284,14 +284,9 @@ namespace CityHighways.Presentation
                 var batch = pair.Value;
                 if (batch.Vertices.Count == 0) continue;
                 var mesh = context.Allocate(batch.Vertices.Count, batch.Indices.Count, pair.Key);
-                var region = mesh.uvRegion;
-                var vertices = batch.Vertices.ToArray();
-                for (int i = 0; i < vertices.Length; i++)
-                {
-                    var uv = vertices[i].uv;
-                    vertices[i].uv = new Vector2(region.x + uv.x * region.width, region.y + uv.y * region.height);
-                }
-                mesh.SetAllVertices(vertices);
+                // UV задаются в 0..1 самой текстуры: в Unity 6 рендерер сам переводит их в область атласа
+                // (MeshWriteData.uvRegion устарел, ручной пересчёт больше не нужен).
+                mesh.SetAllVertices(batch.Vertices.ToArray());
                 mesh.SetAllIndices(batch.Indices.ToArray());
             }
         }
