@@ -55,6 +55,15 @@ namespace CityHighways.Presentation
 
         PlayerLook LookOf(int index) => index >= 0 && index < _looks.Length ? _looks[index] : PlayerLook.None;
 
+        /// <summary>Наряд персонажа игрока: из профиля; у ботов — случайный, но постоянный для имени.</summary>
+        Outfit OutfitOf(int index)
+        {
+            bool bot;
+            if (Online) bot = index < _net.Seats.Count && _net.Seats[index].isBot && string.IsNullOrEmpty(_net.Seats[index].peer);
+            else bot = index < _setup.players.Count && _setup.players[index].isBot;
+            return bot ? Outfit.ForBot(_game.Players[index].Name) : Outfit.Parse(LookOf(index).Outfit);
+        }
+
         void BuildLooks()
         {
             _looks = new PlayerLook[_game.Players.Count];
@@ -63,7 +72,8 @@ namespace CityHighways.Presentation
                 if (Online)
                 {
                     var seat = i < _net.Seats.Count ? _net.Seats[i] : null;
-                    _looks[i] = seat == null ? PlayerLook.None : new PlayerLook(seat.emblem, seat.title, seat.frame);
+                    _looks[i] = seat == null ? PlayerLook.None
+                        : new PlayerLook(seat.emblem, seat.title, seat.frame, seat.isBot && string.IsNullOrEmpty(seat.peer) ? "" : seat.outfit);
                 }
                 else
                 {
@@ -1543,6 +1553,13 @@ namespace CityHighways.Presentation
 
                 var line = Ui.Row();
                 line.style.alignItems = Align.Center;
+                var portrait = new CharacterView(36f, true);
+                portrait.Set(OutfitOf(player.Index));
+                portrait.style.marginRight = 8f;
+                portrait.style.backgroundColor = Theme.Panel;
+                Ui.Radius(portrait, 8f);
+                Ui.Border(portrait, 2f, Palette.PlayerColor(player.Index));
+                line.Add(portrait);
                 var icon = new CharacterIcon(24f, player.Character, Palette.PlayerColor(player.Index));
                 icon.style.marginRight = 8f;
                 line.Add(icon);
@@ -2506,9 +2523,24 @@ namespace CityHighways.Presentation
             var result = _game.Result;
             var box = DialogBox(960f);
 
+            // Победители в полный рост рядом с заголовком.
+            var hero = Ui.Row();
+            hero.style.justifyContent = Justify.Center;
+            hero.style.alignItems = Align.FlexEnd;
+            foreach (var winner in result.Winners.Take(3))
+            {
+                var figure = new CharacterView(result.Winners.Count > 1 ? 80f : 100f);
+                figure.Set(OutfitOf(winner.PlayerIndex));
+                figure.style.marginLeft = 6f;
+                figure.style.marginRight = 6f;
+                hero.Add(figure);
+            }
             var title = Ui.Text("Победа: " + string.Join(", ", result.Winners.Select(w => w.PlayerName)), 34f, Theme.Accent, true);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
-            box.Add(title);
+            title.style.marginLeft = 16f;
+            title.style.marginBottom = 20f;
+            hero.Add(title);
+            box.Add(hero);
             var subtitle = Ui.Text("Дороги + контракты (★ — бонус контракта мэрии) ± плата за проезд + «Крупнейшая сеть» + цели мэрии ± удача + способность персонажа (Чиновник — за контракты, Мостовик — за мосты)", 13f, Theme.TextDim);
             subtitle.style.whiteSpace = WhiteSpace.Normal;
             subtitle.style.unityTextAlign = TextAnchor.MiddleCenter;

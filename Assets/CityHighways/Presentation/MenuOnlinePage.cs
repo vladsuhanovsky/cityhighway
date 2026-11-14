@@ -329,12 +329,14 @@ namespace CityHighways.Presentation
                 session.Seats[0].emblem = look.Emblem;
                 session.Seats[0].title = look.Title;
                 session.Seats[0].frame = look.Frame;
+                session.Seats[0].outfit = look.Outfit;
             }
             else if (session is ClientSession client)
             {
                 client.Emblem = look.Emblem;
                 client.Title = look.Title;
                 client.Frame = look.Frame;
+                client.Outfit = look.Outfit;
             }
             _app.OpenNet(session);
             _session = session;

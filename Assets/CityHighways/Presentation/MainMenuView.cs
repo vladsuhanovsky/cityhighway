@@ -113,7 +113,7 @@ namespace CityHighways.Presentation
         }
 
         VisualElement _profileCorner;
-        AvatarView _cornerAvatar;
+        CharacterView _cornerFigure;
         Label _cornerName;
         Label _cornerWallet;
 
@@ -131,9 +131,9 @@ namespace CityHighways.Presentation
             Ui.Border(corner, 1f, Theme.Line);
             corner.pickingMode = PickingMode.Position;
 
-            _cornerAvatar = new AvatarView(64f);
-            _cornerAvatar.style.marginRight = 12f;
-            corner.Add(_cornerAvatar);
+            _cornerFigure = new CharacterView(64f);
+            _cornerFigure.style.marginRight = 12f;
+            corner.Add(_cornerFigure);
             var texts = Ui.Column();
             texts.pickingMode = PickingMode.Ignore;
             _cornerName = Ui.Text("", 17f, Theme.Text, true);
@@ -162,7 +162,7 @@ namespace CityHighways.Presentation
         void RefreshProfileCorner()
         {
             var profile = Profiles.Active;
-            _cornerAvatar.Set(profile);
+            _cornerFigure.Set(profile.Outfit);
             _cornerName.text = profile.name;
             _cornerWallet.text = $"Кошелёк: {profile.wallet} влияния";
         }

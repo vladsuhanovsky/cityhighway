@@ -22,6 +22,8 @@ namespace CityHighways.Net
         public string emblem = "";
         public string title = "";
         public string frame = "";
+        /// <summary>Наряд персонажа (строка «слот=вещь;…»).</summary>
+        public string outfit = "";
 
         public ulong PeerId => ulong.TryParse(peer, out var id) ? id : 0UL;
     }
@@ -61,12 +63,13 @@ namespace CityHighways.Net
         public string emblem;
         public string title;
         public string frame;
+        public string outfit;
     }
 
     public static class NetCodec
     {
         /// <summary>Меняется при любой несовместимой правке протокола или правил: разные версии не играют вместе.</summary>
-        public const int ProtocolVersion = 5; // 2 — влияние, 3 — аукцион мэрии, 4 — взятки, 5 — профили
+        public const int ProtocolVersion = 6; // 2 — влияние, 3 — аукцион мэрии, 4 — взятки, 5 — профили, 6 — персонаж
 
         public static byte[] Encode(NetMessage message) => Encoding.UTF8.GetBytes(JsonUtility.ToJson(message));
 

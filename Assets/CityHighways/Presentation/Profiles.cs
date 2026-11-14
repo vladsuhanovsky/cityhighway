@@ -29,6 +29,13 @@ namespace CityHighways.Presentation
         public string steamId = "";
 
         public bool IsSteam => !string.IsNullOrEmpty(steamId);
+        /// <summary>Наряд персонажа строкой Outfit («body=…;hat=…»); пусто — наряд по умолчанию.</summary>
+        public string outfit = "";
+
+        public Outfit Outfit => Outfit.Parse(outfit);
+
+        /// <summary>Вещь персонажа есть: бесплатная (цена 0) или куплена.</summary>
+        public bool HasClothing(CharacterItem item) => item != null && (item.price <= 0 || owned.Contains(item.id));
 
         public bool Owns(string id) => owned.Contains(id);
 
@@ -41,7 +48,7 @@ namespace CityHighways.Presentation
             else frame = id;
         }
 
-        public PlayerLook Look => new PlayerLook(emblem, title, frame);
+        public PlayerLook Look => new PlayerLook(emblem, title, frame, Outfit.Serialize());
     }
 
     [Serializable]
@@ -76,12 +83,15 @@ namespace CityHighways.Presentation
         public readonly string Emblem;
         public readonly string Title;
         public readonly string Frame;
+        /// <summary>Наряд персонажа (строка Outfit); пусто — по умолчанию.</summary>
+        public readonly string Outfit;
 
-        public PlayerLook(string emblem, string title, string frame)
+        public PlayerLook(string emblem, string title, string frame, string outfit = "")
         {
             Emblem = emblem ?? "";
             Title = title ?? "";
             Frame = frame ?? "";
+            Outfit = outfit ?? "";
         }
 
         public static readonly PlayerLook None = new PlayerLook("", "", "");
@@ -366,6 +376,30 @@ namespace CityHighways.Presentation
             profile.Equip(item.Kind, item.Id);
             Save();
             return null;
+        }
+
+        // ================================================================== Одежда персонажа
+
+        /// <summary>Купить вещь персонажа и сразу надеть. Возвращает текст ошибки или null.</summary>
+        public static string BuyClothing(PlayerProfile profile, CharacterItem item)
+        {
+            if (item == null) return "Такой вещи нет.";
+            if (profile.HasClothing(item)) return "Уже есть.";
+            if (profile.wallet < item.price) return $"Нужно {item.price} влияния, в кошельке {profile.wallet}.";
+            profile.wallet -= item.price;
+            profile.owned.Add(item.id);
+            Wear(profile, item.slot, item.id);
+            return null;
+        }
+
+        /// <summary>Надеть вещь (или снять: id пустой — только для необязательных слотов).</summary>
+        public static void Wear(PlayerProfile profile, string slot, string id)
+        {
+            if (string.IsNullOrEmpty(id) && CharacterCatalog.IsRequired(slot)) return;
+            var item = CharacterCatalog.Item(id);
+            if (!string.IsNullOrEmpty(id) && !profile.HasClothing(item)) return;
+            profile.outfit = profile.Outfit.With(slot, id).Serialize();
+            Save();
         }
 
         /// <summary>Итог зачисления после партии: кому сколько ушло в кошелёк.</summary>

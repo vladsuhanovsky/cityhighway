@@ -1,0 +1,230 @@
+{
+ "canvas": [
+  512,
+  768
+ ],
+ "note": "Все PNG — 512×768, прозрачный фон, фигура как в template.png. Слои рисуются по порядку order. price 0 — есть у всех.",
+ "order": [
+  "body",
+  "bottom",
+  "shoes",
+  "top",
+  "hair",
+  "accessory",
+  "hat"
+ ],
+ "defaults": {
+  "body": "body_light",
+  "hair": "hair_short",
+  "top": "top_tshirt",
+  "bottom": "bottom_trousers",
+  "shoes": "shoes_boots",
+  "hat": "",
+  "accessory": ""
+ },
+ "items": [
+  {
+   "id": "body_light",
+   "slot": "body",
+   "name": "Светлая кожа",
+   "price": 0,
+   "file": "body/body_light"
+  },
+  {
+   "id": "body_tan",
+   "slot": "body",
+   "name": "Смуглая кожа",
+   "price": 0,
+   "file": "body/body_tan"
+  },
+  {
+   "id": "body_dark",
+   "slot": "body",
+   "name": "Тёмная кожа",
+   "price": 0,
+   "file": "body/body_dark"
+  },
+  {
+   "id": "hair_short",
+   "slot": "hair",
+   "name": "Короткая стрижка",
+   "price": 0,
+   "file": "hair/hair_short"
+  },
+  {
+   "id": "hair_long",
+   "slot": "hair",
+   "name": "Длинные волосы",
+   "price": 0,
+   "file": "hair/hair_long"
+  },
+  {
+   "id": "hair_bun",
+   "slot": "hair",
+   "name": "Пучок",
+   "price": 10,
+   "file": "hair/hair_bun"
+  },
+  {
+   "id": "hair_beard",
+   "slot": "hair",
+   "name": "Борода прораба",
+   "price": 15,
+   "file": "hair/hair_beard"
+  },
+  {
+   "id": "top_tshirt",
+   "slot": "top",
+   "name": "Футболка",
+   "price": 0,
+   "file": "top/top_tshirt"
+  },
+  {
+   "id": "top_vest",
+   "slot": "top",
+   "name": "Сигнальный жилет",
+   "price": 10,
+   "file": "top/top_vest"
+  },
+  {
+   "id": "top_shirt",
+   "slot": "top",
+   "name": "Рубашка",
+   "price": 15,
+   "file": "top/top_shirt"
+  },
+  {
+   "id": "top_sweater",
+   "slot": "top",
+   "name": "Свитер",
+   "price": 15,
+   "file": "top/top_sweater"
+  },
+  {
+   "id": "top_jacket",
+   "slot": "top",
+   "name": "Пиджак",
+   "price": 30,
+   "file": "top/top_jacket"
+  },
+  {
+   "id": "bottom_trousers",
+   "slot": "bottom",
+   "name": "Рабочие брюки",
+   "price": 0,
+   "file": "bottom/bottom_trousers"
+  },
+  {
+   "id": "bottom_jeans",
+   "slot": "bottom",
+   "name": "Джинсы",
+   "price": 10,
+   "file": "bottom/bottom_jeans"
+  },
+  {
+   "id": "bottom_overalls",
+   "slot": "bottom",
+   "name": "Комбинезон",
+   "price": 20,
+   "file": "bottom/bottom_overalls"
+  },
+  {
+   "id": "bottom_classic",
+   "slot": "bottom",
+   "name": "Классические брюки",
+   "price": 15,
+   "file": "bottom/bottom_classic"
+  },
+  {
+   "id": "shoes_boots",
+   "slot": "shoes",
+   "name": "Рабочие ботинки",
+   "price": 0,
+   "file": "shoes/shoes_boots"
+  },
+  {
+   "id": "shoes_sneakers",
+   "slot": "shoes",
+   "name": "Кроссовки",
+   "price": 10,
+   "file": "shoes/shoes_sneakers"
+  },
+  {
+   "id": "shoes_rubber",
+   "slot": "shoes",
+   "name": "Резиновые сапоги",
+   "price": 15,
+   "file": "shoes/shoes_rubber"
+  },
+  {
+   "id": "shoes_oxford",
+   "slot": "shoes",
+   "name": "Туфли",
+   "price": 20,
+   "file": "shoes/shoes_oxford"
+  },
+  {
+   "id": "hat_hardhat",
+   "slot": "hat",
+   "name": "Строительная каска",
+   "price": 10,
+   "file": "hat/hat_hardhat"
+  },
+  {
+   "id": "hat_cap",
+   "slot": "hat",
+   "name": "Кепка",
+   "price": 10,
+   "file": "hat/hat_cap"
+  },
+  {
+   "id": "hat_fedora",
+   "slot": "hat",
+   "name": "Шляпа",
+   "price": 20,
+   "file": "hat/hat_fedora"
+  },
+  {
+   "id": "hat_tophat",
+   "slot": "hat",
+   "name": "Цилиндр",
+   "price": 35,
+   "file": "hat/hat_tophat"
+  },
+  {
+   "id": "acc_glasses",
+   "slot": "accessory",
+   "name": "Очки",
+   "price": 10,
+   "file": "accessory/acc_glasses"
+  },
+  {
+   "id": "acc_tie",
+   "slot": "accessory",
+   "name": "Галстук",
+   "price": 15,
+   "file": "accessory/acc_tie"
+  },
+  {
+   "id": "acc_radio",
+   "slot": "accessory",
+   "name": "Рация",
+   "price": 20,
+   "file": "accessory/acc_radio"
+  },
+  {
+   "id": "acc_blueprint",
+   "slot": "accessory",
+   "name": "Свиток чертежей",
+   "price": 20,
+   "file": "accessory/acc_blueprint"
+  },
+  {
+   "id": "acc_chain",
+   "slot": "accessory",
+   "name": "Золотая цепь",
+   "price": 40,
+   "file": "accessory/acc_chain"
+  }
+ ]
+}

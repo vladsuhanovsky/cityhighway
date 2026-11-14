@@ -17,6 +17,9 @@ namespace CityHighways.Presentation
         readonly Action _setupChanged;
         readonly VisualElement _content;
         string _status = "";
+        /// <summary>Открытый слот гардероба и примерка (вещь показывается на персонаже, пока не надели или не ушли).</summary>
+        string _slot = "hat";
+        Outfit _tryOn;
 
         public VisualElement Root { get; }
 
@@ -140,6 +143,8 @@ namespace CityHighways.Presentation
             // Аватар Steam мог ещё не догрузиться — заглянем ещё раз.
             if (profile.IsSteam && Profiles.AvatarOf(profile) == null)
                 avatar.schedule.Execute(() => avatar.Set(profile)).Every(500).Until(() => Profiles.AvatarOf(profile) != null);
+
+            Wardrobe(profile);
 
             // ---------------------------------------------------------------- Выбор профиля
             var chooser = Ui.Card(14f);
@@ -283,6 +288,130 @@ namespace CityHighways.Presentation
             Ui.Border(input, 1f, Theme.TextDim);
             Ui.Padding(input, 6f, 10f);
             return field;
+        }
+
+        /// <summary>
+        /// Персонаж и гардероб: слева персонаж в полный рост (с примеркой), справа вкладки слотов и вещи —
+        /// каждая показана на мини-персонаже. Клик по вещи — примерить, кнопка — купить или надеть.
+        /// </summary>
+        void Wardrobe(PlayerProfile profile)
+        {
+            var card = Ui.Card(14f);
+            card.style.marginBottom = 12f;
+            card.style.flexDirection = FlexDirection.Row;
+            card.style.alignItems = Align.FlexStart;
+
+            var worn = profile.Outfit;
+            var shown = _tryOn ?? worn;
+            var left = Ui.Column();
+            left.style.alignItems = Align.Center;
+            left.style.marginRight = 18f;
+            left.Add(Ui.Text("Персонаж", 17f, Theme.Text, true));
+            var stage = new CharacterView(200f);
+            stage.Set(shown);
+            stage.style.marginTop = 8f;
+            stage.style.backgroundColor = Theme.PanelLight;
+            Ui.Radius(stage, 12f);
+            left.Add(stage);
+            if (_tryOn != null)
+            {
+                var note = Ui.Text("Примерка — ещё не надето", 12f, Theme.Accent, true);
+                note.style.marginTop = 6f;
+                left.Add(note);
+                left.Add(Ui.Button("Снять примерку", () => { _tryOn = null; Rebuild(); }, ButtonKind.Ghost, 13f));
+            }
+            card.Add(left);
+
+            var right = Ui.Column();
+            right.style.flexGrow = 1f;
+            right.style.flexShrink = 1f;
+            var tabs = Ui.Row();
+            tabs.style.flexWrap = Wrap.Wrap;
+            foreach (var slot in CharacterCatalog.Slots)
+            {
+                string s = slot;
+                var tab = Ui.Button(CharacterCatalog.SlotTitle(slot), () => { _slot = s; Rebuild(); },
+                    slot == _slot ? ButtonKind.Primary : ButtonKind.Secondary, 13f);
+                tab.style.marginRight = 6f;
+                tab.style.marginBottom = 6f;
+                tabs.Add(tab);
+            }
+            right.Add(tabs);
+
+            var grid = Ui.Row();
+            grid.style.flexWrap = Wrap.Wrap;
+            grid.style.alignItems = Align.FlexStart;
+            grid.style.marginTop = 6f;
+            if (!CharacterCatalog.IsRequired(_slot))
+                grid.Add(ClothingCell(profile, null, worn));
+            foreach (var item in CharacterCatalog.ItemsIn(_slot))
+                grid.Add(ClothingCell(profile, item, worn));
+            right.Add(grid);
+            var hint = Ui.Text("Картинки одежды лежат в Resources/CityHighways/Character — их можно заменить своими (PNG 512×768, см. README).", 11f, Theme.TextDim);
+            hint.style.whiteSpace = WhiteSpace.Normal;
+            hint.style.marginTop = 6f;
+            right.Add(hint);
+            card.Add(right);
+            _content.Add(card);
+        }
+
+        /// <summary>Клетка вещи: мини-персонаж в ней, название, цена и кнопка. item == null — «ничего» для необязательного слота.</summary>
+        VisualElement ClothingCell(PlayerProfile profile, CharacterItem item, Outfit worn)
+        {
+            string id = item?.id ?? "";
+            bool wearing = worn.Get(_slot) == id;
+            bool has = item == null || profile.HasClothing(item);
+            var cell = Ui.Column();
+            cell.style.width = 112f;
+            cell.style.marginRight = 8f;
+            cell.style.marginBottom = 8f;
+            cell.style.alignItems = Align.Center;
+            cell.style.backgroundColor = wearing ? Theme.PanelHover : Theme.PanelLight;
+            Ui.Radius(cell, 8f);
+            Ui.Padding(cell, 6f, 4f);
+            Ui.Border(cell, wearing ? 2f : 1f, wearing ? Theme.Accent : Theme.Line);
+
+            var mini = new CharacterView(56f, _slot == "hat" || _slot == "hair" || _slot == "body");
+            mini.Set(worn.With(_slot, id));
+            cell.Add(mini);
+            var name = Ui.Text(item?.name ?? "Без " + (_slot == "hat" ? "головного убора" : "аксессуара"), 12f, Theme.Text, true);
+            name.style.whiteSpace = WhiteSpace.Normal;
+            name.style.unityTextAlign = TextAnchor.MiddleCenter;
+            name.style.marginTop = 4f;
+            cell.Add(name);
+
+            // Клик по клетке — примерка.
+            cell.RegisterCallback<ClickEvent>(e =>
+            {
+                if (e.target is UnityEngine.UIElements.Button) return; // кнопка сама всё сделала
+                _tryOn = wearing ? null : worn.With(_slot, id);
+                Rebuild();
+            });
+
+            UnityEngine.UIElements.Button button;
+            if (wearing)
+            {
+                button = Ui.Button("Надето", () => { }, ButtonKind.Ghost, 12f);
+                Ui.SetEnabled(button, false);
+            }
+            else if (has)
+            {
+                button = Ui.Button("Надеть", () => { Profiles.Wear(profile, _slot, id); _tryOn = null; Rebuild(); }, ButtonKind.Secondary, 12f);
+            }
+            else
+            {
+                button = Ui.Button($"Купить · {item.price}", () =>
+                {
+                    var error = Profiles.BuyClothing(profile, item);
+                    _status = error ?? $"Куплено и надето: {item.name}.";
+                    if (error == null) _tryOn = null;
+                    Rebuild();
+                }, ButtonKind.Primary, 12f);
+                Ui.SetEnabled(button, profile.wallet >= item.price);
+            }
+            button.style.marginTop = 4f;
+            cell.Add(button);
+            return cell;
         }
 
         void Shop(PlayerProfile profile, ShopKind kind, string caption)
