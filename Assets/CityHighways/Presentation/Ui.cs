@@ -64,7 +64,7 @@ namespace CityHighways.Presentation
             label.pickingMode = PickingMode.Ignore;
             label.style.fontSize = size;
             label.style.color = color ?? Theme.Text;
-            label.style.unityFontStyleAndWeight = bold ? FontStyle.Bold : FontStyle.Normal;
+            Fonts.Apply(label, Fonts.For(size, bold));
             label.style.whiteSpace = WhiteSpace.Normal;
             label.style.unityTextAlign = TextAnchor.MiddleLeft;
             Margin(label, 0f);
@@ -169,7 +169,7 @@ namespace CityHighways.Presentation
             });
             button.text = text;
             button.style.fontSize = fontSize;
-            button.style.unityFontStyleAndWeight = FontStyle.Bold;
+            Fonts.Apply(button, fontSize >= Fonts.DisplayFrom ? Fonts.Weight.Bold : Fonts.Weight.SemiBold);
             button.style.unityTextAlign = TextAnchor.MiddleCenter;
             button.style.color = textColor;
             button.style.backgroundColor = normal;

@@ -97,6 +97,8 @@ namespace CityHighways.Presentation
             public readonly Dictionary<string, int> GoalOwners = new Dictionary<string, int>();
             /// <summary>Сколько каждому заплатили за проезд и какие дороги в пробке.</summary>
             public int[] Earned;
+            /// <summary>Видимые очки без проезда (дороги, цели, удача, штрафы) — для всплывающих «+N».</summary>
+            public int[] Points;
             public readonly HashSet<string> Jammed = new HashSet<string>();
         }
 
@@ -982,7 +984,8 @@ namespace CityHighways.Presentation
                 ContractDeck = _game.ContractDeckCount,
                 EventNumber = _game.EventNumber,
                 LuckNumber = _game.LuckNumber,
-                Earned = _game.Players.Select(p => p.TollsEarned).ToArray()
+                Earned = _game.Players.Select(p => p.TollsEarned).ToArray(),
+                Points = _game.Players.Select(p => p.RoadPoints + p.GoalPoints + p.LuckPoints + p.PenaltyPoints).ToArray()
             };
             foreach (var goal in _game.ActiveGoals)
             {
@@ -1170,6 +1173,35 @@ namespace CityHighways.Presentation
                 _app.Tweener.After(claimDuration + 0.5f, () => Toast(text, Theme.Danger));
             }
 
+            // Очки по ходу партии: «+N» / «−N» у строки игрока (дороги, цели, удача, штрафы; проезд — монетками ниже).
+            if (before.Points != null && now.Points != null)
+                for (int i = 0; i < now.Points.Length && i < before.Points.Length; i++)
+                {
+                    int diff = now.Points[i] - before.Points[i];
+                    if (diff == 0 || i >= _playerRows.Length) continue;
+                    var row = _playerRows[i].Root;
+                    _app.Tweener.After(claimDuration * 0.8f, () => FloatText(row, diff > 0 ? $"+{diff}" : $"{diff}", diff > 0 ? Theme.Success : Theme.Danger));
+                }
+
+            // Оплаченные маршруты: свет по пути и монетки владельцам дорог. Свой маршрут виден всегда, чужой —
+            // только если за проезд платили (тогда он и так открыт всем).
+            int coinWave = 0;
+            foreach (var key in now.Completed)
+            {
+                if (before.Completed.Contains(key)) continue;
+                int separator = key.IndexOf(':');
+                int payer = int.Parse(key.Substring(0, separator));
+                var paidContract = _game.Players[payer].Contracts.FirstOrDefault(c => c.Id == key.Substring(separator + 1));
+                var paid = paidContract == null ? null : _game.PaidRouteOf(payer, paidContract);
+                if (paid == null) continue;
+                bool mine = payer == Viewer && !IsBot(payer);
+                if (!mine && paid.Passages.Count == 0) continue;
+                float delay = claimDuration + 0.2f + coinWave * 0.9f;
+                GlowRoute(paid.Path, Palette.PlayerColor(payer), delay);
+                if (paid.Passages.Count > 0) FlyCoins(paid, payer, delay + 0.5f);
+                coinWave++;
+            }
+
             // Выполненные контракты того, кто сидит за экраном.
             foreach (var key in now.Completed)
             {
@@ -1285,6 +1317,114 @@ namespace CityHighways.Presentation
                 card.RemoveFromHierarchy();
                 if (to is CardView target) _app.Tweener.Add(0.3f, target.Pulse, () => target.Pulse(0f), 0f, false);
             }, delay);
+        }
+
+        /// <summary>Свет по маршруту контракта на карте (волна от начала к концу, затем гаснет).</summary>
+        void GlowRoute(IReadOnlyList<string> path, Color color, float delay)
+        {
+            if (path == null || path.Count == 0) return;
+            var ids = path.ToList();
+            _app.Tweener.Add(1.8f, k =>
+            {
+                _map.RoutePath = ids;
+                _map.RouteProgress = k;
+                _map.RouteColor = color;
+            }, () =>
+            {
+                if (_map.RoutePath == ids) _map.RoutePath = null;
+            }, delay, false);
+        }
+
+        /// <summary>
+        /// Плата за проезд: с каждой чужой дороги маршрута монетка «+N» летит к строке владельца,
+        /// у плательщика всплывает «−N»; сбор за пробку — красное «−N» над дорогой (сгорает).
+        /// </summary>
+        void FlyCoins(PaidRoute route, int payer, float delay)
+        {
+            if (!IsLaidOut(_map) || !IsLaidOut(_fx)) return;
+            int index = 0;
+            foreach (var passage in route.Passages)
+            {
+                float start = delay + index++ * 0.22f;
+                var from = _fx.WorldToLocal(_map.RoadWorldCenter(passage.RoadId));
+                if (passage.JamFee > 0)
+                {
+                    var burnt = from;
+                    _app.Tweener.After(start, () => FloatAt(burnt, $"−{passage.JamFee}", Theme.Danger));
+                }
+                if (passage.Toll <= 0 || passage.Owner < 0 || passage.Owner >= _playerRows.Length) continue;
+                var target = _playerRows[passage.Owner].Root;
+                if (!IsLaidOut(target)) continue;
+                var to = _fx.WorldToLocal(target.worldBound.center);
+
+                const float size = 30f;
+                var coin = Ui.Box();
+                coin.pickingMode = PickingMode.Ignore;
+                coin.style.position = Position.Absolute;
+                coin.style.width = size;
+                coin.style.height = size;
+                coin.style.backgroundColor = new Color(1f, 0.80f, 0.25f);
+                Ui.Radius(coin, size / 2f);
+                Ui.Border(coin, 2f, new Color(0.72f, 0.50f, 0.08f));
+                coin.style.justifyContent = Justify.Center;
+                coin.style.alignItems = Align.Center;
+                var label = Ui.Text($"+{passage.Toll}", 12f, new Color(0.30f, 0.20f, 0.02f), true);
+                label.style.unityTextAlign = TextAnchor.MiddleCenter;
+                coin.Add(label);
+                coin.style.opacity = 0f;
+                _fx.Add(coin);
+
+                _app.Tweener.After(start, () => _app.Sound.Play(Sfx.Coin, 0.7f));
+                _app.Tweener.Add(1.0f, k =>
+                {
+                    // Сначала монетка выпрыгивает над дорогой, потом по дуге летит к владельцу.
+                    float pop = Mathf.Clamp01(k / 0.25f);
+                    float fly = Ui.EaseInOutCubic(Mathf.Clamp01((k - 0.25f) / 0.75f));
+                    var position = Vector2.Lerp(from + new Vector2(0f, -26f * Ui.EaseOutCubic(pop)), to, fly);
+                    position.y -= Mathf.Sin(fly * Mathf.PI) * 60f;
+                    coin.style.left = position.x - size / 2f;
+                    coin.style.top = position.y - size / 2f;
+                    float scale = 0.4f + 0.6f * Ui.EaseOutCubic(pop) - 0.3f * fly;
+                    coin.style.scale = new Scale(new Vector3(scale, scale, 1f));
+                    coin.style.opacity = k > 0.9f ? (1f - k) / 0.1f : 1f;
+                }, () =>
+                {
+                    coin.RemoveFromHierarchy();
+                    FloatText(target, $"+{passage.Toll}", Theme.Accent);
+                }, start, false);
+            }
+            if (payer >= 0 && payer < _playerRows.Length)
+            {
+                int total = route.Toll + route.JamFee;
+                var payerRow = _playerRows[payer].Root;
+                _app.Tweener.After(delay, () => FloatText(payerRow, $"−{total}", Theme.Danger));
+            }
+        }
+
+        /// <summary>Всплывающая надпись у правого края элемента (строки игрока): поднимается и гаснет.</summary>
+        void FloatText(VisualElement anchor, string text, Color color)
+        {
+            if (!IsLaidOut(anchor) || !IsLaidOut(_fx)) return;
+            var bounds = anchor.worldBound;
+            FloatAt(_fx.WorldToLocal(new Vector2(bounds.xMax - 34f, bounds.center.y)), text, color);
+        }
+
+        /// <summary>Всплывающая надпись в точке слоя эффектов.</summary>
+        void FloatAt(Vector2 at, string text, Color color)
+        {
+            var label = Ui.Text(text, 20f, color, true);
+            label.pickingMode = PickingMode.Ignore;
+            label.style.position = Position.Absolute;
+            label.style.unityTextOutlineColor = new Color(0f, 0f, 0f, 0.8f);
+            label.style.unityTextOutlineWidth = 0.25f;
+            label.style.left = at.x - 14f;
+            label.style.top = at.y - 12f;
+            _fx.Add(label);
+            _app.Tweener.Add(1.3f, k =>
+            {
+                label.style.top = at.y - 12f - 34f * Ui.EaseOutCubic(k);
+                label.style.opacity = k < 0.1f ? k / 0.1f : k > 0.7f ? (1f - k) / 0.3f : 1f;
+            }, label.RemoveFromHierarchy, 0f, false);
         }
 
         static bool IsLaidOut(VisualElement e) =>

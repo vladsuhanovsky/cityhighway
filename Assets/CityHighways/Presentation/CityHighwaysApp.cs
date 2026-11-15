@@ -54,7 +54,8 @@ namespace CityHighways.Presentation
             }
             _root.style.flexGrow = 1f;
             _root.style.backgroundColor = Theme.Background;
-            var usedFont = font != null ? font : LoadBuiltinFont();
+            // Свой шрифт из инспектора, иначе Golos Text из Resources, иначе встроенный.
+            var usedFont = font != null ? font : Fonts.Regular != null ? Fonts.Regular : LoadBuiltinFont();
             if (usedFont != null) _root.style.unityFontDefinition = new StyleFontDefinition(FontDefinition.FromFont(usedFont));
 
             Display = DisplaySettings.Load();

@@ -14,7 +14,8 @@ namespace CityHighways.Presentation
         Ticket,
         Error,
         Bell,
-        Fanfare
+        Fanfare,
+        Coin
     }
 
     /// <summary>
@@ -69,6 +70,15 @@ namespace CityHighways.Presentation
 
             _clips[Sfx.Error] = Make("error", 0.18f, t =>
                 Mathf.Sign(Mathf.Sin(2f * Mathf.PI * 165f * t)) * Mathf.Clamp01((0.18f - t) / 0.06f) * 0.12f);
+
+            // Монетка: два коротких звонких «динь» — плата за проезд.
+            _clips[Sfx.Coin] = Make("coin", 0.32f, t =>
+            {
+                float local = t < 0.08f ? t : t - 0.08f;
+                float f = t < 0.08f ? 1568f : 2093f;
+                return Mathf.Sin(2f * Mathf.PI * f * t) * Mathf.Exp(-local * 18f) * 0.18f
+                       + Mathf.Sin(2f * Mathf.PI * f * 2.7f * t) * Mathf.Exp(-local * 40f) * 0.05f;
+            });
 
             _clips[Sfx.Bell] = Make("bell", 0.7f, t =>
                 (Mathf.Sin(2f * Mathf.PI * 880f * t) + 0.45f * Mathf.Sin(2f * Mathf.PI * 1760f * t) * Mathf.Exp(-t * 8f))

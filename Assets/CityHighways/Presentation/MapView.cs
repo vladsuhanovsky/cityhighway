@@ -35,6 +35,23 @@ namespace CityHighways.Presentation
         public readonly HashSet<string> Affordable = new HashSet<string>();
         /// <summary>Подсвеченный контракт: первый район (жёлтый) и второй (красный); null — подсветки нет.</summary>
         public string HighlightFrom { get; private set; }
+        /// <summary>
+        /// Свет по маршруту выполненного контракта: дороги RoutePath (по порядку) загораются одна за другой,
+        /// RouteProgress 0..1 — где «голова» света; в конце свет гаснет.
+        /// </summary>
+        public IReadOnlyList<string> RoutePath { get; set; }
+        public float RouteProgress { get; set; }
+        public Color RouteColor { get; set; } = Color.white;
+
+        /// <summary>Середина дороги в координатах окна (для летящих монеток).</summary>
+        public Vector2 RoadWorldCenter(string roadId)
+        {
+            var road = _game?.Map.GetRoad(roadId);
+            if (road == null) return worldBound.center;
+            var mid = (LocationPosition(road.A) + LocationPosition(road.B)) * 0.5f;
+            return this.LocalToWorld(mid);
+        }
+
         /// <summary>Дорога, которую подсказывает наставник обучения (голубая пульсирующая рамка); null — нет.</summary>
         public string HintRoad { get; set; }
         public string HighlightTo { get; private set; }
@@ -394,11 +411,16 @@ namespace CityHighways.Presentation
             float dt = Mathf.Clamp(PulseTime - _lastDrawTime, 0f, 0.1f);
             _lastDrawTime = PulseTime;
 
+            UpdateAtmosphere(dt);
+            DrawAtmosphere(p, area);
             foreach (var road in _game.Map.Roads)
                 if (_game.IsRoadOpen(road.Id)) DrawRoadOver(p, road);
             DrawCars(p);
+            DrawStreetLights(p);
             foreach (var location in _game.Map.Locations)
                 if (_game.IsLocationOpen(location.Id)) DrawLocation(p, location);
+            DrawCones(p);
+            DrawSnowfall(p, area);
 
             if (HasHighlight) DrawContractHighlight(p, area);
             DrawFireworks(p, dt);
@@ -406,6 +428,134 @@ namespace CityHighways.Presentation
         }
 
         float _lastDrawTime;
+
+        // ================================================================== Атмосфера
+        // Снег (сценарий «Зима» или снегопад), вечер перед финалом и ночь в последнем круге с фонарями,
+        // конусы на ремонте. Уровни меняются плавно, а не скачком.
+
+        float _dusk;      // 0 — день, 0.5 — вечер («скоро финал»), 1 — ночь (последний круг)
+        float _snowCover; // 0..1 — снег на земле
+        float _snowfall;  // 0..1 — идёт ли снег
+
+        void UpdateAtmosphere(float dt)
+        {
+            float duskTarget = _game.Phase == GamePhase.GameOver ? 1f : _game.IsFinalRound ? 1f : _game.FinalWarned ? 0.5f : 0f;
+            bool snowing = _game.CurrentEvent != null && _game.CurrentEvent.Kind == CityEventKind.Snow;
+            bool winter = _game.Scenario == ScenarioKind.Winter;
+            float coverTarget = winter ? (snowing ? 1f : 0.75f) : snowing ? 0.6f : 0f;
+            float fallTarget = snowing ? 1f : winter ? 0.35f : 0f;
+            float step = dt * 0.6f; // за пару секунд
+            _dusk = Mathf.MoveTowards(_dusk, duskTarget, step);
+            _snowCover = Mathf.MoveTowards(_snowCover, coverTarget, step);
+            _snowfall = Mathf.MoveTowards(_snowfall, fallTarget, step);
+        }
+
+        void DrawAtmosphere(Painter2D p, Rect area)
+        {
+            if (_snowCover > 0.01f)
+            {
+                p.fillColor = new Color(0.93f, 0.96f, 1f, 0.20f * _snowCover);
+                RectPath(p, area);
+                p.Fill();
+            }
+            if (_dusk > 0.01f)
+            {
+                // До 0.5 — тёплый закат, дальше — синяя ночь.
+                float evening = Mathf.Clamp01(_dusk * 2f) * (1f - Mathf.Clamp01((_dusk - 0.5f) * 2f));
+                float night = Mathf.Clamp01((_dusk - 0.5f) * 2f);
+                if (evening > 0.01f)
+                {
+                    p.fillColor = new Color(1f, 0.50f, 0.18f, 0.13f * evening);
+                    RectPath(p, area);
+                    p.Fill();
+                }
+                p.fillColor = new Color(0.04f, 0.06f, 0.18f, 0.12f * evening + 0.42f * night);
+                RectPath(p, area);
+                p.Fill();
+            }
+        }
+
+        /// <summary>Фонари у мест: тёплое свечение, когда темнеет.</summary>
+        void DrawStreetLights(Painter2D p)
+        {
+            if (_dusk < 0.15f) return;
+            float level = Mathf.Clamp01((_dusk - 0.15f) / 0.85f);
+            float radius = Mathf.Max(18f, _layout.Area.height * 0.03f);
+            foreach (var location in _game.Map.Locations)
+            {
+                if (!_game.IsLocationOpen(location.Id)) continue;
+                var center = _layout.LocationPosition(location.Id);
+                float flicker = 0.92f + 0.08f * Mathf.Sin(PulseTime * 3f + location.Id.GetHashCode() % 7);
+                for (int ring = 3; ring >= 1; ring--)
+                {
+                    p.fillColor = new Color(1f, 0.80f, 0.45f, 0.10f * level * flicker);
+                    CirclePath(p, center, radius * ring * 0.8f);
+                    p.Fill();
+                }
+            }
+        }
+
+        /// <summary>Дорожные конусы на закрытых свободных участках (ремонт, «Год ремонта», парад).</summary>
+        void DrawCones(Painter2D p)
+        {
+            foreach (var road in _game.Map.Roads)
+            {
+                if (_game.GetRoadOwner(road.Id).HasValue || !_game.IsRoadOpen(road.Id)) continue;
+                if (!_game.IsUnderRepair(road.Id) && !_game.IsParadeClosed(road.Id)) continue;
+                var segments = _layout.GetSegments(road);
+                if (segments.Count == 0) continue;
+                // Конусы по краям первого и последнего участка — «въезд закрыт».
+                foreach (var segment in new[] { segments[0], segments[segments.Count - 1] })
+                {
+                    float rad = segment.Angle * Mathf.Deg2Rad;
+                    var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+                    var normal = new Vector2(-dir.y, dir.x);
+                    float side = BoardLayout.RoadThickness * 0.9f;
+                    DrawCone(p, segment.Center + normal * side);
+                    DrawCone(p, segment.Center - normal * side);
+                }
+            }
+        }
+
+        static void DrawCone(Painter2D p, Vector2 at)
+        {
+            const float h = 11f, w = 8f;
+            p.fillColor = new Color(0f, 0f, 0f, 0.35f);
+            CirclePath(p, at + new Vector2(1.5f, h * 0.45f), w * 0.55f);
+            p.Fill();
+            p.fillColor = new Color(1f, 0.45f, 0.08f);
+            p.BeginPath();
+            p.MoveTo(at + new Vector2(0f, -h * 0.55f));
+            p.LineTo(at + new Vector2(w / 2f, h * 0.45f));
+            p.LineTo(at + new Vector2(-w / 2f, h * 0.45f));
+            p.ClosePath();
+            p.Fill();
+            p.strokeColor = Color.white;
+            p.lineWidth = 1.6f;
+            Line(p, at + new Vector2(-w * 0.24f, 0f), at + new Vector2(w * 0.24f, 0f));
+        }
+
+        /// <summary>Снегопад: хлопья падают с покачиванием; положение — от времени, без хранения частиц.</summary>
+        void DrawSnowfall(Painter2D p, Rect area)
+        {
+            if (_snowfall < 0.01f) return;
+            int count = Mathf.RoundToInt(180f * _snowfall);
+            for (int i = 0; i < count; i++)
+            {
+                float seed = i * 12.9898f;
+                float rx = Frac(Mathf.Sin(seed) * 43758.5453f);
+                float ry = Frac(Mathf.Sin(seed * 1.7f) * 24634.6345f);
+                float speed = 0.05f + 0.06f * Frac(rx * 7.3f);
+                float y = Frac(ry + PulseTime * speed) * (area.height + 20f) - 10f;
+                float x = rx * area.width + Mathf.Sin(PulseTime * (0.6f + rx) + i) * 12f;
+                float size = 1.1f + 1.6f * Frac(ry * 5.1f);
+                p.fillColor = new Color(1f, 1f, 1f, (0.45f + 0.4f * Frac(rx * 3.7f)) * _snowfall);
+                CirclePath(p, new Vector2(x, y), size);
+                p.Fill();
+            }
+        }
+
+        static float Frac(float v) => v - Mathf.Floor(v);
 
         /// <summary>Затемнение всей карты и поверх него — два района контракта и путь между ними.</summary>
         void DrawContractHighlight(Painter2D p, Rect area)
@@ -560,6 +710,39 @@ namespace CityHighways.Presentation
                 {
                     SegmentPath(p, segment, 1.5f, Vector2.zero);
                     p.Stroke();
+                }
+            }
+
+            // Свет по маршруту выполненного контракта: волна идёт от начала пути к концу.
+            if (RoutePath != null)
+            {
+                int index = -1;
+                for (int i = 0; i < RoutePath.Count; i++)
+                    if (RoutePath[i] == road.Id) { index = i; break; }
+                if (index >= 0)
+                {
+                    float head = RouteProgress * (RoutePath.Count + 1.5f);
+                    float lit = Mathf.Clamp01(head - index);
+                    float fade = RouteProgress > 0.75f ? (1f - RouteProgress) / 0.25f : 1f;
+                    float alpha = lit * fade;
+                    if (alpha > 0.01f)
+                    {
+                        int count = Mathf.Clamp(Mathf.CeilToInt(lit * segments.Count), 0, segments.Count);
+                        p.strokeColor = new Color(RouteColor.r, RouteColor.g, RouteColor.b, 0.85f * alpha);
+                        p.lineWidth = 12f;
+                        for (int i = 0; i < count; i++)
+                        {
+                            SegmentPath(p, segments[i], 1.5f, Vector2.zero);
+                            p.Stroke();
+                        }
+                        p.strokeColor = new Color(1f, 1f, 1f, 0.9f * alpha);
+                        p.lineWidth = 3.5f;
+                        for (int i = 0; i < count; i++)
+                        {
+                            SegmentPath(p, segments[i], 1.5f, Vector2.zero);
+                            p.Stroke();
+                        }
+                    }
                 }
             }
 
