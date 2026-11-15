@@ -68,7 +68,7 @@ namespace CityHighways.Core
             Seed = seed ?? new Random().Next();
             _rng = new Random(Seed);
             foreach (var district in map.Districts)
-                if (!district.IsExpansion) _openDistricts.Add(district.Id);
+                if (!district.IsExpansion || Config.ExpansionsOpen) _openDistricts.Add(district.Id);
 
             _deck = new ResourceDeck(BuildCardSet(Config), _rng);
             // В колоде только контракты открытых районов; контракты расширений придут с событием.
@@ -85,11 +85,14 @@ namespace CityHighways.Core
             };
             if (characters != null && characters.Count != playerNames.Count)
                 throw new ArgumentException("Персонажей должно быть столько же, сколько игроков.");
+            var drafting = new List<PlayerState>();
             for (int i = 0; i < playerNames.Count; i++)
             {
                 var player = new PlayerState(i, playerNames[i], pieces);
-                player.Character = characters?[i] ?? CharacterKind.None;
+                var kind = characters?[i] ?? CharacterKind.None;
+                player.Character = kind == Characters.Draft ? CharacterKind.None : kind;
                 if (player.Character == CharacterKind.Foreman) player.FreeRoadsLeft = Config.ForemanFreeRoads;
+                if (kind == Characters.Draft) drafting.Add(player);
                 _players.Add(player);
             }
 
@@ -99,6 +102,7 @@ namespace CityHighways.Core
                     if (_deck.TryDraw(out var card)) player.AddCard(card);
                 player.PendingList.AddRange(_contractDeck.Draw(Config.InitialContractsDealt));
             }
+            DealCharacterOffers(drafting);
 
             SetupGoalsAndLuck();
             RefillFaceUpRow();
@@ -122,7 +126,7 @@ namespace CityHighways.Core
                 if (Phase == GamePhase.SetupContracts)
                 {
                     foreach (var p in _players)
-                        if (p.PendingContracts.Count > 0) return p.Index;
+                        if (p.PendingContracts.Count > 0 || p.CharacterOffer.Count > 0) return p.Index;
                     return -1;
                 }
                 return CurrentPlayerIndex;
@@ -159,7 +163,7 @@ namespace CityHighways.Core
         bool IsContractOpen(Contract contract) => contract.Districts.All(IsDistrictOpen);
 
         /// <summary>Участок закрыт на ремонт до конца круга.</summary>
-        public bool IsUnderRepair(string roadId) => _repairRoads.Contains(roadId);
+        public bool IsUnderRepair(string roadId) => _repairRoads.Contains(roadId) || _scheduledRepairs.Contains(roadId);
 
         /// <summary>Дорога построена в «Час пик» — проезд по ней дороже.</summary>
         public bool IsRushHourRoad(string roadId) => _rushHourRoads.Contains(roadId);
@@ -196,8 +200,15 @@ namespace CityHighways.Core
         int BaseBuildCost(Road road, PlayerState player)
         {
             bool permit = _permitActive && player != null && player.Index == CurrentPlayerIndex;
-            if (road.Resource == Resource.Gravel && CurrentEvent != null && CurrentEvent.Kind == CityEventKind.Snow && !permit)
-                return road.Length + Config.SnowExtraCost;
+            bool snowfall = CurrentEvent != null && CurrentEvent.Kind == CityEventKind.Snow;
+            if (!permit)
+            {
+                // Снег: щебёнка в снегопад (а зимой — всю партию), зимой в снегопад ещё и бетон.
+                if (road.Resource == Resource.Gravel && (snowfall || Config.PermanentSnow))
+                    return road.Length + Config.SnowExtraCost;
+                if (road.Resource == Resource.Concrete && snowfall && Config.SnowHitsConcrete)
+                    return road.Length + Config.SnowExtraCost;
+            }
             if (!road.IsBridge) return road.Length;
             int cost = road.Length;
             if (CurrentEvent != null && CurrentEvent.Kind == CityEventKind.Subsidy) cost -= Config.BridgeSubsidy;
@@ -476,6 +487,8 @@ namespace CityHighways.Core
                 return owner == player.Index ? "Эта дорога уже ваша." : $"Дорогу уже построил {_players[owner].Name}.";
             if (!IsRoadOpen(road.Id)) return "Этот район ещё не открыт.";
             if (_repairRoads.Contains(road.Id)) return "Ремонт: участок закрыт до конца круга.";
+            if (_scheduledRepairs.Contains(road.Id) && !(_permitActive && player.Index == CurrentPlayerIndex))
+                return "Год ремонта: участок закрыт в этом круге (разрешение мэрии пускает строить).";
             if (IsParadeClosed(road.Id) && !(_permitActive && player.Index == CurrentPlayerIndex))
                 return "Парад: дороги у этого района закрыты до конца круга (разрешение мэрии снимает запрет).";
             if (player.RoadPieces < road.Length) return "Не хватает участков дороги.";
@@ -561,13 +574,15 @@ namespace CityHighways.Core
         void CheckSetupComplete()
         {
             if (Phase != GamePhase.SetupContracts) return;
-            if (_players.Any(p => p.PendingContracts.Count > 0)) return;
+            if (_players.Any(p => p.PendingContracts.Count > 0 || p.CharacterOfferList.Count > 0)) return;
 
             Phase = GamePhase.AwaitingAction;
             CurrentPlayerIndex = 0;
             TurnNumber = 1;
             _turnHandStart = CurrentPlayer.HandSize;
             Emit($"Игра началась. Ходит {CurrentPlayer.Name}.");
+            if (Scenario != ScenarioKind.Standard)
+                Emit($"Сценарий «{Scenarios.Title(Scenario)}»: " + string.Join(" ", Scenarios.Changes(Scenario, Config)));
             StartRound();
         }
 
@@ -648,6 +663,7 @@ namespace CityHighways.Core
             AwardCatchUpInfluence();
             _repairRoads.Clear();
             CurrentEvent = null;
+            RotateScheduledRepairs();
             if (!Config.EventsEnabled) return;
             // Не каждый круг богат на события: с шансом 1 − EventChance — спокойный день.
             if (Config.EventChance < 1f && _rng.NextDouble() >= Config.EventChance) return;

@@ -31,6 +31,9 @@ namespace CityHighways.Core
     public sealed partial class Game
     {
         bool _auctionHeld;
+        /// <summary>Сколько аукционов уже прошло (в «Выборах мэра» их два).</summary>
+        int _auctionsHeld;
+        public int AuctionsHeld => _auctionsHeld;
         Contract _auctionContract;
         int[] _bids;           // -1 — игрок ещё не ставил
         int _auctionStarter;
@@ -69,7 +72,8 @@ namespace CityHighways.Core
             {
                 if (TurnNumber <= 1) return;
                 int start = Config.RoadPiecesFor(_players.Count);
-                int threshold = (int)Math.Ceiling(start * Config.AuctionTriggerShare);
+                float share = _auctionsHeld == 0 ? Config.AuctionTriggerShare : Config.SecondAuctionShare;
+                int threshold = (int)Math.Ceiling(start * share);
                 if (!_players.Any(p => start - p.RoadPieces >= threshold)) return;
             }
 
@@ -78,7 +82,8 @@ namespace CityHighways.Core
             if (contract == null) return; // колода пуста — попробуем в следующем круге
             _contractDeck.Remove(contract);
 
-            _auctionHeld = true;
+            _auctionsHeld++;
+            _auctionHeld = _auctionsHeld >= Math.Max(1, Config.AuctionCount);
             _auctionContract = contract;
             _bids = Enumerable.Repeat(-1, _players.Count).ToArray();
             _auctionStarter = CurrentPlayerIndex;
@@ -130,6 +135,7 @@ namespace CityHighways.Core
                 player.InfluenceSpent += best;
                 player.ContractList.Add(contract);
                 player.MayorContractId = contract.Id;
+                player.MayorContracts.Add(contract.Id);
                 Emit($"Аукцион выигрывает {player.Name} за {best} влияния (ставки: {bids}).");
                 SettleContracts();
             }

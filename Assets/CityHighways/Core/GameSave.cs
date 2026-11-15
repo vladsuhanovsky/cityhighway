@@ -6,7 +6,7 @@ namespace CityHighways.Core
     [Serializable]
     public class GameSaveData
     {
-        public const int CurrentVersion = 12; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки, 10 — проезд при выполнении, пробки, пропуска, 11 — тайный шёпот, цена обновления рынка, 12 — финал
+        public const int CurrentVersion = 13; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки, 10 — проезд при выполнении, пробки, пропуска, 11 — тайный шёпот, цена обновления рынка, 12 — финал, 13 — сценарии и выбор компании
         /// <summary>Самая старая версия, которую ещё можно загрузить (в v2 цели и удача начнутся заново).</summary>
         public const int OldestSupportedVersion = 2;
 
@@ -91,6 +91,10 @@ namespace CityHighways.Core
 
         // Аукцион мэрии (версия 8)
         public bool auctionHeld;
+        // Сценарии и выбор компании (версия 13)
+        public int auctionsHeld;
+        public string[] scheduledRepairs;
+        public string[] nextRepairs;
         public string auctionContract;
         public int[] bids;
         public int auctionStarter;
@@ -174,6 +178,8 @@ namespace CityHighways.Core
         public string[] rewardedContracts;
         public string[] influenceDistricts;
         public string mayorContract;
+        public string[] mayorContracts;
+        public int[] characterOffer;
         public int penaltyPoints;
         public int bribesGiven;
         public int bribesExposed;
@@ -232,6 +238,8 @@ namespace CityHighways.Core
                     rewardedContracts = p.RewardedContracts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
                     influenceDistricts = p.InfluenceDistricts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
                     mayorContract = p.MayorContractId,
+                    mayorContracts = p.MayorContracts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
+                    characterOffer = p.CharacterOfferList.Select(c => (int)c).ToArray(),
                     penaltyPoints = p.PenaltyPoints,
                     bribesGiven = p.BribesGiven,
                     bribesExposed = p.BribesExposed,
@@ -308,6 +316,9 @@ namespace CityHighways.Core
                 lastGivePass = LastTrade?.GivePass ?? false,
                 lastGetPass = LastTrade?.GetPass ?? false,
                 auctionHeld = _auctionHeld,
+                auctionsHeld = _auctionsHeld,
+                scheduledRepairs = _scheduledRepairs.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
+                nextRepairs = _nextRepairs.ToArray(),
                 auctionContract = _auctionContract?.Id,
                 bids = _bids?.ToArray(),
                 auctionStarter = _auctionStarter,
@@ -442,6 +453,13 @@ namespace CityHighways.Core
                 foreach (var id in saved.rewardedContracts ?? new string[0]) player.RewardedContracts.Add(id);
                 foreach (var id in saved.influenceDistricts ?? new string[0]) player.InfluenceDistricts.Add(id);
                 player.MayorContractId = string.IsNullOrEmpty(saved.mayorContract) ? null : saved.mayorContract;
+                foreach (var id in saved.mayorContracts ?? new string[0]) player.MayorContracts.Add(id);
+                if (player.MayorContractId != null) player.MayorContracts.Add(player.MayorContractId);
+                foreach (int c in saved.characterOffer ?? new int[0])
+                {
+                    if (!Characters.All.Contains((CharacterKind)c)) throw new FormatException("Сохранение: неверный персонаж в выборе компании.");
+                    player.CharacterOfferList.Add((CharacterKind)c);
+                }
                 player.PenaltyPoints = saved.penaltyPoints;
                 player.BribesGiven = saved.bribesGiven;
                 player.BribesExposed = saved.bribesExposed;
@@ -585,6 +603,17 @@ namespace CityHighways.Core
             game._influenceUsedThisTurn = data.influenceUsed;
             game._permitActive = data.permitActive;
             game._auctionHeld = data.auctionHeld;
+            game._auctionsHeld = data.version >= 13 ? data.auctionsHeld : (data.auctionHeld ? 1 : 0);
+            foreach (var id in data.scheduledRepairs ?? new string[0])
+            {
+                FindRoad(id);
+                game._scheduledRepairs.Add(id);
+            }
+            foreach (var id in data.nextRepairs ?? new string[0])
+            {
+                FindRoad(id);
+                game._nextRepairs.Add(id);
+            }
             game.AuctionNumber = data.auctionNumber;
             game._auctionStarter = data.auctionStarter;
             if (game.Phase == GamePhase.Bidding)

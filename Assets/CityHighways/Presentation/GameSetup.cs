@@ -20,10 +20,11 @@ namespace CityHighways.Presentation
         public string name = "Игрок";
         public bool isBot;
         public BotLevel botLevel = BotLevel.Smart;
-        /// <summary>Персонаж: -1 — случайный, иначе CharacterKind как int (0 — без персонажа).</summary>
-        public int character = RandomCharacter;
+        /// <summary>Персонаж: -2 — выбор из двух в начале партии, -1 — случайный, иначе CharacterKind как int (0 — без персонажа).</summary>
+        public int character = DraftCharacter;
 
         public const int RandomCharacter = -1;
+        public const int DraftCharacter = -2;
 
         public PlayerSlot() { }
 
@@ -53,6 +54,13 @@ namespace CityHighways.Presentation
         public static readonly int[] TurnTimerOptions = { 0, 60, 90, 120, 180 };
         public bool sound = true;
         public string mapResourcePath = "CityHighways/Maps/moscow";
+        /// <summary>Сценарий партии (ScenarioKind как int).</summary>
+        public int scenario;
+
+        /// <summary>Настройки партии: участки из меню и правила выбранного сценария.</summary>
+        public GameConfig CreateConfig() =>
+            Scenarios.Apply(new GameConfig { RoadPiecesOverride = roadPieces },
+                scenario >= 0 && scenario < Scenarios.All.Count ? (ScenarioKind)scenario : ScenarioKind.Standard);
 
         public static readonly string[] DefaultNames = { "Аня", "Борис", "Вера", "Глеб", "Даша" };
 
@@ -90,7 +98,8 @@ namespace CityHighways.Presentation
 
         /// <summary>
         /// Персонажи для партии: выбранные остаются, «случайным» раздаются разные персонажи
-        /// из тех, что никто не выбрал (если таких не хватает — любые).
+        /// из тех, что никто не выбрал (если таких не хватает — любые), а «выбор из двух» передаётся
+        /// в партию пометкой Characters.Draft — персонажей предложит сама игра.
         /// </summary>
         public List<CharacterKind> ResolveCharacters(System.Random rng)
         {
@@ -104,6 +113,11 @@ namespace CityHighways.Presentation
             var result = new List<CharacterKind>();
             foreach (var slot in players)
             {
+                if (slot.character == PlayerSlot.DraftCharacter)
+                {
+                    result.Add(Characters.Draft);
+                    continue;
+                }
                 if (slot.character != PlayerSlot.RandomCharacter)
                 {
                     result.Add((CharacterKind)Mathf.Clamp(slot.character, 0, (int)CharacterKind.Bridger));

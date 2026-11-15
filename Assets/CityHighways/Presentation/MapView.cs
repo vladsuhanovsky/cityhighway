@@ -704,6 +704,14 @@ namespace CityHighways.Presentation
 
                 // Ремонт и парад: красно-белые полосы поперёк участка.
                 if (!owner.HasValue && (_game.IsUnderRepair(road.Id) || _game.IsParadeClosed(road.Id))) DrawRepairStripes(p, segment);
+                // Год ремонта: участки, которые закроют в следующем круге, — тонкая оранжевая рамка.
+                else if (!owner.HasValue && _game.IsNextRepair(road.Id))
+                {
+                    p.strokeColor = new Color(1f, 0.55f, 0.15f, 0.75f);
+                    p.lineWidth = 1.6f;
+                    SegmentPath(p, segment, isBridge ? 5f : 3.5f, Vector2.zero);
+                    p.Stroke();
+                }
             }
         }
 

@@ -30,6 +30,8 @@ namespace CityHighways.Core
                 case GamePhase.SetupContracts:
                 {
                     var player = game.Players[game.ActingPlayerIndex];
+                    if (player.CharacterOffer.Count > 0)
+                        return game.ChooseCharacter(player.Index, player.CharacterOffer[_rng.Next(player.CharacterOffer.Count)]);
                     return game.KeepInitialContracts(player.Index, player.PendingContracts.Select(c => c.Id).ToList());
                 }
                 case GamePhase.ChoosingContracts:

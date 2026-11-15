@@ -468,7 +468,7 @@ namespace CityHighways.Presentation
                 var map = CityHighwaysApp.LoadMap(_setup.mapResourcePath);
                 int seed = UnityEngine.Random.Range(0, int.MaxValue);
                 var characters = _setup.ResolveCharacters(new System.Random(seed ^ 0x5bd1e995));
-                game = new Game(map, _setup.PlayerNames(), new GameConfig { RoadPiecesOverride = _setup.roadPieces }, seed, characters);
+                game = new Game(map, _setup.PlayerNames(), _setup.CreateConfig(), seed, characters);
             }
             catch (Exception e)
             {
@@ -817,7 +817,7 @@ namespace CityHighways.Presentation
             switch (_game.Phase)
             {
                 case GamePhase.SetupContracts:
-                    Flash("Сначала выберите стартовые контракты.");
+                    Flash("Сначала выберите компанию и стартовые контракты.");
                     return;
                 case GamePhase.DrawingSecondCard:
                     Flash("Сначала возьмите вторую карту.");
@@ -917,7 +917,9 @@ namespace CityHighways.Presentation
                 }
                 return text;
             }
-            if (_game.IsUnderRepair(road.Id)) text += "\n<color=#FF6B6B>Ремонт: закрыт до конца круга</color>";
+            if (_game.IsScheduledRepair(road.Id)) text += "\n<color=#FF6B6B>Год ремонта: закрыт в этом круге (разрешение мэрии пускает строить)</color>";
+            else if (_game.IsUnderRepair(road.Id)) text += "\n<color=#FF6B6B>Ремонт: закрыт до конца круга</color>";
+            if (!owner.HasValue && _game.IsNextRepair(road.Id)) text += "\n<color=#FF9A33>Год ремонта: закроют в следующем круге — успейте построить</color>";
             if (_game.IsParadeClosed(road.Id)) text += "\n<color=#CC80FF>Парад: закрыт до конца круга</color>";
             if (road.Resource == Resource.Gravel && _game.CurrentEvent?.Kind == CityEventKind.Snow)
                 text += $"\n<color=#D9EBFF>Снегопад: +{_game.Config.SnowExtraCost} карта к цене</color>";
@@ -1199,7 +1201,10 @@ namespace CityHighways.Presentation
             if (NeedsHandoff) return; // покажется окно передачи хода
 
             var name = _game.Players[acting].Name;
-            if (_game.Phase == GamePhase.SetupContracts) Toast($"{name}, выберите стартовые контракты", Theme.Accent);
+            if (_game.Phase == GamePhase.SetupContracts)
+                Toast(_game.ActingPlayerIndex >= 0 && _game.Players[_game.ActingPlayerIndex].CharacterOffer.Count > 0
+                    ? $"{name}, выберите компанию и стартовые контракты"
+                    : $"{name}, выберите стартовые контракты", Theme.Accent);
             else Toast(HumanCount > 1 ? "Ходит " + name : "Ваш ход", Theme.Accent);
         }
 
@@ -1421,7 +1426,8 @@ namespace CityHighways.Presentation
         void Refresh()
         {
             if (_game == null) return;
-            _turnLabel.text = _game.Phase == GamePhase.SetupContracts ? "Подготовка" : "Ход " + _game.TurnNumber;
+            _turnLabel.text = (_game.Phase == GamePhase.SetupContracts ? "Подготовка" : "Ход " + _game.TurnNumber)
+                              + (_game.Scenario != ScenarioKind.Standard ? " · " + Scenarios.Title(_game.Scenario) : "");
             RefreshEvent();
             RefreshGoals();
             RefreshTabs();
@@ -1739,13 +1745,55 @@ namespace CityHighways.Presentation
             if (!HumanToAct) return false;
             if (_game.Phase != GamePhase.SetupContracts && _game.Phase != GamePhase.ChoosingContracts) return false;
             var player = _game.Players[_game.ActingPlayerIndex];
-            if (player.PendingContracts.Count == 0) return false;
+            if (player.PendingContracts.Count == 0 && player.CharacterOffer.Count == 0) return false;
             chooser = player;
             return true;
         }
 
+        /// <summary>Выбор компании в начале партии: предложенные персонажи с их способностями.</summary>
+        VisualElement CharacterChoiceCard(PlayerState player)
+        {
+            var card = Ui.Card(12f);
+            Ui.Border(card, 2f, Theme.Accent);
+            card.style.marginBottom = 10f;
+            card.Add(Ui.Text("Выберите компанию", 17f, Theme.Accent, true));
+            var hint = Ui.Text("Один персонаж на всю партию. Подумайте о стартовых контрактах: мосты на пути — Мостовику, много контрактов — Чиновнику.", 12f, Theme.TextDim);
+            hint.style.whiteSpace = WhiteSpace.Normal;
+            hint.style.marginTop = 4f;
+            hint.style.marginBottom = 8f;
+            card.Add(hint);
+            foreach (var kind in player.CharacterOffer)
+            {
+                var chosen = kind;
+                var row = Ui.Row();
+                row.style.alignItems = Align.Center;
+                row.style.marginBottom = 8f;
+                row.style.backgroundColor = Theme.Panel;
+                Ui.Radius(row, 8f);
+                Ui.Padding(row, 8f, 10f);
+                var icon = new CharacterIcon(34f, kind, Palette.PlayerColor(player.Index));
+                icon.style.marginRight = 10f;
+                row.Add(icon);
+                var texts = Ui.Column();
+                texts.style.flexGrow = 1f;
+                texts.style.flexShrink = 1f;
+                texts.Add(Ui.Text(Characters.Title(kind), 15f, Theme.Text, true));
+                var ability = Ui.Text(Characters.Ability(kind, _game.Config), 12f, Theme.TextDim);
+                ability.style.whiteSpace = WhiteSpace.Normal;
+                texts.Add(ability);
+                row.Add(texts);
+                var pick = Ui.Button("Выбрать", () => Act(() => _game.ChooseCharacter(player.Index, chosen)), ButtonKind.Primary, 14f);
+                pick.style.marginLeft = 10f;
+                row.Add(pick);
+                card.Add(row);
+            }
+            return card;
+        }
+
         void BuildContractChoice(PlayerState player)
         {
+            if (player.CharacterOffer.Count > 0) _contractsBox.Add(CharacterChoiceCard(player));
+            if (player.PendingContracts.Count == 0) return;
             bool setup = _game.Phase == GamePhase.SetupContracts;
             int minKeep = setup ? _game.Config.InitialContractsMinKeep : _game.Config.ContractsMinKeep;
             int required = Math.Min(minKeep, player.PendingContracts.Count);
@@ -1852,7 +1900,7 @@ namespace CityHighways.Presentation
 
             var texts = Ui.Column();
             texts.style.flexGrow = 1f;
-            if (contract.Id == _game.Players[playerIndex].MayorContractId)
+            if (_game.Players[playerIndex].IsMayorContract(contract.Id))
                 texts.Add(Ui.Text($"★ КОНТРАКТ МЭРИИ · выполнен — ещё +{_game.Config.AuctionBonus}", 10f, Theme.Accent, true));
             if (contract.IsComplex)
             {
@@ -2053,7 +2101,9 @@ namespace CityHighways.Presentation
             switch (_game.Phase)
             {
                 case GamePhase.SetupContracts:
-                    return "Выберите стартовые контракты на панели справа.";
+                    return _game.ActingPlayerIndex >= 0 && _game.Players[_game.ActingPlayerIndex].CharacterOffer.Count > 0
+                        ? "Выберите компанию и стартовые контракты на панели справа."
+                        : "Выберите стартовые контракты на панели справа.";
                 case GamePhase.AwaitingAction:
                     return "Возьмите 2 карты, постройте дорогу кликом по карте (доступные мерцают) или возьмите контракты.";
                 case GamePhase.DrawingSecondCard:
@@ -2686,6 +2736,17 @@ namespace CityHighways.Presentation
                     s.GoalPoints.ToString(), $"{s.LuckPoints:+#;-#;0}", character, s.Penalties == 0 ? "—" : s.Penalties.ToString(), s.Total.ToString() };
                 box.Add(ResultRow(cells, widths, Theme.Text, s.PlayerIndex, place == 1));
                 place++;
+            }
+
+            var friends = _game.Result.Ranking.Where(r => r.FriendBonus > 0).ToList();
+            if (friends.Count > 0)
+            {
+                var friend = Ui.Text("«Друг мэра» — больше всех потратил влияния: " + string.Join(", ", friends.Select(f => $"{f.PlayerName} +{f.FriendBonus}")) + " (в итоге).",
+                    13f, Theme.Accent);
+                friend.style.whiteSpace = WhiteSpace.Normal;
+                friend.style.unityTextAlign = TextAnchor.MiddleCenter;
+                friend.style.marginTop = 8f;
+                box.Add(friend);
             }
 
             if (_game.FinalAudit.Count > 0)

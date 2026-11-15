@@ -49,6 +49,7 @@ namespace CityHighways.Presentation
                 ("Сделки и магистрали", () => Deals(config)),
                 ("Влияние", () => InfluenceSection(config)),
                 ("Персонажи", () => CharactersSection(config)),
+                ("Сценарии", () => ScenariosSection()),
                 ("Конец партии и очки", () => Ending(config))
             };
 
@@ -367,10 +368,23 @@ namespace CityHighways.Presentation
             return s;
         }
 
+        static VisualElement ScenariosSection()
+        {
+            var s = Section("Сценарии");
+            Paragraph(s, "Сценарий выбирается в меню «Новая игра» (в сетевой — хостом в лобби) и меняет правила на всю партию. Название сценария — рядом с номером хода.");
+            foreach (var kind in Scenarios.All)
+            {
+                if (kind == ScenarioKind.Standard) continue;
+                Paragraph(s, $"<b>{Scenarios.Title(kind)}.</b> {Scenarios.Summary(kind)}");
+                foreach (var change in Scenarios.Changes(kind)) Paragraph(s, "• " + change);
+            }
+            return s;
+        }
+
         static VisualElement CharactersSection(GameConfig config)
         {
             var s = Section("Персонажи");
-            Paragraph(s, "У каждой компании свой персонаж со способностью. Его выбирают при создании партии или раздают случайно. Способность написана под именем игрока.");
+            Paragraph(s, $"У каждой компании свой персонаж со способностью. По умолчанию — «выбор из двух»: в начале партии игрок видит {config.CharacterOffer} случайных персонажей (по возможности не те, что у соперников) вместе со стартовыми контрактами и выбирает одного. Можно и задать персонажа заранее в меню или раздать случайно. В сетевой игре все выбирают из двух. Способность написана под именем игрока.");
             int i = 0;
             foreach (var kind in Characters.All)
             {

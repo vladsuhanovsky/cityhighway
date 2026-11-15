@@ -28,6 +28,7 @@ namespace CityHighways.Core
         public const string BidKind = "bid";
         public const string BribeKindName = "bribe";
         public const string AccuseKind = "accuse";
+        public const string ChooseCharacterKind = "choose_character";
 
         public string kind;
         /// <summary>Кто действует. Для всех команд, кроме keep_initial, — игрок, чей сейчас ход.</summary>
@@ -57,6 +58,9 @@ namespace CityHighways.Core
 
         public static GameCommand KeepInitialContracts(int player, IEnumerable<string> ids) =>
             new GameCommand { kind = KeepInitial, player = player, contracts = ids.ToArray() };
+        /// <summary>Выбор компании в начале партии; персонаж — в option (CharacterKind как int).</summary>
+        public static GameCommand ChooseCharacter(int player, CharacterKind character) =>
+            new GameCommand { kind = ChooseCharacterKind, player = player, option = (int)character };
         public static GameCommand DrawFaceUpCard(int player, int slot) => new GameCommand { kind = DrawFaceUp, player = player, slot = slot };
         public static GameCommand DrawCardFromDeck(int player) => new GameCommand { kind = DrawDeck, player = player };
         public static GameCommand BuildRoad(int player, string road, Resource resource, int machinery) =>
@@ -85,6 +89,7 @@ namespace CityHighways.Core
             switch (kind)
             {
                 case KeepInitial: return $"#{player} оставляет стартовые {string.Join(",", contracts ?? new string[0])}";
+                case ChooseCharacterKind: return $"#{player} выбирает персонажа {(CharacterKind)option}";
                 case DrawFaceUp: return $"#{player} берёт открытую карту {slot}";
                 case DrawDeck: return $"#{player} берёт карту из колоды";
                 case Build: return $"#{player} строит {road} за {(Resource)resource} + {machinery} техн.";
@@ -140,11 +145,13 @@ namespace CityHighways.Core
         public ActionResult Execute(GameCommand command)
         {
             if (command == null) return ActionResult.Fail("Пустая команда.");
-            if (command.kind != GameCommand.KeepInitial && command.player >= 0 && command.player != ActingPlayerIndex)
+            bool setup = command.kind == GameCommand.KeepInitial || command.kind == GameCommand.ChooseCharacterKind;
+            if (!setup && command.player >= 0 && command.player != ActingPlayerIndex)
                 return ActionResult.Fail($"Сейчас ходит не игрок {command.player}.");
             switch (command.kind)
             {
                 case GameCommand.KeepInitial: return KeepInitialContracts(command.player, command.contracts ?? new string[0]);
+                case GameCommand.ChooseCharacterKind: return ChooseCharacter(command.player, (CharacterKind)command.option);
                 case GameCommand.DrawFaceUp: return DrawFaceUpCard(command.slot);
                 case GameCommand.DrawDeck: return DrawCardFromDeck();
                 case GameCommand.Build:
@@ -203,6 +210,14 @@ namespace CityHighways.Core
             var ids = contractIds?.ToArray() ?? new string[0];
             var result = DoKeepInitialContracts(playerIndex, ids);
             if (result.Success) Record(GameCommand.KeepInitialContracts(playerIndex, ids));
+            return result;
+        }
+
+        /// <summary>Выбрать компанию из предложенных (в начале партии, в любом порядке, как стартовые контракты).</summary>
+        public ActionResult ChooseCharacter(int playerIndex, CharacterKind character)
+        {
+            var result = DoChooseCharacter(playerIndex, character);
+            if (result.Success) Record(GameCommand.ChooseCharacter(playerIndex, character));
             return result;
         }
 

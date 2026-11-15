@@ -76,6 +76,13 @@ namespace CityHighways.Core
         public CharacterKind Character { get; internal set; }
         /// <summary>Сколько бесплатных строек осталось у Прораба.</summary>
         public int FreeRoadsLeft { get; internal set; }
+        /// <summary>Выбор компании: из каких персонажей игрок выбирает в начале партии (пусто — уже выбрал или не выбирает).</summary>
+        internal readonly List<CharacterKind> CharacterOfferList = new List<CharacterKind>();
+        public IReadOnlyList<CharacterKind> CharacterOffer => CharacterOfferList;
+        /// <summary>Все контракты мэрии, выигранные на аукционах (в «Выборах мэра» их может быть два).</summary>
+        internal readonly HashSet<string> MayorContracts = new HashSet<string>();
+        public bool IsMayorContract(string contractId) =>
+            contractId != null && (MayorContracts.Contains(contractId) || contractId == MayorContractId);
 
         internal PlayerState(int index, string name, int roadPieces)
         {

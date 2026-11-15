@@ -195,8 +195,9 @@ namespace CityHighways.Presentation
             _inviteButton = Ui.Button("Пригласить друга", () => _session?.Transport.Invite(), ButtonKind.Secondary, 15f);
             _addBotButton = Ui.Button("Добавить бота", () => (_session as HostSession)?.AddBot(0), ButtonKind.Secondary, 15f);
             _timerButton = Ui.Button("", CycleTimer, ButtonKind.Secondary, 15f);
+            _scenarioButton = Ui.Button("", CycleScenario, ButtonKind.Secondary, 15f);
             _startButton = Ui.Button("Начать партию", StartGame, ButtonKind.Primary, 17f);
-            foreach (var b in new[] { _inviteButton, _addBotButton, _timerButton })
+            foreach (var b in new[] { _inviteButton, _addBotButton, _timerButton, _scenarioButton })
             {
                 b.style.marginRight = 10f;
                 _hostControls.Add(b);
@@ -453,7 +454,7 @@ namespace CityHighways.Presentation
                 _seatsList.Add(row);
             }
             var empty = NetSession.MaxSeats - session.Seats.Count;
-            if (empty > 0) _seatsList.Add(Note($"Свободных мест: {empty}. Персонажи раздаются случайно при старте."));
+            if (empty > 0) _seatsList.Add(Note($"Свободных мест: {empty}. Персонажа каждый выберет из двух в начале партии."));
 
             Ui.Show(_hostControls, host);
             Ui.Show(_waitLabel, !host);
@@ -463,8 +464,18 @@ namespace CityHighways.Presentation
                 Ui.Show(_inviteButton, session.Transport.CanInvite);
                 Ui.SetEnabled(_addBotButton, hostSession.CanAddSeat);
                 _timerButton.text = _turnSeconds > 0 ? $"Таймер хода: {_turnSeconds} с" : "Таймер хода: нет";
+                _scenarioButton.text = "Сценарий: " + Scenarios.Title((ScenarioKind)Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1));
                 Ui.SetEnabled(_startButton, session.Seats.Count >= 2);
             }
+        }
+
+        readonly UnityEngine.UIElements.Button _scenarioButton;
+
+        void CycleScenario()
+        {
+            _setup.scenario = (Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1) + 1) % Scenarios.All.Count;
+            _setup.Save();
+            RefreshLobby();
         }
 
         void CycleTimer()
@@ -479,9 +490,11 @@ namespace CityHighways.Presentation
         {
             if (!(_session is HostSession host) || host.Seats.Count < 2) return;
             // Те же правила раздачи персонажей и участков, что и в обычной партии.
-            var setup = new GameSetup { roadPieces = _setup.roadPieces };
+            var setup = new GameSetup { roadPieces = _setup.roadPieces, scenario = _setup.scenario };
+            // В сети персонажа в лобби не выбирают: каждый выберет из двух в начале партии.
             foreach (var seat in host.Seats)
-                setup.players.Add(new PlayerSlot(seat.name, seat.isBot, seat.botLevel == 1 ? BotLevel.Random : BotLevel.Smart) { character = seat.character });
+                setup.players.Add(new PlayerSlot(seat.name, seat.isBot, seat.botLevel == 1 ? BotLevel.Random : BotLevel.Smart)
+                    { character = seat.character == PlayerSlot.RandomCharacter ? PlayerSlot.DraftCharacter : seat.character });
             int seed = UnityEngine.Random.Range(0, int.MaxValue);
             var characters = setup.ResolveCharacters(new System.Random(seed ^ 0x5bd1e995));
             var start = new GameStartInfo
@@ -489,7 +502,7 @@ namespace CityHighways.Presentation
                 players = setup.PlayerNames().ToArray(),
                 characters = characters.Select(c => (int)c).ToArray(),
                 seed = seed,
-                config = new GameConfig { RoadPiecesOverride = _setup.roadPieces }
+                config = setup.CreateConfig()
             };
             try
             {

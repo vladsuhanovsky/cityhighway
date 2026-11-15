@@ -51,13 +51,15 @@ namespace CityHighways.Core
         public int Influence { get; internal set; }
         /// <summary>Бонус за выполненный контракт мэрии (выигранный на аукционе).</summary>
         public int MayorBonus { get; internal set; }
+        /// <summary>«Друг мэра» (сценарий «Выборы мэра»).</summary>
+        public int FriendBonus { get; internal set; }
         /// <summary>Штрафы за взятки и ложные обвинения (≤ 0).</summary>
         public int Penalties { get; internal set; }
         public int InfluenceEarned { get; internal set; }
         /// <summary>Сгорело в пробках (положительное число).</summary>
         public int JamFees { get; internal set; }
 
-        public int Total => RoadPoints + ContractPoints - TollsPaid - JamFees + TollsEarned + NetworkBonus + GoalPoints + LuckPoints + CharacterPoints + MayorBonus + Penalties;
+        public int Total => RoadPoints + ContractPoints - TollsPaid - JamFees + TollsEarned + NetworkBonus + GoalPoints + LuckPoints + CharacterPoints + MayorBonus + FriendBonus + Penalties;
     }
 
     public sealed class GameResult
@@ -287,6 +289,15 @@ namespace CityHighways.Core
                 foreach (var score in scores)
                     if (score.NetworkDistricts == best) score.NetworkBonus = config.NetworkBonus;
 
+            // «Друг мэра» (Выборы мэра): больше всех потративший влияния за партию; при равенстве — все равные.
+            if (config.MayorFriendBonus > 0 && players.Count > 0)
+            {
+                int spent = players.Max(p => p.InfluenceSpent);
+                if (spent > 0)
+                    foreach (var player in players)
+                        if (player.InfluenceSpent == spent) scores[player.Index].FriendBonus = config.MayorFriendBonus;
+            }
+
             return new GameResult(scores);
         }
 
@@ -294,7 +305,7 @@ namespace CityHighways.Core
         {
             score.ContractPoints += contract.Points;
             score.CompletedContracts++;
-            if (contract.Id == player.MayorContractId) score.MayorBonus += config.AuctionBonus;
+            if (player.IsMayorContract(contract.Id)) score.MayorBonus += config.AuctionBonus;
             if (player.Character == CharacterKind.Official) score.CharacterPoints += config.OfficialBonusPerContract;
         }
     }

@@ -42,6 +42,34 @@ namespace CityHighways.Core
             _rng = new Random(seed);
         }
 
+        /// <summary>
+        /// Выбор компании по стартовым контрактам: мосты на пути — Мостовик, много контрактов — Чиновник,
+        /// длинный путь — Прораб; остальные — ровная ценность с небольшим случайным разбросом.
+        /// </summary>
+        CharacterKind PickCharacter(Game game, PlayerState player)
+        {
+            var plan = new BotPlanner(game, player.Index, ForeignCost).BuildPlan(player.PendingContracts);
+            int bridges = plan.RoadsToBuild.Count(r => r.IsBridge);
+            int pieces = plan.RoadsToBuild.Sum(r => r.Length);
+            int contracts = player.PendingContracts.Count;
+            double Value(CharacterKind kind)
+            {
+                switch (kind)
+                {
+                    case CharacterKind.Bridger: return 2.0 + 2.5 * bridges;
+                    case CharacterKind.Official: return 2.0 + 1.5 * contracts;
+                    case CharacterKind.Foreman: return 3.0 + pieces / 8.0;
+                    case CharacterKind.Tollman: return 5.0;
+                    case CharacterKind.Lucky: return 4.5;
+                    default: return 4.0;
+                }
+            }
+            return player.CharacterOffer
+                .OrderByDescending(k => Value(k) + _rng.NextDouble())
+                .ThenBy(k => (int)k)
+                .First();
+        }
+
         public ActionResult Act(Game game)
         {
             switch (game.Phase)
@@ -49,6 +77,7 @@ namespace CityHighways.Core
                 case GamePhase.SetupContracts:
                 {
                     var player = game.Players[game.ActingPlayerIndex];
+                    if (player.CharacterOffer.Count > 0) return game.ChooseCharacter(player.Index, PickCharacter(game, player));
                     return game.KeepInitialContracts(player.Index, ChooseContracts(game, player, game.Config.InitialContractsMinKeep));
                 }
                 case GamePhase.ChoosingContracts:

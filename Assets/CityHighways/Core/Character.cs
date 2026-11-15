@@ -22,6 +22,12 @@ namespace CityHighways.Core
 
     public static class Characters
     {
+        /// <summary>
+        /// Не персонаж, а пометка для настройки партии: «выбрать в начале из CharacterOffer случайных».
+        /// В StartInfo.characters записывается как -1.
+        /// </summary>
+        public const CharacterKind Draft = (CharacterKind)(-1);
+
         /// <summary>Все персонажи (без None) — для меню выбора и случайной раздачи.</summary>
         public static readonly IReadOnlyList<CharacterKind> All = new[]
         {

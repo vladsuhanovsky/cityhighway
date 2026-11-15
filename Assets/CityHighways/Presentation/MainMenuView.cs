@@ -276,6 +276,17 @@ namespace CityHighways.Presentation
             gameCard.style.width = 360f;
             gameCard.Add(Ui.SectionTitle("Параметры партии"));
 
+            var scenarioRow = SettingRow("Сценарий");
+            _scenarioButton = Ui.Button("", NextScenario, ButtonKind.Secondary, 14f);
+            _scenarioButton.style.width = 170f;
+            scenarioRow.Add(_scenarioButton);
+            gameCard.Add(scenarioRow);
+            _scenarioHint = Ui.Text("", 12f, Theme.TextDim);
+            _scenarioHint.style.whiteSpace = WhiteSpace.Normal;
+            _scenarioHint.style.marginTop = -4f;
+            _scenarioHint.style.marginBottom = 12f;
+            gameCard.Add(_scenarioHint);
+
             var piecesRow = SettingRow("Участков дороги");
             var minus = Ui.Button("–", () => ChangePieces(-1), ButtonKind.Secondary, 18f);
             minus.style.width = 40f;
@@ -467,7 +478,15 @@ namespace CityHighways.Presentation
                 var kind = (CharacterKind)_setup.players[_lastCharacterSlot].character;
                 _characterHint.text = $"{Characters.Title(kind)}: {Characters.Ability(kind, config)}";
             }
-            else _characterHint.text = "Персонаж: нажмите на кнопку персонажа, чтобы выбрать. «Случайный» раздаёт разных персонажей.";
+            else _characterHint.text = "Персонаж: нажмите на кнопку персонажа, чтобы выбрать. «Выбор из двух» — в начале партии игрок видит двух случайных персонажей и стартовые контракты и выбирает одного; «случайный» раздаёт сразу.";
+            if (_scenarioButton != null)
+            {
+                var scenario = (ScenarioKind)Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1);
+                _scenarioButton.text = Scenarios.Title(scenario);
+                _scenarioHint.text = scenario == ScenarioKind.Standard
+                    ? Scenarios.Summary(scenario)
+                    : string.Join("\n", Scenarios.Changes(scenario).Select(c => "• " + c));
+            }
             _trainsValue.text = _setup.roadPieces > 0 ? _setup.roadPieces.ToString() : "по правилам";
             _hideCardsButton.text = _setup.hideCardsBetweenTurns ? "Да" : "Нет";
             _timerButton.text = _setup.turnSeconds > 0 ? $"{_setup.turnSeconds / 60}:{_setup.turnSeconds % 60:00}" : "Без таймера";
@@ -529,8 +548,10 @@ namespace CityHighways.Presentation
             // Персонаж: Случайный → Везунчик → … → Мостовик → Без персонажа → Случайный.
             var character = Ui.Button(CharacterLabel(slot), () =>
             {
-                slot.character = slot.character == PlayerSlot.RandomCharacter ? 1
-                    : slot.character == 0 ? PlayerSlot.RandomCharacter
+                // Выбор из двух → случайный → персонажи по порядку → без персонажа → выбор из двух.
+                slot.character = slot.character == PlayerSlot.DraftCharacter ? PlayerSlot.RandomCharacter
+                    : slot.character == PlayerSlot.RandomCharacter ? 1
+                    : slot.character == 0 ? PlayerSlot.DraftCharacter
                     : slot.character >= (int)CharacterKind.Bridger ? 0
                     : slot.character + 1;
                 _lastCharacterSlot = index;
@@ -558,7 +579,9 @@ namespace CityHighways.Presentation
         }
 
         static string CharacterLabel(PlayerSlot slot) =>
-            slot.character == PlayerSlot.RandomCharacter ? "Персонаж: случайный" : Characters.Title((CharacterKind)slot.character);
+            slot.character == PlayerSlot.DraftCharacter ? "Персонаж: выбор из двух"
+            : slot.character == PlayerSlot.RandomCharacter ? "Персонаж: случайный"
+            : Characters.Title((CharacterKind)slot.character);
 
         static string KindLabel(PlayerSlot slot) => !slot.isBot ? "Человек" : slot.botLevel == BotLevel.Random ? "Бот: случайный" : "Бот: умный";
 
@@ -580,6 +603,15 @@ namespace CityHighways.Presentation
             var name = GameSetup.DefaultNames.FirstOrDefault(n => _setup.players.All(p => p.name != n))
                        ?? "Игрок " + (_setup.players.Count + 1);
             _setup.players.Add(new PlayerSlot(name, true, BotLevel.Smart));
+            Refresh();
+        }
+
+        UnityEngine.UIElements.Button _scenarioButton;
+        Label _scenarioHint;
+
+        void NextScenario()
+        {
+            _setup.scenario = (Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1) + 1) % Scenarios.All.Count;
             Refresh();
         }
 

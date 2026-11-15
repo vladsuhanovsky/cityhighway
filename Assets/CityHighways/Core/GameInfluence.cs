@@ -50,7 +50,9 @@ namespace CityHighways.Core
             {
                 case InfluenceAction.RefreshMarket: return "Все открытые карты уходят в сброс, выкладываются новые. Ход продолжается.";
                 case InfluenceAction.ExtraContracts: return $"Взять {config.ContractsDrawn + 1} контракта вместо {config.ContractsDrawn} и выбрать из них. Это действие хода.";
-                case InfluenceAction.Permit: return "В этот ход парад не закрывает для вас дороги, а снег не удорожает щебёнку.";
+                case InfluenceAction.Permit:
+                    return "В этот ход парад не закрывает для вас дороги, а снег не удорожает стройку" +
+                           (config.ScheduledRepairs > 0 ? "; можно строить и на участке «Года ремонта»." : ".");
                 default: return "Текущее событие заканчивается для всех прямо сейчас («Новый район» не отменить).";
             }
         }
@@ -88,8 +90,9 @@ namespace CityHighways.Core
                     if (_contractDeck.Count == 0) return "Контракты закончились.";
                     break;
                 case InfluenceAction.Permit:
-                    if (CurrentEvent == null || (CurrentEvent.Kind != CityEventKind.Parade && CurrentEvent.Kind != CityEventKind.Snow))
-                        return "Разрешение нужно только в парад или снег.";
+                    bool eventNeedsPermit = CurrentEvent != null && (CurrentEvent.Kind == CityEventKind.Parade || CurrentEvent.Kind == CityEventKind.Snow);
+                    if (!eventNeedsPermit && !Config.PermanentSnow && _scheduledRepairs.Count == 0)
+                        return "Разрешение нужно только в парад, снег или на ремонт.";
                     break;
                 case InfluenceAction.CancelEvent:
                     if (CurrentEvent == null) return "Сейчас нет события.";
@@ -142,7 +145,8 @@ namespace CityHighways.Core
                     return DoDrawContracts(1);
                 case InfluenceAction.Permit:
                     _permitActive = true;
-                    Emit($"{player.Name} получает разрешение мэрии за {cost} влияния: «{CurrentEvent.Title}» в этот ход ему не мешает.");
+                    Emit($"{player.Name} получает разрешение мэрии за {cost} влияния: " +
+                         (CurrentEvent != null ? $"«{CurrentEvent.Title}» в этот ход ему не мешает." : "в этот ход ему не мешают снег и ремонт."));
                     Changed();
                     break;
                 default:
@@ -177,6 +181,8 @@ namespace CityHighways.Core
             foreach (var district in new[] { Map.DistrictOf(road.A), Map.DistrictOf(road.B) })
                 if (district != null && builder.InfluenceDistricts.Add(district)) newDistrict = true;
             if (newDistrict && !first) EarnInfluence(builder, Config.InfluencePerNewDistrict, "новый район");
+            if (Config.InfluencePerLongRoad > 0 && road.Length >= Config.LongRoadLength)
+                EarnInfluence(builder, Config.InfluencePerLongRoad, $"дорога длиной {road.Length}");
 
             foreach (var player in _players)
             {

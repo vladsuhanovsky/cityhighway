@@ -9,6 +9,30 @@ namespace CityHighways.Core
         public int MinPlayers = 2;
         public int MaxPlayers = 5;
 
+        // ------------------------------------------------------------ Сценарий (Scenarios.Apply выставляет поля ниже)
+        /// <summary>Сценарий партии (ScenarioKind как int): 0 — обычная Москва.</summary>
+        public int Scenario;
+        /// <summary>Зима: щебёночные дороги всю партию на SnowExtraCost карт дороже (разрешение мэрии снимает на ход).</summary>
+        public bool PermanentSnow;
+        /// <summary>Зима: в снегопад дорожает и бетон.</summary>
+        public bool SnowHitsConcrete;
+        /// <summary>Большая Москва: окраины открыты с начала партии.</summary>
+        public bool ExpansionsOpen;
+        /// <summary>Сколько участков добавить каждому сверх обычного (не действует при RoadPiecesOverride).</summary>
+        public int ExtraRoadPieces;
+        /// <summary>Год ремонта: столько свободных участков закрыто каждый круг; следующие видны заранее.</summary>
+        public int ScheduledRepairs;
+        /// <summary>Год ремонта: влияние за каждую свою дорогу длиной LongRoadLength и больше.</summary>
+        public int InfluencePerLongRoad;
+        public int LongRoadLength = 3;
+        /// <summary>Выборы мэра: сколько аукционов за партию; второй — когда кто-то построил SecondAuctionShare участков.</summary>
+        public int AuctionCount = 1;
+        public float SecondAuctionShare = 0.67f;
+        /// <summary>Выборы мэра: «друг мэра» — больше всех потративший влияния за партию получает столько очков.</summary>
+        public int MayorFriendBonus;
+        /// <summary>Выбор компании: в начале партии каждому, кто выбирает, предлагается столько случайных персонажей.</summary>
+        public int CharacterOffer = 2;
+
         /// <summary>Сколько участков дороги у каждого игрока, по числу игроков (индекс — число игроков).</summary>
         public int[] RoadPiecesByPlayers = { 0, 0, 35, 32, 28, 25 };
         /// <summary>Если больше нуля — у всех ровно столько участков, независимо от числа игроков.</summary>
@@ -197,7 +221,7 @@ namespace CityHighways.Core
         {
             if (RoadPiecesOverride > 0) return RoadPiecesOverride;
             int index = Math.Max(0, Math.Min(players, RoadPiecesByPlayers.Length - 1));
-            return RoadPiecesByPlayers[index];
+            return RoadPiecesByPlayers[index] + ExtraRoadPieces;
         }
 
         /// <summary>Штраф за одну раскрытую взятку при таком числе игроков.</summary>
@@ -211,5 +235,16 @@ namespace CityHighways.Core
 
         public int PointsForLength(int length) =>
             length >= 0 && length < RoadPointsByLength.Length ? RoadPointsByLength[length] : 0;
+
+        /// <summary>Копия настроек (массивы тоже копируются) — сценарий меняет копию, а не общий объект.</summary>
+        public GameConfig Clone()
+        {
+            var copy = (GameConfig)MemberwiseClone();
+            foreach (var field in typeof(GameConfig).GetFields())
+            {
+                if (field.GetValue(this) is Array array) field.SetValue(copy, array.Clone());
+            }
+            return copy;
+        }
     }
 }
