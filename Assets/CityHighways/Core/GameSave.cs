@@ -6,7 +6,7 @@ namespace CityHighways.Core
     [Serializable]
     public class GameSaveData
     {
-        public const int CurrentVersion = 11; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки, 10 — проезд при выполнении, пробки, пропуска, 11 — тайный шёпот, цена обновления рынка
+        public const int CurrentVersion = 12; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки, 10 — проезд при выполнении, пробки, пропуска, 11 — тайный шёпот, цена обновления рынка, 12 — финал
         /// <summary>Самая старая версия, которую ещё можно загрузить (в v2 цели и удача начнутся заново).</summary>
         public const int OldestSupportedVersion = 2;
 
@@ -25,6 +25,10 @@ namespace CityHighways.Core
         public int phase;
         public int turnNumber;
         public int finalTurnsLeft = -1;
+        // Финал (версия 12)
+        public bool finalWarned;
+        public string finalOrderRoad;
+        public int finalOrderWinner = -1;
         public int consecutivePasses;
 
         // Городские события
@@ -254,6 +258,9 @@ namespace CityHighways.Core
                 phase = (int)Phase,
                 turnNumber = TurnNumber,
                 finalTurnsLeft = _finalTurnsLeft,
+                finalWarned = _finalWarned,
+                finalOrderRoad = FinalOrderRoadId,
+                finalOrderWinner = FinalOrderWinner,
                 consecutivePasses = _consecutivePasses,
                 openDistricts = _openDistricts.OrderBy(d => d, StringComparer.Ordinal).ToArray(),
                 eventDeck = _eventDeck.Select(e => (int)e).ToArray(),
@@ -485,6 +492,13 @@ namespace CityHighways.Core
             game.Phase = (GamePhase)data.phase;
             game.TurnNumber = data.turnNumber;
             game._finalTurnsLeft = data.finalTurnsLeft;
+            game._finalWarned = data.finalWarned;
+            if (!string.IsNullOrEmpty(data.finalOrderRoad))
+            {
+                FindRoad(data.finalOrderRoad);
+                game.FinalOrderRoadId = data.finalOrderRoad;
+            }
+            game.FinalOrderWinner = data.finalOrderWinner >= 0 && data.finalOrderWinner < players.Length ? data.finalOrderWinner : -1;
             game._consecutivePasses = data.consecutivePasses;
 
             // События: открытые районы, колода, текущее событие и его участки, магистрали часа пик.

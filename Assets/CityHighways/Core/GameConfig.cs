@@ -31,6 +31,12 @@ namespace CityHighways.Core
 
         /// <summary>Когда у игрока после хода остаётся столько участков или меньше, начинается последний круг.</summary>
         public int FinalRoundPieces = 2;
+        /// <summary>«Скоро финал»: объявляется, когда у кого-то осталось столько участков или меньше (0 — не объявлять).</summary>
+        public int FinalWarningPieces = 6;
+        /// <summary>Финальный заказ мэрии: очки тому, кто построит выбранную дорогу в последнем круге (0 — без заказа).</summary>
+        public int FinalOrderBonus = 5;
+        /// <summary>Проверка перед итогами: шанс (в процентах) раскрыть каждую ещё нераскрытую взятку (0 — без проверки).</summary>
+        public int FinalAuditPercent = 50;
 
         /// <summary>Сколько очков платит игрок владельцу за каждый чужой участок на пути контракта.</summary>
         public int TollPerRoad = 2;

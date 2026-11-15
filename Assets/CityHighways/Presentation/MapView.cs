@@ -682,6 +682,16 @@ namespace CityHighways.Presentation
                     p.Stroke();
                 }
 
+                // Финальный заказ мэрии: свободная дорога в золотой пульсирующей рамке.
+                if (!owner.HasValue && road.Id == _game.FinalOrderRoadId)
+                {
+                    float glow = 0.55f + 0.4f * Mathf.Sin(PulseTime * 2.4f);
+                    p.strokeColor = new Color(1f, 0.80f, 0.25f, glow);
+                    p.lineWidth = 3f;
+                    SegmentPath(p, segment, isBridge ? 6f : 4.5f, Vector2.zero);
+                    p.Stroke();
+                }
+
                 // Пробка: пульсирующая красная рамка (поверх магистрали её не бывает).
                 if (isBuilt && _game.IsJammed(road.Id))
                 {

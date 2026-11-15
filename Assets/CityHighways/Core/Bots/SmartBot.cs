@@ -399,6 +399,16 @@ namespace CityHighways.Core
             var affordable = Affordable(game, a.Desired);
             if (a.HasGoals && affordable.Count > 0) return Build(game, a, Longest(affordable));
 
+            // Финальный заказ мэрии: ход в последнем круге один — если контрактам в этот ход ничего не построить,
+            // берём заказ (его очки плюс очки за дорогу).
+            var order = game.FinalOrderRoad;
+            if (game.IsFinalRound && order != null && game.FinalOrderWinner < 0 && !game.GetRoadOwner(order.Id).HasValue
+                && order.Length <= me.RoadPieces)
+            {
+                var orderBuild = Affordable(game, new[] { order });
+                if (orderBuild.Count > 0) return Build(game, a, orderBuild[0]);
+            }
+
             if (endgame)
             {
                 var any = Affordable(game, game.Map.Roads);

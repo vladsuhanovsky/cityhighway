@@ -384,7 +384,12 @@ namespace CityHighways.Presentation
         static VisualElement Ending(GameConfig config)
         {
             var s = Section("Конец партии и очки");
-            Paragraph(s, $"Когда у кого-то остаётся {config.FinalRoundPieces} участка дороги или меньше, каждый делает ещё по одному ходу.");
+            Paragraph(s, $"Когда у кого-то остаётся {config.FinalRoundPieces} участка дороги или меньше, начинается последний круг: каждый, включая этого игрока, делает ещё по одному ходу. Под статусом виден счётчик ходов до конца." +
+                         (config.FinalWarningPieces > config.FinalRoundPieces ? $" Заранее, когда у кого-то остаётся {config.FinalWarningPieces} участков или меньше, всем объявляют «скоро финал»." : ""));
+            if (config.FinalOrderBonus > 0)
+                Paragraph(s, $"Финальный заказ мэрии: в начале последнего круга мэрия выбирает одну свободную дорогу — ту, за которую могут побороться больше всего компаний. На карте она в золотой рамке. Кто построит её в последнем круге, получает +{config.FinalOrderBonus} очков (в столбце «Цели»).");
+            if (config.BribesEnabled && config.FinalAuditPercent > 0)
+                Paragraph(s, $"Проверка перед итогами: каждая ещё нераскрытая взятка последних двух кругов раскрывается с шансом {config.FinalAuditPercent}% — с тем же штрафом, что и при обвинении. Взятка в последнем круге — тоже риск.");
             Paragraph(s, "Итог складывается из:");
             var lines = new[]
             {

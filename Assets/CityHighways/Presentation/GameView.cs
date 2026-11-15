@@ -100,6 +100,29 @@ namespace CityHighways.Presentation
             public readonly HashSet<string> Jammed = new HashSet<string>();
         }
 
+        /// <summary>Строка о финале под статусом: последний круг (ходов до конца, заказ мэрии) или «скоро финал».</summary>
+        string FinalText()
+        {
+            if (_game.IsFinalRound)
+            {
+                int left = _game.FinalTurnsLeft;
+                string text = left <= 1 ? "Последний круг: это последний ход партии!"
+                    : $"Последний круг: до конца {left} {Plural(left, "ход", "хода", "ходов")}";
+                var order = _game.FinalOrderRoad;
+                if (order != null)
+                    text += _game.FinalOrderWinner >= 0
+                        ? $"\nФинальный заказ выполнил {_game.Players[_game.FinalOrderWinner].Name}"
+                        : $"\nФинальный заказ: {LocationName(order.A)} — {LocationName(order.B)} (+{_game.Config.FinalOrderBonus})";
+                return text;
+            }
+            if (_game.FinalWarned)
+            {
+                int toFinal = _game.FewestPieces - _game.Config.FinalRoundPieces;
+                return toFinal > 0 ? $"Скоро финал: до последнего круга {toFinal} {Plural(toFinal, "участок", "участка", "участков")} у лидера стройки" : "";
+            }
+            return "";
+        }
+
         static string Plural(int n, string one, string few, string many)
         {
             int m10 = n % 10, m100 = n % 100;
@@ -244,7 +267,8 @@ namespace CityHighways.Presentation
             _statusText = Ui.Text("", 15f, Theme.Text);
             _statusText.style.marginTop = 8f;
             status.Add(_statusText);
-            _finalRound = Ui.Text("Последний круг!", 15f, Theme.Accent, true);
+            _finalRound = Ui.Text("", 15f, Theme.Accent, true);
+            _finalRound.style.whiteSpace = WhiteSpace.Normal;
             _finalRound.style.marginTop = 6f;
             status.Add(_finalRound);
             _flashLabel = Ui.Text("", 13f, Theme.Danger);
@@ -518,6 +542,8 @@ namespace CityHighways.Presentation
             _lastAuctionShown = _game.AuctionNumber;
             _lastWhisperShown = _game.WhisperNumber;
             _lastAccusationShown = _game.AccusationNumber;
+            _lastFinalWarningShown = _game.FinalWarningNumber;
+            _lastFinalOrderShown = _game.FinalOrderNumber;
             _game.StateChanged += OnStateChanged;
 
             _bots = new IBot[_game.Players.Count];
@@ -869,6 +895,8 @@ namespace CityHighways.Presentation
                           $"{char.ToUpper(kind[0]) + kind.Substring(1)} · длина {road.Length} · {resource} · {_game.Config.PointsForLength(road.Length)} очк.";
 
             int? owner = _game.GetRoadOwner(road.Id);
+            if (!owner.HasValue && road.Id == _game.FinalOrderRoadId)
+                text += $"\n<color=#FFCC40>Финальный заказ мэрии: +{_game.Config.FinalOrderBonus} очков тому, кто построит её в последнем круге</color>";
             if (owner.HasValue)
             {
                 text += "\nПостроил: " + _game.Players[owner.Value].Name;
@@ -1018,6 +1046,25 @@ namespace CityHighways.Presentation
                     _map.Repaint();
                     GlowEventCard(color);
                 });
+            }
+
+            // Финал: «скоро финал», финальный заказ мэрии (открыт / выполнен).
+            if (_game.FinalWarningNumber > _lastFinalWarningShown)
+            {
+                _lastFinalWarningShown = _game.FinalWarningNumber;
+                Toast($"Скоро финал: у кого-то осталось {_game.FewestPieces} уч. При {_game.Config.FinalRoundPieces} — последний круг", Theme.Accent);
+            }
+            if (_game.FinalOrderNumber > _lastFinalOrderShown)
+            {
+                _lastFinalOrderShown = _game.FinalOrderNumber;
+                var order = _game.FinalOrderRoad;
+                if (order != null)
+                {
+                    string where = $"{LocationName(order.A)} — {LocationName(order.B)}";
+                    Toast(_game.FinalOrderWinner >= 0
+                        ? $"{_game.Players[_game.FinalOrderWinner].Name} выполняет финальный заказ: +{_game.Config.FinalOrderBonus}"
+                        : $"Последний круг! Финальный заказ мэрии: {where}, +{_game.Config.FinalOrderBonus} тому, кто построит", Theme.Accent);
+                }
             }
 
             // Взятки: в начале круга — сколько шептались в прошлом (без имён), и итог обвинения — видно всем.
@@ -1987,7 +2034,9 @@ namespace CityHighways.Presentation
             _statusText.text = Instruction(acting) + TimerText();
             _statusText.style.color = TimerEnabled && HumanToAct && !_timerExpired && _turnTimeLeft <= 10f ? Theme.Danger : Theme.Text;
             MarkLogSeen();
-            Ui.Show(_finalRound, _game.IsFinalRound && _game.Phase != GamePhase.GameOver);
+            _finalRound.text = FinalText();
+            _finalRound.style.color = _game.IsFinalRound ? Theme.Accent : Theme.TextDim;
+            Ui.Show(_finalRound, _finalRound.text.Length > 0 && _game.Phase != GamePhase.GameOver);
             _flashLabel.text = _flash ?? "";
             Ui.Show(_flashLabel, _flash != null);
             Ui.Show(_passButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction && !_game.HasAnyLegalAction());
@@ -2263,6 +2312,8 @@ namespace CityHighways.Presentation
         int _lastTradeShown;
         int _lastAuctionShown;
         int _lastWhisperShown;
+        int _lastFinalWarningShown;
+        int _lastFinalOrderShown;
         int _lastAccusationShown;
 
         /// <summary>Тайная ставка на аукционе мэрии: контракт, бонус, своё влияние; кто уже поставил — без сумм.</summary>
@@ -2635,6 +2686,18 @@ namespace CityHighways.Presentation
                     s.GoalPoints.ToString(), $"{s.LuckPoints:+#;-#;0}", character, s.Penalties == 0 ? "—" : s.Penalties.ToString(), s.Total.ToString() };
                 box.Add(ResultRow(cells, widths, Theme.Text, s.PlayerIndex, place == 1));
                 place++;
+            }
+
+            if (_game.FinalAudit.Count > 0)
+            {
+                var found = _game.FinalAudit.Where(a => a.Exposed > 0).ToList();
+                var audit = Ui.Text(found.Count > 0
+                        ? "Проверка перед итогами нашла взятки: " + string.Join(" · ", found.Select(a => $"{_game.Players[a.Player].Name} −{a.Fine}")) + " (в столбце «Штрафы»)."
+                        : "Проверка перед итогами: взяток не нашли.", 13f, found.Count > 0 ? Theme.Danger : Theme.TextDim);
+                audit.style.whiteSpace = WhiteSpace.Normal;
+                audit.style.unityTextAlign = TextAnchor.MiddleCenter;
+                audit.style.marginTop = 8f;
+                box.Add(audit);
             }
 
             if (_profileCredits != null && _profileCredits.Count > 0)

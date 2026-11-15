@@ -397,6 +397,7 @@ namespace CityHighways.Core
         {
             player.RoadPieces -= road.Length;
             player.AddRoad(road);
+            CheckFinalOrder(player, road);
             _roadOwners[road.Id] = player.Index;
 
             int points = Config.PointsForLength(road.Length);
@@ -589,8 +590,10 @@ namespace CityHighways.Core
             {
                 // Каждый, включая этого игрока, делает ещё по одному ходу.
                 _finalTurnsLeft = _players.Count;
-                Emit($"У компании {player.Name} осталось участков: {player.RoadPieces}. Начинается последний круг.");
+                Emit($"У компании {player.Name} осталось участков: {player.RoadPieces}. Начинается последний круг: у каждого ещё один ход.");
+                OpenFinalOrder();
             }
+            else CheckFinalWarning(player);
 
             RefillFaceUpRow();
             CurrentPlayerIndex = (CurrentPlayerIndex + 1) % _players.Count;
@@ -612,6 +615,7 @@ namespace CityHighways.Core
         void FinishGame()
         {
             Phase = GamePhase.GameOver;
+            RunFinalAudit();
             SettleContracts();
             Result = Scoring.Calculate(Map, _players, GetRoadOwner, TollFor, Config);
             Emit("Игра окончена. Победа: " + string.Join(", ", Result.Winners.Select(w => w.PlayerName)) + ".");
