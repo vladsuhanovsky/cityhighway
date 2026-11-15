@@ -145,6 +145,7 @@ namespace CityHighways.Presentation
                 avatar.schedule.Execute(() => avatar.Set(profile)).Every(500).Until(() => Profiles.AvatarOf(profile) != null);
 
             Wardrobe(profile);
+            AchievementsCard(profile);
 
             // ---------------------------------------------------------------- Выбор профиля
             var chooser = Ui.Card(14f);
@@ -294,6 +295,77 @@ namespace CityHighways.Presentation
         /// Персонаж и гардероб: слева персонаж в полный рост (с примеркой), справа вкладки слотов и вещи —
         /// каждая показана на мини-персонаже. Клик по вещи — примерить, кнопка — купить или надеть.
         /// </summary>
+        /// <summary>Задание дня и сетка достижений: открытые — ярко, закрытые — с прогрессом и наградой.</summary>
+        void AchievementsCard(PlayerProfile profile)
+        {
+            var card = Ui.Card(14f);
+            card.style.marginBottom = 12f;
+            int done = Achievements.All.Count(a => Achievements.Unlocked(profile, a));
+            card.Add(Ui.Text($"Достижения: {done} из {Achievements.All.Count}", 17f, Theme.Text, true));
+            var note = Ui.Text("Награда — влияние в кошелёк профиля, один раз. На саму партию достижения не влияют.", 12f, Theme.TextDim);
+            note.style.whiteSpace = WhiteSpace.Normal;
+            note.style.marginBottom = 8f;
+            card.Add(note);
+
+            var task = Achievements.Today;
+            bool todayDone = profile.dailyDone == Achievements.DateKey(DateTime.Now);
+            var daily = Ui.Row();
+            daily.style.alignItems = Align.Center;
+            daily.style.backgroundColor = todayDone ? Theme.PanelHover : Theme.PanelLight;
+            Ui.Radius(daily, 8f);
+            Ui.Padding(daily, 8f, 12f);
+            Ui.Border(daily, 2f, todayDone ? Theme.Line : Theme.Accent);
+            daily.style.marginBottom = 10f;
+            var dailyTexts = Ui.Column();
+            dailyTexts.style.flexGrow = 1f;
+            dailyTexts.Add(Ui.Text("Задание дня", 12f, Theme.Accent, true));
+            dailyTexts.Add(Ui.Text(task.Title, 15f, Theme.Text, true));
+            daily.Add(dailyTexts);
+            daily.Add(Ui.Text(todayDone ? "✓ выполнено" : $"+{Achievements.DailyReward} влияния", 13f, todayDone ? Theme.TextDim : Theme.Accent, true));
+            card.Add(daily);
+            if (profile.dailyTotal > 0)
+            {
+                var total = Ui.Text($"Заданий дня выполнено: {profile.dailyTotal}", 11f, Theme.TextDim);
+                total.style.marginTop = -6f;
+                total.style.marginBottom = 8f;
+                card.Add(total);
+            }
+
+            var grid = Ui.Row();
+            grid.style.flexWrap = Wrap.Wrap;
+            foreach (var achievement in Achievements.All)
+            {
+                bool unlocked = Achievements.Unlocked(profile, achievement);
+                var cell = Ui.Column();
+                cell.style.width = 220f;
+                cell.style.marginRight = 8f;
+                cell.style.marginBottom = 8f;
+                cell.style.backgroundColor = unlocked ? Theme.PanelHover : Theme.PanelLight;
+                cell.style.opacity = unlocked ? 1f : 0.75f;
+                Ui.Radius(cell, 8f);
+                Ui.Padding(cell, 8f, 10f);
+                Ui.Border(cell, unlocked ? 2f : 1f, unlocked ? Theme.Accent : Theme.Line);
+                var head = Ui.Row();
+                head.style.justifyContent = Justify.SpaceBetween;
+                head.Add(Ui.Text((unlocked ? "★ " : "") + achievement.Title, 14f, unlocked ? Theme.Accent : Theme.Text, true));
+                head.Add(Ui.Text($"+{achievement.Reward}", 12f, unlocked ? Theme.TextDim : Theme.Accent, true));
+                cell.Add(head);
+                var description = Ui.Text(achievement.Description, 11f, Theme.TextDim);
+                description.style.whiteSpace = WhiteSpace.Normal;
+                description.style.marginTop = 2f;
+                cell.Add(description);
+                if (achievement.Cumulative && !unlocked)
+                {
+                    var progress = Ui.Text($"{Achievements.ProgressOf(profile, achievement)} из {achievement.Target}", 11f, Theme.Accent);
+                    progress.style.marginTop = 2f;
+                    cell.Add(progress);
+                }
+                grid.Add(cell);
+            }
+            card.Add(grid);
+            _content.Add(card);
+        }
+
         void Wardrobe(PlayerProfile profile)
         {
             var card = Ui.Card(14f);

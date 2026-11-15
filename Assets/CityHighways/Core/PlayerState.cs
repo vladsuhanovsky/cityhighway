@@ -57,6 +57,10 @@ namespace CityHighways.Core
         public int PenaltyPoints { get; internal set; }
         public int BribesGiven { get; internal set; }
         public int BribesExposed { get; internal set; }
+        /// <summary>Сколько раз игрок верно обвинил соперника во взятке.</summary>
+        public int CorrectAccusations { get; internal set; }
+        /// <summary>Сколько своих дорог игрок улучшил до магистрали.</summary>
+        public int Upgrades { get; internal set; }
 
         /// <summary>
         /// Проезд, оплаченный по ходу партии (маршрут фиксируется, когда контракт выполнен): заплачено соперникам,

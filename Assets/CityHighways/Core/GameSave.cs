@@ -175,6 +175,8 @@ namespace CityHighways.Core
         public int influenceEarned;
         public int influenceSpent;
         public int refreshes;
+        public int correctAccusations;
+        public int upgrades;
         public string[] rewardedContracts;
         public string[] influenceDistricts;
         public string mayorContract;
@@ -235,6 +237,8 @@ namespace CityHighways.Core
                     influenceEarned = p.InfluenceEarned,
                     influenceSpent = p.InfluenceSpent,
                     refreshes = p.Refreshes,
+                    correctAccusations = p.CorrectAccusations,
+                    upgrades = p.Upgrades,
                     rewardedContracts = p.RewardedContracts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
                     influenceDistricts = p.InfluenceDistricts.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
                     mayorContract = p.MayorContractId,
@@ -450,6 +454,8 @@ namespace CityHighways.Core
                 player.InfluenceEarned = saved.influenceEarned;
                 player.InfluenceSpent = saved.influenceSpent;
                 player.Refreshes = saved.refreshes;
+                player.CorrectAccusations = saved.correctAccusations;
+                player.Upgrades = saved.upgrades;
                 foreach (var id in saved.rewardedContracts ?? new string[0]) player.RewardedContracts.Add(id);
                 foreach (var id in saved.influenceDistricts ?? new string[0]) player.InfluenceDistricts.Add(id);
                 player.MayorContractId = string.IsNullOrEmpty(saved.mayorContract) ? null : saved.mayorContract;

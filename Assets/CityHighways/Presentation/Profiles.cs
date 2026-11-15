@@ -29,6 +29,19 @@ namespace CityHighways.Presentation
         public string steamId = "";
 
         public bool IsSteam => !string.IsNullOrEmpty(steamId);
+        /// <summary>Открытые достижения (Id), отметки для накопительных («победа в сценарии…»), задание дня.</summary>
+        public List<string> achievements = new List<string>();
+        public List<string> marks = new List<string>();
+        /// <summary>День (yyyy-MM-dd), за который задание дня уже засчитано; сколько всего выполнено.</summary>
+        public string dailyDone = "";
+        public int dailyTotal;
+
+        public bool HasMark(string mark) => marks != null && marks.Contains(mark);
+        public void AddMark(string mark)
+        {
+            if (marks == null) marks = new List<string>();
+            if (!marks.Contains(mark)) marks.Add(mark);
+        }
         /// <summary>Наряд персонажа строкой Outfit («body=…;hat=…»); пусто — наряд по умолчанию.</summary>
         public string outfit = "";
 
@@ -406,7 +419,12 @@ namespace CityHighways.Presentation
         public struct Credit
         {
             public string Profile;
+            /// <summary>Остаток влияния с партии.</summary>
             public int Amount;
+            /// <summary>Открытые за партию достижения и задание дня (их награда уже в кошельке).</summary>
+            public List<Achievement> Unlocked;
+            public bool DailyDone;
+            public int Bonus;
         }
 
         /// <summary>
@@ -436,7 +454,13 @@ namespace CityHighways.Presentation
                 profile.earnedTotal += player.InfluenceEarned;
                 profile.games++;
                 if (winners.Contains(i)) profile.wins++;
-                credits.Add(new Credit { Profile = profile.name, Amount = Math.Max(0, player.Influence) });
+                if (profile.achievements == null) profile.achievements = new List<string>();
+                var outcome = Achievements.Apply(profile, GameFacts.Of(game, i), DateTime.Now);
+                credits.Add(new Credit
+                {
+                    Profile = profile.name, Amount = Math.Max(0, player.Influence),
+                    Unlocked = outcome.Unlocked, DailyDone = outcome.DailyDone, Bonus = outcome.Reward
+                });
             }
             if (credits.Count > 0) Save();
             return credits;

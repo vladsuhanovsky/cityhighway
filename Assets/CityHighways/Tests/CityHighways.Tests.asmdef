@@ -4,6 +4,7 @@
     "references": [
         "CityHighways.Core",
         "CityHighways.Net",
+        "CityHighways.Presentation",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

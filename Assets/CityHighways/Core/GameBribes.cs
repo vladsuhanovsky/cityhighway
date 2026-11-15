@@ -145,6 +145,7 @@ namespace CityHighways.Core
                 suspect.PenaltyPoints -= fine;
                 suspect.BribesExposed += exposed;
                 EarnInfluence(accuser, Config.BribeWhistleReward, "разоблачение");
+                accuser.CorrectAccusations++;
                 Emit($"{accuser.Name} обвиняет {suspect.Name} во взятке — подтвердилось! Раскрыто: {exposed}, штраф −{fine}.");
             }
             else

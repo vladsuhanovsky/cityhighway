@@ -2763,12 +2763,23 @@ namespace CityHighways.Presentation
 
             if (_profileCredits != null && _profileCredits.Count > 0)
             {
-                var credit = Ui.Text("В кошелёк профиля: " + string.Join(" · ", _profileCredits.Select(c => $"{c.Profile} +{c.Amount}"))
+                var credit = Ui.Text("В кошелёк профиля: " + string.Join(" · ", _profileCredits.Select(c => $"{c.Profile} +{c.Amount + c.Bonus}"))
                                      + " — тратится на оформление в «Профиле».", 14f, Theme.Accent, true);
                 credit.style.whiteSpace = WhiteSpace.Normal;
                 credit.style.unityTextAlign = TextAnchor.MiddleCenter;
                 credit.style.marginTop = 10f;
                 box.Add(credit);
+                // Новые достижения и задание дня — их награда уже в сумме выше.
+                foreach (var c in _profileCredits.Where(x => (x.Unlocked != null && x.Unlocked.Count > 0) || x.DailyDone))
+                {
+                    var parts = (c.Unlocked ?? new List<Achievement>()).Select(a => $"«{a.Title}» +{a.Reward}").ToList();
+                    if (c.DailyDone) parts.Add($"задание дня +{Achievements.DailyReward}");
+                    var line = Ui.Text($"★ {c.Profile}: " + string.Join(", ", parts), 13f, Theme.Accent);
+                    line.style.whiteSpace = WhiteSpace.Normal;
+                    line.style.unityTextAlign = TextAnchor.MiddleCenter;
+                    line.style.marginTop = 4f;
+                    box.Add(line);
+                }
             }
 
             if (_game.Config.InfluenceEnabled)

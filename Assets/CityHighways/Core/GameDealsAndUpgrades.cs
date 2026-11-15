@@ -206,6 +206,7 @@ namespace CityHighways.Core
             Pay(player, Resource.Machinery, machinery);
             _rushHourRoads.Add(roadId);
             player.RoadPoints += Config.UpgradePoints;
+            player.Upgrades++;
             Emit($"{player.Name} улучшает дорогу {Map.LocationName(road.A)} — {Map.LocationName(road.B)} до магистрали (+{Config.UpgradePoints}).");
             EndTurn();
             return ActionResult.Ok();
