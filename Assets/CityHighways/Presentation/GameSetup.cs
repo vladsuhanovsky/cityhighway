@@ -56,6 +56,46 @@ namespace CityHighways.Presentation
         public string mapResourcePath = "CityHighways/Maps/moscow";
         /// <summary>Сценарий партии (ScenarioKind как int).</summary>
         public int scenario;
+        /// <summary>Обучающая партия: не сохраняется (ни настройки, ни партия) и не пишется в статистику.</summary>
+        [NonSerialized] public bool tutorial;
+
+        public const string TutorialMap = "CityHighways/Maps/tutorial";
+        /// <summary>Участков у каждого в обучении: карта маленькая, партия — минут на десять.</summary>
+        public const int TutorialPieces = 14;
+
+        /// <summary>Настройки обучающей партии: вы против умного бота-наставника на карте центра.</summary>
+        public static GameSetup CreateTutorial(string playerName, bool sound)
+        {
+            var setup = new GameSetup
+            {
+                tutorial = true,
+                sound = sound,
+                hideCardsBetweenTurns = false,
+                turnSeconds = 0,
+                roadPieces = TutorialPieces,
+                mapResourcePath = TutorialMap
+            };
+            setup.players.Add(new PlayerSlot(string.IsNullOrWhiteSpace(playerName) ? "Вы" : playerName, false) { character = 0 });
+            setup.players.Add(new PlayerSlot("Наставник", true, BotLevel.Smart) { character = 0 });
+            return setup;
+        }
+
+        /// <summary>
+        /// Правила обучения: без событий, удачи, аукциона, взяток, сделок и улучшений — только дороги, контракты,
+        /// проезд, влияние и финал. Остальное объясняется в конце и в «Правилах».
+        /// </summary>
+        public static GameConfig TutorialConfig() => new GameConfig
+        {
+            RoadPiecesOverride = TutorialPieces,
+            EventsEnabled = false,
+            LuckEnabled = false,
+            AuctionEnabled = false,
+            BribesEnabled = false,
+            TradesEnabled = false,
+            UpgradeEnabled = false,
+            PassesEnabled = false,
+            FinalWarningPieces = 5
+        };
 
         /// <summary>Настройки партии: участки из меню и правила выбранного сценария.</summary>
         public GameConfig CreateConfig() =>

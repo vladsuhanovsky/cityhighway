@@ -169,6 +169,21 @@ namespace CityHighways.Presentation
             _game.StartNewGame();
         }
 
+        /// <summary>Обучающая партия: настройки и сохранение игрока не трогает.</summary>
+        public void StartTutorial()
+        {
+            var local = GameSetup.Load();
+            var setup = GameSetup.CreateTutorial(Profiles.Active?.name, local.sound);
+            Sound.Enabled = setup.sound;
+            CloseNet();
+            Tweener.Clear();
+            _root.Clear();
+            _menu = null;
+            _game = new GameView(this, setup);
+            _root.Add(_game.Root);
+            _game.StartNewGame();
+        }
+
         public void ContinueGame(SaveFile file)
         {
             if (file == null) return;

@@ -106,6 +106,13 @@ namespace CityHighways.Tests
             return JsonUtility.FromJson<CityMapDto>(File.ReadAllText(path)).ToMap();
         }
 
+        /// <summary>Карта обучения — центр Москвы (Tools~/make_tutorial_map.py).</summary>
+        public static CityMap Tutorial()
+        {
+            var path = Path.Combine(Application.dataPath, "CityHighways/Resources/CityHighways/Maps/tutorial.json");
+            return JsonUtility.FromJson<CityMapDto>(File.ReadAllText(path)).ToMap();
+        }
+
         /// <summary>
         /// Партия после выбора стартовых контрактов (каждый оставил первые два).
         /// События по умолчанию выключены, чтобы случайный «Ремонт» не мешал проверкам правил.

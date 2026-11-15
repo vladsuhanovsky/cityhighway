@@ -226,6 +226,7 @@ namespace CityHighways.Presentation
                 buttons.Add(button);
             }
             Add("Новая игра", () => ShowPage(Page.NewGame), saved != null ? ButtonKind.Secondary : ButtonKind.Primary);
+            Add(TutorialCoach.IsDone ? "Обучение" : "Обучение — начните отсюда", _app.StartTutorial, ButtonKind.Secondary);
             Add("Сетевая игра", () => ShowPage(Page.Online), ButtonKind.Secondary);
             Add("Правила", () => ShowPage(Page.Rules), ButtonKind.Secondary);
             Add("Счётчик партий", () => ShowPage(Page.Stats), ButtonKind.Secondary);

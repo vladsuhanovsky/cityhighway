@@ -1,0 +1,439 @@
+{
+ "name": "Центр Москвы (обучение)",
+ "districts": [
+  {
+   "id": "center",
+   "name": "Центр"
+  },
+  {
+   "id": "zamoskvorechye",
+   "name": "Замоскворечье"
+  },
+  {
+   "id": "vokzaly",
+   "name": "Вокзалы"
+  },
+  {
+   "id": "city",
+   "name": "Москва-Сити"
+  },
+  {
+   "id": "west",
+   "name": "Запад"
+  }
+ ],
+ "locations": [
+  {
+   "id": "kremlin",
+   "name": "Кремль",
+   "district": "center",
+   "x": 0.676,
+   "y": 0.515
+  },
+  {
+   "id": "lubyanka",
+   "name": "Лубянка",
+   "district": "center",
+   "x": 0.787,
+   "y": 0.343
+  },
+  {
+   "id": "arbat",
+   "name": "Арбат",
+   "district": "center",
+   "x": 0.535,
+   "y": 0.515
+  },
+  {
+   "id": "pushkinskaya",
+   "name": "Пушкинская",
+   "district": "center",
+   "x": 0.619,
+   "y": 0.256
+  },
+  {
+   "id": "tretyakovka",
+   "name": "Третьяковка",
+   "district": "zamoskvorechye",
+   "x": 0.732,
+   "y": 0.774
+  },
+  {
+   "id": "oktyabrskaya",
+   "name": "Октябрьская",
+   "district": "zamoskvorechye",
+   "x": 0.621,
+   "y": 0.94
+  },
+  {
+   "id": "paveletsky",
+   "name": "Павелецкий",
+   "district": "zamoskvorechye",
+   "x": 0.839,
+   "y": 0.932
+  },
+  {
+   "id": "komsomolskaya",
+   "name": "Комсомольская",
+   "district": "vokzaly",
+   "x": 0.864,
+   "y": 0.063
+  },
+  {
+   "id": "kursky",
+   "name": "Курский",
+   "district": "vokzaly",
+   "x": 0.94,
+   "y": 0.392
+  },
+  {
+   "id": "city",
+   "name": "Сити",
+   "district": "city",
+   "x": 0.346,
+   "y": 0.398
+  },
+  {
+   "id": "presnya",
+   "name": "Пресня",
+   "district": "city",
+   "x": 0.436,
+   "y": 0.27
+  },
+  {
+   "id": "kievsky",
+   "name": "Киевский",
+   "district": "west",
+   "x": 0.367,
+   "y": 0.711
+  },
+  {
+   "id": "kutuzovsky",
+   "name": "Кутузовский",
+   "district": "west",
+   "x": 0.237,
+   "y": 0.586
+  },
+  {
+   "id": "belorussky",
+   "name": "Белорусский",
+   "district": "vokzaly",
+   "x": 0.514,
+   "y": 0.06
+  },
+  {
+   "id": "fili",
+   "name": "Фили",
+   "district": "west",
+   "x": 0.195,
+   "y": 0.313
+  },
+  {
+   "id": "krylatskoe",
+   "name": "Крылатское",
+   "district": "west",
+   "x": 0.06,
+   "y": 0.545
+  }
+ ],
+ "roads": [
+  {
+   "id": "r01",
+   "from": "kremlin",
+   "to": "lubyanka",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r02",
+   "from": "kremlin",
+   "to": "arbat",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r03",
+   "from": "kremlin",
+   "to": "pushkinskaya",
+   "length": 1,
+   "resource": "concrete"
+  },
+  {
+   "id": "r04",
+   "from": "lubyanka",
+   "to": "pushkinskaya",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r05",
+   "from": "arbat",
+   "to": "pushkinskaya",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r06",
+   "from": "kremlin",
+   "to": "tretyakovka",
+   "length": 1,
+   "resource": "steel"
+  },
+  {
+   "id": "r07",
+   "from": "arbat",
+   "to": "kievsky",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r08",
+   "from": "tretyakovka",
+   "to": "oktyabrskaya",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r09",
+   "from": "tretyakovka",
+   "to": "paveletsky",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r10",
+   "from": "oktyabrskaya",
+   "to": "paveletsky",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r11",
+   "from": "lubyanka",
+   "to": "komsomolskaya",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r12",
+   "from": "lubyanka",
+   "to": "kursky",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r13",
+   "from": "komsomolskaya",
+   "to": "kursky",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r29",
+   "from": "city",
+   "to": "presnya",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r30",
+   "from": "presnya",
+   "to": "pushkinskaya",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r31",
+   "from": "presnya",
+   "to": "arbat",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r33",
+   "from": "city",
+   "to": "kutuzovsky",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r34",
+   "from": "kievsky",
+   "to": "kutuzovsky",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r73",
+   "from": "belorussky",
+   "to": "pushkinskaya",
+   "length": 1,
+   "resource": "concrete"
+  },
+  {
+   "id": "r74",
+   "from": "belorussky",
+   "to": "presnya",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r82",
+   "from": "krylatskoe",
+   "to": "kutuzovsky",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r83",
+   "from": "fili",
+   "to": "kutuzovsky",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r84",
+   "from": "fili",
+   "to": "city",
+   "length": 2,
+   "resource": "asphalt"
+  }
+ ],
+ "contracts": [
+  {
+   "id": "t01",
+   "from": "center",
+   "to": "zamoskvorechye",
+   "points": 3
+  },
+  {
+   "id": "t02",
+   "from": "center",
+   "to": "vokzaly",
+   "points": 3
+  },
+  {
+   "id": "t03",
+   "from": "city",
+   "to": "center",
+   "points": 3
+  },
+  {
+   "id": "t04",
+   "from": "center",
+   "to": "west",
+   "points": 4
+  },
+  {
+   "id": "t05",
+   "from": "city",
+   "to": "west",
+   "points": 3
+  },
+  {
+   "id": "t06",
+   "from": "vokzaly",
+   "to": "zamoskvorechye",
+   "points": 5
+  },
+  {
+   "id": "t07",
+   "from": "city",
+   "to": "zamoskvorechye",
+   "points": 5
+  },
+  {
+   "id": "t08",
+   "from": "city",
+   "to": "vokzaly",
+   "points": 6
+  },
+  {
+   "id": "t09",
+   "from": "west",
+   "to": "zamoskvorechye",
+   "points": 6
+  },
+  {
+   "id": "t10",
+   "from": "vokzaly",
+   "to": "west",
+   "points": 7
+  }
+ ],
+ "river": [
+  {
+   "x": -0.116,
+   "y": 0.349
+  },
+  {
+   "x": 0.06,
+   "y": 0.368
+  },
+  {
+   "x": 0.152,
+   "y": 0.42
+  },
+  {
+   "x": 0.221,
+   "y": 0.463
+  },
+  {
+   "x": 0.287,
+   "y": 0.496
+  },
+  {
+   "x": 0.346,
+   "y": 0.553
+  },
+  {
+   "x": 0.434,
+   "y": 0.719
+  },
+  {
+   "x": 0.427,
+   "y": 0.918
+  },
+  {
+   "x": 0.456,
+   "y": 1.093
+  },
+  {
+   "x": 0.53,
+   "y": 1.125
+  },
+  {
+   "x": 0.58,
+   "y": 0.978
+  },
+  {
+   "x": 0.606,
+   "y": 0.815
+  },
+  {
+   "x": 0.647,
+   "y": 0.668
+  },
+  {
+   "x": 0.732,
+   "y": 0.646
+  },
+  {
+   "x": 0.828,
+   "y": 0.684
+  },
+  {
+   "x": 0.903,
+   "y": 0.823
+  },
+  {
+   "x": 0.933,
+   "y": 0.992
+  },
+  {
+   "x": 0.947,
+   "y": 1.199
+  }
+ ],
+ "goals": []
+}

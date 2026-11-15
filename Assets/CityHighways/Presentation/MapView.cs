@@ -35,6 +35,8 @@ namespace CityHighways.Presentation
         public readonly HashSet<string> Affordable = new HashSet<string>();
         /// <summary>Подсвеченный контракт: первый район (жёлтый) и второй (красный); null — подсветки нет.</summary>
         public string HighlightFrom { get; private set; }
+        /// <summary>Дорога, которую подсказывает наставник обучения (голубая пульсирующая рамка); null — нет.</summary>
+        public string HintRoad { get; set; }
         public string HighlightTo { get; private set; }
         public string HighlightThird { get; private set; }
         public bool HasHighlight => HighlightFrom != null;
@@ -679,6 +681,16 @@ namespace CityHighways.Presentation
                     p.strokeColor = new Color(1f, 0.60f, 0.20f, 0.95f);
                     p.lineWidth = 2.2f;
                     SegmentPath(p, segment, isBridge ? 5f : 3.5f, Vector2.zero);
+                    p.Stroke();
+                }
+
+                // Подсказка наставника в обучении: голубая пульсирующая рамка.
+                if (!owner.HasValue && road.Id == HintRoad)
+                {
+                    float pulse = 0.5f + 0.45f * Mathf.Sin(PulseTime * 4f);
+                    p.strokeColor = new Color(0.35f, 0.85f, 1f, pulse);
+                    p.lineWidth = 3.4f;
+                    SegmentPath(p, segment, isBridge ? 7f : 5.5f, Vector2.zero);
                     p.Stroke();
                 }
 

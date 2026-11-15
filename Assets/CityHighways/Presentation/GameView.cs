@@ -467,8 +467,18 @@ namespace CityHighways.Presentation
             {
                 var map = CityHighwaysApp.LoadMap(_setup.mapResourcePath);
                 int seed = UnityEngine.Random.Range(0, int.MaxValue);
-                var characters = _setup.ResolveCharacters(new System.Random(seed ^ 0x5bd1e995));
-                game = new Game(map, _setup.PlayerNames(), _setup.CreateConfig(), seed, characters);
+                if (_setup.tutorial)
+                {
+                    // Обучение: одна и та же раздача, без персонажей и лишних правил.
+                    seed = 2026;
+                    game = new Game(map, _setup.PlayerNames(), GameSetup.TutorialConfig(), seed,
+                        new[] { CharacterKind.None, CharacterKind.None });
+                }
+                else
+                {
+                    var characters = _setup.ResolveCharacters(new System.Random(seed ^ 0x5bd1e995));
+                    game = new Game(map, _setup.PlayerNames(), _setup.CreateConfig(), seed, characters);
+                }
             }
             catch (Exception e)
             {
@@ -476,7 +486,7 @@ namespace CityHighways.Presentation
                 ShowError(e.Message);
                 return;
             }
-            Begin(game, 0f, $"Новая партия на карте «{game.Map.Name}».");
+            Begin(game, 0f, _setup.tutorial ? "Обучающая партия: центр Москвы, вы против Наставника." : $"Новая партия на карте «{game.Map.Name}».");
         }
 
         /// <summary>Сетевая партия: Game уже собран сессией (у хоста — новый, у клиента — по данным хоста).</summary>
@@ -564,9 +574,12 @@ namespace CityHighways.Presentation
             HideOverlay();
             _snapshot = TakeSnapshot();
             _dirty = true;
-            if (!Online) SaveSystem.Save(_setup, _game, _playSeconds);
+            if (!Online && !_setup.tutorial) SaveSystem.Save(_setup, _game, _playSeconds);
 
-            bool showTutorial = !Online && HumanCount > 0 && PlayerPrefs.GetInt(TutorialPrefsKey, 0) == 0;
+            if (_coach != null) _coach.Panel.RemoveFromHierarchy();
+            _coach = _setup.tutorial ? new TutorialCoach(_game, _map) : null;
+            if (_coach != null) _fx.Add(_coach.Panel);
+            bool showTutorial = !Online && !_setup.tutorial && HumanCount > 0 && PlayerPrefs.GetInt(TutorialPrefsKey, 0) == 0;
             if (showTutorial) _app.Tweener.After(0.5f, () => ShowTutorialStep(0));
             else _app.Tweener.After(0.4f, OnTurnStarted);
         }
@@ -947,11 +960,12 @@ namespace CityHighways.Presentation
             // Автосохранение после каждого хода; по окончании партии — запись статистики.
             if (finished)
             {
-                if (!Online) SaveSystem.Delete();
-                StatsLog.Append(_game, _setup, _playSeconds);
+                if (!Online && !_setup.tutorial) SaveSystem.Delete();
+                if (!_setup.tutorial) StatsLog.Append(_game, _setup, _playSeconds);
+                else TutorialCoach.MarkDone();
                 _profileCredits = Profiles.CreditAfterGame(_game, _setup, Online ? _net.LocalSeat : (int?)null);
             }
-            else if (now.Phase != GamePhase.GameOver && !Online)
+            else if (now.Phase != GamePhase.GameOver && !Online && !_setup.tutorial)
             {
                 SaveSystem.Save(_setup, _game, _playSeconds);
             }
@@ -1438,6 +1452,7 @@ namespace CityHighways.Presentation
             RefreshLog();
             RefreshStatus();
             RefreshHand();
+            _coach?.Update();
             RefreshOverlays();
             RefreshMap();
         }
@@ -2362,6 +2377,8 @@ namespace CityHighways.Presentation
         int _lastTradeShown;
         int _lastAuctionShown;
         int _lastWhisperShown;
+        /// <summary>Наставник обучающей партии (null — обычная партия).</summary>
+        TutorialCoach _coach;
         int _lastFinalWarningShown;
         int _lastFinalOrderShown;
         int _lastAccusationShown;
@@ -2798,7 +2815,19 @@ namespace CityHighways.Presentation
             var buttons = Ui.Row();
             buttons.style.justifyContent = Justify.Center;
             buttons.style.marginTop = 24f;
-            var again = Ui.Button("Сыграть ещё", () => _app.StartGame(_setup), ButtonKind.Primary, 17f);
+            if (_setup.tutorial)
+            {
+                var done = Ui.Text("Обучение пройдено! В обычной партии есть ещё: городские события, цели мэрии, карты удачи, " +
+                                   "персонажи, сделки и пропуска, улучшение дорог, аукцион мэрии и взятки. Всё это — в «Правилах», " +
+                                   "а коротко — в подсказках первой партии.", 14f, Theme.Accent);
+                done.style.whiteSpace = WhiteSpace.Normal;
+                done.style.unityTextAlign = TextAnchor.MiddleCenter;
+                done.style.marginTop = 14f;
+                box.Add(done);
+            }
+            var again = _setup.tutorial
+                ? Ui.Button("Пройти ещё раз", _app.StartTutorial, ButtonKind.Primary, 17f)
+                : Ui.Button("Сыграть ещё", () => _app.StartGame(_setup), ButtonKind.Primary, 17f);
             again.style.marginRight = 12f;
             buttons.Add(again);
             buttons.Add(Ui.Button("В главное меню", _app.ShowMenu, ButtonKind.Secondary, 17f));
