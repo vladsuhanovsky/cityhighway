@@ -1946,8 +1946,7 @@ namespace CityHighways.Presentation
         void RefreshDrawerInfo()
         {
             _drawerInfo.text = $"Колода: {_game.DeckCount} · сброс {_game.DiscardCount} · контрактов в колоде {_game.ContractDeckCount}"
-                               + (_game.Scenario != ScenarioKind.Standard ? $"
-Сценарий: {Scenarios.Title(_game.Scenario)}" : "");
+                               + (_game.Scenario != ScenarioKind.Standard ? $"\nСценарий: {Scenarios.Title(_game.Scenario)}" : "");
         }
 
         void BuildFaceUpRow()
