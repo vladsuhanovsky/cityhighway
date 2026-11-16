@@ -35,10 +35,10 @@ namespace CityHighways.Core
             switch (kind)
             {
                 case ScenarioKind.Winter: return "Зима";
-                case ScenarioKind.GreaterMoscow: return "Большая Москва";
+                case ScenarioKind.GreaterMoscow: return "Большой город";
                 case ScenarioKind.RepairYear: return "Год ремонта";
                 case ScenarioKind.Elections: return "Выборы мэра";
-                default: return "Обычная Москва";
+                default: return "Обычные правила";
             }
         }
 
@@ -72,7 +72,7 @@ namespace CityHighways.Core
                 case ScenarioKind.GreaterMoscow:
                     return new[]
                     {
-                        "Зеленоград, Некрасовка и Троицк открыты с первого хода, событий «Новый район» нет.",
+                        "Районы-расширения (в Москве — Зеленоград, Некрасовка и Троицк, в Амстердаме — Заандам, Эйбург и Амстелвен, в Чунцине — Бэйбэй, Банань и Чаншоу) открыты с первого хода, событий «Новый район» нет.",
                         $"+{c.ExtraRoadPieces} участков дороги каждому.",
                         $"В начале — {c.InitialContractsDealt} контракта на выбор (оставить не меньше {c.InitialContractsMinKeep})."
                     };

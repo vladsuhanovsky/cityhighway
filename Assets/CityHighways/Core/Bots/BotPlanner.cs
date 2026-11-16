@@ -84,7 +84,8 @@ namespace CityHighways.Core
                     int nextForeign = foreignUsed;
                     bool nextOwn = true;
 
-                    if (owner == _me || (planned != null && planned.Contains(road.Id))) weight = 0f;
+                    // В кооперативе дороги союзников — общая сеть: бесплатно и без предела чужих.
+                    if (owner == _me || (owner.HasValue && _game.IsCooperative) || (planned != null && planned.Contains(road.Id))) weight = 0f;
                     else if (!owner.HasValue)
                     {
                         if (!_game.IsRoadOpen(road.Id)) continue; // район ещё не открыт
@@ -155,7 +156,7 @@ namespace CityHighways.Core
                         {
                             if (network.Add(road.Id)) newRoads.Add(road);
                         }
-                        else if (owner.Value != _me)
+                        else if (owner.Value != _me && !_game.IsCooperative)
                         {
                             tolls[road.Id] = _game.PassageCost(road.Id, _me);
                         }

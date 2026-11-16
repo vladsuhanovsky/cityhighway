@@ -25,6 +25,11 @@ namespace CityHighways.Presentation
         public bool MayorContractDone;
         public int MaxTraffic;
         public int LongestRoad;
+        /// <summary>Кооператив «Город против всех» и сколько заказов команда просрочила.</summary>
+        public bool Cooperative;
+        public int CoopFailedOrders;
+        /// <summary>Название карты партии (Москва, Амстердам, Чунцин).</summary>
+        public string Map;
 
         public static GameFacts Of(Game game, int index)
         {
@@ -48,7 +53,10 @@ namespace CityHighways.Presentation
                 FinalOrder = game.FinalOrderWinner == index,
                 MayorContractDone = score.MayorBonus > 0,
                 MaxTraffic = player.Roads.Count == 0 ? 0 : player.Roads.Max(r => game.TrafficOn(r.Id)),
-                LongestRoad = player.Roads.Count == 0 ? 0 : player.Roads.Max(r => r.Length)
+                LongestRoad = player.Roads.Count == 0 ? 0 : player.Roads.Max(r => r.Length),
+                Cooperative = game.IsCooperative,
+                CoopFailedOrders = game.OrdersFailed,
+                Map = game.Map.Name
             };
         }
     }
@@ -85,6 +93,9 @@ namespace CityHighways.Presentation
         static readonly ScenarioKind[] Seasons =
             { ScenarioKind.Winter, ScenarioKind.GreaterMoscow, ScenarioKind.RepairYear, ScenarioKind.Elections };
 
+        /// <summary>Карты для «Турне» — по названиям из JSON.</summary>
+        static readonly string[] Cities = { "Москва", "Амстердам", "Чунцин" };
+
         public static readonly IReadOnlyList<Achievement> All = new[]
         {
             new Achievement { Id = "first_contract", Title = "Первый подряд", Description = "Выполните контракт.", Reward = 3, Check = f => f.Completed > 0 },
@@ -92,24 +103,31 @@ namespace CityHighways.Presentation
             new Achievement { Id = "bridges5", Title = "Мостостроитель", Description = "Постройте за партию 5 мостов.", Reward = 5, Check = f => f.Bridges >= 5 },
             new Achievement { Id = "tolls15", Title = "Король проезда", Description = "Получите за партию 15 очков за проезд от соперников.", Reward = 6, Check = f => f.TollsEarned >= 15 },
             new Achievement { Id = "clean4", Title = "Без провалов", Description = "Выполните 4 контракта и ни одного не провалите.", Reward = 6, Check = f => f.Completed >= 4 && f.Failed == 0 },
-            new Achievement { Id = "honest_win", Title = "Чистые руки", Description = "Выиграйте партию на троих и больше, не дав ни одной взятки.", Reward = 6, Check = f => f.Won && f.Players >= 3 && f.BribesGiven == 0 },
+            new Achievement { Id = "honest_win", Title = "Чистые руки", Description = "Выиграйте партию на троих и больше, не дав ни одной взятки.", Reward = 6, Check = f => f.Won && !f.Cooperative && f.Players >= 3 && f.BribesGiven == 0 },
             new Achievement { Id = "whistle", Title = "Разоблачитель", Description = "Верно обвините соперника во взятке.", Reward = 4, Check = f => f.CorrectAccusations > 0 },
             new Achievement { Id = "final_order", Title = "Финальный заказ", Description = "Выполните финальный заказ мэрии.", Reward = 4, Check = f => f.FinalOrder },
             new Achievement { Id = "mayor", Title = "Ставленник мэрии", Description = "Выполните контракт, выигранный на аукционе.", Reward = 5, Check = f => f.MayorContractDone },
-            new Achievement { Id = "network8", Title = "Вся Москва", Description = "Соберите сеть на 8 районов.", Reward = 6, Check = f => f.NetworkDistricts >= 8 },
+            new Achievement { Id = "network8", Title = "Весь город", Description = "Соберите сеть на 8 районов.", Reward = 6, Check = f => f.NetworkDistricts >= 8 },
             new Achievement { Id = "traffic3", Title = "Час пик", Description = "Пусть по одной вашей дороге едут 3 маршрута соперников.", Reward = 4, Check = f => f.MaxTraffic >= 3 },
             new Achievement { Id = "upgrades3", Title = "Магистрали", Description = "Улучшите за партию 3 дороги до магистрали.", Reward = 4, Check = f => f.Upgrades >= 3 },
             new Achievement { Id = "score130", Title = "Рекордсмен", Description = "Наберите за партию 130 очков.", Reward = 6, Check = f => f.Total >= 130 },
-            new Achievement { Id = "big_win", Title = "Против всех", Description = "Выиграйте партию на пятерых.", Reward = 8, Check = f => f.Won && f.Players >= 5 },
+            new Achievement { Id = "big_win", Title = "Против всех", Description = "Выиграйте партию на пятерых (в соревновании).", Reward = 8, Check = f => f.Won && !f.Cooperative && f.Players >= 5 },
+            new Achievement { Id = "coop_win", Title = "Город спасён", Description = "Выиграйте кооперативную партию «Город против всех».", Reward = 8, Check = f => f.Won && f.Cooperative },
+            new Achievement { Id = "coop_clean", Title = "Ни одного срыва", Description = "Выиграйте кооператив, не просрочив ни одного заказа города.", Reward = 10, Check = f => f.Won && f.Cooperative && f.CoopFailedOrders == 0 },
             new Achievement
             {
-                Id = "seasons", Title = "Все сезоны", Description = "Выиграйте в каждом сценарии: Зима, Большая Москва, Год ремонта, Выборы мэра.",
+                Id = "seasons", Title = "Все сезоны", Description = "Выиграйте в каждом сценарии: Зима, Большой город, Год ремонта, Выборы мэра.",
                 Reward = 15, Target = Seasons.Length, Progress = p => Seasons.Count(s => p.HasMark("win_scenario:" + s))
             },
             new Achievement
             {
                 Id = "companies", Title = "Все компании", Description = "Выиграйте за каждого персонажа.",
                 Reward = 15, Target = Characters.All.Count, Progress = p => Characters.All.Count(c => p.HasMark("win_character:" + c))
+            },
+            new Achievement
+            {
+                Id = "travel", Title = "Турне", Description = "Сыграйте партию на каждой карте: Москва, Амстердам, Чунцин.",
+                Reward = 10, Target = Cities.Length, Progress = p => Cities.Count(c => p.HasMark("map:" + c))
             },
             new Achievement
             {
@@ -128,7 +146,7 @@ namespace CityHighways.Presentation
             new DailyTask { Id = "d_long", Title = "Постройте дорогу длиной 4 и больше", Check = f => f.LongestRoad >= 4 },
             new DailyTask { Id = "d_final", Title = "Выполните финальный заказ мэрии", Check = f => f.FinalOrder },
             new DailyTask { Id = "d_network6", Title = "Соберите сеть на 6 районов", Check = f => f.NetworkDistricts >= 6 },
-            new DailyTask { Id = "d_scenario", Title = "Сыграйте партию в любом сценарии, кроме обычной Москвы", Check = f => f.Scenario != ScenarioKind.Standard },
+            new DailyTask { Id = "d_scenario", Title = "Сыграйте партию в любом сценарии, кроме обычных правил", Check = f => f.Scenario != ScenarioKind.Standard },
             new DailyTask { Id = "d_clean", Title = "Выполните 2 контракта и ни одного не провалите", Check = f => f.Completed >= 2 && f.Failed == 0 }
         };
 
@@ -153,6 +171,8 @@ namespace CityHighways.Presentation
                 case "honest_win":
                 case "big_win":
                 case "score130":
+                case "coop_win":
+                case "coop_clean":
                     return "Победы";
                 case "whistle":
                 case "tolls15":
@@ -196,6 +216,7 @@ namespace CityHighways.Presentation
         public static Outcome Apply(PlayerProfile profile, GameFacts facts, DateTime now)
         {
             var outcome = new Outcome();
+            if (!string.IsNullOrEmpty(facts.Map)) profile.AddMark("map:" + facts.Map);
             if (facts.Won)
             {
                 profile.AddMark("win_scenario:" + facts.Scenario);

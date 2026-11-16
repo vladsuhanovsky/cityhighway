@@ -205,6 +205,45 @@ namespace CityHighways.Core
         /// <summary>Очки за дорогу по длине (индекс — длина).</summary>
         public int[] RoadPointsByLength = { 0, 1, 2, 4, 7, 10, 15 };
 
+        // ------------------------------------------------------------ Кооператив «Город против всех»
+
+        /// <summary>
+        /// Кооператив: все компании — одна команда против города. Сеть общая (дороги союзников засчитываются в контракты
+        /// и бесплатны), на столе — заказы города с таймером, растёт кризис. Победа — выполнить нужное число заказов,
+        /// поражение — кризис дошёл до предела или участки кончились раньше. Взяток, аукциона и пропусков нет.
+        /// </summary>
+        public bool Cooperative;
+        /// <summary>Сколько заказов города открыто одновременно.</summary>
+        public int CoopOpenOrders = 3;
+        /// <summary>За сколько кругов нужно выполнить заказ.</summary>
+        public int CoopOrderRounds = 5;
+        /// <summary>Шкала кризиса: на этом значении город проигрывает.</summary>
+        public int CoopCrisisMax = 10;
+        public int CoopCrisisStart = 2;
+        /// <summary>Город растёт: кризис +1 каждые столько кругов.</summary>
+        public int CoopCrisisEveryRounds = 2;
+        /// <summary>Просроченный заказ поднимает кризис на столько.</summary>
+        public int CoopCrisisPerFailedOrder = 2;
+        /// <summary>Выполненный заказ снижает кризис на столько.</summary>
+        public int CoopCrisisReliefPerOrder = 2;
+        /// <summary>Ремонт, снегопад или парад поднимают кризис на столько.</summary>
+        public int CoopCrisisPerBadEvent = 1;
+        /// <summary>Сколько заказов нужно выполнить для победы (по числу игроков).</summary>
+        public int[] CoopOrdersToWinByPlayers = { 0, 0, 5, 6, 7, 8 };
+
+        public int CoopOrdersToWin(int players) =>
+            CoopOrdersToWinByPlayers[Math.Max(0, Math.Min(players, CoopOrdersToWinByPlayers.Length - 1))];
+
+        /// <summary>Включить кооператив: соревновательные механики (взятки, аукцион, пропуска) выключаются.</summary>
+        public GameConfig MakeCooperative()
+        {
+            Cooperative = true;
+            BribesEnabled = false;
+            AuctionEnabled = false;
+            PassesEnabled = false;
+            return this;
+        }
+
         public int MaxRoadLength => RoadPointsByLength.Length - 1;
 
         public int TotalCards

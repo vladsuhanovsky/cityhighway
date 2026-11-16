@@ -355,7 +355,9 @@ namespace CityHighways.Core
         Analysis Analyze(Game game, int? who = null)
         {
             var me = who.HasValue ? game.Players[who.Value] : game.CurrentPlayer;
-            var plan = new BotPlanner(game, me.Index, ForeignCost).BuildPlan(me.Contracts);
+            // В кооперативе бот строит и под общие заказы города — их срок горит, поэтому они первыми в плане.
+            var targets = game.IsCooperative ? game.CityOrderContracts.Concat(me.Contracts) : me.Contracts;
+            var plan = new BotPlanner(game, me.Index, ForeignCost).BuildPlan(targets);
             var a = new Analysis { Me = me };
             a.Desired = plan.RoadsToBuild.Where(r => r.Length <= me.RoadPieces).ToList();
             a.HasGoals = a.Desired.Count > 0;

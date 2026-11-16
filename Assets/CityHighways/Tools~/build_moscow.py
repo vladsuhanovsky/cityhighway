@@ -248,7 +248,8 @@ data={"name":"Москва","districts":[dict({"id":i,"name":n}, **({"expansion"
  "roads":[{"id":ROAD_ID[(a,b)],"from":a,"to":b,"length":n,"resource":r} for (a,b,n,r) in roads],
  "contracts":contracts,
  "river":[{"x":x,"y":y} for x,y in river],
- "goals":GOALS}
+ "goals":GOALS,
+ "ring":{"name":"МКАД","cx":0.5,"cy":0.5,"rx":0.40,"ry":0.49}}
 json.dump(data,open(OUT,"w"),ensure_ascii=False,indent=1)
 tot=collections.Counter(); cnt=collections.Counter()
 for a,b,n,r in roads: tot[r]+=n; cnt[r]+=1

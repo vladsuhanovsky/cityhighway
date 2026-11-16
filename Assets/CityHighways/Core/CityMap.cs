@@ -171,6 +171,12 @@ namespace CityHighways.Core
         public IReadOnlyList<Road> Roads { get; }
         public IReadOnlyList<Contract> Contracts { get; }
         public IReadOnlyList<MapPoint> River { get; }
+        /// <summary>Все реки карты (у Москвы одна, у Чунцина — Янцзы и Цзялинцзян). Первая — та же, что River.</summary>
+        public IReadOnlyList<IReadOnlyList<MapPoint>> Rivers { get; private set; }
+        /// <summary>Множитель участков дороги на игрока: на компактных картах их меньше (если число не задано вручную).</summary>
+        public float PiecesScale { get; private set; } = 1f;
+        /// <summary>Кольцевая дорога-декорация (МКАД, A10); null — кольца нет.</summary>
+        public MapRing Ring { get; private set; }
         /// <summary>Пул общих целей мэрии; в партии открывается GameConfig.MayorGoalsDealt из них.</summary>
         public IReadOnlyList<MayorGoal> Goals { get; }
 
@@ -184,6 +190,7 @@ namespace CityHighways.Core
             Roads = new List<Road>(roads);
             Contracts = new List<Contract>(contracts);
             River = new List<MapPoint>(river ?? new MapPoint[0]);
+            Rivers = River.Count > 1 ? new List<IReadOnlyList<MapPoint>> { River } : new List<IReadOnlyList<MapPoint>>();
             Goals = new List<MayorGoal>(goals ?? new MayorGoal[0]);
 
             // Повторы id не ломают конструктор — их найдёт Validate().
@@ -203,6 +210,16 @@ namespace CityHighways.Core
             }
             foreach (var c in Contracts) _contracts[c.Id] = c;
             foreach (var g in Goals) _goals[g.Id] = g;
+        }
+
+        /// <summary>Дополнить карту несколькими реками и множителем участков (из JSON).</summary>
+        internal void SetExtras(IEnumerable<IReadOnlyList<MapPoint>> rivers, float piecesScale, MapRing ring = null)
+        {
+            Ring = ring;
+            var list = new List<IReadOnlyList<MapPoint>>();
+            if (rivers != null) foreach (var r in rivers) if (r != null && r.Count > 1) list.Add(r);
+            if (list.Count > 0) Rivers = list;
+            if (piecesScale > 0.2f && piecesScale <= 2f) PiecesScale = piecesScale;
         }
 
         void AddRoadAt(string locationId, Road road)
@@ -294,6 +311,25 @@ namespace CityHighways.Core
                 if (string.IsNullOrEmpty(id)) errors.Add($"Есть объект {what} без id.");
                 else if (!seen.Add(id)) errors.Add($"Повторяется id {what}: {id}.");
             }
+        }
+    }
+
+    /// <summary>Кольцевая дорога на карте — только рисунок: эллипс с центром (CX, CY) и полуосями RX, RY в долях поля.</summary>
+    public sealed class MapRing
+    {
+        public string Name { get; }
+        public float CX { get; }
+        public float CY { get; }
+        public float RX { get; }
+        public float RY { get; }
+
+        public MapRing(string name, float cx, float cy, float rx, float ry)
+        {
+            Name = name;
+            CX = cx;
+            CY = cy;
+            RX = rx;
+            RY = ry;
         }
     }
 }

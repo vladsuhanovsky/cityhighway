@@ -563,25 +563,29 @@ namespace CityHighways.Presentation
             p.lineJoin = LineJoin.Round;
             var map = _game.Map;
 
-            // МКАД и река.
-            p.strokeColor = new Color(1f, 1f, 1f, 0.18f);
-            p.lineWidth = 1.5f;
-            p.BeginPath();
-            for (int i = 0; i <= 64; i++)
+            // Кольцо карты (МКАД, A10) и реки.
+            if (map.Ring != null)
             {
-                float a = i * Mathf.PI * 2f / 64f;
-                var point = ToMini(0.5f + Mathf.Cos(a) * 0.40f, 0.5f + Mathf.Sin(a) * 0.49f);
-                if (i == 0) p.MoveTo(point);
-                else p.LineTo(point);
+                p.strokeColor = new Color(1f, 1f, 1f, 0.18f);
+                p.lineWidth = 1.5f;
+                p.BeginPath();
+                for (int i = 0; i <= 64; i++)
+                {
+                    float a = i * Mathf.PI * 2f / 64f;
+                    var point = ToMini(map.Ring.CX + Mathf.Cos(a) * map.Ring.RX, map.Ring.CY + Mathf.Sin(a) * map.Ring.RY);
+                    if (i == 0) p.MoveTo(point);
+                    else p.LineTo(point);
+                }
+                p.Stroke();
             }
-            p.Stroke();
-            if (map.River.Count > 1)
+            foreach (var river in map.Rivers)
             {
+                if (river.Count < 2) continue;
                 p.strokeColor = new Color(0.30f, 0.55f, 0.85f, 0.9f);
                 p.lineWidth = 3f;
                 p.BeginPath();
-                p.MoveTo(ToMini(map.River[0].X, map.River[0].Y));
-                for (int i = 1; i < map.River.Count; i++) p.LineTo(ToMini(map.River[i].X, map.River[i].Y));
+                p.MoveTo(ToMini(river[0].X, river[0].Y));
+                for (int i = 1; i < river.Count; i++) p.LineTo(ToMini(river[i].X, river[i].Y));
                 p.Stroke();
             }
 

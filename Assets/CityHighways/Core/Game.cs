@@ -76,6 +76,9 @@ namespace CityHighways.Core
             _faceUp = new Resource?[Config.FaceUpSlots];
 
             int pieces = Config.RoadPiecesFor(playerNames.Count);
+            // Компактные карты (Амстердам, Чунцин) дают меньше участков, если число не задано вручную.
+            if (Config.RoadPiecesOverride <= 0 && Math.Abs(map.PiecesScale - 1f) > 0.001f)
+                pieces = Math.Max(Config.FinalRoundPieces + 6, (int)Math.Round(pieces * map.PiecesScale));
             StartInfo = new GameStartInfo
             {
                 players = playerNames.ToArray(),
@@ -106,6 +109,7 @@ namespace CityHighways.Core
 
             SetupGoalsAndLuck();
             RefillFaceUpRow();
+            CoopSetup();
             Phase = GamePhase.SetupContracts;
             CheckSetupComplete();
         }
@@ -143,7 +147,7 @@ namespace CityHighways.Core
         {
             var paid = PaidRouteOf(playerIndex, contract);
             if (paid != null) return CheckFromPaid(contract, paid);
-            return Scoring.CheckContract(Map, contract, playerIndex, GetRoadOwner, Config.MaxForeignRoadsPerContract,
+            return Scoring.CheckContract(Map, contract, playerIndex, ContractOwnerFor(playerIndex), Config.MaxForeignRoadsPerContract,
                 id => TollFor(id, playerIndex), JamFeeFor);
         }
 
@@ -419,6 +423,7 @@ namespace CityHighways.Core
             CheckGoals(player);
             AwardInfluenceForRoad(player, road);
             SettleContracts();
+            if (CoopCheckOrders(player)) return; // кооператив: последний нужный заказ — победа
 
             EndTurn();
         }
@@ -633,7 +638,13 @@ namespace CityHighways.Core
             RunFinalAudit();
             SettleContracts();
             Result = Scoring.Calculate(Map, _players, GetRoadOwner, TollFor, Config);
-            Emit("Игра окончена. Победа: " + string.Join(", ", Result.Winners.Select(w => w.PlayerName)) + ".");
+            if (IsCooperative)
+            {
+                CoopResolveNaturalEnd();
+                Result.MakeCooperative(CoopWon, CoopOutcome);
+                Emit((CoopWon ? "Победа команды! " : "Город победил. ") + CoopOutcome);
+            }
+            else Emit("Игра окончена. Победа: " + string.Join(", ", Result.Winners.Select(w => w.PlayerName)) + ".");
             Changed();
         }
 
@@ -659,6 +670,7 @@ namespace CityHighways.Core
         /// <summary>Начало круга: прошлое событие заканчивается, открывается следующее.</summary>
         void StartRound()
         {
+            if (CoopRoundStart()) return; // кооператив: кризис дошёл до предела — партия проиграна
             AnnounceBribes();
             AwardCatchUpInfluence();
             _repairRoads.Clear();
@@ -731,6 +743,7 @@ namespace CityHighways.Core
             CurrentEvent = cityEvent;
             EventNumber++;
             Emit($"Событие: {cityEvent.Title}. {cityEvent.Describe(this)}");
+            CoopOnEvent(kind);
         }
 
         void Emit(string message) => Log?.Invoke(message);

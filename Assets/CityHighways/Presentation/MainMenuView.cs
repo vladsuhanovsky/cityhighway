@@ -300,7 +300,9 @@ namespace CityHighways.Presentation
         {
             "Новый интерфейс партии: карта на весь экран, мини-карта и карточки контрактов",
             "Поле с наклоном 2.5D: утро, день, закат и ночь в одной партии",
-            "Сценарии: Зима, Большая Москва, Год ремонта и Выборы мэра",
+            "Сценарии: Зима, Большой город, Год ремонта и Выборы мэра",
+            "Новые карты: Амстердам с каналами и Чунцин — город мостов на двух реках",
+            "Новый режим: кооператив «Город против всех» — одна команда против кризиса",
             "Обучающая партия с наставником — лучший способ начать",
             "Пробки и пропуска: объезды выгоднее, магистрали не стоят в пробках",
             "Достижения и задание дня приносят влияние на гардероб персонажа"
@@ -706,6 +708,22 @@ namespace CityHighways.Presentation
             gameCard.style.width = 360f;
             gameCard.Add(Ui.SectionTitle("Параметры партии"));
 
+            var mapRow = SettingRow("Карта");
+            _mapButton = Ui.Button("", NextMap, ButtonKind.Secondary, 14f);
+            _mapButton.style.width = 170f;
+            mapRow.Add(_mapButton);
+            gameCard.Add(mapRow);
+            _mapHint = Hint();
+            gameCard.Add(_mapHint);
+
+            var modeRow = SettingRow("Режим");
+            _modeButton = Ui.Button("", () => { _setup.cooperative = !_setup.cooperative; Refresh(); }, ButtonKind.Secondary, 14f);
+            _modeButton.style.width = 170f;
+            modeRow.Add(_modeButton);
+            gameCard.Add(modeRow);
+            _modeHint = Hint();
+            gameCard.Add(_modeHint);
+
             var scenarioRow = SettingRow("Сценарий");
             _scenarioButton = Ui.Button("", NextScenario, ButtonKind.Secondary, 14f);
             _scenarioButton.style.width = 170f;
@@ -807,6 +825,17 @@ namespace CityHighways.Presentation
                 _characterHint.text = $"{Characters.Title(kind)}: {Characters.Ability(kind, config)}";
             }
             else _characterHint.text = "Персонаж: нажмите на кнопку персонажа, чтобы выбрать. «Выбор из двух» — в начале партии игрок видит двух случайных персонажей и стартовые контракты и выбирает одного; «случайный» раздаёт сразу.";
+            if (_mapButton != null)
+            {
+                var map = GameSetup.MapOf(_setup.mapResourcePath);
+                _mapButton.text = map.Title;
+                _mapHint.text = map.Hint;
+                _modeButton.text = _setup.cooperative ? "Кооператив" : "Соревнование";
+                var rules = new GameConfig();
+                _modeHint.text = _setup.cooperative
+                    ? $"«Город против всех»: все — одна команда. Выполните {rules.CoopOrdersToWin(_setup.players.Count)} заказов города, пока кризис не дошёл до {rules.CoopCrisisMax}. Проезд между союзниками бесплатный."
+                    : "Каждый сам за себя: больше всех очков — победа.";
+            }
             if (_scenarioButton != null)
             {
                 var scenario = (ScenarioKind)Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1);
@@ -932,6 +961,24 @@ namespace CityHighways.Presentation
 
         UnityEngine.UIElements.Button _scenarioButton;
         Label _scenarioHint;
+        UnityEngine.UIElements.Button _mapButton, _modeButton;
+        Label _mapHint, _modeHint;
+
+        static Label Hint()
+        {
+            var hint = Ui.Text("", 12f, Theme.TextDim);
+            hint.style.whiteSpace = WhiteSpace.Normal;
+            hint.style.marginTop = -4f;
+            hint.style.marginBottom = 12f;
+            return hint;
+        }
+
+        void NextMap()
+        {
+            int index = System.Array.FindIndex(GameSetup.Maps, m => m.Path == GameSetup.MapOf(_setup.mapResourcePath).Path);
+            _setup.mapResourcePath = GameSetup.Maps[(index + 1) % GameSetup.Maps.Length].Path;
+            Refresh();
+        }
 
         void NextScenario()
         {

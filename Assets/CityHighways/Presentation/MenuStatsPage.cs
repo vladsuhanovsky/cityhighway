@@ -537,6 +537,7 @@ namespace CityHighways.Presentation
             when.Add(Ui.Number(ShortDate(game.date), 13f, Theme.Text, true));
             var tags = new List<string>();
             if (game.online) tags.Add("сеть");
+            if (game.coop) tags.Add("кооператив");
             if (!string.IsNullOrEmpty(game.scenario) && game.scenario != Scenarios.Title(ScenarioKind.Standard)) tags.Add(game.scenario);
             when.Add(Ui.Text(tags.Count > 0 ? string.Join(" · ", tags) : Duration(game.seconds), 11f, Theme.TextDim));
             row.Add(when);
@@ -632,6 +633,7 @@ namespace CityHighways.Presentation
             if (game.turns > 0) facts.Add($"{game.turns} ходов");
             if (game.seconds > 0) facts.Add(Duration(game.seconds));
             if (game.online) facts.Add("сетевая");
+            if (game.coop) facts.Add("кооператив");
             window.Add(Caption(string.Join(" · ", facts), 13f, Theme.TextDim, 2f));
 
             var ordered = game.results.OrderByDescending(r => r.total).ToList();
@@ -646,8 +648,11 @@ namespace CityHighways.Presentation
             trophy.style.marginRight = 12f;
             hero.Add(trophy);
             var heroTexts = Ui.Column();
-            heroTexts.Add(Ui.Text($"Победил {winner.name} — {winner.total} очк.", 18f, Theme.Text, true));
-            if (ordered.Count > 1) heroTexts.Add(Ui.Text($"Отрыв от второго места: {winner.total - ordered[1].total} очк." +
+            bool teamWon = game.results.Any(r => r.winner);
+            heroTexts.Add(Ui.Text(game.coop
+                ? (teamWon ? $"Команда спасла город — {game.results.Sum(r => r.total)} очк. на всех" : "Город победил команду")
+                : $"Победил {winner.name} — {winner.total} очк.", 18f, Theme.Text, true));
+            if (ordered.Count > 1 && !game.coop) heroTexts.Add(Ui.Text($"Отрыв от второго места: {winner.total - ordered[1].total} очк." +
                                                         (string.IsNullOrEmpty(winner.character) ? "" : $" Персонаж: {winner.character}."), 13f, Theme.TextDim));
             hero.Add(heroTexts);
             window.Add(hero);

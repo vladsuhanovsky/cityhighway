@@ -45,6 +45,8 @@ namespace CityHighways.Presentation
         public PlayerStat[] results;
         /// <summary>Сетевая партия (Relay или Steam).</summary>
         public bool online;
+        /// <summary>Кооператив «Город против всех»: победители — вся команда или никто.</summary>
+        public bool coop;
         /// <summary>Сценарий партии (название) и путь карты в Resources — для обзора партии и тепловой карты.</summary>
         public string scenario;
         public string mapPath;
@@ -70,6 +72,7 @@ namespace CityHighways.Presentation
                     turns = game.TurnNumber,
                     seconds = Mathf.RoundToInt(seconds),
                     online = online,
+                    coop = game.IsCooperative,
                     scenario = setup != null ? Scenarios.Title((ScenarioKind)Mathf.Clamp(setup.scenario, 0, Scenarios.All.Count - 1)) : "",
                     mapPath = setup?.mapResourcePath ?? "",
                     results = game.Result.Ranking.Select(s => new PlayerStat

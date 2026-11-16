@@ -66,7 +66,21 @@ namespace CityHighways.Core
     {
         /// <summary>Игроки по местам: очки, затем выполненные контракты, затем размер сети.</summary>
         public IReadOnlyList<PlayerScore> Ranking { get; }
-        public IReadOnlyList<PlayerScore> Winners { get; }
+        public IReadOnlyList<PlayerScore> Winners { get; private set; }
+        /// <summary>Кооперативная партия: победители — вся команда или никто.</summary>
+        public bool Cooperative { get; private set; }
+        public bool TeamWon { get; private set; }
+        public string CoopOutcome { get; private set; }
+        /// <summary>Очки команды — сумма очков всех компаний.</summary>
+        public int TeamTotal => Ranking.Sum(s => s.Total);
+
+        internal void MakeCooperative(bool won, string outcome)
+        {
+            Cooperative = true;
+            TeamWon = won;
+            CoopOutcome = outcome;
+            Winners = won ? Ranking.ToList() : new List<PlayerScore>();
+        }
 
         internal GameResult(List<PlayerScore> scores)
         {

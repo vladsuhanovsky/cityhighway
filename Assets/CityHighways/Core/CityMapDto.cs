@@ -14,6 +14,12 @@ namespace CityHighways.Core
         public RoadDto[] roads;
         public ContractDto[] contracts;
         public PointDto[] river;
+        /// <summary>Несколько рек (если есть); river — первая из них, для старых версий.</summary>
+        public RiverDto[] rivers;
+        /// <summary>Множитель участков дороги на игрока; 0 — как обычно (1).</summary>
+        public float piecesScale;
+        /// <summary>Кольцевая дорога-декорация (имя и эллипс); пустое имя — кольца нет.</summary>
+        public RingDto ring;
         public GoalDto[] goals;
 
         public CityMap ToMap()
@@ -39,7 +45,18 @@ namespace CityHighways.Core
                 goalList.Add(new MayorGoal(g.id, g.name, ParseGoalKind(g.kind, g.id), g.count, g.points, g.district,
                     string.IsNullOrEmpty(g.resource) ? (Resource?)null : ParseResource(g.resource, g.id), g.length));
 
-            return new CityMap(name, districtList, locationList, roadList, contractList, riverList, goalList);
+            var map = new CityMap(name, districtList, locationList, roadList, contractList, riverList, goalList);
+            var riverLines = new List<IReadOnlyList<MapPoint>>();
+            foreach (var r in rivers ?? new RiverDto[0])
+            {
+                var line = new List<MapPoint>();
+                foreach (var p in r.points ?? new PointDto[0]) line.Add(new MapPoint(p.x, p.y));
+                riverLines.Add(line);
+            }
+            var mapRing = ring != null && !string.IsNullOrEmpty(ring.name) && ring.rx > 0f && ring.ry > 0f
+                ? new MapRing(ring.name, ring.cx, ring.cy, ring.rx, ring.ry) : null;
+            map.SetExtras(riverLines, piecesScale, mapRing);
+            return map;
         }
 
         static GoalKind ParseGoalKind(string value, string goalId)
@@ -126,6 +143,20 @@ namespace CityHighways.Core
         public int count;
         public int length;
         public int points;
+    }
+
+    [Serializable]
+    public class RingDto
+    {
+        public string name;
+        public float cx, cy, rx, ry;
+    }
+
+    [Serializable]
+    public class RiverDto
+    {
+        public string name;
+        public PointDto[] points;
     }
 
     [Serializable]

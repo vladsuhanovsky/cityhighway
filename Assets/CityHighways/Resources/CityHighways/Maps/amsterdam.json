@@ -1,0 +1,1577 @@
+{
+ "name": "Амстердам",
+ "districts": [
+  {
+   "id": "center",
+   "name": "Центр"
+  },
+  {
+   "id": "canals",
+   "name": "Каналы"
+  },
+  {
+   "id": "west",
+   "name": "Запад"
+  },
+  {
+   "id": "museum",
+   "name": "Музейный квартал"
+  },
+  {
+   "id": "pijp",
+   "name": "Де Пейп"
+  },
+  {
+   "id": "zuid",
+   "name": "Зёйдас"
+  },
+  {
+   "id": "east",
+   "name": "Восток"
+  },
+  {
+   "id": "watergraafsmeer",
+   "name": "Ватерграфсмер"
+  },
+  {
+   "id": "docks",
+   "name": "Восточные доки"
+  },
+  {
+   "id": "noord",
+   "name": "Норд"
+  },
+  {
+   "id": "newwest",
+   "name": "Новый Запад"
+  },
+  {
+   "id": "port",
+   "name": "Порт"
+  },
+  {
+   "id": "zuidoost",
+   "name": "Зёйдост"
+  },
+  {
+   "id": "airports",
+   "name": "Схипхол"
+  },
+  {
+   "id": "zaandam",
+   "name": "Заандам",
+   "expansion": true
+  },
+  {
+   "id": "ijburg",
+   "name": "Эйбург",
+   "expansion": true
+  },
+  {
+   "id": "amstelveen",
+   "name": "Амстелвен",
+   "expansion": true
+  }
+ ],
+ "locations": [
+  {
+   "id": "dam",
+   "name": "Дам",
+   "district": "center",
+   "x": 0.48,
+   "y": 0.45
+  },
+  {
+   "id": "centraal",
+   "name": "Вокзал",
+   "district": "center",
+   "x": 0.523,
+   "y": 0.378
+  },
+  {
+   "id": "nieuwmarkt",
+   "name": "Ньюмаркт",
+   "district": "center",
+   "x": 0.585,
+   "y": 0.443
+  },
+  {
+   "id": "jordaan",
+   "name": "Йордан",
+   "district": "west",
+   "x": 0.395,
+   "y": 0.415
+  },
+  {
+   "id": "westerpark",
+   "name": "Вестерпарк",
+   "district": "west",
+   "x": 0.316,
+   "y": 0.384
+  },
+  {
+   "id": "bosenlommer",
+   "name": "Бос-эн-Ломмер",
+   "district": "west",
+   "x": 0.26,
+   "y": 0.474
+  },
+  {
+   "id": "oudwest",
+   "name": "Оуд-Вест",
+   "district": "west",
+   "x": 0.296,
+   "y": 0.564
+  },
+  {
+   "id": "leidseplein",
+   "name": "Лейдсеплейн",
+   "district": "canals",
+   "x": 0.409,
+   "y": 0.542
+  },
+  {
+   "id": "rembrandtplein",
+   "name": "Рембрандтплейн",
+   "district": "canals",
+   "x": 0.509,
+   "y": 0.543
+  },
+  {
+   "id": "rijksmuseum",
+   "name": "Рейксмюсеум",
+   "district": "museum",
+   "x": 0.452,
+   "y": 0.638
+  },
+  {
+   "id": "vondelpark",
+   "name": "Вондел-парк",
+   "district": "museum",
+   "x": 0.362,
+   "y": 0.667
+  },
+  {
+   "id": "albertcuyp",
+   "name": "Альберт-Кёйп",
+   "district": "pijp",
+   "x": 0.541,
+   "y": 0.674
+  },
+  {
+   "id": "rai",
+   "name": "RAI",
+   "district": "pijp",
+   "x": 0.537,
+   "y": 0.781
+  },
+  {
+   "id": "zuidas",
+   "name": "Зёйдас",
+   "district": "zuid",
+   "x": 0.417,
+   "y": 0.795
+  },
+  {
+   "id": "buitenveldert",
+   "name": "Бёйтенвелдерт",
+   "district": "zuid",
+   "x": 0.468,
+   "y": 0.886
+  },
+  {
+   "id": "waterlooplein",
+   "name": "Ватерлоплейн",
+   "district": "east",
+   "x": 0.609,
+   "y": 0.525
+  },
+  {
+   "id": "artis",
+   "name": "Артис",
+   "district": "east",
+   "x": 0.666,
+   "y": 0.463
+  },
+  {
+   "id": "oosterpark",
+   "name": "Остерпарк",
+   "district": "east",
+   "x": 0.684,
+   "y": 0.567
+  },
+  {
+   "id": "indischebuurt",
+   "name": "Индише-бюрт",
+   "district": "east",
+   "x": 0.763,
+   "y": 0.489
+  },
+  {
+   "id": "watergraafsmeer",
+   "name": "Ватерграфсмер",
+   "district": "watergraafsmeer",
+   "x": 0.746,
+   "y": 0.617
+  },
+  {
+   "id": "amstelstation",
+   "name": "Станция Амстел",
+   "district": "watergraafsmeer",
+   "x": 0.656,
+   "y": 0.699
+  },
+  {
+   "id": "diemen",
+   "name": "Димен",
+   "district": "watergraafsmeer",
+   "x": 0.83,
+   "y": 0.635
+  },
+  {
+   "id": "pta",
+   "name": "Терминал",
+   "district": "docks",
+   "x": 0.622,
+   "y": 0.383
+  },
+  {
+   "id": "javaeiland",
+   "name": "Ява-эйланд",
+   "district": "docks",
+   "x": 0.704,
+   "y": 0.396
+  },
+  {
+   "id": "knsm",
+   "name": "КНСМ",
+   "district": "docks",
+   "x": 0.774,
+   "y": 0.395
+  },
+  {
+   "id": "ndsm",
+   "name": "NDSM",
+   "district": "noord",
+   "x": 0.361,
+   "y": 0.239
+  },
+  {
+   "id": "eye",
+   "name": "Музей EYE",
+   "district": "noord",
+   "x": 0.508,
+   "y": 0.275
+  },
+  {
+   "id": "noorderpark",
+   "name": "Нордерпарк",
+   "district": "noord",
+   "x": 0.441,
+   "y": 0.133
+  },
+  {
+   "id": "buikslotermeer",
+   "name": "Бёйкслотермер",
+   "district": "noord",
+   "x": 0.592,
+   "y": 0.138
+  },
+  {
+   "id": "nieuwendam",
+   "name": "Ньювендам",
+   "district": "noord",
+   "x": 0.71,
+   "y": 0.243
+  },
+  {
+   "id": "sloterdijk",
+   "name": "Слотердейк",
+   "district": "newwest",
+   "x": 0.231,
+   "y": 0.375
+  },
+  {
+   "id": "slotermeer",
+   "name": "Слотермер",
+   "district": "newwest",
+   "x": 0.169,
+   "y": 0.498
+  },
+  {
+   "id": "osdorp",
+   "name": "Осдорп",
+   "district": "newwest",
+   "x": 0.098,
+   "y": 0.577
+  },
+  {
+   "id": "slotervaart",
+   "name": "Слотерварт",
+   "district": "newwest",
+   "x": 0.222,
+   "y": 0.629
+  },
+  {
+   "id": "westpoort",
+   "name": "Вестпорт",
+   "district": "port",
+   "x": 0.056,
+   "y": 0.43
+  },
+  {
+   "id": "houthavens",
+   "name": "Хаутхавенс",
+   "district": "port",
+   "x": 0.149,
+   "y": 0.397
+  },
+  {
+   "id": "arena",
+   "name": "Арена",
+   "district": "zuidoost",
+   "x": 0.733,
+   "y": 0.82
+  },
+  {
+   "id": "bijlmer",
+   "name": "Бейлмер",
+   "district": "zuidoost",
+   "x": 0.794,
+   "y": 0.906
+  },
+  {
+   "id": "gaasperdam",
+   "name": "Гаспердам",
+   "district": "zuidoost",
+   "x": 0.892,
+   "y": 0.812
+  },
+  {
+   "id": "schiphol",
+   "name": "Схипхол",
+   "district": "airports",
+   "x": 0.145,
+   "y": 0.826
+  },
+  {
+   "id": "cargo",
+   "name": "Схипхол-Карго",
+   "district": "airports",
+   "x": 0.057,
+   "y": 0.702
+  },
+  {
+   "id": "zaandam",
+   "name": "Заандам",
+   "district": "zaandam",
+   "x": 0.197,
+   "y": 0.125
+  },
+  {
+   "id": "zaanseschans",
+   "name": "Заансе-Сханс",
+   "district": "zaandam",
+   "x": 0.277,
+   "y": 0.022
+  },
+  {
+   "id": "ijburg",
+   "name": "Эйбург",
+   "district": "ijburg",
+   "x": 0.876,
+   "y": 0.47
+  },
+  {
+   "id": "blijburg",
+   "name": "Блейбург",
+   "district": "ijburg",
+   "x": 0.952,
+   "y": 0.55
+  },
+  {
+   "id": "amstelveen",
+   "name": "Амстелвен",
+   "district": "amstelveen",
+   "x": 0.393,
+   "y": 0.953
+  },
+  {
+   "id": "amsterdamsebos",
+   "name": "Амстердамсе-Бос",
+   "district": "amstelveen",
+   "x": 0.26,
+   "y": 0.901
+  }
+ ],
+ "roads": [
+  {
+   "id": "r01",
+   "from": "dam",
+   "to": "centraal",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r02",
+   "from": "dam",
+   "to": "nieuwmarkt",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r03",
+   "from": "centraal",
+   "to": "nieuwmarkt",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r04",
+   "from": "dam",
+   "to": "jordaan",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r05",
+   "from": "dam",
+   "to": "leidseplein",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r06",
+   "from": "dam",
+   "to": "rembrandtplein",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r07",
+   "from": "nieuwmarkt",
+   "to": "waterlooplein",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r08",
+   "from": "centraal",
+   "to": "pta",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r09",
+   "from": "nieuwmarkt",
+   "to": "pta",
+   "length": 1,
+   "resource": "concrete"
+  },
+  {
+   "id": "r10",
+   "from": "leidseplein",
+   "to": "rembrandtplein",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r11",
+   "from": "leidseplein",
+   "to": "rijksmuseum",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r12",
+   "from": "leidseplein",
+   "to": "jordaan",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r13",
+   "from": "leidseplein",
+   "to": "oudwest",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r14",
+   "from": "rembrandtplein",
+   "to": "albertcuyp",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r15",
+   "from": "rembrandtplein",
+   "to": "waterlooplein",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r16",
+   "from": "rijksmuseum",
+   "to": "albertcuyp",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r17",
+   "from": "rijksmuseum",
+   "to": "vondelpark",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r18",
+   "from": "rijksmuseum",
+   "to": "zuidas",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r19",
+   "from": "vondelpark",
+   "to": "oudwest",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r20",
+   "from": "vondelpark",
+   "to": "slotervaart",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r21",
+   "from": "albertcuyp",
+   "to": "rai",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r22",
+   "from": "rai",
+   "to": "zuidas",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r23",
+   "from": "rai",
+   "to": "buitenveldert",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r24",
+   "from": "rai",
+   "to": "amstelstation",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r25",
+   "from": "albertcuyp",
+   "to": "oosterpark",
+   "length": 4,
+   "resource": "steel"
+  },
+  {
+   "id": "r26",
+   "from": "zuidas",
+   "to": "buitenveldert",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r27",
+   "from": "zuidas",
+   "to": "schiphol",
+   "length": 5,
+   "resource": "concrete"
+  },
+  {
+   "id": "r28",
+   "from": "zuidas",
+   "to": "slotervaart",
+   "length": 5,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r29",
+   "from": "buitenveldert",
+   "to": "arena",
+   "length": 5,
+   "resource": "steel"
+  },
+  {
+   "id": "r30",
+   "from": "waterlooplein",
+   "to": "artis",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r31",
+   "from": "artis",
+   "to": "oosterpark",
+   "length": 1,
+   "resource": "concrete"
+  },
+  {
+   "id": "r32",
+   "from": "artis",
+   "to": "pta",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r33",
+   "from": "artis",
+   "to": "javaeiland",
+   "length": 1,
+   "resource": "concrete"
+  },
+  {
+   "id": "r34",
+   "from": "artis",
+   "to": "indischebuurt",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r35",
+   "from": "oosterpark",
+   "to": "indischebuurt",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r36",
+   "from": "oosterpark",
+   "to": "watergraafsmeer",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r37",
+   "from": "oosterpark",
+   "to": "amstelstation",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r38",
+   "from": "watergraafsmeer",
+   "to": "amstelstation",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r39",
+   "from": "watergraafsmeer",
+   "to": "diemen",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r40",
+   "from": "watergraafsmeer",
+   "to": "indischebuurt",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r41",
+   "from": "amstelstation",
+   "to": "arena",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r42",
+   "from": "diemen",
+   "to": "arena",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r43",
+   "from": "diemen",
+   "to": "gaasperdam",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r44",
+   "from": "pta",
+   "to": "javaeiland",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r45",
+   "from": "javaeiland",
+   "to": "knsm",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r46",
+   "from": "knsm",
+   "to": "indischebuurt",
+   "length": 1,
+   "resource": "concrete"
+  },
+  {
+   "id": "r47",
+   "from": "knsm",
+   "to": "nieuwendam",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r48",
+   "from": "centraal",
+   "to": "eye",
+   "length": 1,
+   "resource": "steel"
+  },
+  {
+   "id": "r49",
+   "from": "eye",
+   "to": "ndsm",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r50",
+   "from": "eye",
+   "to": "noorderpark",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r51",
+   "from": "eye",
+   "to": "buikslotermeer",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r52",
+   "from": "noorderpark",
+   "to": "buikslotermeer",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r53",
+   "from": "buikslotermeer",
+   "to": "nieuwendam",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r54",
+   "from": "ndsm",
+   "to": "noorderpark",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r55",
+   "from": "eye",
+   "to": "nieuwendam",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r56",
+   "from": "jordaan",
+   "to": "westerpark",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r57",
+   "from": "westerpark",
+   "to": "bosenlommer",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r58",
+   "from": "bosenlommer",
+   "to": "oudwest",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r59",
+   "from": "westerpark",
+   "to": "ndsm",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r60",
+   "from": "westerpark",
+   "to": "sloterdijk",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r61",
+   "from": "jordaan",
+   "to": "centraal",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r62",
+   "from": "sloterdijk",
+   "to": "houthavens",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r63",
+   "from": "sloterdijk",
+   "to": "bosenlommer",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r64",
+   "from": "bosenlommer",
+   "to": "slotermeer",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r65",
+   "from": "slotermeer",
+   "to": "osdorp",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r66",
+   "from": "osdorp",
+   "to": "slotervaart",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r67",
+   "from": "slotervaart",
+   "to": "oudwest",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r68",
+   "from": "slotermeer",
+   "to": "slotervaart",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r69",
+   "from": "westpoort",
+   "to": "houthavens",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r70",
+   "from": "westpoort",
+   "to": "slotermeer",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r71",
+   "from": "houthavens",
+   "to": "slotermeer",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r72",
+   "from": "schiphol",
+   "to": "osdorp",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r73",
+   "from": "schiphol",
+   "to": "slotervaart",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r74",
+   "from": "schiphol",
+   "to": "cargo",
+   "length": 3,
+   "resource": "any"
+  },
+  {
+   "id": "r75",
+   "from": "cargo",
+   "to": "osdorp",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r76",
+   "from": "cargo",
+   "to": "westpoort",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r77",
+   "from": "arena",
+   "to": "bijlmer",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r78",
+   "from": "bijlmer",
+   "to": "gaasperdam",
+   "length": 3,
+   "resource": "any"
+  },
+  {
+   "id": "r79",
+   "from": "arena",
+   "to": "gaasperdam",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r80",
+   "from": "zaandam",
+   "to": "zaanseschans",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r81",
+   "from": "zaandam",
+   "to": "houthavens",
+   "length": 4,
+   "resource": "steel"
+  },
+  {
+   "id": "r82",
+   "from": "zaandam",
+   "to": "ndsm",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r83",
+   "from": "zaanseschans",
+   "to": "noorderpark",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r84",
+   "from": "ijburg",
+   "to": "blijburg",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r85",
+   "from": "ijburg",
+   "to": "indischebuurt",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r86",
+   "from": "ijburg",
+   "to": "knsm",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r87",
+   "from": "blijburg",
+   "to": "diemen",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r88",
+   "from": "amstelveen",
+   "to": "amsterdamsebos",
+   "length": 3,
+   "resource": "any"
+  },
+  {
+   "id": "r89",
+   "from": "amstelveen",
+   "to": "buitenveldert",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r90",
+   "from": "amsterdamsebos",
+   "to": "schiphol",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r91",
+   "from": "amsterdamsebos",
+   "to": "zuidas",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r92",
+   "from": "amstelveen",
+   "to": "bijlmer",
+   "length": 5,
+   "resource": "steel"
+  }
+ ],
+ "contracts": [
+  {
+   "id": "c01",
+   "from": "canals",
+   "to": "watergraafsmeer",
+   "points": 7
+  },
+  {
+   "id": "c02",
+   "from": "west",
+   "to": "zuid",
+   "points": 7
+  },
+  {
+   "id": "c03",
+   "from": "center",
+   "to": "museum",
+   "points": 5
+  },
+  {
+   "id": "c04",
+   "from": "center",
+   "to": "watergraafsmeer",
+   "points": 6
+  },
+  {
+   "id": "c05",
+   "from": "noord",
+   "to": "watergraafsmeer",
+   "points": 6
+  },
+  {
+   "id": "c06",
+   "from": "east",
+   "to": "museum",
+   "points": 7
+  },
+  {
+   "id": "c07",
+   "from": "east",
+   "to": "pijp",
+   "points": 5
+  },
+  {
+   "id": "c08",
+   "from": "pijp",
+   "to": "west",
+   "points": 6
+  },
+  {
+   "id": "c09",
+   "from": "docks",
+   "to": "zuidoost",
+   "points": 7
+  },
+  {
+   "id": "c10",
+   "from": "zuid",
+   "to": "zuidoost",
+   "points": 6
+  },
+  {
+   "id": "c11",
+   "from": "noord",
+   "to": "pijp",
+   "points": 6
+  },
+  {
+   "id": "c12",
+   "from": "museum",
+   "to": "noord",
+   "points": 7
+  },
+  {
+   "id": "c13",
+   "from": "airports",
+   "to": "center",
+   "points": 13
+  },
+  {
+   "id": "c14",
+   "from": "noord",
+   "to": "zuid",
+   "points": 9
+  },
+  {
+   "id": "c15",
+   "from": "canals",
+   "to": "zuidoost",
+   "points": 9
+  },
+  {
+   "id": "c16",
+   "from": "canals",
+   "to": "port",
+   "points": 8
+  },
+  {
+   "id": "c17",
+   "from": "east",
+   "to": "zuid",
+   "points": 8
+  },
+  {
+   "id": "c18",
+   "from": "docks",
+   "to": "newwest",
+   "points": 12
+  },
+  {
+   "id": "c19",
+   "from": "east",
+   "to": "newwest",
+   "points": 12
+  },
+  {
+   "id": "c20",
+   "from": "pijp",
+   "to": "port",
+   "points": 13
+  },
+  {
+   "id": "c21",
+   "from": "watergraafsmeer",
+   "to": "west",
+   "points": 12
+  },
+  {
+   "id": "c22",
+   "from": "port",
+   "to": "zuid",
+   "points": 9
+  },
+  {
+   "id": "c23",
+   "from": "docks",
+   "to": "zuid",
+   "points": 12
+  },
+  {
+   "id": "c24",
+   "from": "airports",
+   "to": "canals",
+   "points": 9
+  },
+  {
+   "id": "c25",
+   "from": "airports",
+   "to": "noord",
+   "points": 13
+  },
+  {
+   "id": "c26",
+   "from": "newwest",
+   "to": "pijp",
+   "points": 8
+  },
+  {
+   "id": "c27",
+   "from": "port",
+   "to": "zuidoost",
+   "points": 21
+  },
+  {
+   "id": "c28",
+   "from": "airports",
+   "to": "docks",
+   "points": 19
+  },
+  {
+   "id": "c29",
+   "from": "airports",
+   "to": "watergraafsmeer",
+   "points": 14
+  },
+  {
+   "id": "c30",
+   "from": "west",
+   "to": "zuidoost",
+   "points": 14
+  },
+  {
+   "id": "c31",
+   "from": "newwest",
+   "to": "watergraafsmeer",
+   "points": 14
+  },
+  {
+   "id": "c32",
+   "from": "airports",
+   "to": "zuidoost",
+   "points": 15
+  },
+  {
+   "id": "c33",
+   "from": "port",
+   "to": "watergraafsmeer",
+   "points": 20
+  },
+  {
+   "id": "c34",
+   "from": "airports",
+   "to": "east",
+   "points": 15
+  },
+  {
+   "id": "c35",
+   "from": "zaandam",
+   "to": "center",
+   "points": 8
+  },
+  {
+   "id": "c36",
+   "from": "zaandam",
+   "to": "zuid",
+   "points": 15
+  },
+  {
+   "id": "c37",
+   "from": "ijburg",
+   "to": "center",
+   "points": 8
+  },
+  {
+   "id": "c38",
+   "from": "ijburg",
+   "to": "west",
+   "points": 14
+  },
+  {
+   "id": "c39",
+   "from": "amstelveen",
+   "to": "center",
+   "points": 9
+  },
+  {
+   "id": "c40",
+   "from": "amstelveen",
+   "to": "noord",
+   "points": 13
+  },
+  {
+   "id": "c41",
+   "from": "noord",
+   "to": "zuid",
+   "points": 11,
+   "kind": "transit",
+   "third": "center"
+  },
+  {
+   "id": "c42",
+   "from": "newwest",
+   "to": "east",
+   "points": 14,
+   "kind": "transit",
+   "third": "canals"
+  },
+  {
+   "id": "c43",
+   "from": "newwest",
+   "to": "docks",
+   "points": 14,
+   "kind": "transit",
+   "third": "center"
+  },
+  {
+   "id": "c44",
+   "from": "airports",
+   "to": "east",
+   "points": 21,
+   "kind": "transit",
+   "third": "museum"
+  },
+  {
+   "id": "c45",
+   "from": "port",
+   "to": "zuidoost",
+   "points": 24,
+   "kind": "transit",
+   "third": "pijp"
+  },
+  {
+   "id": "c46",
+   "from": "noord",
+   "to": "airports",
+   "points": 15,
+   "kind": "transit",
+   "third": "west"
+  },
+  {
+   "id": "c47",
+   "from": "center",
+   "to": "airports",
+   "points": 24,
+   "kind": "hub",
+   "third": "zuidoost"
+  },
+  {
+   "id": "c48",
+   "from": "canals",
+   "to": "noord",
+   "points": 13,
+   "kind": "hub",
+   "third": "watergraafsmeer"
+  },
+  {
+   "id": "c49",
+   "from": "zuid",
+   "to": "docks",
+   "points": 24,
+   "kind": "hub",
+   "third": "port"
+  },
+  {
+   "id": "c50",
+   "from": "east",
+   "to": "west",
+   "points": 10,
+   "kind": "hub",
+   "third": "noord"
+  }
+ ],
+ "river": [
+  {
+   "x": 0.015,
+   "y": 0.355
+  },
+  {
+   "x": 0.093,
+   "y": 0.358
+  },
+  {
+   "x": 0.178,
+   "y": 0.358
+  },
+  {
+   "x": 0.262,
+   "y": 0.335
+  },
+  {
+   "x": 0.37,
+   "y": 0.34
+  },
+  {
+   "x": 0.466,
+   "y": 0.343
+  },
+  {
+   "x": 0.55,
+   "y": 0.337
+  },
+  {
+   "x": 0.659,
+   "y": 0.335
+  },
+  {
+   "x": 0.749,
+   "y": 0.332
+  },
+  {
+   "x": 0.823,
+   "y": 0.367
+  },
+  {
+   "x": 0.904,
+   "y": 0.41
+  },
+  {
+   "x": 0.985,
+   "y": 0.44
+  }
+ ],
+ "rivers": [
+  {
+   "name": "Эй",
+   "points": [
+    {
+     "x": 0.015,
+     "y": 0.355
+    },
+    {
+     "x": 0.093,
+     "y": 0.358
+    },
+    {
+     "x": 0.178,
+     "y": 0.358
+    },
+    {
+     "x": 0.262,
+     "y": 0.335
+    },
+    {
+     "x": 0.37,
+     "y": 0.34
+    },
+    {
+     "x": 0.466,
+     "y": 0.343
+    },
+    {
+     "x": 0.55,
+     "y": 0.337
+    },
+    {
+     "x": 0.659,
+     "y": 0.335
+    },
+    {
+     "x": 0.749,
+     "y": 0.332
+    },
+    {
+     "x": 0.823,
+     "y": 0.367
+    },
+    {
+     "x": 0.904,
+     "y": 0.41
+    },
+    {
+     "x": 0.985,
+     "y": 0.44
+    }
+   ]
+  },
+  {
+   "name": "Амстел",
+   "points": [
+    {
+     "x": 0.67,
+     "y": 0.985
+    },
+    {
+     "x": 0.661,
+     "y": 0.919
+    },
+    {
+     "x": 0.645,
+     "y": 0.825
+    },
+    {
+     "x": 0.625,
+     "y": 0.733
+    },
+    {
+     "x": 0.599,
+     "y": 0.649
+    },
+    {
+     "x": 0.574,
+     "y": 0.575
+    },
+    {
+     "x": 0.558,
+     "y": 0.521
+    }
+   ]
+  }
+ ],
+ "goals": [
+  {
+   "id": "g1",
+   "name": "Ворота Схипхола",
+   "kind": "locations",
+   "district": "airports",
+   "count": 2,
+   "points": 8
+  },
+  {
+   "id": "g2",
+   "name": "Город мостов",
+   "kind": "bridges",
+   "count": 3,
+   "points": 8
+  },
+  {
+   "id": "g3",
+   "name": "Вся агломерация",
+   "kind": "network",
+   "count": 7,
+   "points": 8
+  },
+  {
+   "id": "g4",
+   "name": "Польдерные дороги",
+   "kind": "resource_pieces",
+   "resource": "gravel",
+   "count": 9,
+   "points": 6
+  },
+  {
+   "id": "g5",
+   "name": "Кольцевая A10",
+   "kind": "long_roads",
+   "length": 3,
+   "count": 3,
+   "points": 7
+  },
+  {
+   "id": "g6",
+   "name": "Сердце Амстердама",
+   "kind": "locations",
+   "district": "center",
+   "count": 3,
+   "points": 8
+  },
+  {
+   "id": "g7",
+   "name": "Портовый город",
+   "kind": "locations",
+   "district": "docks",
+   "count": 3,
+   "points": 6
+  }
+ ],
+ "piecesScale": 0.85,
+ "ring": {
+  "name": "A10",
+  "cx": 0.47,
+  "cy": 0.475,
+  "rx": 0.215,
+  "ry": 0.285
+ }
+}

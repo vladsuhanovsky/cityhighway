@@ -1,0 +1,1370 @@
+{
+ "name": "Чунцин",
+ "districts": [
+  {
+   "id": "center",
+   "name": "Юйчжун"
+  },
+  {
+   "id": "jiangbei",
+   "name": "Цзянбэй"
+  },
+  {
+   "id": "yubei",
+   "name": "Юбэй"
+  },
+  {
+   "id": "airports",
+   "name": "Аэропорт"
+  },
+  {
+   "id": "liangjiang",
+   "name": "Лянцзян"
+  },
+  {
+   "id": "shapingba",
+   "name": "Шапинба"
+  },
+  {
+   "id": "huxi",
+   "name": "Хуси"
+  },
+  {
+   "id": "jiulongpo",
+   "name": "Цзюлунпо"
+  },
+  {
+   "id": "dadukou",
+   "name": "Дадукоу"
+  },
+  {
+   "id": "nanan",
+   "name": "Наньань"
+  },
+  {
+   "id": "nanshan",
+   "name": "Гора Наньшань"
+  },
+  {
+   "id": "banan",
+   "name": "Банань",
+   "expansion": true
+  },
+  {
+   "id": "beibei",
+   "name": "Бэйбэй",
+   "expansion": true
+  },
+  {
+   "id": "changshou",
+   "name": "Чаншоу",
+   "expansion": true
+  }
+ ],
+ "locations": [
+  {
+   "id": "jiefangbei",
+   "name": "Цзефанбэй",
+   "district": "center",
+   "x": 0.53,
+   "y": 0.5
+  },
+  {
+   "id": "chaotianmen",
+   "name": "Чаотяньмэнь",
+   "district": "center",
+   "x": 0.625,
+   "y": 0.485
+  },
+  {
+   "id": "hongyadong",
+   "name": "Хунъядун",
+   "district": "center",
+   "x": 0.449,
+   "y": 0.449
+  },
+  {
+   "id": "liziba",
+   "name": "Лицзыба",
+   "district": "center",
+   "x": 0.366,
+   "y": 0.541
+  },
+  {
+   "id": "daping",
+   "name": "Дапин",
+   "district": "center",
+   "x": 0.317,
+   "y": 0.607
+  },
+  {
+   "id": "jiangbeizui",
+   "name": "Цзянбэйцзуй",
+   "district": "jiangbei",
+   "x": 0.66,
+   "y": 0.335
+  },
+  {
+   "id": "guanyinqiao",
+   "name": "Гуаньиньцяо",
+   "district": "jiangbei",
+   "x": 0.53,
+   "y": 0.26
+  },
+  {
+   "id": "hongensi",
+   "name": "Хунъэньсы",
+   "district": "jiangbei",
+   "x": 0.445,
+   "y": 0.191
+  },
+  {
+   "id": "cuntan",
+   "name": "Цуньтань",
+   "district": "jiangbei",
+   "x": 0.775,
+   "y": 0.221
+  },
+  {
+   "id": "yuelai",
+   "name": "Юэлай",
+   "district": "yubei",
+   "x": 0.422,
+   "y": 0.099
+  },
+  {
+   "id": "lianglu",
+   "name": "Лянлу",
+   "district": "yubei",
+   "x": 0.66,
+   "y": 0.109
+  },
+  {
+   "id": "dazhulin",
+   "name": "Дачжулинь",
+   "district": "yubei",
+   "x": 0.327,
+   "y": 0.193
+  },
+  {
+   "id": "airport",
+   "name": "Аэропорт Цзянбэй",
+   "district": "airports",
+   "x": 0.57,
+   "y": 0.015
+  },
+  {
+   "id": "t3",
+   "name": "Терминал Т3",
+   "district": "airports",
+   "x": 0.728,
+   "y": 0.045
+  },
+  {
+   "id": "liangjiang",
+   "name": "Лянцзян",
+   "district": "liangjiang",
+   "x": 0.877,
+   "y": 0.169
+  },
+  {
+   "id": "guoyuan",
+   "name": "Порт Гоюань",
+   "district": "liangjiang",
+   "x": 0.939,
+   "y": 0.233
+  },
+  {
+   "id": "shuangfengqiao",
+   "name": "Шуанфэнцяо",
+   "district": "liangjiang",
+   "x": 0.801,
+   "y": 0.104
+  },
+  {
+   "id": "shapingba",
+   "name": "Шапинба",
+   "district": "shapingba",
+   "x": 0.219,
+   "y": 0.377
+  },
+  {
+   "id": "ciqikou",
+   "name": "Цыцикоу",
+   "district": "shapingba",
+   "x": 0.279,
+   "y": 0.36
+  },
+  {
+   "id": "shuangbei",
+   "name": "Шуанбэй",
+   "district": "shapingba",
+   "x": 0.171,
+   "y": 0.295
+  },
+  {
+   "id": "geleshan",
+   "name": "Гэлэшань",
+   "district": "shapingba",
+   "x": 0.133,
+   "y": 0.393
+  },
+  {
+   "id": "huxi",
+   "name": "Хуси",
+   "district": "huxi",
+   "x": 0.063,
+   "y": 0.455
+  },
+  {
+   "id": "xiyong",
+   "name": "Сиюн",
+   "district": "huxi",
+   "x": 0.082,
+   "y": 0.565
+  },
+  {
+   "id": "yangjiaping",
+   "name": "Янцзяпин",
+   "district": "jiulongpo",
+   "x": 0.284,
+   "y": 0.5
+  },
+  {
+   "id": "erlang",
+   "name": "Эрлан",
+   "district": "jiulongpo",
+   "x": 0.205,
+   "y": 0.553
+  },
+  {
+   "id": "huayan",
+   "name": "Хуаянь",
+   "district": "jiulongpo",
+   "x": 0.143,
+   "y": 0.627
+  },
+  {
+   "id": "dadukou",
+   "name": "Дадукоу",
+   "district": "dadukou",
+   "x": 0.242,
+   "y": 0.696
+  },
+  {
+   "id": "baishiyi",
+   "name": "Байшии",
+   "district": "dadukou",
+   "x": 0.116,
+   "y": 0.732
+  },
+  {
+   "id": "nanping",
+   "name": "Наньпин",
+   "district": "nanan",
+   "x": 0.558,
+   "y": 0.752
+  },
+  {
+   "id": "longmenhao",
+   "name": "Лунмыньхао",
+   "district": "nanan",
+   "x": 0.698,
+   "y": 0.601
+  },
+  {
+   "id": "danzishi",
+   "name": "Даньцзыши",
+   "district": "nanan",
+   "x": 0.78,
+   "y": 0.47
+  },
+  {
+   "id": "nanshan",
+   "name": "Наньшань",
+   "district": "nanshan",
+   "x": 0.834,
+   "y": 0.608
+  },
+  {
+   "id": "chayuan",
+   "name": "Чаюань",
+   "district": "nanshan",
+   "x": 0.76,
+   "y": 0.753
+  },
+  {
+   "id": "tushan",
+   "name": "Тушань",
+   "district": "nanshan",
+   "x": 0.635,
+   "y": 0.87
+  },
+  {
+   "id": "banan",
+   "name": "Банань",
+   "district": "banan",
+   "x": 0.584,
+   "y": 0.936
+  },
+  {
+   "id": "yudong",
+   "name": "Юйдун",
+   "district": "banan",
+   "x": 0.414,
+   "y": 0.933
+  },
+  {
+   "id": "beibei",
+   "name": "Бэйбэй",
+   "district": "beibei",
+   "x": 0.215,
+   "y": 0.053
+  },
+  {
+   "id": "jinyunshan",
+   "name": "Цзиньюньшань",
+   "district": "beibei",
+   "x": 0.315,
+   "y": 0.081
+  },
+  {
+   "id": "changshou",
+   "name": "Чаншоу",
+   "district": "changshou",
+   "x": 0.951,
+   "y": 0.069
+  },
+  {
+   "id": "yanjia",
+   "name": "Яньцзя",
+   "district": "changshou",
+   "x": 0.864,
+   "y": 0.035
+  }
+ ],
+ "roads": [
+  {
+   "id": "r01",
+   "from": "jiefangbei",
+   "to": "chaotianmen",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r02",
+   "from": "jiefangbei",
+   "to": "hongyadong",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r03",
+   "from": "jiefangbei",
+   "to": "liziba",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r04",
+   "from": "hongyadong",
+   "to": "liziba",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r05",
+   "from": "liziba",
+   "to": "daping",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r06",
+   "from": "daping",
+   "to": "yangjiaping",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r07",
+   "from": "liziba",
+   "to": "yangjiaping",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r08",
+   "from": "hongyadong",
+   "to": "guanyinqiao",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r09",
+   "from": "chaotianmen",
+   "to": "jiangbeizui",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r10",
+   "from": "jiefangbei",
+   "to": "nanping",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r11",
+   "from": "chaotianmen",
+   "to": "longmenhao",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r12",
+   "from": "daping",
+   "to": "nanping",
+   "length": 5,
+   "resource": "steel"
+  },
+  {
+   "id": "r13",
+   "from": "jiangbeizui",
+   "to": "guanyinqiao",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r14",
+   "from": "guanyinqiao",
+   "to": "hongensi",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r15",
+   "from": "hongensi",
+   "to": "yuelai",
+   "length": 1,
+   "resource": "concrete"
+  },
+  {
+   "id": "r16",
+   "from": "hongensi",
+   "to": "dazhulin",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r17",
+   "from": "jiangbeizui",
+   "to": "cuntan",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r18",
+   "from": "cuntan",
+   "to": "lianglu",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r19",
+   "from": "guanyinqiao",
+   "to": "lianglu",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r20",
+   "from": "yuelai",
+   "to": "dazhulin",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r21",
+   "from": "yuelai",
+   "to": "lianglu",
+   "length": 5,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r22",
+   "from": "yuelai",
+   "to": "airport",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r23",
+   "from": "lianglu",
+   "to": "airport",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r24",
+   "from": "lianglu",
+   "to": "t3",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r25",
+   "from": "airport",
+   "to": "t3",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r26",
+   "from": "lianglu",
+   "to": "shuangfengqiao",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r27",
+   "from": "t3",
+   "to": "shuangfengqiao",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r28",
+   "from": "shuangfengqiao",
+   "to": "liangjiang",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r29",
+   "from": "liangjiang",
+   "to": "guoyuan",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r30",
+   "from": "cuntan",
+   "to": "liangjiang",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r31",
+   "from": "cuntan",
+   "to": "shuangfengqiao",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r32",
+   "from": "shapingba",
+   "to": "ciqikou",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r33",
+   "from": "shapingba",
+   "to": "shuangbei",
+   "length": 1,
+   "resource": "concrete"
+  },
+  {
+   "id": "r34",
+   "from": "shapingba",
+   "to": "geleshan",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r35",
+   "from": "ciqikou",
+   "to": "dazhulin",
+   "length": 2,
+   "resource": "steel"
+  },
+  {
+   "id": "r36",
+   "from": "ciqikou",
+   "to": "liziba",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r37",
+   "from": "ciqikou",
+   "to": "yangjiaping",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r38",
+   "from": "huxi",
+   "to": "geleshan",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r39",
+   "from": "huxi",
+   "to": "xiyong",
+   "length": 1,
+   "resource": "any"
+  },
+  {
+   "id": "r40",
+   "from": "geleshan",
+   "to": "shuangbei",
+   "length": 1,
+   "resource": "gravel"
+  },
+  {
+   "id": "r41",
+   "from": "huxi",
+   "to": "shuangbei",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r42",
+   "from": "yangjiaping",
+   "to": "erlang",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r43",
+   "from": "yangjiaping",
+   "to": "shapingba",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r44",
+   "from": "erlang",
+   "to": "huayan",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r45",
+   "from": "erlang",
+   "to": "xiyong",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r46",
+   "from": "xiyong",
+   "to": "huayan",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r47",
+   "from": "dadukou",
+   "to": "daping",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r48",
+   "from": "dadukou",
+   "to": "erlang",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r49",
+   "from": "dadukou",
+   "to": "baishiyi",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r50",
+   "from": "baishiyi",
+   "to": "huayan",
+   "length": 1,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r51",
+   "from": "dadukou",
+   "to": "yangjiaping",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r52",
+   "from": "nanping",
+   "to": "longmenhao",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r53",
+   "from": "longmenhao",
+   "to": "danzishi",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r54",
+   "from": "danzishi",
+   "to": "jiangbeizui",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r55",
+   "from": "danzishi",
+   "to": "cuntan",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r56",
+   "from": "danzishi",
+   "to": "nanshan",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r57",
+   "from": "longmenhao",
+   "to": "nanshan",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r58",
+   "from": "nanshan",
+   "to": "chayuan",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r59",
+   "from": "chayuan",
+   "to": "tushan",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r60",
+   "from": "nanping",
+   "to": "tushan",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r61",
+   "from": "nanping",
+   "to": "chayuan",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r62",
+   "from": "banan",
+   "to": "yudong",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r63",
+   "from": "tushan",
+   "to": "banan",
+   "length": 1,
+   "resource": "gravel"
+  },
+  {
+   "id": "r64",
+   "from": "nanping",
+   "to": "yudong",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r65",
+   "from": "dadukou",
+   "to": "yudong",
+   "length": 5,
+   "resource": "steel"
+  },
+  {
+   "id": "r66",
+   "from": "beibei",
+   "to": "jinyunshan",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r67",
+   "from": "jinyunshan",
+   "to": "yuelai",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r68",
+   "from": "jinyunshan",
+   "to": "dazhulin",
+   "length": 1,
+   "resource": "gravel"
+  },
+  {
+   "id": "r69",
+   "from": "beibei",
+   "to": "shuangbei",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r70",
+   "from": "changshou",
+   "to": "yanjia",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r71",
+   "from": "yanjia",
+   "to": "shuangfengqiao",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r72",
+   "from": "changshou",
+   "to": "guoyuan",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r73",
+   "from": "yanjia",
+   "to": "t3",
+   "length": 3,
+   "resource": "gravel"
+  }
+ ],
+ "contracts": [
+  {
+   "id": "c01",
+   "from": "nanan",
+   "to": "yubei",
+   "points": 7
+  },
+  {
+   "id": "c02",
+   "from": "airports",
+   "to": "jiangbei",
+   "points": 5
+  },
+  {
+   "id": "c03",
+   "from": "dadukou",
+   "to": "shapingba",
+   "points": 6
+  },
+  {
+   "id": "c04",
+   "from": "jiulongpo",
+   "to": "yubei",
+   "points": 5
+  },
+  {
+   "id": "c05",
+   "from": "jiangbei",
+   "to": "shapingba",
+   "points": 6
+  },
+  {
+   "id": "c06",
+   "from": "center",
+   "to": "nanshan",
+   "points": 6
+  },
+  {
+   "id": "c07",
+   "from": "center",
+   "to": "yubei",
+   "points": 6
+  },
+  {
+   "id": "c08",
+   "from": "liangjiang",
+   "to": "nanan",
+   "points": 6
+  },
+  {
+   "id": "c09",
+   "from": "jiangbei",
+   "to": "nanshan",
+   "points": 6
+  },
+  {
+   "id": "c10",
+   "from": "center",
+   "to": "huxi",
+   "points": 8
+  },
+  {
+   "id": "c11",
+   "from": "huxi",
+   "to": "yubei",
+   "points": 8
+  },
+  {
+   "id": "c12",
+   "from": "jiulongpo",
+   "to": "nanshan",
+   "points": 12
+  },
+  {
+   "id": "c13",
+   "from": "airports",
+   "to": "center",
+   "points": 12
+  },
+  {
+   "id": "c14",
+   "from": "dadukou",
+   "to": "nanan",
+   "points": 8
+  },
+  {
+   "id": "c15",
+   "from": "liangjiang",
+   "to": "nanshan",
+   "points": 8
+  },
+  {
+   "id": "c16",
+   "from": "center",
+   "to": "liangjiang",
+   "points": 8
+  },
+  {
+   "id": "c17",
+   "from": "dadukou",
+   "to": "jiangbei",
+   "points": 9
+  },
+  {
+   "id": "c18",
+   "from": "huxi",
+   "to": "jiangbei",
+   "points": 13
+  },
+  {
+   "id": "c19",
+   "from": "nanan",
+   "to": "shapingba",
+   "points": 12
+  },
+  {
+   "id": "c20",
+   "from": "jiulongpo",
+   "to": "nanan",
+   "points": 8
+  },
+  {
+   "id": "c21",
+   "from": "nanshan",
+   "to": "yubei",
+   "points": 9
+  },
+  {
+   "id": "c22",
+   "from": "jiulongpo",
+   "to": "liangjiang",
+   "points": 20
+  },
+  {
+   "id": "c23",
+   "from": "liangjiang",
+   "to": "shapingba",
+   "points": 19
+  },
+  {
+   "id": "c24",
+   "from": "airports",
+   "to": "jiulongpo",
+   "points": 14
+  },
+  {
+   "id": "c25",
+   "from": "airports",
+   "to": "huxi",
+   "points": 20
+  },
+  {
+   "id": "c26",
+   "from": "nanshan",
+   "to": "shapingba",
+   "points": 14
+  },
+  {
+   "id": "c27",
+   "from": "huxi",
+   "to": "liangjiang",
+   "points": 24
+  },
+  {
+   "id": "c28",
+   "from": "huxi",
+   "to": "nanan",
+   "points": 15
+  },
+  {
+   "id": "c29",
+   "from": "airports",
+   "to": "dadukou",
+   "points": 20
+  },
+  {
+   "id": "c30",
+   "from": "banan",
+   "to": "center",
+   "points": 7
+  },
+  {
+   "id": "c31",
+   "from": "banan",
+   "to": "jiangbei",
+   "points": 13
+  },
+  {
+   "id": "c32",
+   "from": "beibei",
+   "to": "center",
+   "points": 7
+  },
+  {
+   "id": "c33",
+   "from": "beibei",
+   "to": "nanan",
+   "points": 15
+  },
+  {
+   "id": "c34",
+   "from": "changshou",
+   "to": "center",
+   "points": 12
+  },
+  {
+   "id": "c35",
+   "from": "changshou",
+   "to": "jiulongpo",
+   "points": 22
+  },
+  {
+   "id": "c36",
+   "from": "shapingba",
+   "to": "nanan",
+   "points": 14,
+   "kind": "transit",
+   "third": "center"
+  },
+  {
+   "id": "c37",
+   "from": "airports",
+   "to": "dadukou",
+   "points": 22,
+   "kind": "transit",
+   "third": "center"
+  },
+  {
+   "id": "c38",
+   "from": "huxi",
+   "to": "liangjiang",
+   "points": 27,
+   "kind": "transit",
+   "third": "jiangbei"
+  },
+  {
+   "id": "c39",
+   "from": "yubei",
+   "to": "nanshan",
+   "points": 11,
+   "kind": "transit",
+   "third": "nanan"
+  },
+  {
+   "id": "c40",
+   "from": "jiulongpo",
+   "to": "airports",
+   "points": 16,
+   "kind": "transit",
+   "third": "shapingba"
+  },
+  {
+   "id": "c41",
+   "from": "center",
+   "to": "airports",
+   "points": 21,
+   "kind": "hub",
+   "third": "nanshan"
+  },
+  {
+   "id": "c42",
+   "from": "jiangbei",
+   "to": "huxi",
+   "points": 25,
+   "kind": "hub",
+   "third": "dadukou"
+  },
+  {
+   "id": "c43",
+   "from": "nanan",
+   "to": "yubei",
+   "points": 20,
+   "kind": "hub",
+   "third": "jiulongpo"
+  },
+  {
+   "id": "c44",
+   "from": "shapingba",
+   "to": "liangjiang",
+   "points": 29,
+   "kind": "hub",
+   "third": "nanan"
+  }
+ ],
+ "river": [
+  {
+   "x": 0.015,
+   "y": 0.86
+  },
+  {
+   "x": 0.098,
+   "y": 0.831
+  },
+  {
+   "x": 0.191,
+   "y": 0.798
+  },
+  {
+   "x": 0.275,
+   "y": 0.755
+  },
+  {
+   "x": 0.342,
+   "y": 0.707
+  },
+  {
+   "x": 0.418,
+   "y": 0.661
+  },
+  {
+   "x": 0.515,
+   "y": 0.633
+  },
+  {
+   "x": 0.61,
+   "y": 0.602
+  },
+  {
+   "x": 0.664,
+   "y": 0.535
+  },
+  {
+   "x": 0.688,
+   "y": 0.466
+  },
+  {
+   "x": 0.723,
+   "y": 0.384
+  },
+  {
+   "x": 0.775,
+   "y": 0.325
+  },
+  {
+   "x": 0.838,
+   "y": 0.298
+  },
+  {
+   "x": 0.916,
+   "y": 0.287
+  },
+  {
+   "x": 0.985,
+   "y": 0.264
+  }
+ ],
+ "rivers": [
+  {
+   "name": "Янцзы",
+   "points": [
+    {
+     "x": 0.015,
+     "y": 0.86
+    },
+    {
+     "x": 0.098,
+     "y": 0.831
+    },
+    {
+     "x": 0.191,
+     "y": 0.798
+    },
+    {
+     "x": 0.275,
+     "y": 0.755
+    },
+    {
+     "x": 0.342,
+     "y": 0.707
+    },
+    {
+     "x": 0.418,
+     "y": 0.661
+    },
+    {
+     "x": 0.515,
+     "y": 0.633
+    },
+    {
+     "x": 0.61,
+     "y": 0.602
+    },
+    {
+     "x": 0.664,
+     "y": 0.535
+    },
+    {
+     "x": 0.688,
+     "y": 0.466
+    },
+    {
+     "x": 0.723,
+     "y": 0.384
+    },
+    {
+     "x": 0.775,
+     "y": 0.325
+    },
+    {
+     "x": 0.838,
+     "y": 0.298
+    },
+    {
+     "x": 0.916,
+     "y": 0.287
+    },
+    {
+     "x": 0.985,
+     "y": 0.264
+    }
+   ]
+  },
+  {
+   "name": "Цзялинцзян",
+   "points": [
+    {
+     "x": 0.06,
+     "y": 0.015
+    },
+    {
+     "x": 0.128,
+     "y": 0.098
+    },
+    {
+     "x": 0.201,
+     "y": 0.181
+    },
+    {
+     "x": 0.257,
+     "y": 0.255
+    },
+    {
+     "x": 0.308,
+     "y": 0.314
+    },
+    {
+     "x": 0.375,
+     "y": 0.365
+    },
+    {
+     "x": 0.486,
+     "y": 0.382
+    },
+    {
+     "x": 0.596,
+     "y": 0.412
+    },
+    {
+     "x": 0.688,
+     "y": 0.466
+    }
+   ]
+  }
+ ],
+ "goals": [
+  {
+   "id": "g1",
+   "name": "Воздушная гавань",
+   "kind": "locations",
+   "district": "airports",
+   "count": 2,
+   "points": 8
+  },
+  {
+   "id": "g2",
+   "name": "Город мостов",
+   "kind": "bridges",
+   "count": 3,
+   "points": 8
+  },
+  {
+   "id": "g3",
+   "name": "Слияние рек",
+   "kind": "locations",
+   "district": "center",
+   "count": 3,
+   "points": 8
+  },
+  {
+   "id": "g4",
+   "name": "Горные серпантины",
+   "kind": "resource_pieces",
+   "resource": "gravel",
+   "count": 9,
+   "points": 6
+  },
+  {
+   "id": "g5",
+   "name": "Скоростные трассы",
+   "kind": "long_roads",
+   "length": 3,
+   "count": 3,
+   "points": 7
+  },
+  {
+   "id": "g6",
+   "name": "Два берега",
+   "kind": "network",
+   "count": 6,
+   "points": 8
+  },
+  {
+   "id": "g7",
+   "name": "Южный берег",
+   "kind": "locations",
+   "district": "nanan",
+   "count": 3,
+   "points": 6
+  }
+ ],
+ "piecesScale": 0.8
+}

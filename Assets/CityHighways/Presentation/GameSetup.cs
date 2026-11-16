@@ -56,6 +56,29 @@ namespace CityHighways.Presentation
         public string mapResourcePath = "CityHighways/Maps/moscow";
         /// <summary>Сценарий партии (ScenarioKind как int).</summary>
         public int scenario;
+        /// <summary>Кооператив «Город против всех»: все компании — одна команда против города.</summary>
+        public bool cooperative;
+
+        /// <summary>Карта для меню: путь в Resources, название и одна строка описания.</summary>
+        public sealed class MapChoice
+        {
+            public string Path;
+            public string Title;
+            public string Hint;
+        }
+
+        public static readonly MapChoice[] Maps =
+        {
+            new MapChoice { Path = "CityHighways/Maps/moscow", Title = "Москва",
+                Hint = "Большой город: 66 мест, Москва-река, МКАД и три района на окраинах." },
+            new MapChoice { Path = "CityHighways/Maps/amsterdam", Title = "Амстердам",
+                Hint = "Компактный город каналов: залив Эй отрезает Норд, Амстел подходит к центру. Кольцо A10." },
+            new MapChoice { Path = "CityHighways/Maps/chongqing", Title = "Чунцин",
+                Hint = "Город мостов и гор: центр зажат между Янцзы и Цзялинцзян, к любому берегу — по мосту." },
+        };
+
+        public static MapChoice MapOf(string path) =>
+            Array.Find(Maps, m => string.Equals(m.Path, path, StringComparison.OrdinalIgnoreCase)) ?? Maps[0];
         /// <summary>Обучающая партия: не сохраняется (ни настройки, ни партия) и не пишется в статистику.</summary>
         [NonSerialized] public bool tutorial;
 
@@ -97,10 +120,13 @@ namespace CityHighways.Presentation
             FinalWarningPieces = 5
         };
 
-        /// <summary>Настройки партии: участки из меню и правила выбранного сценария.</summary>
-        public GameConfig CreateConfig() =>
-            Scenarios.Apply(new GameConfig { RoadPiecesOverride = roadPieces },
+        /// <summary>Настройки партии: участки из меню, правила выбранного сценария и режим (кооператив).</summary>
+        public GameConfig CreateConfig()
+        {
+            var config = Scenarios.Apply(new GameConfig { RoadPiecesOverride = roadPieces },
                 scenario >= 0 && scenario < Scenarios.All.Count ? (ScenarioKind)scenario : ScenarioKind.Standard);
+            return cooperative ? config.MakeCooperative() : config;
+        }
 
         public static readonly string[] DefaultNames = { "Аня", "Борис", "Вера", "Глеб", "Даша" };
 

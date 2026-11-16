@@ -74,6 +74,7 @@ namespace CityHighways.Core
         {
             var owner = GetRoadOwner(roadId);
             if (!owner.HasValue || owner.Value == payer) return 0;
+            if (IsCooperative) return 0; // кооператив: союзники ездят бесплатно
             return HasPass(payer, owner.Value) ? 0 : TollFor(roadId);
         }
 
@@ -110,7 +111,7 @@ namespace CityHighways.Core
                 foreach (var contract in player.Contracts)
                 {
                     if (player.PaidRoutes.ContainsKey(contract.Id)) continue;
-                    var check = Scoring.CheckContract(Map, contract, player.Index, GetRoadOwner,
+                    var check = Scoring.CheckContract(Map, contract, player.Index, ContractOwnerFor(player.Index),
                         Config.MaxForeignRoadsPerContract, id => TollFor(id, player.Index), JamFeeFor);
                     if (!check.Completed) continue;
 

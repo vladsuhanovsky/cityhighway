@@ -176,6 +176,7 @@ namespace CityHighways.Presentation
             AddSection("Основы", "Цель и ход", MenuIcon.Glyph.Play, Basics);
             AddSection("Основы", "Ресурсы", MenuIcon.Glyph.Coins, ResourcesSection);
             AddSection("Основы", "Конец партии и очки", MenuIcon.Glyph.Flag, Ending);
+            AddSection("Основы", "Кооператив", MenuIcon.Glyph.Skyline, Cooperative);
             AddSection("Основы", "Глоссарий", MenuIcon.Glyph.Document, Glossary);
             AddGroup("Дороги и город", MenuIcon.Glyph.Road);
             AddSection("Дороги и город", "Контракты и проезд", MenuIcon.Glyph.Document, Contracts);
@@ -1028,6 +1029,46 @@ namespace CityHighways.Presentation
                 ("Персонаж", "Чиновник — за контракты, Мостовик — за мосты", MenuIcon.Glyph.Person)
             };
             foreach (var (title, text, glyph) in lines) s.Add(Tile(title, text, Theme.Gold, new MenuIcon(glyph, 24f, Theme.Gold)));
+            return s;
+        }
+
+        VisualElement Cooperative()
+        {
+            var coop = new GameConfig().MakeCooperative();
+            var s = Section("Кооператив «Город против всех»");
+            Paragraph(s, "Режим выбирается в «Новой игре» (в сети — хостом в лобби). Все компании — одна команда, противник — сам город. Побеждают или проигрывают все вместе.");
+            Paragraph(s, "Сеть общая: дорога любого союзника засчитывается в ваши контракты, и проезд по ней бесплатный. Взяток, аукциона и пропусков нет — делиться картами помогают сделки.");
+
+            // Шкала кризиса — как на панели в партии.
+            var meter = Ui.Row();
+            meter.style.width = 420f;
+            meter.style.height = 16f;
+            for (int i = 0; i < coop.CoopCrisisMax; i++)
+            {
+                var cell = Ui.Box();
+                cell.style.flexGrow = 1f;
+                cell.style.marginRight = 3f;
+                cell.style.backgroundColor = i < coop.CoopCrisisStart + 3 ? CoopPanel.CrisisColor(i / (float)(coop.CoopCrisisMax - 1)) : new Color(1f, 1f, 1f, 0.12f);
+                Ui.Radius(cell, 3f);
+                meter.Add(cell);
+            }
+            Picture(s, meter, $"Кризис: старт {coop.CoopCrisisStart}, предел {coop.CoopCrisisMax}. На картинке — {coop.CoopCrisisStart + 3} из {coop.CoopCrisisMax}.");
+
+            Paragraph(s, $"На столе всегда {coop.CoopOpenOrders} заказа города — это контракты, общие для всей команды. Заказ выполнен, когда общая сеть связывает его районы: очки получает тот, чья дорога замкнула путь, а кризис падает на {coop.CoopCrisisReliefPerOrder}. На каждый заказ — {coop.CoopOrderRounds} кругов; просроченный поднимает кризис на {coop.CoopCrisisPerFailedOrder}.");
+            Paragraph(s, $"Город растёт сам: кризис +1 каждые {coop.CoopCrisisEveryRounds} круга, а ремонт, снегопад и парад добавляют ещё +{coop.CoopCrisisPerBadEvent}.");
+            var outcomes = Ui.Row();
+            outcomes.style.marginTop = 10f;
+            outcomes.style.justifyContent = Justify.SpaceBetween;
+            var win = Tile("Победа команды", $"Выполнить заказы города: на двоих — {coop.CoopOrdersToWin(2)}, на троих — {coop.CoopOrdersToWin(3)}, на четверых — {coop.CoopOrdersToWin(4)}, на пятерых — {coop.CoopOrdersToWin(5)}.",
+                GameColors.Success, new MenuIcon(MenuIcon.Glyph.Trophy, 26f, GameColors.Success));
+            win.style.width = 380f;
+            var lose = Tile("Город победил", $"Кризис дошёл до {coop.CoopCrisisMax} — или у кого-то кончились участки и последний круг прошёл, а заказов не хватило.",
+                GameColors.Danger, new MenuIcon(MenuIcon.Glyph.Flame, 26f, GameColors.Danger));
+            lose.style.width = 380f;
+            outcomes.Add(win);
+            outcomes.Add(lose);
+            s.Add(outcomes);
+            Paragraph(s, "Свои контракты тоже никуда не делись: выполненные дают очки, проваленные отнимают — это общий счёт команды. Боты-союзники видят заказы города и строят под них в первую очередь. Панель заказов — в правом верхнем углу поля; наведите на заказ, чтобы подсветить его районы.");
             return s;
         }
 

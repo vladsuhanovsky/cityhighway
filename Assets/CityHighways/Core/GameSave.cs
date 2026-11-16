@@ -6,7 +6,7 @@ namespace CityHighways.Core
     [Serializable]
     public class GameSaveData
     {
-        public const int CurrentVersion = 13; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки, 10 — проезд при выполнении, пробки, пропуска, 11 — тайный шёпот, цена обновления рынка, 12 — финал, 13 — сценарии и выбор компании
+        public const int CurrentVersion = 14; // 2 — события, 3 — цели и удача, 4 — персонажи, 5 — история команд, 6 — сделки, 7 — влияние, 8 — аукцион, 9 — взятки, 10 — проезд при выполнении, пробки, пропуска, 11 — тайный шёпот, цена обновления рынка, 12 — финал, 13 — сценарии и выбор компании, 14 — кооператив
         /// <summary>Самая старая версия, которую ещё можно загрузить (в v2 цели и удача начнутся заново).</summary>
         public const int OldestSupportedVersion = 2;
 
@@ -29,6 +29,13 @@ namespace CityHighways.Core
         public bool finalWarned;
         public string finalOrderRoad;
         public int finalOrderWinner = -1;
+        /// <summary>Кооператив: открытые заказы города (id контрактов), сколько кругов у каждого, кризис, счёт заказов.</summary>
+        public string[] coopOrders;
+        public int[] coopRoundsLeft;
+        public int coopCrisis;
+        public int coopDone;
+        public int coopFailed;
+        public int coopRounds;
         public int consecutivePasses;
 
         // Городские события
@@ -215,7 +222,7 @@ namespace CityHighways.Core
 
         public GameSaveData CreateSave()
         {
-            return new GameSaveData
+            var save = new GameSaveData
             {
                 config = Config,
                 players = _players.Select(p => new PlayerSaveData
@@ -350,6 +357,8 @@ namespace CityHighways.Core
                 lastWhisperCount = LastWhisperCount,
                 suspicionFlags = _suspicionFlags?.ToArray()
             };
+            CoopFillSave(save);
+            return save;
         }
 
         /// <summary>Восстанавливает партию. FormatException — если сохранение не подходит к карте.</summary>
@@ -524,6 +533,7 @@ namespace CityHighways.Core
             }
             game.FinalOrderWinner = data.finalOrderWinner >= 0 && data.finalOrderWinner < players.Length ? data.finalOrderWinner : -1;
             game._consecutivePasses = data.consecutivePasses;
+            game.CoopRestore(data);
 
             // События: открытые районы, колода, текущее событие и его участки, магистрали часа пик.
             if (data.openDistricts != null && data.openDistricts.Length > 0)

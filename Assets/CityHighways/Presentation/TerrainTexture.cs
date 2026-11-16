@@ -151,10 +151,14 @@ namespace CityHighways.Presentation
         {
             float span = 1f + 2f * Margin;
             Vector2 ToPixel(float x, float y) => new Vector2((x + Margin) / span * w, (y + Margin) / span * h);
-            // Положение относительно МКАД: 0 в центре, 1 на кольце (эллипс 0.40 × 0.49 вокруг 0.5, 0.5).
+            // Положение относительно городской черты: 0 в центре, 1 на кольце. У Москвы — МКАД (эллипс 0.40 × 0.49
+            // вокруг 0.5, 0.5); у карт без кольца — тот же эллипс как граница «город — пригород», но без полосы трассы.
+            var ringShape = map.Ring;
+            float rcx = 0.5f, rcy = 0.5f, rrx = 0.40f, rry = 0.49f;
+            bool ringRoad = ringShape != null && ringShape.Name == "МКАД";
             float Ring(float px, float py)
             {
-                float mx = (px / w * span - Margin - 0.5f) / 0.40f, my = (py / h * span - Margin - 0.5f) / 0.49f;
+                float mx = (px / w * span - Margin - rcx) / rrx, my = (py / h * span - Margin - rcy) / rry;
                 return Mathf.Sqrt(mx * mx + my * my);
             }
             float Urban(float e) => Mathf.Clamp01((1.08f - e) / 0.55f);
@@ -182,8 +186,9 @@ namespace CityHighways.Presentation
             foreach (var r in map.Roads)
                 if (points.TryGetValue(r.A, out var a) && points.TryGetValue(r.B, out var b)) roads.Add(new Seg { A = a, B = b });
             var river = new List<Seg>();
-            for (int i = 0; i + 1 < map.River.Count; i++)
-                river.Add(new Seg { A = ToPixel(map.River[i].X, map.River[i].Y), B = ToPixel(map.River[i + 1].X, map.River[i + 1].Y) });
+            foreach (var line in map.Rivers)
+                for (int i = 0; i + 1 < line.Count; i++)
+                    river.Add(new Seg { A = ToPixel(line[i].X, line[i].Y), B = ToPixel(line[i + 1].X, line[i + 1].Y) });
             float NearestPlace(Vector2 p)
             {
                 float best = float.MaxValue;
@@ -231,7 +236,7 @@ namespace CityHighways.Presentation
                 float density = Mathf.Min(1f, u * 1.1f) + (e > 1.08f ? 0.05f : 0f);
                 if (u > 0.15f && (ix % 4 == 0 || iy % 3 == 0)) continue;   // улицы
                 if (Hash(ix, iy, 1) > density) continue;
-                if (e > 0.97f && e < 1.05f) continue;                         // полоса МКАД
+                if (ringRoad && e > 0.97f && e < 1.05f) continue;             // полоса МКАД
                 if (Nearest(p, roads) < 13f * k || NearestPlace(p) < 24f * k || Nearest(p, river) < 22f * k || InPark(p, 4f * k)) continue;
 
                 float bw = cell * (0.55f + Hash(ix, iy, 6) * 0.42f), bh = cell * (0.55f + Hash(ix, iy, 7) * 0.42f);

@@ -313,6 +313,15 @@ namespace CityHighways.Presentation
             _minimap.style.bottom = 14f;
             _mapArea.Add(_minimap);
 
+            // Кооператив: заказы города и кризис — в правом верхнем углу поля.
+            _coopPanel = new CoopPanel(contract =>
+            {
+                if (contract == null) _map.ClearContractHighlight();
+                else _map.SetContractHighlight(contract.DistrictA, contract.DistrictB, contract.IsComplex ? contract.DistrictC : null);
+            });
+            Ui.Show(_coopPanel, false);
+            _mapArea.Add(_coopPanel);
+
             // Статус хода — плашка сверху по центру поля.
             _statusBanner = Ui.Row();
             _statusBanner.style.position = Position.Absolute;
@@ -874,6 +883,7 @@ namespace CityHighways.Presentation
             _lastWhisperShown = _game.WhisperNumber;
             _lastAccusationShown = _game.AccusationNumber;
             _lastFinalWarningShown = _game.FinalWarningNumber;
+            _lastCoopNewsShown = _game.CoopNewsNumber;
             _lastFinalOrderShown = _game.FinalOrderNumber;
             _game.StateChanged += OnStateChanged;
 
@@ -1418,6 +1428,16 @@ namespace CityHighways.Presentation
                 });
             }
 
+            // Кооператив: заказ города выполнен или просрочен.
+            if (_game.CoopNewsNumber > _lastCoopNewsShown)
+            {
+                _lastCoopNewsShown = _game.CoopNewsNumber;
+                bool good = _game.LastCoopNewsGood;
+                Toast(_game.LastCoopNews, good ? Theme.Success : Theme.Danger);
+                _app.Sound.Play(good ? Sfx.Fanfare : Sfx.Swish, good ? 0.5f : 0.4f);
+                _map.Flash(good ? Theme.Success : Theme.Danger);
+            }
+
             // Финал: «скоро финал», финальный заказ мэрии (открыт / выполнен).
             if (_game.FinalWarningNumber > _lastFinalWarningShown)
             {
@@ -1932,9 +1952,11 @@ namespace CityHighways.Presentation
         {
             if (_game == null) return;
             _turnLabel.text = (_game.Phase == GamePhase.SetupContracts ? "Подготовка" : "Ход " + _game.TurnNumber)
-                              + (_game.Scenario != ScenarioKind.Standard ? " · " + Scenarios.Title(_game.Scenario) : "");
+                              + (_game.Scenario != ScenarioKind.Standard ? " · " + Scenarios.Title(_game.Scenario) : "")
+                              + (_game.IsCooperative ? " · Кооператив" : "");
             RefreshEvent();
             RefreshGoals();
+            _coopPanel?.Set(_game);
             RefreshTabs();
             _map.RefreshVisibility();
             RefreshFaceUp();
@@ -3007,6 +3029,8 @@ namespace CityHighways.Presentation
         /// <summary>Наставник обучающей партии (null — обычная партия).</summary>
         TutorialCoach _coach;
         int _lastFinalWarningShown;
+        int _lastCoopNewsShown;
+        CoopPanel _coopPanel;
         int _lastFinalOrderShown;
         int _lastAccusationShown;
 
@@ -3351,12 +3375,30 @@ namespace CityHighways.Presentation
                 figure.style.marginRight = 6f;
                 hero.Add(figure);
             }
-            var title = Ui.Text("Победа: " + string.Join(", ", result.Winners.Select(w => w.PlayerName)), 34f, Theme.Gold, true);
+            if (result.Cooperative && result.Winners.Count == 0)
+            {
+                // Поражение команды: вместо победителей — город.
+                var city = new MenuIcon(MenuIcon.Glyph.Skyline, 90f, Theme.Danger);
+                city.style.marginRight = 6f;
+                hero.Add(city);
+            }
+            var title = Ui.Text(result.Cooperative
+                    ? (result.TeamWon ? "Победа команды!" : "Город победил")
+                    : "Победа: " + string.Join(", ", result.Winners.Select(w => w.PlayerName)),
+                34f, result.Cooperative && !result.TeamWon ? Theme.Danger : Theme.Gold, true);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
             title.style.marginLeft = 16f;
             title.style.marginBottom = 20f;
             hero.Add(title);
             box.Add(hero);
+            if (result.Cooperative)
+            {
+                var outcome = Ui.Text(result.CoopOutcome + $" Очки команды: {result.TeamTotal}.", 16f, Theme.Text, true);
+                outcome.style.whiteSpace = WhiteSpace.Normal;
+                outcome.style.unityTextAlign = TextAnchor.MiddleCenter;
+                outcome.style.marginBottom = 6f;
+                box.Add(outcome);
+            }
             var subtitle = Ui.Text("Дороги + контракты (★ — бонус контракта мэрии) ± плата за проезд + «Крупнейшая сеть» + цели мэрии ± удача + способность персонажа (Чиновник — за контракты, Мостовик — за мосты)", 13f, Theme.TextDim);
             subtitle.style.whiteSpace = WhiteSpace.Normal;
             subtitle.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -3597,7 +3639,7 @@ namespace CityHighways.Presentation
             new TutorialStep
             {
                 Target = () => _map,
-                Title = "Москва",
+                Title = _game?.Map.Name ?? "Город",
                 Text = "Вы — дорожная компания. Стройте участки дорог между местами города: каждая дорога сразу приносит очки (дорога длиной 4 — 7 очков). Цветные пятна — районы."
             },
             new TutorialStep

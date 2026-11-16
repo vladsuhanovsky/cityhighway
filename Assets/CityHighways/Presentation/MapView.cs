@@ -327,12 +327,15 @@ namespace CityHighways.Presentation
                 _locationLabels[location.Id] = holder;
             }
 
-            var ring = Ui.Text("МКАД", 12f, new Color(1f, 0.72f, 0.35f, 0.85f), true);
-            ring.style.backgroundColor = LabelBack;
-            Ui.Padding(ring, 0f, 4f);
-            _ringLabel = Holder(80f);
-            _ringLabel.Add(ring);
-            _labels.Add(_ringLabel);
+            if (game.Map.Ring != null)
+            {
+                var ring = Ui.Text(game.Map.Ring.Name, 12f, new Color(1f, 0.72f, 0.35f, 0.85f), true);
+                ring.style.backgroundColor = LabelBack;
+                Ui.Padding(ring, 0f, 4f);
+                _ringLabel = Holder(80f);
+                _ringLabel.Add(ring);
+                _labels.Add(_ringLabel);
+            }
 
             BuildTitle(game.Map.Name);
             Relayout();
@@ -579,7 +582,7 @@ namespace CityHighways.Presentation
                 pair.Value.style.top = c.y - 48f;
             }
 
-            if (_ringLabel != null)
+            if (_ringLabel != null && _game.Map.Ring != null)
             {
                 var top = RingPoint(-Mathf.PI / 2f);
                 _ringLabel.style.left = top.x - 40f;
@@ -600,11 +603,15 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>
-        /// Точка на МКАД: эллипс вокруг (0.5, 0.5) с полуосями 0.40 × 0.49 поля. Размеры подобраны скриптом карты так,
-        /// чтобы внутри был весь город, а снаружи — только аэропорты и Новая Москва.
+        /// Точка на кольцевой дороге карты (МКАД — эллипс вокруг 0.5, 0.5 с полуосями 0.40 × 0.49, A10 — вокруг центра
+        /// Амстердама). Эллипс задаёт JSON карты (ring).
         /// </summary>
-        Vector2 RingPoint(float angle) =>
-            _layout.ToScreen(0.5f + Mathf.Cos(angle) * 0.40f, 0.5f + Mathf.Sin(angle) * 0.49f);
+        Vector2 RingPoint(float angle)
+        {
+            var ring = _game.Map.Ring;
+            if (ring == null) return _layout.ToScreen(0.5f, 0.5f);
+            return _layout.ToScreen(ring.CX + Mathf.Cos(angle) * ring.RX, ring.CY + Mathf.Sin(angle) * ring.RY);
+        }
 
         void SetHover(Road road, Vector2 position)
         {
@@ -1025,24 +1032,28 @@ namespace CityHighways.Presentation
 
         void DrawRiver(Painter2D p)
         {
-            var points = _game.Map.River;
-            if (points.Count < 2) return;
-            var screen = points.Select(pt => _layout.ToScreen(pt.X, pt.Y)).ToList();
+            // Рек может быть несколько (Чунцин — Янцзы и Цзялинцзян): у каждой своя набережная.
+            foreach (var points in _game.Map.Rivers)
+            {
+                if (points.Count < 2) continue;
+                var screen = points.Select(pt => _layout.ToScreen(pt.X, pt.Y)).ToList();
 
-            // Набережные: тёмный край и светлый гранит; сама вода — текстурой поверх.
-            p.strokeColor = new Color(0.40f, 0.39f, 0.35f, 0.9f);
-            p.lineWidth = 30f;
-            SmoothPath(p, screen);
-            p.Stroke();
-            // Сама вода — текстурой в отдельном слое (DrawWater); здесь гранитная кромка набережной.
-            p.strokeColor = new Color(0.64f, 0.62f, 0.56f, 1f);
-            p.lineWidth = 27f;
-            SmoothPath(p, screen);
-            p.Stroke();
+                // Набережные: тёмный край и светлый гранит; сама вода — текстурой поверх.
+                p.strokeColor = new Color(0.40f, 0.39f, 0.35f, 0.9f);
+                p.lineWidth = 30f;
+                SmoothPath(p, screen);
+                p.Stroke();
+                // Сама вода — текстурой в отдельном слое (DrawWater); здесь гранитная кромка набережной.
+                p.strokeColor = new Color(0.64f, 0.62f, 0.56f, 1f);
+                p.lineWidth = 27f;
+                SmoothPath(p, screen);
+                p.Stroke();
+            }
         }
 
         void DrawRing(Painter2D p)
         {
+            if (_game.Map.Ring == null) return;
             // МКАД днём: асфальтовая лента со светлыми кромками и жёлтым пунктиром посередине.
             const int pieces = 320;
             var points = new List<Vector2>();
@@ -1429,8 +1440,17 @@ namespace CityHighways.Presentation
         /// </summary>
         void DrawWater(MeshGenerationContext context)
         {
-            if (!CanDraw || _game.Map.River.Count < 2) return;
-            var raw = _game.Map.River.Select(pt => _layout.ToScreen(pt.X, pt.Y)).ToList();
+            if (!CanDraw) return;
+            _quads.Clear();
+            foreach (var river in _game.Map.Rivers)
+                if (river.Count >= 2) AddWater(river);
+            _quads.Flush(context);
+        }
+
+        /// <summary>Добавить в пачку квадов воду одной реки.</summary>
+        void AddWater(IReadOnlyList<MapPoint> river)
+        {
+            var raw = river.Select(pt => _layout.ToScreen(pt.X, pt.Y)).ToList();
             var line = SmoothLine(raw, 6);
             var distances = new List<float> { 0f };
             for (int i = 1; i < line.Count; i++) distances.Add(distances[i - 1] + (line[i] - line[i - 1]).magnitude);
@@ -1447,7 +1467,6 @@ namespace CityHighways.Presentation
                 if (d > 0f) stations.Add(d);
             stations.Sort();
 
-            _quads.Clear();
             var texture = RoadTextures.Water;
             for (int i = 0; i < stations.Count - 1; i++)
             {
@@ -1463,7 +1482,6 @@ namespace CityHighways.Presentation
                     new Vector2(u0, 1f), new Vector2(Mathf.Min(1f, u1), 1f), new Vector2(Mathf.Min(1f, u1), 0f), new Vector2(u0, 0f),
                     Color.white);
             }
-            _quads.Flush(context);
         }
 
         /// <summary>Сглаживание ломаной сплайном Катмулла — Рома: steps точек на отрезок.</summary>
