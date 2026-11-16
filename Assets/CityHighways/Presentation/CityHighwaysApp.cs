@@ -34,7 +34,9 @@ namespace CityHighways.Presentation
 
         IEnumerator Start()
         {
-            var settings = panelSettings != null ? panelSettings : CreatePanelSettings();
+            // Настройки из инспектора копируем, чтобы не менять ассет в редакторе (тема ниже — объект времени выполнения).
+            var settings = panelSettings != null ? Instantiate(panelSettings) : CreatePanelSettings();
+            if (settings.themeStyleSheet == null) settings.themeStyleSheet = LoadTheme();
 
             // UIDocument создаём на выключенном объекте: при включении он сразу построит корень с нашими настройками.
             var uiObject = new GameObject("City Highways UI");
@@ -214,7 +216,24 @@ namespace CityHighways.Presentation
             settings.referenceResolution = new Vector2Int(1920, 1080);
             settings.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
             settings.match = 1f; // подстраиваемся по высоте: интерфейс одинаков на 16:9 и 16:10
+            settings.themeStyleSheet = LoadTheme();
             return settings;
+        }
+
+        /// <summary>
+        /// Тема панели. Весь интерфейс оформлен прямо в коде и рассчитан на «чистую» тему без стандартных стилей
+        /// Unity, поэтому по умолчанию берётся пустая тема: так пропадает предупреждение «No Theme Style Sheet set
+        /// to PanelSettings», а вид остаётся прежним. Если положить свою тему в
+        /// Resources/CityHighways/UI/CityHighwaysTheme.tss, возьмётся она.
+        /// </summary>
+        static ThemeStyleSheet LoadTheme()
+        {
+            var theme = Resources.Load<ThemeStyleSheet>("CityHighways/UI/CityHighwaysTheme");
+            if (theme != null) return theme;
+            theme = ScriptableObject.CreateInstance<ThemeStyleSheet>();
+            theme.name = "City Highways Theme";
+            theme.hideFlags = HideFlags.DontSave;
+            return theme;
         }
 
         static Font LoadBuiltinFont()
