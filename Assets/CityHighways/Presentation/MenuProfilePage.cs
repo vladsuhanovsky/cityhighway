@@ -22,7 +22,7 @@ namespace CityHighways.Presentation
         readonly Action _back;
         readonly Action _setupChanged;
         readonly Label _title;
-        readonly Dictionary<Tab, VisualElement> _tabButtons = new Dictionary<Tab, VisualElement>();
+        readonly Dictionary<Tab, (VisualElement button, MenuIcon icon, Label label)> _tabButtons = new Dictionary<Tab, (VisualElement, MenuIcon, Label)>();
         readonly ScrollView _scroll;
         readonly VisualElement _content;
         readonly Label _statusLabel;
@@ -65,18 +65,22 @@ namespace CityHighways.Presentation
             _setup = setup;
             _back = back;
             _setupChanged = setupChanged;
+            // Своя подложка страницы в палитре профиля (GameColors) поверх приглушённого города.
             Root = Ui.Column();
+            Root.style.backgroundColor = new Color(GameColors.Background.r, GameColors.Background.g, GameColors.Background.b, 0.94f);
+            Ui.Radius(Root, 16f);
+            Ui.Padding(Root, 16f, 18f);
 
             var header = Ui.Row();
             header.style.alignItems = Align.Center;
             header.style.marginBottom = 12f;
-            var backButton = Ui.Button("← Назад", () => _back(), ButtonKind.Ghost, 15f);
+            var backButton = Btn("← Назад", () => _back(), ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             header.Add(backButton);
-            _title = Ui.Text("Профиль", 32f, Theme.Gold, true);
+            _title = Ui.Text("Профиль", 32f, GameColors.Accent, true);
             _title.style.flexGrow = 1f;
             header.Add(_title);
-            _statusLabel = Ui.Text("", 14f, Theme.Gold);
+            _statusLabel = Ui.Text("", 14f, GameColors.Accent);
             header.Add(_statusLabel);
             Root.Add(header);
 
@@ -91,7 +95,7 @@ namespace CityHighways.Presentation
             Root.Add(tabs);
 
             _scroll = new ScrollView(ScrollViewMode.Vertical);
-            _scroll.style.maxHeight = 700f;
+            _scroll.style.maxHeight = 664f;
             Ui.StyleScroller(_scroll);
             Root.Add(_scroll);
             _content = Ui.Column();
@@ -113,10 +117,11 @@ namespace CityHighways.Presentation
             var icon = new MenuIcon(glyph, 20f, Theme.Text);
             icon.style.marginRight = 8f;
             button.Add(icon);
-            button.Add(Ui.Text(caption, 16f, Theme.Text, true));
+            var label = Ui.Text(caption, 16f, Theme.Text, true);
+            button.Add(label);
             button.RegisterCallback<PointerEnterEvent>(_ =>
             {
-                if (_tab != tab) button.style.backgroundColor = Theme.PanelHover;
+                if (_tab != tab) button.style.backgroundColor = GameColors.ButtonHover;
                 button.style.translate = new Translate(new Length(0f), new Length(-1.5f));
                 MenuButton.Hovered?.Invoke();
             });
@@ -133,14 +138,20 @@ namespace CityHighways.Presentation
                 _scroll.scrollOffset = Vector2.zero;
                 Rebuild();
             });
-            _tabButtons[tab] = button;
+            _tabButtons[tab] = (button, icon, label);
             row.Add(button);
         }
 
         void StyleTabs()
         {
             foreach (var pair in _tabButtons)
-                pair.Value.style.backgroundColor = pair.Key == _tab ? Theme.Accent : Theme.PanelLight;
+            {
+                bool active = pair.Key == _tab;
+                var ink = active ? GameColors.AccentText : Theme.Text;
+                pair.Value.button.style.backgroundColor = active ? GameColors.Accent : GameColors.Button;
+                pair.Value.icon.SetColor(ink);
+                pair.Value.label.style.color = ink;
+            }
         }
 
         public void Rebuild()
@@ -185,7 +196,7 @@ namespace CityHighways.Presentation
             var worn = profile.Outfit;
             var shown = _tryOn ?? worn;
 
-            var left = Ui.Card(14f);
+            var left = Card(14f);
             left.style.alignItems = Align.Center;
             left.style.marginRight = 14f;
             left.style.width = 280f;
@@ -201,7 +212,7 @@ namespace CityHighways.Presentation
 
             if (_tryOn != null)
             {
-                var note = Ui.Text("Примерка — ещё не надето", 13f, Theme.Gold, true);
+                var note = Ui.Text("Примерка — ещё не надето", 13f, GameColors.Warning, true);
                 note.style.marginTop = 8f;
                 left.Add(note);
                 // Что из примеренного ещё не куплено и сколько стоит.
@@ -210,7 +221,7 @@ namespace CityHighways.Presentation
                 int total = toBuy.Sum(i => i.price);
                 if (toBuy.Count > 0)
                 {
-                    var buyAll = Ui.Button($"Купить примеренное · {total}", () =>
+                    var buyAll = Btn($"Купить примеренное · {total}", () =>
                     {
                         foreach (var item in toBuy)
                         {
@@ -233,7 +244,7 @@ namespace CityHighways.Presentation
                 }
                 else
                 {
-                    var wearAll = Ui.Button("Надеть примеренное", () =>
+                    var wearAll = Btn("Надеть примеренное", () =>
                     {
                         foreach (var slot in CharacterCatalog.Slots) Profiles.Wear(profile, slot, _tryOn.Get(slot));
                         _tryOn = null;
@@ -243,7 +254,7 @@ namespace CityHighways.Presentation
                     wearAll.style.marginTop = 6f;
                     left.Add(wearAll);
                 }
-                var cancel = Ui.Button("Снять примерку", () =>
+                var cancel = Btn("Снять примерку", () =>
                 {
                     _tryOn = null;
                     Rebuild();
@@ -251,12 +262,12 @@ namespace CityHighways.Presentation
                 cancel.style.marginTop = 6f;
                 left.Add(cancel);
             }
-            var wallet = Ui.Text($"Кошелёк: {profile.wallet} влияния", 14f, Theme.Gold, true);
+            var wallet = Ui.Text($"Кошелёк: {profile.wallet} влияния", 14f, GameColors.Accent, true);
             wallet.style.marginTop = 10f;
             left.Add(wallet);
             row.Add(left);
 
-            var right = Ui.Card(14f);
+            var right = Card(14f);
             right.style.flexGrow = 1f;
             right.style.flexShrink = 1f;
             var slots = Ui.Row();
@@ -264,7 +275,7 @@ namespace CityHighways.Presentation
             foreach (var slot in CharacterCatalog.Slots)
             {
                 string s = slot;
-                var tab = Ui.Button(CharacterCatalog.SlotTitle(slot), () => { _slot = s; Rebuild(); },
+                var tab = Btn(CharacterCatalog.SlotTitle(slot), () => { _slot = s; Rebuild(); },
                     slot == _slot ? ButtonKind.Primary : ButtonKind.Secondary, 13f);
                 tab.style.marginRight = 6f;
                 tab.style.marginBottom = 6f;
@@ -319,10 +330,10 @@ namespace CityHighways.Presentation
             tile.style.marginRight = 8f;
             tile.style.marginBottom = 8f;
             tile.style.alignItems = Align.Center;
-            tile.style.backgroundColor = wearing ? Theme.PanelHover : Theme.PanelLight;
+            tile.style.backgroundColor = wearing ? GameColors.ButtonHover : GameColors.Button;
             Ui.Radius(tile, 10f);
             Ui.Padding(tile, 6f, 4f);
-            Ui.Border(tile, wearing || trying ? 2f : 1f, wearing ? Theme.Gold : trying ? Theme.Accent : new Color(rarity.r, rarity.g, rarity.b, 0.7f));
+            Ui.Border(tile, wearing || trying ? 2f : 1f, wearing ? GameColors.Accent : trying ? GameColors.Warning : new Color(rarity.r, rarity.g, rarity.b, 0.7f));
             tile.style.borderTopWidth = 4f;
             tile.style.borderTopColor = rarity;
             Ui.Transitions(tile, "translate", "background-color");
@@ -344,14 +355,14 @@ namespace CityHighways.Presentation
             UnityEngine.UIElements.Button button;
             if (wearing)
             {
-                button = Ui.Button("Надето", () => { }, ButtonKind.Ghost, 12f);
+                button = Btn("Надето", () => { }, ButtonKind.Ghost, 12f);
                 Ui.SetEnabled(button, false);
             }
             else if (has)
-                button = Ui.Button("Надеть", () => Apply(profile, item, slot, true), ButtonKind.Secondary, 12f);
+                button = Btn("Надеть", () => Apply(profile, item, slot, true), ButtonKind.Secondary, 12f);
             else
             {
-                button = Ui.Button($"Купить · {item.price}", () =>
+                button = Btn($"Купить · {item.price}", () =>
                 {
                     var error = Profiles.BuyClothing(profile, item);
                     _status = error ?? $"Куплено и надето: {item.name}.";
@@ -432,7 +443,7 @@ namespace CityHighways.Presentation
             Root.Add(_ghost);
             // Подсказка, куда бросать.
             _turntable.style.borderTopWidth = 0f;
-            Ui.Border(_turntable, 2f, new Color(Theme.Accent.r, Theme.Accent.g, Theme.Accent.b, 0.8f));
+            Ui.Border(_turntable, 2f, new Color(GameColors.Accent.r, GameColors.Accent.g, GameColors.Accent.b, 0.8f));
             Ui.Radius(_turntable, 12f);
         }
 
@@ -478,11 +489,11 @@ namespace CityHighways.Presentation
             var top = Ui.Row();
             top.style.alignItems = Align.Stretch;
             top.style.marginBottom = 12f;
-            var summary = Ui.Card(14f);
+            var summary = Card(14f);
             summary.style.width = 300f;
             summary.style.marginRight = 12f;
             summary.Add(Ui.Text($"Открыто {done} из {Achievements.All.Count}", 20f, Theme.Text, true));
-            var bar = new ProgressBar(260f, 8f, Theme.Gold);
+            var bar = new ProgressBar(260f, 8f, GameColors.Accent);
             bar.Set(done / (float)Mathf.Max(1, Achievements.All.Count));
             bar.style.marginTop = 8f;
             summary.Add(bar);
@@ -491,13 +502,13 @@ namespace CityHighways.Presentation
 
             var task = Achievements.Today;
             bool todayDone = profile.dailyDone == Achievements.DateKey(DateTime.Now);
-            var daily = Ui.Card(14f);
+            var daily = Card(14f);
             daily.style.flexGrow = 1f;
-            Ui.Border(daily, 2f, todayDone ? Theme.Line : Theme.Gold);
-            daily.Add(Ui.Text("Задание дня", 13f, Theme.Gold, true));
+            Ui.Border(daily, 2f, todayDone ? Theme.Line : GameColors.Accent);
+            daily.Add(Ui.Text("Задание дня", 13f, GameColors.Accent, true));
             daily.Add(Ui.Text(task.Title, 17f, Theme.Text, true));
             daily.Add(Caption(todayDone ? "Выполнено сегодня" : $"Награда: +{Achievements.DailyReward} влияния · выполнено всего: {profile.dailyTotal}",
-                13f, todayDone ? Theme.Success : Theme.TextDim, 0f, 4f));
+                13f, todayDone ? GameColors.Success : Theme.TextDim, 0f, 4f));
             top.Add(daily);
             _content.Add(top);
 
@@ -569,34 +580,34 @@ namespace CityHighways.Presentation
             card.style.width = 260f;
             card.style.marginRight = 10f;
             card.style.marginBottom = 10f;
-            card.style.backgroundColor = unlocked ? Theme.PanelHover : Theme.PanelLight;
+            card.style.backgroundColor = unlocked ? GameColors.Button : GameColors.PanelBackground;
             Ui.Radius(card, 10f);
             Ui.Padding(card, 10f, 12f);
-            Ui.Border(card, unlocked ? 2f : 1f, unlocked ? Theme.Gold : Theme.Line);
+            Ui.Border(card, unlocked ? 2f : 1f, unlocked ? GameColors.Accent : Theme.Line);
             if (celebrate)
             {
                 var frame = new AnimatedFrame(10f);
-                frame.SetColor(Theme.Gold);
+                frame.SetColor(GameColors.Accent);
                 card.Add(frame);
                 _frames.Add(frame);
                 _pulsing.Add(card);
             }
 
             var head = Ui.Row();
-            var name = Ui.Text(achievement.Title, 15f, unlocked ? Theme.Gold : Theme.Text, true);
+            var name = Ui.Text(achievement.Title, 15f, unlocked ? GameColors.Accent : Theme.Text, true);
             name.style.flexGrow = 1f;
             name.style.flexShrink = 1f;
             head.Add(name);
             if (celebrate)
             {
-                var tag = Ui.Text("НОВОЕ", 10f, Color.white, true);
-                tag.style.backgroundColor = Theme.Accent;
+                var tag = Ui.Text("НОВОЕ", 10f, GameColors.AccentText, true);
+                tag.style.backgroundColor = GameColors.Warning;
                 Ui.Radius(tag, 6f);
                 Ui.Padding(tag, 2f, 6f);
                 tag.style.marginRight = 6f;
                 head.Add(tag);
             }
-            head.Add(Ui.Number($"+{achievement.Reward}", 13f, unlocked ? Theme.TextDim : Theme.Gold, true));
+            head.Add(Ui.Number($"+{achievement.Reward}", 13f, unlocked ? Theme.TextDim : GameColors.Accent, true));
             card.Add(head);
             card.Add(Caption(achievement.Description, 12f, Theme.TextDim, 0f, 2f));
 
@@ -604,14 +615,14 @@ namespace CityHighways.Presentation
             int progress = unlocked ? target : achievement.Cumulative ? Achievements.ProgressOf(profile, achievement) : 0;
             var progressRow = Ui.Row();
             progressRow.style.marginTop = 8f;
-            var bar = new ProgressBar(180f, 6f, unlocked ? Theme.Success : Theme.Gold);
+            var bar = new ProgressBar(180f, 6f, unlocked ? GameColors.Success : GameColors.Accent);
             bar.Set(progress / (float)Mathf.Max(1, target));
             progressRow.Add(bar);
-            var count = Ui.Number($"{progress}/{target}", 12f, unlocked ? Theme.Success : Theme.TextDim, true);
+            var count = Ui.Number($"{progress}/{target}", 12f, unlocked ? GameColors.Success : Theme.TextDim, true);
             count.style.marginLeft = 8f;
             progressRow.Add(count);
             card.Add(progressRow);
-            if (unlocked) card.Add(Caption("Получено", 11f, Theme.Success, 0f, 4f));
+            if (unlocked) card.Add(Caption("Получено", 11f, GameColors.Success, 0f, 4f));
             return card;
         }
 
@@ -640,12 +651,12 @@ namespace CityHighways.Presentation
             top.style.alignItems = Align.Stretch;
             top.style.marginBottom = 12f;
 
-            var balance = Ui.Card(16f);
+            var balance = Card(16f);
             balance.style.flexGrow = 1f;
             balance.style.flexBasis = 0f;
             balance.style.marginRight = 12f;
             balance.Add(Ui.Text("В кошельке", 13f, Theme.TextDim, true));
-            var amount = Ui.Number($"{profile.wallet}", 44f, Theme.Gold, true);
+            var amount = Ui.Number($"{profile.wallet}", 44f, GameColors.Accent, true);
             balance.Add(amount);
             balance.Add(Caption("влияния — тратится на одежду персонажа и оформление", 13f, Theme.TextDim, 0f, 0f));
             balance.Add(Caption($"Заработано всего: {profile.earnedTotal} · по истории: доход {income}, траты {spent}", 13f, Theme.Text, 0f, 8f));
@@ -654,7 +665,7 @@ namespace CityHighways.Presentation
             // Прогноз уровня: сколько опыта осталось и примерно сколько партий.
             int xp = ProfileLevel.Xp(profile);
             int level = ProfileLevel.Of(xp, out int into, out int need);
-            var forecast = Ui.Card(16f);
+            var forecast = Card(16f);
             forecast.style.flexGrow = 1f;
             forecast.style.flexBasis = 0f;
             forecast.Add(Ui.Text("Прогноз уровня", 13f, Theme.TextDim, true));
@@ -664,7 +675,7 @@ namespace CityHighways.Presentation
             rank.style.marginLeft = 10f;
             levelRow.Add(rank);
             forecast.Add(levelRow);
-            var levelBar = new ProgressBar(320f, 8f, Theme.Success);
+            var levelBar = new ProgressBar(320f, 8f, GameColors.Success);
             levelBar.Set(into / (float)Mathf.Max(1, need));
             levelBar.style.marginTop = 6f;
             forecast.Add(levelBar);
@@ -679,7 +690,7 @@ namespace CityHighways.Presentation
             _content.Add(top);
 
             // График по дням: последние 14 дней.
-            var chartCard = Ui.Card(16f);
+            var chartCard = Card(16f);
             chartCard.style.marginBottom = 12f;
             chartCard.Add(Ui.Text("Влияние по дням · 14 дней", 16f, Theme.Text, true));
             var chartLegend = Caption("зелёное — доход, красное — траты", 12f, Theme.TextDim, 0f, 2f);
@@ -703,7 +714,7 @@ namespace CityHighways.Presentation
             bottom.style.alignItems = Align.FlexStart;
 
             // Источники: откуда пришло и куда ушло.
-            var sources = Ui.Card(16f);
+            var sources = Card(16f);
             sources.style.width = 340f;
             sources.style.marginRight = 12f;
             sources.Add(Ui.Text("Источники влияния", 16f, Theme.Text, true));
@@ -718,10 +729,10 @@ namespace CityHighways.Presentation
                 var caption = Ui.Text(SourceTitle(source), 13f, Theme.Text);
                 caption.style.width = 110f;
                 line.Add(caption);
-                var sourceBar = new ProgressBar(140f, 8f, sum >= 0 ? Theme.Success : Theme.Danger);
+                var sourceBar = new ProgressBar(140f, 8f, sum >= 0 ? GameColors.Success : GameColors.Danger);
                 sourceBar.Set(Mathf.Abs(sum) / (float)maxSource);
                 line.Add(sourceBar);
-                var value = Ui.Number(sum > 0 ? $"+{sum}" : sum.ToString(), 13f, sum >= 0 ? Theme.Success : Theme.Danger, true);
+                var value = Ui.Number(sum > 0 ? $"+{sum}" : sum.ToString(), 13f, sum >= 0 ? GameColors.Success : GameColors.Danger, true);
                 value.style.marginLeft = 8f;
                 line.Add(value);
                 sources.Add(line);
@@ -729,7 +740,7 @@ namespace CityHighways.Presentation
             bottom.Add(sources);
 
             // История с фильтром.
-            var list = Ui.Card(16f);
+            var list = Card(16f);
             list.style.flexGrow = 1f;
             list.style.flexShrink = 1f;
             var listHeader = Ui.Row();
@@ -755,7 +766,7 @@ namespace CityHighways.Presentation
             {
                 var line = Ui.Row();
                 line.style.marginTop = 6f;
-                line.style.backgroundColor = Theme.PanelLight;
+                line.style.backgroundColor = GameColors.Background;
                 Ui.Radius(line, 8f);
                 Ui.Padding(line, 6f, 10f);
                 var when = Ui.Number(entry.time ?? "", 12f, Theme.TextDim);
@@ -768,7 +779,7 @@ namespace CityHighways.Presentation
                 note.style.flexGrow = 1f;
                 note.style.flexShrink = 1f;
                 line.Add(note);
-                line.Add(Ui.Number(entry.amount > 0 ? $"+{entry.amount}" : entry.amount.ToString(), 14f, entry.amount > 0 ? Theme.Success : Theme.Danger, true));
+                line.Add(Ui.Number(entry.amount > 0 ? $"+{entry.amount}" : entry.amount.ToString(), 14f, entry.amount > 0 ? GameColors.Success : GameColors.Danger, true));
                 list.Add(line);
             }
             bottom.Add(list);
@@ -792,7 +803,7 @@ namespace CityHighways.Presentation
             string title = _preview != null && _preview.Kind == ShopKind.Title ? _preview.Id : profile.title;
             string frameId = _preview != null && _preview.Kind == ShopKind.Frame ? _preview.Id : profile.frame;
 
-            var previewCard = Ui.Card(16f);
+            var previewCard = Card(16f);
             previewCard.style.marginBottom = 12f;
             previewCard.style.flexDirection = FlexDirection.Row;
             previewCard.style.alignItems = Align.Center;
@@ -803,10 +814,10 @@ namespace CityHighways.Presentation
                 ? "Так вас видят за столом. Нажмите на предмет — он появится здесь до покупки."
                 : profile.Owns(_preview.Id)
                     ? $"Превью: «{_preview.Name}» — уже куплено, можно надеть."
-                    : $"Превью: «{_preview.Name}» — ещё не куплено ({_preview.Price} влияния).", 12f, _preview == null ? Theme.TextDim : Theme.Gold, 0f, 4f));
+                    : $"Превью: «{_preview.Name}» — ещё не куплено ({_preview.Price} влияния).", 12f, _preview == null ? Theme.TextDim : GameColors.Accent, 0f, 4f));
             if (_preview != null)
             {
-                var reset = Ui.Button("Показать надетое", () => { _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
+                var reset = Btn("Показать надетое", () => { _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
                 reset.style.marginTop = 6f;
                 reset.style.alignSelf = Align.FlexStart;
                 side.Add(reset);
@@ -818,7 +829,7 @@ namespace CityHighways.Presentation
             stage.style.alignItems = Align.Center;
             var row = Ui.Column();
             row.style.width = 380f;
-            row.style.backgroundColor = Theme.PanelLight;
+            row.style.backgroundColor = GameColors.Background;
             Ui.Radius(row, 10f);
             Ui.Padding(row, 12f, 14f);
             var frame = new AnimatedFrame(10f);
@@ -829,18 +840,18 @@ namespace CityHighways.Presentation
             var portrait = new CharacterView(44f, true);
             portrait.Set(profile.Outfit);
             portrait.style.marginRight = 10f;
-            portrait.style.backgroundColor = Theme.Panel;
+            portrait.style.backgroundColor = GameColors.Background;
             Ui.Radius(portrait, 10f);
             line.Add(portrait);
             var badge = new ProfileBadge(22f);
             var frameColor = Profiles.FrameColor(frameId);
-            badge.Set(emblem, frameColor.a > 0f ? frameColor : new Color(0.98f, 0.78f, 0.25f));
+            badge.Set(emblem, frameColor.a > 0f ? frameColor : GameColors.Warning);
             badge.style.marginRight = 8f;
             line.Add(badge);
             var names = Ui.Column();
             names.Add(Ui.Text(profile.name, 20f, Theme.Text, true));
             var titleText = Profiles.TitleText(title);
-            if (titleText.Length > 0) names.Add(Ui.Text(titleText, 13f, new Color(0.98f, 0.78f, 0.25f), true));
+            if (titleText.Length > 0) names.Add(Ui.Text(titleText, 13f, GameColors.Warning, true));
             line.Add(names);
             row.Add(line);
             stage.Add(row);
@@ -855,7 +866,7 @@ namespace CityHighways.Presentation
             var space = Ui.Box();
             space.style.flexGrow = 1f;
             filters.Add(space);
-            filters.Add(Ui.Text($"Кошелёк: {profile.wallet} влияния", 15f, Theme.Gold, true));
+            filters.Add(Ui.Text($"Кошелёк: {profile.wallet} влияния", 15f, GameColors.Accent, true));
             _content.Add(filters);
 
             StyleSection(profile, ShopKind.Emblem, "Эмблемы — у имени");
@@ -896,10 +907,10 @@ namespace CityHighways.Presentation
             cell.style.marginRight = 10f;
             cell.style.marginBottom = 10f;
             cell.style.alignItems = Align.Center;
-            cell.style.backgroundColor = equipped ? Theme.PanelHover : Theme.PanelLight;
+            cell.style.backgroundColor = equipped ? GameColors.ButtonHover : GameColors.Button;
             Ui.Radius(cell, 10f);
             Ui.Padding(cell, 10f, 8f);
-            Ui.Border(cell, previewing || equipped ? 2f : 1f, previewing ? Theme.Accent : equipped ? Theme.Gold : new Color(rarity.r, rarity.g, rarity.b, 0.7f));
+            Ui.Border(cell, previewing || equipped ? 2f : 1f, previewing ? GameColors.Warning : equipped ? GameColors.Accent : new Color(rarity.r, rarity.g, rarity.b, 0.7f));
             cell.style.borderTopWidth = 4f;
             cell.style.borderTopColor = rarity;
             Ui.Transitions(cell, "translate");
@@ -907,7 +918,7 @@ namespace CityHighways.Presentation
             if (item.Kind == ShopKind.Emblem)
             {
                 var badge = new ProfileBadge(30f);
-                badge.Set(item.Id, new Color(0.98f, 0.78f, 0.25f));
+                badge.Set(item.Id, GameColors.Warning);
                 cell.Add(badge);
             }
             else if (item.Kind == ShopKind.Frame)
@@ -916,7 +927,7 @@ namespace CityHighways.Presentation
                 var swatch = Ui.Box();
                 swatch.style.width = 120f;
                 swatch.style.height = 30f;
-                swatch.style.backgroundColor = Theme.Panel;
+                swatch.style.backgroundColor = GameColors.Background;
                 Ui.Radius(swatch, 8f);
                 var animated = new AnimatedFrame(8f);
                 animated.SetColor(Profiles.FrameColor(item.Id));
@@ -924,7 +935,7 @@ namespace CityHighways.Presentation
                 _frames.Add(animated);
                 cell.Add(swatch);
             }
-            var name = Ui.Text(item.Name, 14f, item.Kind == ShopKind.Title ? new Color(0.98f, 0.78f, 0.25f) : Theme.Text, true);
+            var name = Ui.Text(item.Name, 14f, item.Kind == ShopKind.Title ? GameColors.Warning : Theme.Text, true);
             name.style.marginTop = 6f;
             name.style.unityTextAlign = TextAnchor.MiddleCenter;
             cell.Add(name);
@@ -934,12 +945,12 @@ namespace CityHighways.Presentation
 
             UnityEngine.UIElements.Button button;
             if (equipped)
-                button = Ui.Button("Снять", () => { profile.Equip(item.Kind, ""); Profiles.Save(); _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
+                button = Btn("Снять", () => { profile.Equip(item.Kind, ""); Profiles.Save(); _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
             else if (owned)
-                button = Ui.Button("Надеть", () => { profile.Equip(item.Kind, item.Id); Profiles.Save(); _preview = null; _status = $"Надето: {item.Name}."; Rebuild(); }, ButtonKind.Secondary, 13f);
+                button = Btn("Надеть", () => { profile.Equip(item.Kind, item.Id); Profiles.Save(); _preview = null; _status = $"Надето: {item.Name}."; Rebuild(); }, ButtonKind.Secondary, 13f);
             else
             {
-                button = Ui.Button($"Купить · {item.Price}", () =>
+                button = Btn($"Купить · {item.Price}", () =>
                 {
                     var error = Profiles.Buy(profile, item);
                     _status = error ?? $"Куплено: {item.Name}.";
@@ -984,7 +995,7 @@ namespace CityHighways.Presentation
             tiles.style.marginBottom = 8f;
             void Tile(string caption, string value, Color color, string note = null)
             {
-                var tile = Ui.Card(14f);
+                var tile = Card(14f);
                 tile.style.width = 205f;
                 tile.style.marginRight = 10f;
                 tile.style.marginBottom = 10f;
@@ -995,18 +1006,18 @@ namespace CityHighways.Presentation
             }
             Tile("Уровень", $"{level}", ProfileLevel.TierColor(level), ProfileLevel.Rank(level));
             Tile("Партий", $"{profile.games}", Theme.Text);
-            Tile("Побед", $"{profile.wins}", Theme.Success, profile.games > 0 ? $"{100f * profile.wins / profile.games:0}% партий" : null);
-            Tile("Лучший счёт", games.Count > 0 ? $"{best}" : "—", Theme.Gold, games.Count > 0 ? $"в среднем {average:0}" : "по журналу партий");
+            Tile("Побед", $"{profile.wins}", GameColors.Success, profile.games > 0 ? $"{100f * profile.wins / profile.games:0}% партий" : null);
+            Tile("Лучший счёт", games.Count > 0 ? $"{best}" : "—", GameColors.Accent, games.Count > 0 ? $"в среднем {average:0}" : "по журналу партий");
             Tile("Контрактов выполнено", games.Count > 0 ? $"{contracts}" : "—", Theme.Text);
             Tile("Получено за проезд", games.Count > 0 ? $"{tolls}" : "—", Theme.Text);
-            Tile("Достижений", $"{achievements}/{Achievements.All.Count}", Theme.Gold);
+            Tile("Достижений", $"{achievements}/{Achievements.All.Count}", GameColors.Accent);
             Tile("Заданий дня", $"{profile.dailyTotal}", Theme.Text);
-            Tile("Влияния заработано", $"{profile.earnedTotal}", Theme.Gold);
+            Tile("Влияния заработано", $"{profile.earnedTotal}", GameColors.Accent);
             _content.Add(tiles);
 
             if (games.Count > 0)
             {
-                var recent = Ui.Card(14f);
+                var recent = Card(14f);
                 recent.style.marginBottom = 12f;
                 recent.Add(Ui.Text("Последние партии", 16f, Theme.Text, true));
                 foreach (var (game, me) in games.AsEnumerable().Reverse().Take(8))
@@ -1014,16 +1025,16 @@ namespace CityHighways.Presentation
                     int place = game.results.Count(r => r.total > me.total) + 1;
                     var line = Ui.Row();
                     line.style.marginTop = 6f;
-                    line.style.backgroundColor = Theme.PanelLight;
+                    line.style.backgroundColor = GameColors.Background;
                     Ui.Radius(line, 8f);
                     Ui.Padding(line, 6f, 10f);
                     var date = Ui.Number(game.date ?? "", 12f, Theme.TextDim);
                     date.style.width = 150f;
                     line.Add(date);
-                    var where = Ui.Text($"{place}-е место из {game.results.Length}" + (me.winner ? " · победа" : ""), 13f, me.winner ? Theme.Success : Theme.Text, me.winner);
+                    var where = Ui.Text($"{place}-е место из {game.results.Length}" + (me.winner ? " · победа" : ""), 13f, me.winner ? GameColors.Success : Theme.Text, me.winner);
                     where.style.flexGrow = 1f;
                     line.Add(where);
-                    line.Add(Ui.Number($"{me.total} очк", 14f, Theme.Gold, true));
+                    line.Add(Ui.Number($"{me.total} очк", 14f, GameColors.Accent, true));
                     recent.Add(line);
                 }
                 _content.Add(recent);
@@ -1035,7 +1046,7 @@ namespace CityHighways.Presentation
         /// <summary>Аватар, имя, список профилей этого компьютера, создание, удаление, «играть под этим именем».</summary>
         void ProfilesCard(PlayerProfile profile)
         {
-            var card = Ui.Card(14f);
+            var card = Card(14f);
             card.style.marginBottom = 12f;
             card.Add(Ui.Text("Профиль и аватар", 16f, Theme.Text, true));
 
@@ -1054,7 +1065,7 @@ namespace CityHighways.Presentation
                 var renameField = Field(profile.name, 16);
                 renameField.style.width = 280f;
                 renameRow.Add(renameField);
-                var rename = Ui.Button("Сохранить имя", () =>
+                var rename = Btn("Сохранить имя", () =>
                 {
                     string oldName = profile.name;
                     var error = Profiles.Rename(profile, renameField.value);
@@ -1081,7 +1092,7 @@ namespace CityHighways.Presentation
             avatarButtons.style.marginTop = 8f;
             if (FilePicker.Supported)
             {
-                avatarButtons.Add(Ui.Button("Загрузить картинку…", () =>
+                avatarButtons.Add(Btn("Загрузить картинку…", () =>
                 {
                     string path = FilePicker.PickImage();
                     if (path == null) return;
@@ -1094,7 +1105,7 @@ namespace CityHighways.Presentation
                 var pathField = Field("", 260);
                 pathField.style.width = 340f;
                 avatarButtons.Add(pathField);
-                var load = Ui.Button("Загрузить по пути", () =>
+                var load = Btn("Загрузить по пути", () =>
                 {
                     _status = Profiles.ImportAvatar(profile, pathField.value) ?? "Аватар обновлён.";
                     Rebuild();
@@ -1104,7 +1115,7 @@ namespace CityHighways.Presentation
             }
             if (!string.IsNullOrEmpty(profile.avatar))
             {
-                var removeAvatar = Ui.Button(profile.IsSteam ? "Вернуть аватар Steam" : "Убрать картинку", () =>
+                var removeAvatar = Btn(profile.IsSteam ? "Вернуть аватар Steam" : "Убрать картинку", () =>
                 {
                     Profiles.RemoveAvatar(profile);
                     _status = "Картинка убрана.";
@@ -1128,7 +1139,7 @@ namespace CityHighways.Presentation
             {
                 var chosen = other;
                 bool active = other == profile;
-                var chip = Ui.Button(other.name, () => { Profiles.SetActive(chosen); _status = ""; _tryOn = null; _preview = null; Rebuild(); },
+                var chip = Btn(other.name, () => { Profiles.SetActive(chosen); _status = ""; _tryOn = null; _preview = null; Rebuild(); },
                     active ? ButtonKind.Primary : ButtonKind.Secondary, 14f);
                 chip.style.marginRight = 8f;
                 chip.style.marginBottom = 6f;
@@ -1142,7 +1153,7 @@ namespace CityHighways.Presentation
             nameField.style.width = 260f;
             nameField.textEdition.placeholder = "Имя нового профиля";
             createRow.Add(nameField);
-            var create = Ui.Button("Новый профиль", () =>
+            var create = Btn("Новый профиль", () =>
             {
                 string name = (nameField.value ?? "").Trim();
                 if (name.Length == 0) { _status = "Введите имя нового профиля."; Rebuild(); return; }
@@ -1153,7 +1164,7 @@ namespace CityHighways.Presentation
             }, ButtonKind.Secondary, 14f);
             create.style.marginLeft = 10f;
             createRow.Add(create);
-            var play = Ui.Button("Играть под этим именем", () =>
+            var play = Btn("Играть под этим именем", () =>
             {
                 var first = _setup.players.FirstOrDefault(p => !p.isBot);
                 if (first != null) first.name = profile.name;
@@ -1166,7 +1177,7 @@ namespace CityHighways.Presentation
             createRow.Add(play);
             if (Profiles.Book.profiles.Count > 1)
             {
-                var remove = Ui.Button("Удалить профиль", () => { Profiles.Remove(profile); _status = $"Профиль «{profile.name}» удалён."; Rebuild(); },
+                var remove = Btn("Удалить профиль", () => { Profiles.Remove(profile); _status = $"Профиль «{profile.name}» удалён."; Rebuild(); },
                     ButtonKind.Ghost, 14f);
                 remove.style.marginLeft = 10f;
                 createRow.Add(remove);
@@ -1179,10 +1190,29 @@ namespace CityHighways.Presentation
 
         // ================================================================== Мелочи
 
-        /// <summary>Кнопка-фильтр: активная — красная, остальные — тёмные.</summary>
+        /// <summary>Кнопка в палитре профиля: главная — оранжевая с тёмным текстом, обычная — сине-серая, «призрак» — прозрачная.</summary>
+        static UnityEngine.UIElements.Button Btn(string text, Action onClick, ButtonKind kind = ButtonKind.Primary, float fontSize = 16f)
+        {
+            switch (kind)
+            {
+                case ButtonKind.Primary: return Ui.Button(text, onClick, GameColors.Accent, GameColors.AccentHover, GameColors.AccentText, fontSize);
+                case ButtonKind.Secondary: return Ui.Button(text, onClick, GameColors.Button, GameColors.ButtonHover, Theme.Text, fontSize);
+                default: return Ui.Button(text, onClick, kind, fontSize);
+            }
+        }
+
+        /// <summary>Карточка в палитре профиля.</summary>
+        static VisualElement Card(float padding = 14f)
+        {
+            var card = Ui.Card(padding);
+            card.style.backgroundColor = GameColors.PanelBackground;
+            return card;
+        }
+
+        /// <summary>Кнопка-фильтр: активная — оранжевая, остальные — сине-серые.</summary>
         static UnityEngine.UIElements.Button Chip(string text, bool active, Action onClick)
         {
-            var chip = Ui.Button(text, onClick, active ? ButtonKind.Primary : ButtonKind.Secondary, 13f);
+            var chip = Btn(text, onClick, active ? ButtonKind.Primary : ButtonKind.Secondary, 13f);
             chip.style.minHeight = 32f;
             chip.style.marginRight = 6f;
             Ui.Padding(chip, 4f, 12f);
@@ -1209,7 +1239,7 @@ namespace CityHighways.Presentation
             field.style.color = Theme.Text;
             Ui.Margin(field, 0f);
             var input = field.Q(className: TextField.inputUssClassName) ?? field;
-            input.style.backgroundColor = Theme.PanelLight;
+            input.style.backgroundColor = GameColors.Background;
             input.style.color = Theme.Text;
             input.style.minHeight = 36f;
             Ui.Radius(input, 8f);

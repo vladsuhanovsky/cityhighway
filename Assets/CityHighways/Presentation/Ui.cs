@@ -277,7 +277,13 @@ namespace CityHighways.Presentation
                     textColor = Theme.TextDim;
                     break;
             }
+            return Button(text, onClick, normal, hover, textColor, fontSize, kind == ButtonKind.Ghost);
+        }
 
+        /// <summary>Кнопка своих цветов (фон, фон при наведении, текст) — для страниц со своей палитрой.</summary>
+        public static UnityEngine.UIElements.Button Button(string text, Action onClick, Color normal, Color hover, Color textColor,
+            float fontSize = 16f, bool outlined = false)
+        {
             var button = new UnityEngine.UIElements.Button(() =>
             {
                 ButtonClicked?.Invoke();
@@ -291,7 +297,7 @@ namespace CityHighways.Presentation
             button.style.backgroundColor = normal;
             button.style.minHeight = 38f;
             Radius(button, 8f);
-            Border(button, kind == ButtonKind.Ghost ? 1f : 0f, Theme.Line);
+            Border(button, outlined ? 1f : 0f, Theme.Line);
             Padding(button, 8f, 16f);
             Margin(button, 0f);
 

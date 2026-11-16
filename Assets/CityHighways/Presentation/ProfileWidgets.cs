@@ -28,10 +28,10 @@ namespace CityHighways.Presentation
         {
             switch (level)
             {
-                case Level.Rare: return new Color(0.20f, 0.60f, 0.86f);      // #3498DB
-                case Level.Epic: return new Color(0.61f, 0.35f, 0.71f);      // #9B59B6
-                case Level.Legendary: return new Color(0.95f, 0.61f, 0.07f); // #F39C12
-                default: return new Color(0.58f, 0.65f, 0.65f);              // #95A5A6
+                case Level.Rare: return GameColors.Rare;
+                case Level.Epic: return GameColors.Epic;
+                case Level.Legendary: return GameColors.Legendary;
+                default: return GameColors.Common;
             }
         }
 
@@ -334,13 +334,13 @@ namespace CityHighways.Presentation
                 var day = _days[i];
                 if (day.income > 0)
                 {
-                    p.fillColor = Theme.Success;
+                    p.fillColor = GameColors.Success;
                     MenuButton.RoundRect(p, new Rect(cx - bar / 2f, axis - day.income * upScale, bar, day.income * upScale), 3f);
                     p.Fill();
                 }
                 if (day.spent > 0)
                 {
-                    p.fillColor = new Color(Theme.Danger.r, Theme.Danger.g, Theme.Danger.b, 0.8f);
+                    p.fillColor = new Color(GameColors.Danger.r, GameColors.Danger.g, GameColors.Danger.b, 0.8f);
                     MenuButton.RoundRect(p, new Rect(cx - bar / 2f, axis, bar, day.spent * downScale), 3f);
                     p.Fill();
                 }
