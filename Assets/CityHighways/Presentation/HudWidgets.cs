@@ -113,7 +113,7 @@ namespace CityHighways.Presentation
     /// <summary>Кнопка-значок, нарисованная кодом: «бургер» (три полоски) или шестерёнка, с подписью.</summary>
     public sealed class IconButton : Button
     {
-        public enum Glyph { Menu, Gear, Close, Plus, Minus, Fit, Left, Right }
+        public new enum Glyph { Menu, Gear, Close, Plus, Minus, Fit, Left, Right }
 
         readonly Glyph _glyph;
         readonly VisualElement _icon;
