@@ -18,7 +18,8 @@ namespace CityHighways.Presentation
         const float SidebarWidth = 400f;
         const float BottomHeight = 200f;
         const float BotDelay = 0.55f;
-        const int LogLines = 60;
+        /// <summary>Сколько последних записей хранит и показывает журнал (старые уходят).</summary>
+        const int LogHistory = 200;
         const int ResourceCount = ResourceInfo.Count;
 
         enum OverlayKind
@@ -204,6 +205,11 @@ namespace CityHighways.Presentation
         bool _timerExpired;
         SmartBot _timeoutBot;
         int _logTotal;
+        /// <summary>_logTotal на момент последней отрисовки журнала; −1 — журнал надо собрать заново.</summary>
+        int _logShownTotal = -1;
+        /// <summary>Журнал прокручен до конца: новые записи держат его внизу. Прокрутил вверх — журнал стоит на месте.</summary>
+        bool _logStick = true;
+        UnityEngine.UIElements.Button _logNewButton;
         int[] _seenLog;
         bool _dirty = true;
         readonly HashSet<string> _selectedContracts = new HashSet<string>();
@@ -405,7 +411,9 @@ namespace CityHighways.Presentation
             {
                 var scroll = new ScrollView(ScrollViewMode.Vertical);
                 scroll.style.flexGrow = 1f;
-                scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+                scroll.style.flexShrink = 1f;
+                scroll.style.minHeight = 0f;
+                Ui.StyleScroller(scroll);
                 scroll.Add(content);
                 tabHost.Add(scroll);
                 return scroll;
@@ -416,6 +424,25 @@ namespace CityHighways.Presentation
             _goalsPage = Page(_goalsBox);
             _logBox = Ui.Column();
             _logPage = Page(_logBox);
+            // Журнал держится внизу, пока игрок сам не прокрутит его вверх.
+            _logPage.verticalScroller.valueChanged += value =>
+            {
+                _logStick = value >= _logPage.verticalScroller.highValue - 4f;
+                if (_logStick && _logNewButton != null) Ui.Show(_logNewButton, false);
+            };
+            _logPage.contentContainer.RegisterCallback<GeometryChangedEvent>(_ => KeepLogAtEnd());
+            _logPage.contentViewport.RegisterCallback<GeometryChangedEvent>(_ => KeepLogAtEnd());
+            _logNewButton = Ui.Button("Новые записи ↓", () =>
+            {
+                _logStick = true;
+                Ui.Show(_logNewButton, false);
+                ScrollLogToEnd();
+            }, ButtonKind.Secondary, 12f);
+            _logNewButton.style.position = Position.Absolute;
+            _logNewButton.style.bottom = 8f;
+            _logNewButton.style.alignSelf = Align.Center;
+            Ui.Show(_logNewButton, false);
+            tabHost.Add(_logNewButton);
             SelectTab(SideTab.Contracts);
 
             // ---------- Оверлеи и эффекты
@@ -567,6 +594,8 @@ namespace CityHighways.Presentation
             BuildPlayerRows();
 
             _log.Clear();
+            _logShownTotal = -1;
+            _logStick = true;
             AddLog(firstLogLine);
             _revealedFor = -1;
             _selectionKey = null;
@@ -1571,7 +1600,7 @@ namespace CityHighways.Presentation
         {
             _logTotal++;
             _log.Add(message);
-            if (_log.Count > 200) _log.RemoveAt(0);
+            if (_log.Count > LogHistory) _log.RemoveAt(0);
             _dirty = true;
         }
 
@@ -2205,19 +2234,61 @@ namespace CityHighways.Presentation
             _map.ClearContractHighlight();
         }
 
-        void RefreshLog()
+        /// <summary>
+        /// Журнал: новые записи дописываются в конец, а не пересобирают весь список, — поэтому
+        /// прокрутка не прыгает, пока ходят боты. Внизу журнал держится, только если игрок там и был.
+        /// </summary>
+        void RefreshLog(bool rebuild = false)
         {
-            _logBox.Clear();
             if (_sideTab != SideTab.Log) return; // журнал собираем, только когда его видно
-            int start = Math.Max(0, _log.Count - LogLines);
-            for (int i = start; i < _log.Count; i++)
+            int fresh = _logTotal - _logShownTotal;
+            if (!rebuild && _logShownTotal >= 0 && fresh == 0) return; // ничего нового — прокрутку не трогаем
+
+            if (rebuild || _logShownTotal < 0 || fresh >= _log.Count || fresh < 0)
             {
-                var line = Ui.Text(_log[i], 12f, i == _log.Count - 1 ? Theme.Text : Theme.TextDim);
-                line.style.whiteSpace = WhiteSpace.Normal;
-                line.style.marginBottom = 4f;
-                _logBox.Add(line);
+                _logBox.Clear();
+                foreach (var entry in _log) _logBox.Add(LogLine(entry));
             }
-            _logPage.schedule.Execute(() => _logPage.scrollOffset = new Vector2(0f, float.MaxValue));
+            else
+            {
+                for (int i = _log.Count - fresh; i < _log.Count; i++) _logBox.Add(LogLine(_log[i]));
+                while (_logBox.childCount > _log.Count) _logBox.RemoveAt(0);
+            }
+            // Последняя запись — ярче остальных.
+            for (int i = Math.Max(0, _logBox.childCount - fresh - 1); i < _logBox.childCount; i++)
+                _logBox[i].style.color = i == _logBox.childCount - 1 ? Theme.Text : Theme.TextDim;
+
+            bool hadShown = _logShownTotal >= 0;
+            _logShownTotal = _logTotal;
+            if (rebuild) _logStick = true;
+            if (_logStick) ScrollLogToEnd();
+            else if (hadShown && fresh > 0) Ui.Show(_logNewButton, true);
+        }
+
+        static Label LogLine(string text)
+        {
+            var line = Ui.Text(text, 12f, Theme.TextDim);
+            line.style.whiteSpace = WhiteSpace.Normal;
+            line.style.marginBottom = 4f;
+            line.style.flexShrink = 0f;
+            return line;
+        }
+
+        /// <summary>Содержимое журнала поменяло размер — если он был внизу, остаёмся внизу.</summary>
+        void KeepLogAtEnd()
+        {
+            if (_logStick && _sideTab == SideTab.Log) ScrollLogToEnd();
+        }
+
+        void ScrollLogToEnd()
+        {
+            var scroller = _logPage.verticalScroller;
+            scroller.value = scroller.highValue;
+            // Размер прокрутки обновляется после раскладки — повторяем в следующем кадре.
+            _logPage.schedule.Execute(() =>
+            {
+                if (_logStick) scroller.value = scroller.highValue;
+            });
         }
 
         void RefreshStatus()
@@ -3286,11 +3357,12 @@ namespace CityHighways.Presentation
             Ui.Show(_contractsPage, tab == SideTab.Contracts);
             Ui.Show(_goalsPage, tab == SideTab.Goals);
             Ui.Show(_logPage, tab == SideTab.Log);
+            if (tab != SideTab.Log) Ui.Show(_logNewButton, false);
             if (tab == SideTab.Goals && _game != null) _seenGoalOwners = _game.ActiveGoals.Count(g => _game.GoalOwner(g.Id).HasValue);
             if (_game != null)
             {
                 RefreshTabs();
-                if (tab == SideTab.Log) RefreshLog();
+                if (tab == SideTab.Log) RefreshLog(rebuild: true);
             }
         }
 

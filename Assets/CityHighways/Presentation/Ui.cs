@@ -121,6 +121,108 @@ namespace CityHighways.Presentation
         public static void Show(VisualElement e, bool visible) =>
             e.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
 
+        /// <summary>
+        /// Тонкая вертикальная полоса прокрутки в цветах игры: без стрелок, со скруглённым ползунком,
+        /// колесо мыши крутит быстрее стандартного. Стили заданы в коде, поэтому полоса выглядит
+        /// одинаково и без темы в PanelSettings (без темы стандартная полоса рисуется криво).
+        /// </summary>
+        public static void StyleScroller(ScrollView scroll, float wheelStep = 48f)
+        {
+            scroll.mouseWheelScrollSize = wheelStep;
+            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroll.verticalScrollerVisibility = ScrollerVisibility.Auto;
+
+            // Раскладка самой прокрутки: содержимое слева, полоса справа, лишнее обрезается.
+            var row = scroll.Q(className: "unity-scroll-view__content-and-vertical-scroll-container");
+            if (row != null)
+            {
+                row.style.flexDirection = FlexDirection.Row;
+                row.style.flexGrow = 1f;
+                row.style.flexShrink = 1f;
+                row.style.minHeight = 0f;
+            }
+            scroll.contentViewport.style.flexGrow = 1f;
+            scroll.contentViewport.style.flexShrink = 1f;
+            scroll.contentViewport.style.minWidth = 0f;
+            scroll.contentViewport.style.overflow = Overflow.Hidden;
+            scroll.contentContainer.style.flexShrink = 0f;
+
+            var scroller = scroll.verticalScroller;
+            scroller.style.flexShrink = 0f;
+            scroller.style.width = 8f;
+            scroller.style.minWidth = 8f;
+            scroller.style.marginLeft = 4f;
+            scroller.style.backgroundColor = Color.clear;
+            NoBorder(scroller);
+            Show(scroller.lowButton, false);
+            Show(scroller.highButton, false);
+
+            var slider = scroller.slider;
+            slider.style.flexGrow = 1f;
+            slider.style.marginLeft = 0f;
+            slider.style.marginRight = 0f;
+            slider.style.marginTop = 0f;
+            slider.style.marginBottom = 0f;
+            slider.style.minWidth = 0f;
+            slider.style.minHeight = 0f;
+            foreach (var name in new[] { "unity-base-slider__input", "unity-base-slider__drag-container" })
+            {
+                var part = slider.Q(className: name);
+                if (part == null) continue;
+                part.style.flexGrow = 1f;
+                part.style.marginLeft = 0f;
+                part.style.marginRight = 0f;
+                part.style.minWidth = 0f;
+                part.style.minHeight = 0f;
+            }
+
+            var tracker = slider.Q(className: "unity-base-slider__tracker");
+            if (tracker != null)
+            {
+                tracker.style.position = Position.Absolute;
+                tracker.style.left = 0f;
+                tracker.style.right = 0f;
+                tracker.style.top = 0f;
+                tracker.style.bottom = 0f;
+                tracker.style.width = StyleKeyword.Auto;
+                tracker.style.height = StyleKeyword.Auto;
+                tracker.style.marginLeft = 0f;
+                tracker.style.marginRight = 0f;
+                tracker.style.backgroundColor = new Color(1f, 1f, 1f, 0.04f);
+                NoBorder(tracker);
+                Radius(tracker, 4f);
+            }
+
+            var border = slider.Q(className: "unity-base-slider__dragger-border");
+            if (border != null) Show(border, false);
+
+            var dragger = slider.Q(className: "unity-base-slider__dragger");
+            if (dragger != null)
+            {
+                var idle = new Color(Theme.TextDim.r, Theme.TextDim.g, Theme.TextDim.b, 0.35f);
+                var hover = new Color(Theme.TextDim.r, Theme.TextDim.g, Theme.TextDim.b, 0.7f);
+                dragger.style.position = Position.Absolute;
+                dragger.style.left = 0f;
+                dragger.style.width = 8f;
+                dragger.style.minHeight = 28f;
+                dragger.style.marginLeft = 0f;
+                dragger.style.marginRight = 0f;
+                dragger.style.backgroundColor = idle;
+                NoBorder(dragger);
+                Radius(dragger, 4f);
+                dragger.RegisterCallback<PointerEnterEvent>(_ => dragger.style.backgroundColor = hover);
+                dragger.RegisterCallback<PointerLeaveEvent>(_ => dragger.style.backgroundColor = idle);
+            }
+        }
+
+        static void NoBorder(VisualElement e)
+        {
+            e.style.borderLeftWidth = 0f;
+            e.style.borderRightWidth = 0f;
+            e.style.borderTopWidth = 0f;
+            e.style.borderBottomWidth = 0f;
+        }
+
         /// <summary>Панель-карточка: тёмный фон, скругление, тонкая рамка.</summary>
         public static VisualElement Card(float padding = 14f)
         {

@@ -41,6 +41,7 @@ namespace CityHighways.Presentation
 
             var scroll = new ScrollView(ScrollViewMode.Vertical);
             scroll.style.maxHeight = 760f;
+            Ui.StyleScroller(scroll);
             Root.Add(scroll);
             _content = Ui.Column();
             scroll.Add(_content);

@@ -34,6 +34,7 @@ namespace CityHighways.Presentation
             var content = new ScrollView(ScrollViewMode.Vertical);
             content.style.flexGrow = 1f;
             content.style.height = 640f;
+            Ui.StyleScroller(content);
             content.style.backgroundColor = Theme.Panel;
             Ui.Radius(content, 12f);
             Ui.Padding(content.contentContainer, 22f, 26f);

@@ -44,6 +44,7 @@ namespace CityHighways.Presentation
 
             var scroll = new ScrollView(ScrollViewMode.Vertical);
             scroll.style.height = 660f;
+            Ui.StyleScroller(scroll);
             page.Add(scroll);
 
             scroll.Add(Totals(games));
