@@ -15,6 +15,8 @@ namespace CityHighways.Presentation
         public int width;
         public int height;
         public float volume = 0.8f;
+        /// <summary>Игровое поле с лёгким наклоном (2.5D); выключено — плоская карта сверху.</summary>
+        public bool tiltedBoard = true;
 
         public static DisplaySettings Load()
         {

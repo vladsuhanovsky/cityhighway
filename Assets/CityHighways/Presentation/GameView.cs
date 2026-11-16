@@ -589,6 +589,7 @@ namespace CityHighways.Presentation
             for (int i = 0; i < _bots.Length; i++)
                 if (IsRealBot(i)) _bots[i] = _setup.players[i].CreateBot(UnityEngine.Random.Range(0, int.MaxValue));
 
+            _map.TiltEnabled = _app.Display == null || _app.Display.tiltedBoard;
             _map.SetGame(_game);
             BuildFaceUpRow();
             BuildPlayerRows();
@@ -619,8 +620,7 @@ namespace CityHighways.Presentation
         {
             if (_game == null) return;
 
-            _map.PulseTime += deltaTime;
-            _map.Repaint();
+            _map.Tick(deltaTime);
             if (_game.Phase != GamePhase.GameOver) _playSeconds += deltaTime;
 
             if (_flash != null && Time.time > _flashUntil)
@@ -889,6 +889,7 @@ namespace CityHighways.Presentation
                     Flash(blocker);
                     return;
                 }
+                _map.SelectedRoadId = route.Id;
                 ShowUpgrade(route, position);
                 return;
             }
@@ -897,6 +898,7 @@ namespace CityHighways.Presentation
             if (_game.CanBuildRoadFree(route.Id))
             {
                 // Прорабу всегда предлагаем выбор: бесплатно или картами.
+                _map.SelectedRoadId = route.Id;
                 ShowPayment(route, options, position, true);
                 return;
             }
@@ -911,6 +913,7 @@ namespace CityHighways.Presentation
                 Act(() => _game.BuildRoad(route.Id, only.Resource, only.Machinery));
                 return;
             }
+            _map.SelectedRoadId = route.Id;
             ShowPayment(route, options, position);
         }
 
@@ -2432,6 +2435,7 @@ namespace CityHighways.Presentation
             _overlayKind = kind;
             _map.Interactive = false;
             _map.Affordable.Clear();
+            if (kind != OverlayKind.Payment && kind != OverlayKind.Upgrade) _map.SelectedRoadId = null;
         }
 
         void HideOverlay()
@@ -2441,6 +2445,7 @@ namespace CityHighways.Presentation
             _overlayKind = OverlayKind.None;
             _overlayPlayer = -1;
             _map.Interactive = true;
+            _map.SelectedRoadId = null;
             _dirty = true;
         }
 

@@ -353,6 +353,18 @@ namespace CityHighways.Presentation
             resolutionRow.Add(resolution);
             card.Add(resolutionRow);
 
+            var tiltRow = SettingRow("Наклон поля (2.5D)");
+            var tiltButton = Ui.Button(_display.tiltedBoard ? "Включён" : "Выключен", () => { }, ButtonKind.Secondary, 14f);
+            tiltButton.style.width = 200f;
+            tiltButton.clicked += () =>
+            {
+                _display.tiltedBoard = !_display.tiltedBoard;
+                _display.Save();
+                tiltButton.text = _display.tiltedBoard ? "Включён" : "Выключен";
+            };
+            tiltRow.Add(tiltButton);
+            card.Add(tiltRow);
+
             var editorNote = Ui.Text("В редакторе режим и разрешение задаёт окно Game — они применятся в собранной игре.", 12f, Theme.TextDim);
             editorNote.style.whiteSpace = WhiteSpace.Normal;
             editorNote.style.marginBottom = 10f;
