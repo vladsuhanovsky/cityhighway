@@ -44,13 +44,23 @@ namespace CityHighways.Presentation
 
         /// <summary>Наклон: 0 — плоская карта сверху, 1 — полный лёгкий наклон.</summary>
         public float Tilt { get; private set; }
+        /// <summary>Приближение: 1 — вся карта, больше — крупнее (колесо мыши, мини-карта).</summary>
+        public float Zoom { get; private set; } = 1f;
+        /// <summary>Сдвиг приближённой карты в пикселях поля.</summary>
+        public Vector2 Pan { get; private set; }
 
-        public void Fit(Rect area, float tilt)
+        public void Fit(Rect area, float tilt) => Fit(area, tilt, Zoom, Pan);
+
+        public void Fit(Rect area, float tilt, float zoom, Vector2 pan)
         {
             tilt = Mathf.Clamp01(tilt);
-            if (area == _area && Mathf.Abs(tilt - Tilt) < 0.0001f && _positions.Count > 0) return;
+            zoom = Mathf.Max(1f, zoom);
+            if (area == _area && Mathf.Abs(tilt - Tilt) < 0.0001f && Mathf.Abs(zoom - Zoom) < 0.0001f
+                && (pan - Pan).sqrMagnitude < 0.0001f && _positions.Count > 0) return;
             _area = area;
             Tilt = tilt;
+            Zoom = zoom;
+            Pan = ClampPan(pan, zoom);
             _positions.Clear();
             foreach (var location in _map.Locations) _positions[location.Id] = ToScreen(location.X, location.Y);
         }
@@ -74,7 +84,10 @@ namespace CityHighways.Presentation
         /// Нормализованные координаты карты (0..1) → пиксели поля. С наклоном — перспектива:
         /// ширина строки ∝ 1/z, высота на экране линейна по 1/z, поэтому прямые остаются прямыми.
         /// </summary>
-        public Vector2 ToScreen(float x, float y)
+        public Vector2 ToScreen(float x, float y) => View(Project(x, y));
+
+        /// <summary>Проекция без приближения: вся карта в окне.</summary>
+        Vector2 Project(float x, float y)
         {
             float width = Right - Left, height = Bottom - Top;
             if (Flat) return new Vector2(Left + x * width, Top + y * height);
@@ -82,6 +95,43 @@ namespace CityHighways.Presentation
             float w0 = FarWidth;
             float ny = (w - w0) / (1f - w0);
             return new Vector2((Left + Right) / 2f + (x - 0.5f) * width * w, Top + ny * height);
+        }
+
+        Vector2 ViewCenter => _area.center;
+
+        /// <summary>Приближение вокруг центра поля и сдвиг.</summary>
+        Vector2 View(Vector2 projected) => ViewCenter + (projected - ViewCenter) * Zoom + Pan;
+
+        /// <summary>Обратно к проекции без приближения.</summary>
+        Vector2 Unview(Vector2 screen) => ViewCenter + (screen - ViewCenter - Pan) / Zoom;
+
+        /// <summary>Сдвиг не даёт увести карту из окна: край приближённой карты не заходит внутрь поля.</summary>
+        public Vector2 ClampPan(Vector2 pan, float zoom)
+        {
+            float maxX = (zoom - 1f) * _area.width / 2f;
+            float maxY = (zoom - 1f) * _area.height / 2f;
+            return new Vector2(Mathf.Clamp(pan.x, -maxX, maxX), Mathf.Clamp(pan.y, -maxY, maxY));
+        }
+
+        /// <summary>Сдвиг, при котором точка карты (x, y) окажется в центре поля при этом приближении.</summary>
+        public Vector2 PanToCenter(float x, float y, float zoom) =>
+            ClampPan(-(Project(x, y) - ViewCenter) * zoom, zoom);
+
+        /// <summary>Сдвиг, при котором экранная точка anchor останется на месте после смены приближения.</summary>
+        public Vector2 PanForZoomAt(Vector2 anchor, float newZoom)
+        {
+            var offset = anchor - ViewCenter - Pan;
+            return ClampPan(anchor - ViewCenter - offset * (newZoom / Zoom), newZoom);
+        }
+
+        /// <summary>Экранная точка → координаты карты (0..1), с учётом приближения и наклона.</summary>
+        public Vector2 ScreenToMap(Vector2 screen)
+        {
+            var p = Unview(screen);
+            float width = Mathf.Max(1f, Right - Left);
+            float y = MapY(p.y);
+            float x = 0.5f + (p.x - (Left + Right) / 2f) / (width * DepthOf(y));
+            return new Vector2(x, y);
         }
 
         /// <summary>Строка карты (y), которая видна на высоте экрана screenY.</summary>
@@ -98,7 +148,7 @@ namespace CityHighways.Presentation
         public float ScaleAt(Vector2 screen)
         {
             if (Flat) return 1f;
-            float ny = (screen.y - Top) / Mathf.Max(1f, Bottom - Top);
+            float ny = (Unview(screen).y - Top) / Mathf.Max(1f, Bottom - Top);
             return Mathf.Clamp(FarWidth + ny * (1f - FarWidth), 0.6f, 1.15f);
         }
 

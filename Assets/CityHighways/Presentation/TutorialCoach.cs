@@ -62,10 +62,10 @@ namespace CityHighways.Presentation
             Panel.style.position = Position.Absolute;
             Panel.style.width = 380f;
             Panel.style.backgroundColor = new Color(0.10f, 0.12f, 0.15f, 0.96f);
-            Ui.Border(Panel, 2f, Theme.Accent);
+            Ui.Border(Panel, 2f, Theme.Gold);
             _counter = Ui.Text("", 11f, Theme.TextDim, true);
             Panel.Add(_counter);
-            _title = Ui.Text("", 19f, Theme.Accent, true);
+            _title = Ui.Text("", 19f, Theme.Gold, true);
             _title.style.marginTop = 2f;
             Panel.Add(_title);
             _text = Ui.Text("", 14f, Theme.Text);
@@ -95,7 +95,7 @@ namespace CityHighways.Presentation
             new Step
             {
                 Title = "Стартовые контракты",
-                Text = () => "Справа — контракты: соединить два района своими дорогами (подойдёт любое место района). " +
+                Text = () => "Внизу, в панели «Контракты», — контракты: соединить два района своими дорогами (подойдёт любое место района). " +
                              "Выполненный приносит очки, невыполненный в конце отнимает. Наведите на контракт — районы подсветятся. " +
                              "Оставьте хотя бы два и нажмите «Взять выбранные».",
                 Done = () => _game.Phase != GamePhase.SetupContracts
@@ -103,7 +103,7 @@ namespace CityHighways.Presentation
             new Step
             {
                 Title = "Возьмите карты",
-                Text = () => "За ход можно взять 2 карты — из открытого ряда под картой или из колоды. " +
+                Text = () => "За ход можно взять 2 карты — в панели «Действия» внизу: из открытого ряда или из колоды. " +
                              NeedText() + " Техника — джокер: заменяет любую карту, но открытую технику можно взять только одну за ход.",
                 Done = () => _game.TurnNumber > 1 || MePlayer.Roads.Count > 0,
                 HintRoad = true
@@ -140,14 +140,14 @@ namespace CityHighways.Presentation
             new Step
             {
                 Title = "Контракт выполнен!",
-                Text = () => "Очки за него посчитаются в конце, а влияние — валюта мэрии — уже у вас. Кнопка «Влияние» под открытыми картами: " +
+                Text = () => "Очки за него посчитаются в конце, а влияние — валюта мэрии — уже у вас. Кнопка «Влияние» — в панели «Действия»: " +
                              "можно обновить рынок или взять контракты с выбором. Остаток влияния после партии уйдёт в профиль — на одежду персонажа и оформление."
             },
             new Step
             {
                 Title = "Новые контракты",
                 When = () => _game.Phase == GamePhase.AwaitingAction && MePlayer.Contracts.All(c => MePlayer.PaidRouteList.ContainsKey(c.Id)),
-                Text = () => "Все ваши контракты выполнены. Пока участки ещё есть, возьмите новые — кнопка «Взять контракты» (это занимает ход). " +
+                Text = () => "Все ваши контракты выполнены. Пока участки ещё есть, возьмите новые — кнопка «Взять контракты» в панели «Действия» (это занимает ход). " +
                              "Оставить нужно хотя бы один. Или просто стройте длинные дороги — они тоже приносят очки.",
                 Done = () => MePlayer.Contracts.Any(c => !MePlayer.PaidRouteList.ContainsKey(c.Id)) || _game.IsFinalRound
             },

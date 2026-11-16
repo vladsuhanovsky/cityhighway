@@ -139,7 +139,7 @@ namespace CityHighways.Presentation
             _cornerName = Ui.Text("", 17f, Theme.Text, true);
             _cornerName.pickingMode = PickingMode.Ignore;
             texts.Add(_cornerName);
-            _cornerWallet = Ui.Text("", 13f, Theme.Accent);
+            _cornerWallet = Ui.Text("", 13f, Theme.Gold);
             _cornerWallet.pickingMode = PickingMode.Ignore;
             texts.Add(_cornerWallet);
             var hint = Ui.Text("Профиль и оформление", 11f, Theme.TextDim);
@@ -187,7 +187,7 @@ namespace CityHighways.Presentation
             var backButton = Ui.Button("← Назад", back, ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             row.Add(backButton);
-            row.Add(Ui.Text(text, 34f, Theme.Accent, true));
+            row.Add(Ui.Text(text, 34f, Theme.Gold, true));
             return row;
         }
 
@@ -198,7 +198,8 @@ namespace CityHighways.Presentation
             var page = Ui.Column();
             page.style.alignItems = Align.Center;
 
-            var title = Ui.Text("City Highways", 72f, Theme.Accent, true);
+            var title = Ui.Text("City Highways", 72f, Theme.Gold, true);
+            Fonts.Apply(title, Fonts.Weight.Logo);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
             page.Add(title);
             var subtitle = Ui.Text("Стройте дороги Москвы, выполняйте контракты мэрии и берите плату за проезд", 17f, Theme.TextDim);
@@ -418,13 +419,13 @@ namespace CityHighways.Presentation
             var card = Ui.Row();
             card.style.backgroundColor = new Color(0.25f, 0.21f, 0.13f);
             Ui.Radius(card, 10f);
-            Ui.Border(card, 2f, Theme.Accent);
+            Ui.Border(card, 2f, Theme.Gold);
             Ui.Padding(card, 14f, 20f);
             card.style.marginBottom = 14f;
 
             var texts = Ui.Column();
             texts.style.flexGrow = 1f;
-            texts.Add(Ui.Text("Незаконченная партия", 18f, Theme.Accent, true));
+            texts.Add(Ui.Text("Незаконченная партия", 18f, Theme.Gold, true));
             var names = string.Join(", ", saved.setup.PlayerNames());
             int turn = saved.game != null ? saved.game.turnNumber : 0;
             texts.Add(Ui.Text($"{names} · ход {turn} · сохранена {saved.savedAt}", 14f, Theme.Text));

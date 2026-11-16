@@ -74,7 +74,7 @@ namespace CityHighways.Presentation
             ugsCard.style.flexGrow = 1f;
             ugsCard.style.flexBasis = 0f;
             ugsCard.style.marginRight = 14f;
-            ugsCard.Add(Ui.Text("Через интернет", 22f, Theme.Accent, true));
+            ugsCard.Add(Ui.Text("Через интернет", 22f, Theme.Gold, true));
             if (NetPlatforms.Ugs == null)
             {
                 ugsCard.Add(Note("Нужен пакет Multiplayer Services и привязка проекта к Unity Cloud — как настроить, написано в README, раздел «Unity Relay и Lobby»."));
@@ -115,7 +115,7 @@ namespace CityHighways.Presentation
             steamCard.style.flexGrow = 1f;
             steamCard.style.flexBasis = 0f;
             steamCard.style.marginRight = 14f;
-            steamCard.Add(Ui.Text("Steam", 22f, Theme.Accent, true));
+            steamCard.Add(Ui.Text("Steam", 22f, Theme.Gold, true));
             var steam = NetPlatforms.Steam;
             if (steam == null)
             {
@@ -149,7 +149,7 @@ namespace CityHighways.Presentation
             var lanCard = Ui.Card(18f);
             lanCard.style.flexGrow = 1f;
             lanCard.style.flexBasis = 0f;
-            lanCard.Add(Ui.Text("Локальная сеть", 22f, Theme.Accent, true));
+            lanCard.Add(Ui.Text("Локальная сеть", 22f, Theme.Gold, true));
             lanCard.Add(Note($"Компьютеры в одной сети (или два окна игры на одном компьютере). Хост открывает порт {TcpTransport.DefaultPort}; брандмауэр может спросить разрешение."));
             var hostLan = Ui.Button("Создать игру", HostLan, ButtonKind.Primary, 17f);
             hostLan.style.marginTop = 10f;
@@ -525,7 +525,7 @@ namespace CityHighways.Presentation
             var backButton = Ui.Button("← Назад", back, ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             row.Add(backButton);
-            row.Add(Ui.Text(text, 34f, Theme.Accent, true));
+            row.Add(Ui.Text(text, 34f, Theme.Gold, true));
             return row;
         }
 

@@ -19,7 +19,7 @@ namespace CityHighways.Presentation
             var backButton = Ui.Button("← Назад", back, ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             header.Add(backButton);
-            header.Add(Ui.Text("Правила", 34f, Theme.Accent, true));
+            header.Add(Ui.Text("Правила", 34f, Theme.Gold, true));
             page.Add(header);
 
             var body = Ui.Row();
@@ -63,8 +63,8 @@ namespace CityHighways.Presentation
                 for (int i = 0; i < buttons.Count; i++)
                 {
                     bool active = i == index;
-                    buttons[i].style.backgroundColor = active ? Theme.Accent : Theme.PanelLight;
-                    buttons[i].style.color = active ? Theme.AccentText : Theme.Text;
+                    buttons[i].style.backgroundColor = active ? Theme.Gold : Theme.PanelLight;
+                    buttons[i].style.color = active ? Theme.GoldText : Theme.Text;
                 }
             }
             for (int i = 0; i < sections.Count; i++)
@@ -86,7 +86,7 @@ namespace CityHighways.Presentation
         static VisualElement Section(string title)
         {
             var column = Ui.Column();
-            column.Add(Ui.Text(title, 24f, Theme.Accent, true));
+            column.Add(Ui.Text(title, 24f, Theme.Gold, true));
             return column;
         }
 
@@ -180,7 +180,7 @@ namespace CityHighways.Presentation
                 Ui.Radius(bar, 3f);
                 cell.Add(bar);
                 cell.Add(Ui.Text($"длина {length}", 11f, Theme.TextDim));
-                cell.Add(Ui.Text($"+{config.PointsForLength(length)}", 16f, Theme.Accent, true));
+                cell.Add(Ui.Text($"+{config.PointsForLength(length)}", 16f, Theme.Gold, true));
                 points.Add(cell);
             }
             Picture(s, points, "Очки за построенную дорогу: длинные дороги выгоднее.");
@@ -193,7 +193,7 @@ namespace CityHighways.Presentation
             card.style.width = 220f;
             card.style.backgroundColor = Theme.PanelLight;
             Ui.Radius(card, 10f);
-            card.Add(Ui.Text(title, 15f, Theme.Accent, true));
+            card.Add(Ui.Text(title, 15f, Theme.Gold, true));
             var body = Ui.Text(text, 13f, Theme.Text);
             body.style.whiteSpace = WhiteSpace.Normal;
             body.style.marginTop = 4f;
@@ -416,7 +416,7 @@ namespace CityHighways.Presentation
                 ("Удача", "гранты, премии и штрафы карт удачи"),
                 ("Персонаж", "Чиновник — за контракты, Мостовик — за мосты")
             };
-            foreach (var (title, text) in lines) s.Add(Tile(title, text, Theme.Accent));
+            foreach (var (title, text) in lines) s.Add(Tile(title, text, Theme.Gold));
             return s;
         }
     }

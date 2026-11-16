@@ -31,6 +31,18 @@ namespace CityHighways.Presentation
 
         public event Action<Road, Vector2> Hovered;
         public event Action<Road, Vector2> RoadClicked;
+        /// <summary>Курсор над местом (null — ушёл с места). Для подсказок по элементам карты.</summary>
+        public event Action<Location, Vector2> LocationHovered;
+        /// <summary>Приближение или сдвиг карты изменились (мини-карта перерисовывает рамку обзора).</summary>
+        public event Action ViewChanged;
+
+        public const float MaxZoom = 2.6f;
+        float _zoom = 1f, _zoomTarget = 1f;
+        Vector2 _pan, _panTarget;
+        bool _panning;
+        Vector2 _panStartPointer, _panStartOffset;
+        int _panPointer = -1;
+        Location _hoverLocation;
 
         public Road HoverRoad { get; private set; }
         /// <summary>Дороги, которые текущий игрок может построить прямо сейчас (мягко пульсируют).</summary>
@@ -130,16 +142,135 @@ namespace CityHighways.Presentation
             RegisterCallback<PointerMoveEvent>(e =>
             {
                 Vector2 position = e.localPosition;
-                SetHover(Interactive && _game != null ? OpenRoadAt(position) : null, position);
+                if (_panning && e.pointerId == _panPointer)
+                {
+                    // Перетаскивание карты: сдвиг идёт за курсором без задержки.
+                    _panTarget = _layout.ClampPan(_panStartOffset + (position - _panStartPointer), _zoomTarget);
+                    _pan = _panTarget;
+                    Relayout();
+                    ViewChanged?.Invoke();
+                    return;
+                }
+                var road = Interactive && _game != null ? OpenRoadAt(position) : null;
+                SetHover(road, position);
+                SetHoverLocation(road == null && _game != null ? LocationAt(position) : null, position);
             });
-            RegisterCallback<PointerLeaveEvent>(_ => SetHover(null, Vector2.zero));
+            RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                SetHover(null, Vector2.zero);
+                SetHoverLocation(null, Vector2.zero);
+            });
             RegisterCallback<PointerDownEvent>(e =>
             {
-                if (e.button != 0 || !Interactive || _game == null) return;
+                if (_game == null) return;
                 Vector2 position = e.localPosition;
-                var road = OpenRoadAt(position);
-                if (road != null) RoadClicked?.Invoke(road, position);
+                var road = e.button == 0 && Interactive ? OpenRoadAt(position) : null;
+                if (road != null)
+                {
+                    RoadClicked?.Invoke(road, position);
+                    return;
+                }
+                // Пусто под курсором (или правая/средняя кнопка) — тянем карту, если она приближена.
+                if (_zoomTarget > 1.001f)
+                {
+                    _panning = true;
+                    _panPointer = e.pointerId;
+                    _panStartPointer = position;
+                    _panStartOffset = _panTarget;
+                    this.CapturePointer(e.pointerId);
+                    SetHover(null, position);
+                    SetHoverLocation(null, position);
+                }
             });
+            RegisterCallback<PointerUpEvent>(e =>
+            {
+                if (!_panning || e.pointerId != _panPointer) return;
+                _panning = false;
+                if (this.HasPointerCapture(e.pointerId)) this.ReleasePointer(e.pointerId);
+            });
+            // Колесо мыши — приближение к точке под курсором.
+            RegisterCallback<WheelEvent>(e =>
+            {
+                if (_game == null || Mathf.Abs(e.delta.y) < 0.01f) return;
+                ZoomAt(e.localMousePosition, e.delta.y > 0f ? 1f / 1.2f : 1.2f);
+                e.StopPropagation();
+            });
+        }
+
+        // ================================================================== Обзор: приближение и сдвиг
+
+        public float Zoom => _zoomTarget;
+
+        /// <summary>Приблизить (factor больше 1) или отдалить так, чтобы точка anchor осталась под курсором.</summary>
+        public void ZoomAt(Vector2 anchor, float factor)
+        {
+            if (_layout == null) return;
+            float zoom = Mathf.Clamp(_zoomTarget * factor, 1f, MaxZoom);
+            var center = _layout.Area.center;
+            var offset = anchor - center - _panTarget;
+            _panTarget = _layout.ClampPan(anchor - center - offset * (zoom / _zoomTarget), zoom);
+            _zoomTarget = zoom;
+            ViewChanged?.Invoke();
+        }
+
+        /// <summary>Приблизить или отдалить вокруг центра поля (кнопки на мини-карте).</summary>
+        public void ZoomBy(float factor)
+        {
+            if (_layout != null) ZoomAt(_layout.Area.center, factor);
+        }
+
+        /// <summary>Показать всю карту.</summary>
+        public void ResetView()
+        {
+            _zoomTarget = 1f;
+            _panTarget = Vector2.zero;
+            ViewChanged?.Invoke();
+        }
+
+        /// <summary>Поставить точку карты (координаты 0..1) в центр поля; без приближения — сначала приблизить.</summary>
+        public void CenterOn(Vector2 mapPoint)
+        {
+            if (_layout == null) return;
+            if (_zoomTarget < 1.5f) _zoomTarget = 1.8f;
+            _panTarget = _layout.PanToCenter(mapPoint.x, mapPoint.y, _zoomTarget);
+            ViewChanged?.Invoke();
+        }
+
+        /// <summary>Углы видимой части поля в координатах карты (0..1): левый верхний, правый верхний, правый нижний, левый нижний.</summary>
+        public void ViewportCorners(Vector2[] corners)
+        {
+            if (_layout == null || corners == null || corners.Length < 4) return;
+            var r = _layout.Area;
+            corners[0] = _layout.ScreenToMap(new Vector2(r.xMin, r.yMin));
+            corners[1] = _layout.ScreenToMap(new Vector2(r.xMax, r.yMin));
+            corners[2] = _layout.ScreenToMap(new Vector2(r.xMax, r.yMax));
+            corners[3] = _layout.ScreenToMap(new Vector2(r.xMin, r.yMax));
+        }
+
+        /// <summary>Открытое место под курсором (в радиусе фишки с запасом).</summary>
+        Location LocationAt(Vector2 position)
+        {
+            if (_layout == null) return null;
+            Location best = null;
+            float bestDistance = BoardLayout.LocationRadius + 6f;
+            foreach (var location in _game.Map.Locations)
+            {
+                if (!_game.IsLocationOpen(location.Id)) continue;
+                float distance = Vector2.Distance(position, _layout.LocationPosition(location.Id));
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = location;
+                }
+            }
+            return best;
+        }
+
+        void SetHoverLocation(Location location, Vector2 position)
+        {
+            if (location == null && _hoverLocation == null) return;
+            _hoverLocation = location;
+            LocationHovered?.Invoke(location, position);
         }
 
         public void SetGame(Game game)
@@ -155,6 +286,9 @@ namespace CityHighways.Presentation
             HoverRoad = null;
             SelectedRoadId = null;
             _tiltProgress = 0f;
+            _zoom = _zoomTarget = 1f;
+            _pan = _panTarget = Vector2.zero;
+            _panning = false;
             _dimLevel = 0f;
             _districtLit.Clear();
             _districtLitColor.Clear();
@@ -327,6 +461,16 @@ namespace CityHighways.Presentation
 
             _hoverFade = Mathf.MoveTowards(_hoverFade, 1f, dt / 0.15f);
             UpdateClock();
+
+            // Приближение и сдвиг догоняют цель плавно (колесо, кнопки, клик по мини-карте).
+            if (Mathf.Abs(_zoom - _zoomTarget) > 0.0005f || (_pan - _panTarget).sqrMagnitude > 0.05f)
+            {
+                float k = 1f - Mathf.Exp(-dt * 12f);
+                _zoom = Mathf.Abs(_zoom - _zoomTarget) < 0.001f ? _zoomTarget : Mathf.Lerp(_zoom, _zoomTarget, k);
+                _pan = (_pan - _panTarget).sqrMagnitude < 0.25f ? _panTarget : Vector2.Lerp(_pan, _panTarget, k);
+                Relayout();
+                ViewChanged?.Invoke();
+            }
         }
 
         float DistrictLit(string districtId) => _districtLit.TryGetValue(districtId, out var v) ? v : 0f;
@@ -397,10 +541,11 @@ namespace CityHighways.Presentation
             Ui.Border(sign, 3f, Color.white);
             Ui.Radius(sign, 8f);
             Ui.Padding(sign, 8f, 16f);
-            var title = Ui.Text("City Highways", 20f, Color.white, true);
+            // Логотип игры — в верхней панели экрана; на табличке — город и время суток.
+            var title = Ui.Text(city, 20f, Color.white, true);
+            Fonts.Apply(title, Fonts.Weight.Logo);
             title.style.whiteSpace = WhiteSpace.NoWrap;
             sign.Add(title);
-            sign.Add(Ui.Text(city, 13f, new Color(1f, 1f, 1f, 0.85f)));
             // Время суток на поле: идёт вместе с партией, к финалу — вечер и ночь.
             _clockLabel = Ui.Text("", 12f, new Color(1f, 1f, 1f, 0.75f));
             _clockLabel.style.marginTop = 2f;
@@ -416,7 +561,8 @@ namespace CityHighways.Presentation
             var rect = contentRect;
             if (float.IsNaN(rect.width) || rect.width < 50f || rect.height < 50f) return;
             float tilt = Smooth01(_tiltProgress);
-            _layout.Fit(new Rect(0f, 0f, rect.width, rect.height), tilt);
+            _layout.Fit(new Rect(0f, 0f, rect.width, rect.height), tilt, _zoom, _pan);
+            _pan = _layout.Pan;
             _terrainLayer.style.backgroundColor = Color.Lerp(Land, Table, tilt);
 
             foreach (var pair in _locationLabels)

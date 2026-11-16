@@ -36,7 +36,7 @@ namespace CityHighways.Presentation
             var backButton = Ui.Button("← Назад", () => _back(), ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             header.Add(backButton);
-            header.Add(Ui.Text("Профиль", 34f, Theme.Accent, true));
+            header.Add(Ui.Text("Профиль", 34f, Theme.Gold, true));
             Root.Add(header);
 
             var scroll = new ScrollView(ScrollViewMode.Vertical);
@@ -206,7 +206,7 @@ namespace CityHighways.Presentation
             chooser.Add(createRow);
             if (_status.Length > 0)
             {
-                var status = Ui.Text(_status, 13f, Theme.Accent);
+                var status = Ui.Text(_status, 13f, Theme.Gold);
                 status.style.marginTop = 6f;
                 chooser.Add(status);
             }
@@ -245,7 +245,7 @@ namespace CityHighways.Presentation
             var stats = Ui.Card(14f);
             stats.style.flexGrow = 1f;
             stats.style.flexBasis = 0f;
-            stats.Add(Ui.Text($"Кошелёк: {profile.wallet} влияния", 22f, Theme.Accent, true));
+            stats.Add(Ui.Text($"Кошелёк: {profile.wallet} влияния", 22f, Theme.Gold, true));
             stats.Add(Caption($"Партий: {profile.games} · побед: {profile.wins} · влияния заработано всего: {profile.earnedTotal}", 14f, Theme.Text, 0f));
             var how = Ui.Text("Влияние, которое осталось у вас к концу партии, попадает сюда. За одним компьютером профиль узнаётся по имени игрока, в сетевой игре — это активный профиль.", 12f, Theme.TextDim);
             how.style.whiteSpace = WhiteSpace.Normal;
@@ -315,14 +315,14 @@ namespace CityHighways.Presentation
             daily.style.backgroundColor = todayDone ? Theme.PanelHover : Theme.PanelLight;
             Ui.Radius(daily, 8f);
             Ui.Padding(daily, 8f, 12f);
-            Ui.Border(daily, 2f, todayDone ? Theme.Line : Theme.Accent);
+            Ui.Border(daily, 2f, todayDone ? Theme.Line : Theme.Gold);
             daily.style.marginBottom = 10f;
             var dailyTexts = Ui.Column();
             dailyTexts.style.flexGrow = 1f;
-            dailyTexts.Add(Ui.Text("Задание дня", 12f, Theme.Accent, true));
+            dailyTexts.Add(Ui.Text("Задание дня", 12f, Theme.Gold, true));
             dailyTexts.Add(Ui.Text(task.Title, 15f, Theme.Text, true));
             daily.Add(dailyTexts);
-            daily.Add(Ui.Text(todayDone ? "✓ выполнено" : $"+{Achievements.DailyReward} влияния", 13f, todayDone ? Theme.TextDim : Theme.Accent, true));
+            daily.Add(Ui.Text(todayDone ? "✓ выполнено" : $"+{Achievements.DailyReward} влияния", 13f, todayDone ? Theme.TextDim : Theme.Gold, true));
             card.Add(daily);
             if (profile.dailyTotal > 0)
             {
@@ -345,11 +345,11 @@ namespace CityHighways.Presentation
                 cell.style.opacity = unlocked ? 1f : 0.75f;
                 Ui.Radius(cell, 8f);
                 Ui.Padding(cell, 8f, 10f);
-                Ui.Border(cell, unlocked ? 2f : 1f, unlocked ? Theme.Accent : Theme.Line);
+                Ui.Border(cell, unlocked ? 2f : 1f, unlocked ? Theme.Gold : Theme.Line);
                 var head = Ui.Row();
                 head.style.justifyContent = Justify.SpaceBetween;
-                head.Add(Ui.Text((unlocked ? "★ " : "") + achievement.Title, 14f, unlocked ? Theme.Accent : Theme.Text, true));
-                head.Add(Ui.Text($"+{achievement.Reward}", 12f, unlocked ? Theme.TextDim : Theme.Accent, true));
+                head.Add(Ui.Text((unlocked ? "★ " : "") + achievement.Title, 14f, unlocked ? Theme.Gold : Theme.Text, true));
+                head.Add(Ui.Text($"+{achievement.Reward}", 12f, unlocked ? Theme.TextDim : Theme.Gold, true));
                 cell.Add(head);
                 var description = Ui.Text(achievement.Description, 11f, Theme.TextDim);
                 description.style.whiteSpace = WhiteSpace.Normal;
@@ -357,7 +357,7 @@ namespace CityHighways.Presentation
                 cell.Add(description);
                 if (achievement.Cumulative && !unlocked)
                 {
-                    var progress = Ui.Text($"{Achievements.ProgressOf(profile, achievement)} из {achievement.Target}", 11f, Theme.Accent);
+                    var progress = Ui.Text($"{Achievements.ProgressOf(profile, achievement)} из {achievement.Target}", 11f, Theme.Gold);
                     progress.style.marginTop = 2f;
                     cell.Add(progress);
                 }
@@ -388,7 +388,7 @@ namespace CityHighways.Presentation
             left.Add(stage);
             if (_tryOn != null)
             {
-                var note = Ui.Text("Примерка — ещё не надето", 12f, Theme.Accent, true);
+                var note = Ui.Text("Примерка — ещё не надето", 12f, Theme.Gold, true);
                 note.style.marginTop = 6f;
                 left.Add(note);
                 left.Add(Ui.Button("Снять примерку", () => { _tryOn = null; Rebuild(); }, ButtonKind.Ghost, 13f));
@@ -442,7 +442,7 @@ namespace CityHighways.Presentation
             cell.style.backgroundColor = wearing ? Theme.PanelHover : Theme.PanelLight;
             Ui.Radius(cell, 8f);
             Ui.Padding(cell, 6f, 4f);
-            Ui.Border(cell, wearing ? 2f : 1f, wearing ? Theme.Accent : Theme.Line);
+            Ui.Border(cell, wearing ? 2f : 1f, wearing ? Theme.Gold : Theme.Line);
 
             var mini = new CharacterView(56f, _slot == "hat" || _slot == "hair" || _slot == "body");
             mini.Set(worn.With(_slot, id));
@@ -509,7 +509,7 @@ namespace CityHighways.Presentation
                 Ui.Radius(cell, 8f);
                 Ui.Padding(cell, 10f, 8f);
                 var frame = kind == ShopKind.Frame ? Profiles.FrameColor(item.Id) : Theme.Line;
-                Ui.Border(cell, equipped || kind == ShopKind.Frame ? 2f : 1f, kind == ShopKind.Frame ? frame : equipped ? Theme.Accent : Theme.Line);
+                Ui.Border(cell, equipped || kind == ShopKind.Frame ? 2f : 1f, kind == ShopKind.Frame ? frame : equipped ? Theme.Gold : Theme.Line);
 
                 if (kind == ShopKind.Emblem)
                 {

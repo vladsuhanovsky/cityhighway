@@ -21,7 +21,7 @@ namespace CityHighways.Presentation
             style.height = size;
             style.flexShrink = 0f;
             _kind = kind;
-            _color = color ?? Theme.Accent;
+            _color = color ?? Theme.Gold;
             generateVisualContent += Draw;
         }
 

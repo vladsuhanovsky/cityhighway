@@ -1,26 +1,40 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace CityHighways.Presentation
 {
-    /// <summary>Цвета интерфейса (карта и карты ресурсов — в Palette).</summary>
+    /// <summary>
+    /// Цвета интерфейса (карта и карты ресурсов — в Palette). Основной — тёмно-синий #2C3E50,
+    /// акцент для действий — красный #E74C3C, успех — зелёный #27AE60, затемнение под окнами — #00000080.
+    /// Латунь (Gold) — для очков, наград и выделения, где красный читался бы как ошибка.
+    /// </summary>
     public static class Theme
     {
-        public static readonly Color Background = new Color(0.10f, 0.11f, 0.14f);
-        public static readonly Color Panel = new Color(0.15f, 0.16f, 0.20f);
-        public static readonly Color PanelLight = new Color(0.20f, 0.22f, 0.27f);
-        public static readonly Color PanelHover = new Color(0.26f, 0.28f, 0.34f);
-        public static readonly Color Line = new Color(1f, 1f, 1f, 0.07f);
-        public static readonly Color Text = new Color(0.93f, 0.94f, 0.96f);
-        public static readonly Color TextDim = new Color(0.62f, 0.65f, 0.72f);
-        public static readonly Color Accent = new Color(0.93f, 0.68f, 0.26f);      // латунь
-        public static readonly Color AccentHover = new Color(1.00f, 0.77f, 0.36f);
-        public static readonly Color AccentText = new Color(0.16f, 0.11f, 0.04f);
-        public static readonly Color Danger = new Color(0.92f, 0.38f, 0.34f);
-        public static readonly Color Success = new Color(0.42f, 0.82f, 0.47f);
-        public static readonly Color Shade = new Color(0.03f, 0.04f, 0.06f, 0.72f);
-        public static readonly Color ShadeOpaque = new Color(0.07f, 0.08f, 0.10f, 0.97f);
+        static Color Hex(int rgb, float alpha = 1f) =>
+            new Color(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f, alpha);
+
+        public static readonly Color Background = Hex(0x1B2631);
+        public static readonly Color Panel = Hex(0x2C3E50);
+        public static readonly Color PanelLight = Hex(0x34495E);
+        public static readonly Color PanelHover = Hex(0x3E5871);
+        /// <summary>Плавающие панели поверх карты — тот же основной цвет, чуть прозрачнее.</summary>
+        public static readonly Color PanelGlass = Hex(0x2C3E50, 0.94f);
+        public static readonly Color Line = new Color(1f, 1f, 1f, 0.08f);
+        public static readonly Color Text = Hex(0xECF0F1);
+        public static readonly Color TextDim = Hex(0xAAB7B8);
+        public static readonly Color Accent = Hex(0xE74C3C);
+        public static readonly Color AccentHover = Hex(0xEC7063);
+        public static readonly Color AccentText = Color.white;
+        public static readonly Color Gold = new Color(0.95f, 0.69f, 0.26f);
+        public static readonly Color GoldText = new Color(0.16f, 0.11f, 0.04f);
+        public static readonly Color Danger = Hex(0xE74C3C);
+        public static readonly Color Success = Hex(0x27AE60);
+        public static readonly Color Shade = Hex(0x000000, 0.5f);
+        public static readonly Color ShadeOpaque = new Color(0.07f, 0.09f, 0.12f, 0.97f);
+        /// <summary>Длительность плавных переходов интерфейса.</summary>
+        public const float TransitionSeconds = 0.3f;
     }
 
     public enum ButtonKind
@@ -254,7 +268,7 @@ namespace CityHighways.Presentation
                     break;
                 case ButtonKind.Secondary:
                     normal = Theme.PanelHover;
-                    hover = new Color(0.33f, 0.35f, 0.42f);
+                    hover = new Color(0.30f, 0.42f, 0.53f);
                     textColor = Theme.Text;
                     break;
                 default:
@@ -281,12 +295,139 @@ namespace CityHighways.Presentation
             Padding(button, 8f, 16f);
             Margin(button, 0f);
 
+            // Наведение: цвет светлеет, кнопка чуть приподнимается; нажатие — слегка «вдавливается».
+            Transitions(button, "background-color", "translate", "scale");
             button.RegisterCallback<PointerEnterEvent>(_ =>
             {
-                if (button.enabledSelf) button.style.backgroundColor = hover;
+                if (!button.enabledSelf) return;
+                button.style.backgroundColor = hover;
+                button.style.translate = new Translate(new Length(0f), new Length(-1.5f));
             });
-            button.RegisterCallback<PointerLeaveEvent>(_ => button.style.backgroundColor = normal);
+            button.RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                button.style.backgroundColor = normal;
+                button.style.translate = new Translate(new Length(0f), new Length(0f));
+                button.style.scale = new Scale(Vector3.one);
+            });
+            button.RegisterCallback<PointerDownEvent>(_ =>
+            {
+                if (button.enabledSelf) button.style.scale = new Scale(new Vector3(0.97f, 0.97f, 1f));
+            }, TrickleDown.TrickleDown);
+            button.RegisterCallback<PointerUpEvent>(_ => button.style.scale = new Scale(Vector3.one), TrickleDown.TrickleDown);
             return button;
+        }
+
+        /// <summary>Плавные переходы перечисленных свойств (0.3 с, ease) — без USS, прямо в коде.</summary>
+        public static void Transitions(VisualElement e, params string[] properties) =>
+            Transitions(e, Theme.TransitionSeconds, properties);
+
+        public static void Transitions(VisualElement e, float seconds, params string[] properties)
+        {
+            var names = new List<StylePropertyName>();
+            var durations = new List<TimeValue>();
+            var easings = new List<EasingFunction>();
+            foreach (var property in properties)
+            {
+                names.Add(new StylePropertyName(property));
+                durations.Add(new TimeValue(seconds, TimeUnit.Second));
+                easings.Add(new EasingFunction(EasingMode.Ease));
+            }
+            e.style.transitionProperty = new StyleList<StylePropertyName>(names);
+            e.style.transitionDuration = new StyleList<TimeValue>(durations);
+            e.style.transitionTimingFunction = new StyleList<EasingFunction>(easings);
+        }
+
+        /// <summary>Число моноширинным шрифтом — цифры не «пляшут», когда меняются.</summary>
+        public static Label Number(string text, float size = 15f, Color? color = null, bool bold = false)
+        {
+            var label = Text(text, size, color, false);
+            Fonts.Apply(label, bold ? Fonts.Weight.MonoBold : Fonts.Weight.Mono);
+            label.style.whiteSpace = WhiteSpace.NoWrap;
+            return label;
+        }
+
+        /// <summary>
+        /// Мягкая тень вокруг панели: несколько полупрозрачных скруглённых обводок снаружи, гуще книзу.
+        /// UI Toolkit не умеет box-shadow, поэтому тень рисуется кодом (Painter2D) за краем элемента.
+        /// </summary>
+        public static void Shadow(VisualElement e, float radius, float spread = 14f, float strength = 0.45f)
+        {
+            e.generateVisualContent += context =>
+            {
+                var size = e.layout.size;
+                if (float.IsNaN(size.x) || size.x < 2f || size.y < 2f) return;
+                var p = context.painter2D;
+                const int steps = 7;
+                float width = spread / steps;
+                for (int i = 0; i < steps; i++)
+                {
+                    float t = (i + 0.5f) / steps;
+                    float grow = width * (i + 0.5f);
+                    float fade = (1f - t) * (1f - t);
+                    p.strokeColor = new Color(0f, 0f, 0f, strength * fade / steps * 2.2f);
+                    p.lineWidth = width + 0.5f;
+                    // Снизу тень длиннее: смещаем внешние кольца вниз, но не залезаем внутрь панели.
+                    float drop = Mathf.Min(grow * 0.5f, 4f);
+                    RoundRectPath(p, new Rect(-grow, -grow + drop, size.x + 2f * grow, size.y + 2f * grow), radius + grow);
+                    p.Stroke();
+                }
+            };
+        }
+
+        static void RoundRectPath(Painter2D p, Rect r, float radius)
+        {
+            radius = Mathf.Min(radius, r.width / 2f, r.height / 2f);
+            p.BeginPath();
+            p.MoveTo(new Vector2(r.xMin + radius, r.yMin));
+            p.LineTo(new Vector2(r.xMax - radius, r.yMin));
+            p.ArcTo(new Vector2(r.xMax, r.yMin), new Vector2(r.xMax, r.yMin + radius), radius);
+            p.LineTo(new Vector2(r.xMax, r.yMax - radius));
+            p.ArcTo(new Vector2(r.xMax, r.yMax), new Vector2(r.xMax - radius, r.yMax), radius);
+            p.LineTo(new Vector2(r.xMin + radius, r.yMax));
+            p.ArcTo(new Vector2(r.xMin, r.yMax), new Vector2(r.xMin, r.yMax - radius), radius);
+            p.LineTo(new Vector2(r.xMin, r.yMin + radius));
+            p.ArcTo(new Vector2(r.xMin, r.yMin), new Vector2(r.xMin + radius, r.yMin), radius);
+            p.ClosePath();
+        }
+
+        /// <summary>
+        /// Плавное появление и исчезновение панели: прозрачность и сдвиг за 0.3 с. Скрытая панель
+        /// после анимации убирается из раскладки (display: none), чтобы не перехватывать клики.
+        /// hiddenX / hiddenY — сдвиг скрытой панели в процентах её размера (например, 0 и 100 — уехала вниз).
+        /// </summary>
+        public static void Slide(VisualElement e, bool show, float hiddenX, float hiddenY)
+        {
+            int version = (e.userData is int v ? v : 0) + 1;
+            e.userData = version;
+            Transitions(e, "opacity", "translate");
+            var hidden = new Translate(new Length(hiddenX, LengthUnit.Percent), new Length(hiddenY, LengthUnit.Percent));
+            var shown = new Translate(new Length(0f), new Length(0f));
+            if (show)
+            {
+                bool wasHidden = e.style.display.value == DisplayStyle.None || e.resolvedStyle.opacity < 0.01f;
+                if (wasHidden)
+                {
+                    e.style.opacity = 0f;
+                    e.style.translate = hidden;
+                }
+                e.style.display = DisplayStyle.Flex;
+                // Переход срабатывает, только если стартовое состояние успело примениться, — ждём кадр.
+                e.schedule.Execute(() =>
+                {
+                    if (!(e.userData is int now) || now != version) return;
+                    e.style.opacity = 1f;
+                    e.style.translate = shown;
+                }).ExecuteLater(wasHidden ? 16 : 0);
+            }
+            else
+            {
+                e.style.opacity = 0f;
+                e.style.translate = hidden;
+                e.schedule.Execute(() =>
+                {
+                    if (e.userData is int now && now == version) e.style.display = DisplayStyle.None;
+                }).ExecuteLater((long)(Theme.TransitionSeconds * 1000f) + 30);
+            }
         }
 
         public static void SetEnabled(VisualElement e, bool enabled)

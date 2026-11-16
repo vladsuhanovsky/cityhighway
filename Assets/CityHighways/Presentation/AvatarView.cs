@@ -21,8 +21,8 @@ namespace CityHighways.Presentation
             style.justifyContent = Justify.Center;
             style.overflow = Overflow.Hidden;
             Ui.Radius(this, size * 0.22f);
-            Ui.Border(this, Mathf.Max(2f, size * 0.04f), Theme.Accent);
-            _letter = Ui.Text("", size * 0.45f, Theme.AccentText, true);
+            Ui.Border(this, Mathf.Max(2f, size * 0.04f), Theme.Gold);
+            _letter = Ui.Text("", size * 0.45f, Theme.GoldText, true);
             _letter.pickingMode = PickingMode.Ignore;
             Add(_letter);
         }
@@ -39,7 +39,7 @@ namespace CityHighways.Presentation
             else
             {
                 style.backgroundImage = StyleKeyword.None;
-                style.backgroundColor = Theme.Accent;
+                style.backgroundColor = Theme.Gold;
                 string name = profile?.name ?? "";
                 _letter.text = name.Length > 0 ? name.Substring(0, 1).ToUpperInvariant() : "?";
             }

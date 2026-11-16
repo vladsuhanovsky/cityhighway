@@ -15,7 +15,13 @@ namespace CityHighways.Presentation
         Error,
         Bell,
         Fanfare,
-        Coin
+        Coin,
+        /// <summary>Панель выезжает: короткий восходящий «вжух».</summary>
+        Open,
+        /// <summary>Панель уезжает: тот же «вжух» вниз.</summary>
+        Close,
+        /// <summary>Карусель встала на карточку: тихий щелчок.</summary>
+        Tick
     }
 
     /// <summary>
@@ -79,6 +85,16 @@ namespace CityHighways.Presentation
                 return Mathf.Sin(2f * Mathf.PI * f * t) * Mathf.Exp(-local * 18f) * 0.18f
                        + Mathf.Sin(2f * Mathf.PI * f * 2.7f * t) * Mathf.Exp(-local * 40f) * 0.05f;
             });
+
+            // Панели: шум с плавной огибающей плюс скользящий по высоте тон — вверх при открытии, вниз при закрытии.
+            _clips[Sfx.Open] = Make("open", 0.18f, t =>
+                Noise() * Mathf.Sin(Mathf.PI * t / 0.18f) * 0.07f
+                + Mathf.Sin(2f * Mathf.PI * (420f + 900f * t) * t) * Mathf.Sin(Mathf.PI * t / 0.18f) * 0.10f);
+            _clips[Sfx.Close] = Make("close", 0.16f, t =>
+                Noise() * Mathf.Sin(Mathf.PI * t / 0.16f) * 0.06f
+                + Mathf.Sin(2f * Mathf.PI * (700f - 900f * t) * t) * Mathf.Sin(Mathf.PI * t / 0.16f) * 0.08f);
+            _clips[Sfx.Tick] = Make("tick", 0.03f, t =>
+                Mathf.Sin(2f * Mathf.PI * 2600f * t) * Mathf.Exp(-t * 160f) * 0.22f);
 
             _clips[Sfx.Bell] = Make("bell", 0.7f, t =>
                 (Mathf.Sin(2f * Mathf.PI * 880f * t) + 0.45f * Mathf.Sin(2f * Mathf.PI * 1760f * t) * Mathf.Exp(-t * 8f))

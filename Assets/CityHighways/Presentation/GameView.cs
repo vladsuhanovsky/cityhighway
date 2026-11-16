@@ -15,8 +15,10 @@ namespace CityHighways.Presentation
     /// </summary>
     public sealed class GameView
     {
-        const float SidebarWidth = 400f;
-        const float BottomHeight = 200f;
+        const float TopBarHeight = 60f;
+        const float BottomBarHeight = 58f;
+        const float DrawerWidth = 380f;
+        const float ContractCardWidth = 220f;
         const float BotDelay = 0.55f;
         /// <summary>Сколько последних записей хранит и показывает журнал (старые уходят).</summary>
         const int LogHistory = 200;
@@ -47,6 +49,16 @@ namespace CityHighways.Presentation
             public Label Ability;
             public ProfileBadge Badge;
             public Label Title;
+            public ProgressBar Pieces;
+            public Label Score;
+        }
+
+        /// <summary>Игрок в нижней полосе: кружок его цвета с буквой и видимые очки.</summary>
+        sealed class PlayerChip
+        {
+            public VisualElement Root;
+            public VisualElement Dot;
+            public Label Score;
         }
 
         /// <summary>Оформление игроков из профилей (эмблема, титул, рамка): за одним компьютером — по имени, в сети — от хоста.</summary>
@@ -142,42 +154,82 @@ namespace CityHighways.Presentation
         IBot[] _bots;
         readonly MapView _map;
 
-        // Правая панель
-        readonly Label _turnLabel;
-        readonly VisualElement _eventCard;
-        readonly VisualElement _eventChip;
-        readonly Label _eventTitle;
-        readonly Label _eventText;
-        readonly VisualElement _faceUpRow;
-        CardView[] _faceUp = new CardView[0];
-        readonly UnityEngine.UIElements.Button _deckButton;
-        readonly UnityEngine.UIElements.Button _luckButton;
-        readonly UnityEngine.UIElements.Button _tradeButton;
-        readonly UnityEngine.UIElements.Button _influenceButton;
-
-        enum SideTab { Contracts, Goals, Log }
-        SideTab _sideTab = SideTab.Contracts;
-        readonly UnityEngine.UIElements.Button _tabContracts, _tabGoals, _tabLog;
-        readonly ScrollView _contractsPage, _goalsPage, _logPage;
-        int _seenGoalOwners;   // сколько целей было взято, когда вкладку «Цели» открывали последний раз
-        readonly Label _luckOdds;
-        readonly VisualElement _goalsBox;
-        readonly UnityEngine.UIElements.Button _contractsButton;
-        readonly VisualElement _playersBox;
-        PlayerRow[] _playerRows = new PlayerRow[0];
-        readonly VisualElement _contractsBox;
-        readonly VisualElement _logBox;
-
-        // Нижняя панель
+        // Поле и плашка статуса
+        readonly VisualElement _mapArea;
+        readonly MiniMapView _minimap;
+        readonly VisualElement _statusBanner;
         readonly VisualElement _statusChip;
         readonly Label _statusName;
         readonly Label _statusText;
         readonly Label _finalRound;
         readonly Label _flashLabel;
         readonly UnityEngine.UIElements.Button _passButton;
-        readonly Label _handTitle;
+
+        // Верхняя панель: логотип, ход, событие, ресурсы, меню и настройки
+        readonly VisualElement _topBar;
+        readonly Label _logo;
+        readonly Label _turnLabel;
+        readonly VisualElement _eventPill;
+        readonly VisualElement _eventPillDot;
+        readonly Label _eventPillText;
+        readonly Label _resourcesCaption;
         readonly VisualElement _handRow;
-        readonly Dictionary<Resource, CardView> _hand = new Dictionary<Resource, CardView>();
+        readonly Dictionary<Resource, ResourceChip> _hand = new Dictionary<Resource, ResourceChip>();
+        readonly Label _piecesLabel;
+        readonly ProgressBar _piecesBar;
+        readonly Label _handTitle;
+        readonly IconButton _menuButton;
+        readonly VisualElement _menuDot;
+
+        // Нижняя полоса: вкладки
+        readonly UnityEngine.UIElements.Button _actionsTab, _contractsTab, _playersTab, _logTab;
+        readonly VisualElement _playerChipsRow;
+        PlayerChip[] _playerChips = new PlayerChip[0];
+        readonly Label _viewHint;
+
+        // Выезжающие панели: действия, контракты, журнал
+        enum SheetKind { None, Actions, Contracts, Log }
+        SheetKind _sheet = SheetKind.None;
+        readonly VisualElement _sheetHost;
+        readonly VisualElement _actionsSheet, _contractsSheet, _logSheet;
+        readonly VisualElement _faceUpRow;
+        CardView[] _faceUp = new CardView[0];
+        readonly UnityEngine.UIElements.Button _deckButton;
+        readonly UnityEngine.UIElements.Button _luckButton;
+        readonly UnityEngine.UIElements.Button _tradeButton;
+        readonly UnityEngine.UIElements.Button _influenceButton;
+        readonly UnityEngine.UIElements.Button _contractsButton;
+        readonly Label _luckOdds;
+        readonly VisualElement _contractsBox;
+        readonly CardCarousel _contractCarousel, _choiceCarousel;
+        readonly ScrollView _logPage;
+        readonly VisualElement _logBox;
+        /// <summary>Сколько записей журнала было, когда его открывали последний раз (для «•» на вкладке).</summary>
+        int _logSeenTotal;
+        /// <summary>Ключ «ход:игрок:фаза», для которого панель уже открывалась сама (повторно не навязываем).</summary>
+        string _autoSheetKey;
+
+        // Боковое меню
+        readonly VisualElement _drawer;
+        bool _drawerOpen;
+        readonly VisualElement _eventCard;
+        readonly VisualElement _eventChip;
+        readonly Label _eventTitle;
+        readonly Label _eventText;
+        readonly Label _goalsTitle;
+        readonly ScrollView _goalsPage;
+        readonly VisualElement _goalsBox;
+        readonly Label _drawerInfo;
+        int _seenGoalOwners;   // сколько целей было взято, когда меню открывали последний раз
+
+        // Окна: игроки, настройки, правила
+        enum Modal { None, Players, Settings, Rules }
+        Modal _modal = Modal.None;
+        readonly VisualElement _modalLayer;
+        readonly VisualElement _playersModal, _settingsModal, _rulesModal;
+        readonly VisualElement _settingsBody, _rulesBody;
+        readonly VisualElement _playersBox;
+        PlayerRow[] _playerRows = new PlayerRow[0];
 
         // Слои поверх всего
         readonly VisualElement _fx;
@@ -233,197 +285,187 @@ namespace CityHighways.Presentation
 
             Root = new VisualElement();
             Root.style.flexGrow = 1f;
-            Root.style.flexDirection = FlexDirection.Row;
+            Root.style.backgroundColor = Theme.Background;
 
-            // ---------- Левая часть: карта и нижняя панель
-            var left = Ui.Column();
-            left.style.flexGrow = 1f;
-            Root.Add(left);
+            // Макет: карта на весь экран; сверху — панель с ресурсами и меню, снизу — вкладки.
+            // Всё остальное — выезжающие панели (действия, контракты, журнал), боковое меню и окна.
+
+            // ---------- Игровое поле
+            _mapArea = Ui.Box();
+            _mapArea.style.position = Position.Absolute;
+            _mapArea.style.left = 0f;
+            _mapArea.style.right = 0f;
+            _mapArea.style.top = TopBarHeight;
+            _mapArea.style.bottom = BottomBarHeight;
+            Root.Add(_mapArea);
 
             _map = new MapView();
+            Ui.Fill(_map);
             _map.Hovered += OnMapHover;
+            _map.LocationHovered += OnLocationHover;
             _map.RoadClicked += OnRoadClicked;
-            left.Add(_map);
+            _mapArea.Add(_map);
 
-            var bottom = Ui.Row();
-            bottom.style.height = BottomHeight;
-            bottom.style.flexShrink = 0f;
-            bottom.style.alignItems = Align.Stretch;
-            bottom.style.backgroundColor = Theme.Panel;
-            bottom.style.borderTopWidth = 1f;
-            bottom.style.borderTopColor = Theme.Line;
-            Ui.Padding(bottom, 16f, 20f);
-            left.Add(bottom);
+            // Мини-карта в левом нижнем углу поля.
+            _minimap = new MiniMapView(_map, 236f, 150f);
+            _minimap.style.position = Position.Absolute;
+            _minimap.style.left = 14f;
+            _minimap.style.bottom = 14f;
+            _mapArea.Add(_minimap);
 
-            var status = Ui.Column();
-            status.style.width = 430f;
-            status.style.flexShrink = 0f;
-            status.style.paddingRight = 20f;
-            bottom.Add(status);
+            // Статус хода — плашка сверху по центру поля.
+            _statusBanner = Ui.Row();
+            _statusBanner.style.position = Position.Absolute;
+            _statusBanner.style.top = 12f;
+            _statusBanner.style.left = Length.Percent(50f);
+            _statusBanner.style.translate = new Translate(Length.Percent(-50f), new Length(0f));
+            _statusBanner.style.maxWidth = 760f;
+            _statusBanner.style.alignItems = Align.Center;
+            _statusBanner.style.backgroundColor = Theme.PanelGlass;
+            Ui.Radius(_statusBanner, 12f);
+            Ui.Border(_statusBanner, 1f, Theme.Line);
+            Ui.Padding(_statusBanner, 10f, 16f);
+            Ui.Shadow(_statusBanner, 12f);
+            _mapArea.Add(_statusBanner);
 
-            var nameRow = Ui.Row();
             _statusChip = Ui.Box();
-            _statusChip.style.width = 18f;
-            _statusChip.style.height = 18f;
-            _statusChip.style.marginRight = 10f;
-            Ui.Radius(_statusChip, 4f);
-            nameRow.Add(_statusChip);
-            _statusName = Ui.Text("", 22f, null, true);
-            nameRow.Add(_statusName);
-            status.Add(nameRow);
-
-            _statusText = Ui.Text("", 15f, Theme.Text);
-            _statusText.style.marginTop = 8f;
+            _statusChip.style.width = 14f;
+            _statusChip.style.height = 14f;
+            _statusChip.style.marginRight = 12f;
+            _statusChip.style.flexShrink = 0f;
+            Ui.Radius(_statusChip, 7f);
+            Ui.Transitions(_statusChip, "background-color");
+            _statusBanner.Add(_statusChip);
+            var status = Ui.Column();
+            status.style.flexShrink = 1f;
+            _statusBanner.Add(status);
+            _statusName = Ui.Text("", 18f, null, true);
+            status.Add(_statusName);
+            _statusText = Ui.Text("", 14f, Theme.Text);
+            _statusText.style.marginTop = 2f;
             status.Add(_statusText);
-            _finalRound = Ui.Text("", 15f, Theme.Accent, true);
+            _finalRound = Ui.Text("", 14f, Theme.Gold, true);
             _finalRound.style.whiteSpace = WhiteSpace.Normal;
-            _finalRound.style.marginTop = 6f;
+            _finalRound.style.marginTop = 4f;
             status.Add(_finalRound);
-            _flashLabel = Ui.Text("", 13f, Theme.Danger);
-            _flashLabel.style.marginTop = 6f;
+            _flashLabel = Ui.Text("", 14f, Theme.Danger);
+            _flashLabel.style.marginTop = 4f;
             status.Add(_flashLabel);
-            _passButton = Ui.Button("Пропустить ход", () => Act(() => _game.Pass()), ButtonKind.Secondary, 14f);
-            _passButton.style.marginTop = 8f;
-            _passButton.style.alignSelf = Align.FlexStart;
-            status.Add(_passButton);
+            _passButton = Ui.Button("Пропустить ход", () => Act(() => _game.Pass()), ButtonKind.Primary, 14f);
+            _passButton.style.marginLeft = 14f;
+            _passButton.style.flexShrink = 0f;
+            _statusBanner.Add(_passButton);
 
-            var handColumn = Ui.Column();
-            handColumn.style.flexGrow = 1f;
-            bottom.Add(handColumn);
-            _handTitle = Ui.SectionTitle("Рука");
-            handColumn.Add(_handTitle);
-            _handRow = Ui.Row();
-            handColumn.Add(_handRow);
-            foreach (var color in ResourceInfo.Building.Concat(new[] { Resource.Machinery }))
+            // ---------- Выезжающие снизу панели (над нижней полосой)
+            _sheetHost = Ui.Box();
+            _sheetHost.style.position = Position.Absolute;
+            _sheetHost.style.left = 0f;
+            _sheetHost.style.right = 0f;
+            _sheetHost.style.bottom = BottomBarHeight;
+            _sheetHost.style.top = TopBarHeight;
+            Root.Add(_sheetHost);
+
+            VisualElement Sheet(string title, float width, Action onClose, out VisualElement body)
             {
-                var card = new CardView(76f, 124f, true);
-                card.pickingMode = PickingMode.Ignore;
-                card.style.marginRight = 8f;
-                _hand[color] = card;
-                _handRow.Add(card);
+                var sheet = Ui.Column();
+                sheet.pickingMode = PickingMode.Position;
+                sheet.style.position = Position.Absolute;
+                sheet.style.bottom = 0f;
+                sheet.style.left = Length.Percent(50f);
+                sheet.style.width = width;
+                sheet.style.marginLeft = -width / 2f;
+                sheet.style.backgroundColor = Theme.PanelGlass;
+                sheet.style.borderTopLeftRadius = 14f;
+                sheet.style.borderTopRightRadius = 14f;
+                sheet.style.borderTopWidth = 1f;
+                sheet.style.borderLeftWidth = 1f;
+                sheet.style.borderRightWidth = 1f;
+                sheet.style.borderTopColor = Theme.Line;
+                sheet.style.borderLeftColor = Theme.Line;
+                sheet.style.borderRightColor = Theme.Line;
+                Ui.Padding(sheet, 12f, 18f);
+                Ui.Shadow(sheet, 14f);
+                var header = Ui.Row();
+                header.style.marginBottom = 8f;
+                header.Add(Ui.Text(title, 20f, Theme.Text, true));
+                var spacer = Ui.Box();
+                spacer.style.flexGrow = 1f;
+                header.Add(spacer);
+                header.Add(new IconButton(IconButton.Glyph.Close, "", onClose, 12f));
+                sheet.Add(header);
+                body = Ui.Column();
+                body.style.flexGrow = 1f;
+                body.style.flexShrink = 1f;
+                body.style.minHeight = 0f;
+                sheet.Add(body);
+                sheet.style.display = DisplayStyle.None;
+                sheet.style.opacity = 0f;
+                _sheetHost.Add(sheet);
+                return sheet;
             }
 
-            // ---------- Правая панель
-            var side = Ui.Column();
-            side.style.width = SidebarWidth;
-            side.style.flexShrink = 0f;
-            side.style.backgroundColor = Theme.Panel;
-            side.style.borderLeftWidth = 1f;
-            side.style.borderLeftColor = Theme.Line;
-            Ui.Padding(side, 16f, 18f);
-            Root.Add(side);
-
-            // Шапка: номер хода и меню.
-            var header = Ui.Row();
-            header.style.justifyContent = Justify.SpaceBetween;
-            header.style.alignItems = Align.Center;
-            header.style.marginBottom = 8f;
-            _turnLabel = Ui.Text("", 20f, null, true);
-            header.Add(_turnLabel);
-            header.Add(Ui.Button("Меню", ShowConfirmExit, ButtonKind.Ghost, 13f));
-            side.Add(header);
-
-            // Событие круга — компактная строка: цветная точка, название, описание мелко.
-            _eventCard = Ui.Column();
-            _eventCard.style.marginBottom = 10f;
-            Ui.Padding(_eventCard, 6f, 10f);
-            Ui.Radius(_eventCard, 8f);
-            _eventCard.style.backgroundColor = Theme.PanelLight;
-            var eventHeader = Ui.Row();
-            eventHeader.style.alignItems = Align.Center;
-            _eventChip = Ui.Box();
-            _eventChip.style.width = 10f;
-            _eventChip.style.height = 10f;
-            _eventChip.style.marginRight = 8f;
-            Ui.Radius(_eventChip, 5f);
-            eventHeader.Add(_eventChip);
-            _eventTitle = Ui.Text("", 14f, null, true);
-            eventHeader.Add(_eventTitle);
-            _eventCard.Add(eventHeader);
-            _eventText = Ui.Text("", 11f, Theme.TextDim);
-            _eventText.style.marginTop = 2f;
-            _eventText.style.whiteSpace = WhiteSpace.Normal;
-            _eventCard.Add(_eventText);
-            Ui.Show(_eventCard, false);
-            side.Add(_eventCard);
-
-            // Игроки — по строке на каждого; способность видна только у того, кто ходит.
-            _playersBox = Ui.Column();
-            _playersBox.style.marginBottom = 10f;
-            side.Add(_playersBox);
-
-            // Взять карты: открытый ряд и одна строка действий.
+            // Действия: открытый ряд карт и кнопки хода.
+            _actionsSheet = Sheet("Действия", 860f, CloseSheet, out var actionsBody);
+            var actionsRow = Ui.Row();
+            actionsRow.style.alignItems = Align.FlexStart;
+            actionsBody.Add(actionsRow);
             _faceUpRow = Ui.Row();
-            _faceUpRow.style.justifyContent = Justify.SpaceBetween;
-            side.Add(_faceUpRow);
-
-            var drawRow = Ui.Row();
-            drawRow.style.marginTop = 8f;
-            UnityEngine.UIElements.Button ActionButton(string text, Action onClick, bool last = false)
+            _faceUpRow.style.marginRight = 18f;
+            actionsRow.Add(_faceUpRow);
+            var actionButtons = Ui.Column();
+            actionButtons.style.flexGrow = 1f;
+            actionsRow.Add(actionButtons);
+            var firstRow = Ui.Row();
+            var secondRow = Ui.Row();
+            secondRow.style.marginTop = 8f;
+            actionButtons.Add(firstRow);
+            actionButtons.Add(secondRow);
+            UnityEngine.UIElements.Button ActionButton(VisualElement row, string text, Action onClick, ButtonKind kind, bool last = false)
             {
-                var button = Ui.Button(text, onClick, ButtonKind.Secondary, 13f);
+                var button = Ui.Button(text, onClick, kind, 14f);
                 button.style.flexGrow = 1f;
                 button.style.flexBasis = 0f;
-                button.style.paddingLeft = 4f;
-                button.style.paddingRight = 4f;
-                if (!last) button.style.marginRight = 6f;
-                drawRow.Add(button);
+                button.style.paddingLeft = 6f;
+                button.style.paddingRight = 6f;
+                if (!last) button.style.marginRight = 8f;
+                row.Add(button);
                 return button;
             }
-            _deckButton = ActionButton("Колода", () => Act(DrawFromDeck));
-            _luckButton = ActionButton("Удача", () => Act(() => _game.DrawLuckCard()));
-            _contractsButton = ActionButton("Контракты", () => Act(() => _game.DrawContracts()));
-            _influenceButton = ActionButton("Влияние", ShowInfluenceMenu);
-            _tradeButton = ActionButton("Сделка", ShowTradeComposer, true);
-            side.Add(drawRow);
-            _luckOdds = Ui.Text("", 11f, Theme.TextDim);
-            _luckOdds.style.marginTop = 4f;
-            side.Add(_luckOdds);
+            _deckButton = ActionButton(firstRow, "Колода", () => Act(DrawFromDeck), ButtonKind.Primary);
+            _luckButton = ActionButton(firstRow, "Удача", () => Act(() => _game.DrawLuckCard()), ButtonKind.Secondary, true);
+            _contractsButton = ActionButton(secondRow, "Контракты", () => Act(() => _game.DrawContracts()), ButtonKind.Secondary);
+            _influenceButton = ActionButton(secondRow, "Влияние", ShowInfluenceMenu, ButtonKind.Secondary);
+            _tradeButton = ActionButton(secondRow, "Сделка", ShowTradeComposer, ButtonKind.Secondary, true);
+            _luckOdds = Ui.Text("", 13f, Theme.TextDim);
+            _luckOdds.style.marginTop = 10f;
+            actionButtons.Add(_luckOdds);
 
-            // Вкладки: контракты, цели мэрии, журнал — видна одна, ей достаётся всё оставшееся место.
-            var tabs = Ui.Row();
-            tabs.style.marginTop = 12f;
-            tabs.style.borderBottomWidth = 1f;
-            tabs.style.borderBottomColor = Theme.Line;
-            side.Add(tabs);
-            UnityEngine.UIElements.Button Tab(SideTab tab)
-            {
-                var button = Ui.Button("", () => SelectTab(tab), ButtonKind.Ghost, 13f);
-                button.style.flexGrow = 1f;
-                button.style.flexBasis = 0f;
-                button.style.borderBottomLeftRadius = 0f;
-                button.style.borderBottomRightRadius = 0f;
-                tabs.Add(button);
-                return button;
-            }
-            _tabContracts = Tab(SideTab.Contracts);
-            _tabGoals = Tab(SideTab.Goals);
-            _tabLog = Tab(SideTab.Log);
-
-            var tabHost = Ui.Column();
-            tabHost.style.flexGrow = 1f;
-            tabHost.style.flexShrink = 1f;
-            tabHost.style.overflow = Overflow.Hidden;
-            tabHost.style.marginTop = 8f;
-            side.Add(tabHost);
-
-            ScrollView Page(VisualElement content)
-            {
-                var scroll = new ScrollView(ScrollViewMode.Vertical);
-                scroll.style.flexGrow = 1f;
-                scroll.style.flexShrink = 1f;
-                scroll.style.minHeight = 0f;
-                Ui.StyleScroller(scroll);
-                scroll.Add(content);
-                tabHost.Add(scroll);
-                return scroll;
-            }
+            // Контракты: карточки с swipe-навигацией (и выбор новых контрактов).
+            _contractsSheet = Sheet("Контракты", 1000f, CloseSheet, out var contractsBody);
             _contractsBox = Ui.Column();
-            _contractsPage = Page(_contractsBox);
-            _goalsBox = Ui.Column();
-            _goalsPage = Page(_goalsBox);
+            contractsBody.Add(_contractsBox);
+            _contractCarousel = new CardCarousel(ContractCardWidth, 12f);
+            _contractCarousel.Snapped += () => _app.Sound.Play(Sfx.Tick, 0.5f);
+            _choiceCarousel = new CardCarousel(ContractCardWidth, 12f);
+            _choiceCarousel.Snapped += () => _app.Sound.Play(Sfx.Tick, 0.5f);
+
+            // Журнал.
+            _logSheet = Sheet("Журнал", 640f, CloseSheet, out var logBody);
+            _logSheet.style.height = 360f;
+            var logHost = Ui.Column();
+            logHost.style.flexGrow = 1f;
+            logHost.style.flexShrink = 1f;
+            logHost.style.minHeight = 0f;
+            logHost.style.overflow = Overflow.Hidden;
+            logBody.Add(logHost);
             _logBox = Ui.Column();
-            _logPage = Page(_logBox);
+            _logPage = new ScrollView(ScrollViewMode.Vertical);
+            _logPage.style.flexGrow = 1f;
+            _logPage.style.flexShrink = 1f;
+            _logPage.style.minHeight = 0f;
+            Ui.StyleScroller(_logPage);
+            _logPage.Add(_logBox);
+            logHost.Add(_logPage);
             // Журнал держится внизу, пока игрок сам не прокрутит его вверх.
             _logPage.verticalScroller.valueChanged += value =>
             {
@@ -442,8 +484,255 @@ namespace CityHighways.Presentation
             _logNewButton.style.bottom = 8f;
             _logNewButton.style.alignSelf = Align.Center;
             Ui.Show(_logNewButton, false);
-            tabHost.Add(_logNewButton);
-            SelectTab(SideTab.Contracts);
+            logHost.Add(_logNewButton);
+
+            // ---------- Верхняя панель (поверх поля — чтобы тень ложилась на карту)
+            _topBar = Ui.Row();
+            _topBar.pickingMode = PickingMode.Position;
+            _topBar.style.position = Position.Absolute;
+            _topBar.style.left = 0f;
+            _topBar.style.right = 0f;
+            _topBar.style.top = 0f;
+            _topBar.style.height = TopBarHeight;
+            _topBar.style.backgroundColor = Theme.Panel;
+            _topBar.style.borderBottomWidth = 1f;
+            _topBar.style.borderBottomColor = Theme.Line;
+            Ui.Padding(_topBar, 0f, 16f);
+            Ui.Shadow(_topBar, 0f, 12f, 0.5f);
+            Root.Add(_topBar);
+
+            _logo = Ui.Text("City Highways", 20f, Theme.Text, true);
+            Fonts.Apply(_logo, Fonts.Weight.Logo);
+            _logo.style.whiteSpace = WhiteSpace.NoWrap;
+            _logo.style.marginRight = 14f;
+            _topBar.Add(_logo);
+            var divider = Ui.Box();
+            divider.style.width = 1f;
+            divider.style.height = 26f;
+            divider.style.backgroundColor = Theme.Line;
+            divider.style.marginRight = 12f;
+            _topBar.Add(divider);
+            _turnLabel = Ui.Text("", 16f, null, true);
+            _turnLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            _turnLabel.style.marginRight = 12f;
+            _topBar.Add(_turnLabel);
+
+            // Событие круга — цветная «пилюля»; подробности — в подсказке и в меню.
+            _eventPill = Ui.Row();
+            _eventPill.pickingMode = PickingMode.Position;
+            _eventPill.style.backgroundColor = Theme.PanelLight;
+            Ui.Radius(_eventPill, 14f);
+            Ui.Padding(_eventPill, 4f, 12f);
+            Ui.Border(_eventPill, 1f, Theme.Line);
+            Ui.Transitions(_eventPill, "background-color", "border-top-color", "border-bottom-color", "border-left-color", "border-right-color");
+            _eventPillDot = Ui.Box();
+            _eventPillDot.style.width = 8f;
+            _eventPillDot.style.height = 8f;
+            _eventPillDot.style.marginRight = 8f;
+            Ui.Radius(_eventPillDot, 4f);
+            _eventPill.Add(_eventPillDot);
+            _eventPillText = Ui.Text("", 13f, null, true);
+            _eventPillText.style.whiteSpace = WhiteSpace.NoWrap;
+            _eventPill.Add(_eventPillText);
+            _eventPill.RegisterCallback<ClickEvent>(_ => ToggleDrawer());
+            AttachTooltip(_eventPill, () => _game == null ? "" : _eventText.text);
+            _topBar.Add(_eventPill);
+
+            var spaceLeft = Ui.Box();
+            spaceLeft.style.flexGrow = 1f;
+            _topBar.Add(spaceLeft);
+
+            // Ресурсы: карты в руке (деления + число) и оставшиеся участки дороги.
+            _resourcesCaption = Ui.Text("РЕСУРСЫ", 11f, Theme.TextDim, true);
+            _resourcesCaption.style.letterSpacing = 1.5f;
+            _resourcesCaption.style.marginRight = 10f;
+            _topBar.Add(_resourcesCaption);
+            _handRow = Ui.Row();
+            _topBar.Add(_handRow);
+            foreach (var color in ResourceInfo.Building.Concat(new[] { Resource.Machinery }))
+            {
+                var chip = new ResourceChip(color);
+                var resource = color;
+                AttachTooltip(chip, () => ResourceTooltip(resource));
+                _hand[color] = chip;
+                _handRow.Add(chip);
+            }
+            var pieces = Ui.Column();
+            pieces.pickingMode = PickingMode.Position;
+            pieces.style.marginLeft = 6f;
+            var piecesTop = Ui.Row();
+            piecesTop.Add(Ui.Text("Участки", 11f, Theme.TextDim, true));
+            _piecesLabel = Ui.Number("", 14f, Theme.Text, true);
+            _piecesLabel.style.marginLeft = 6f;
+            piecesTop.Add(_piecesLabel);
+            pieces.Add(piecesTop);
+            _piecesBar = new ProgressBar(86f, 6f, Theme.Success);
+            _piecesBar.style.marginTop = 4f;
+            pieces.Add(_piecesBar);
+            AttachTooltip(pieces, () => _game == null ? "" : PiecesTooltip());
+            _topBar.Add(pieces);
+            _handTitle = Ui.Text("", 12f, Theme.TextDim, true);
+            _handTitle.style.marginLeft = 10f;
+            _topBar.Add(_handTitle);
+
+            var spaceRight = Ui.Box();
+            spaceRight.style.flexGrow = 1f;
+            _topBar.Add(spaceRight);
+
+            _menuButton = new IconButton(IconButton.Glyph.Menu, "Меню", ToggleDrawer);
+            _menuButton.style.marginRight = 8f;
+            _menuDot = Ui.Box();
+            _menuDot.style.position = Position.Absolute;
+            _menuDot.style.top = 4f;
+            _menuDot.style.right = 4f;
+            _menuDot.style.width = 8f;
+            _menuDot.style.height = 8f;
+            _menuDot.style.backgroundColor = Theme.Accent;
+            Ui.Radius(_menuDot, 4f);
+            Ui.Show(_menuDot, false);
+            _menuButton.Add(_menuDot);
+            _topBar.Add(_menuButton);
+            _topBar.Add(new IconButton(IconButton.Glyph.Gear, "Настройки", () => ToggleModal(Modal.Settings)));
+
+            // ---------- Нижняя полоса: вкладки
+            var bottomBar = Ui.Row();
+            bottomBar.pickingMode = PickingMode.Position;
+            bottomBar.style.position = Position.Absolute;
+            bottomBar.style.left = 0f;
+            bottomBar.style.right = 0f;
+            bottomBar.style.bottom = 0f;
+            bottomBar.style.height = BottomBarHeight;
+            bottomBar.style.backgroundColor = Theme.Panel;
+            bottomBar.style.borderTopWidth = 1f;
+            bottomBar.style.borderTopColor = Theme.Line;
+            Ui.Padding(bottomBar, 0f, 14f);
+            Ui.Shadow(bottomBar, 0f, 12f, 0.5f);
+            Root.Add(bottomBar);
+
+            UnityEngine.UIElements.Button Tab(string text, Action onClick)
+            {
+                var button = Ui.Button(text, onClick, ButtonKind.Ghost, 14f);
+                button.style.marginRight = 8f;
+                button.style.minHeight = 40f;
+                Ui.Border(button, 0f, Color.clear);
+                button.style.borderBottomWidth = 3f;
+                Ui.Transitions(button, "background-color", "color", "border-bottom-color", "translate");
+                bottomBar.Add(button);
+                return button;
+            }
+            _actionsTab = Tab("Действия", () => ToggleSheet(SheetKind.Actions));
+            _contractsTab = Tab("Контракты", () => ToggleSheet(SheetKind.Contracts));
+            // У кнопки «Игроки» внутри — подпись и кружки игроков (текст кнопки пустой, иначе наложится).
+            _playersTab = Tab("", () => ToggleModal(Modal.Players));
+            _playersTab.style.flexDirection = FlexDirection.Row;
+            _playersTab.style.alignItems = Align.Center;
+            var playersCaption = Ui.Text("Игроки", 14f, null, true);
+            _playersTab.Add(playersCaption);
+            _playerChipsRow = Ui.Row();
+            _playerChipsRow.style.marginLeft = 6f;
+            _playersTab.Add(_playerChipsRow);
+            _logTab = Tab("Журнал", () => ToggleSheet(SheetKind.Log));
+            var bottomSpace = Ui.Box();
+            bottomSpace.style.flexGrow = 1f;
+            bottomBar.Add(bottomSpace);
+            _viewHint = Ui.Text("Колесо мыши — приближение · перетаскивание — сдвиг карты", 12f, Theme.TextDim);
+            _viewHint.style.whiteSpace = WhiteSpace.NoWrap;
+            bottomBar.Add(_viewHint);
+
+            // ---------- Боковое меню (☰): событие, цели мэрии, правила, выход
+            _drawer = Ui.Column();
+            _drawer.pickingMode = PickingMode.Position;
+            _drawer.style.position = Position.Absolute;
+            _drawer.style.right = 0f;
+            _drawer.style.top = TopBarHeight;
+            _drawer.style.bottom = BottomBarHeight;
+            _drawer.style.width = DrawerWidth;
+            _drawer.style.backgroundColor = Theme.PanelGlass;
+            _drawer.style.borderLeftWidth = 1f;
+            _drawer.style.borderLeftColor = Theme.Line;
+            Ui.Padding(_drawer, 16f, 18f);
+            Ui.Shadow(_drawer, 0f, 16f, 0.55f);
+            _drawer.style.display = DisplayStyle.None;
+            _drawer.style.opacity = 0f;
+            Root.Add(_drawer);
+
+            var drawerHeader = Ui.Row();
+            drawerHeader.style.marginBottom = 12f;
+            drawerHeader.Add(Ui.Text("Партия", 22f, Theme.Text, true));
+            var drawerSpace = Ui.Box();
+            drawerSpace.style.flexGrow = 1f;
+            drawerHeader.Add(drawerSpace);
+            drawerHeader.Add(new IconButton(IconButton.Glyph.Close, "", CloseDrawer, 12f));
+            _drawer.Add(drawerHeader);
+
+            _eventCard = Ui.Column();
+            _eventCard.style.marginBottom = 14f;
+            Ui.Padding(_eventCard, 10f, 12f);
+            Ui.Radius(_eventCard, 10f);
+            _eventCard.style.backgroundColor = Theme.PanelLight;
+            var eventHeader = Ui.Row();
+            eventHeader.style.alignItems = Align.Center;
+            _eventChip = Ui.Box();
+            _eventChip.style.width = 10f;
+            _eventChip.style.height = 10f;
+            _eventChip.style.marginRight = 8f;
+            Ui.Radius(_eventChip, 5f);
+            eventHeader.Add(_eventChip);
+            _eventTitle = Ui.Text("", 16f, null, true);
+            eventHeader.Add(_eventTitle);
+            _eventCard.Add(eventHeader);
+            _eventText = Ui.Text("", 14f, Theme.TextDim);
+            _eventText.style.marginTop = 4f;
+            _eventText.style.whiteSpace = WhiteSpace.Normal;
+            _eventCard.Add(_eventText);
+            Ui.Show(_eventCard, false);
+            _drawer.Add(_eventCard);
+
+            _goalsTitle = Ui.SectionTitle("Цели мэрии");
+            _drawer.Add(_goalsTitle);
+            _goalsBox = Ui.Column();
+            _goalsPage = new ScrollView(ScrollViewMode.Vertical);
+            _goalsPage.style.flexGrow = 1f;
+            _goalsPage.style.flexShrink = 1f;
+            _goalsPage.style.minHeight = 0f;
+            Ui.StyleScroller(_goalsPage);
+            _goalsPage.Add(_goalsBox);
+            _drawer.Add(_goalsPage);
+
+            _drawerInfo = Ui.Text("", 13f, Theme.TextDim);
+            _drawerInfo.style.marginTop = 10f;
+            _drawerInfo.style.marginBottom = 12f;
+            _drawer.Add(_drawerInfo);
+            var drawerButtons = Ui.Row();
+            var rulesButton = Ui.Button("Правила", () => ToggleModal(Modal.Rules), ButtonKind.Secondary, 14f);
+            rulesButton.style.flexGrow = 1f;
+            rulesButton.style.marginRight = 8f;
+            drawerButtons.Add(rulesButton);
+            var exitButton = Ui.Button("Выйти в меню", ShowConfirmExit, ButtonKind.Ghost, 14f);
+            exitButton.style.flexGrow = 1f;
+            drawerButtons.Add(exitButton);
+            _drawer.Add(drawerButtons);
+
+            // ---------- Окна: игроки, настройки, правила (затемнение #00000080)
+            _modalLayer = Ui.Column();
+            Ui.Fill(_modalLayer);
+            _modalLayer.pickingMode = PickingMode.Position;
+            _modalLayer.style.backgroundColor = Theme.Shade;
+            _modalLayer.style.alignItems = Align.Center;
+            _modalLayer.style.justifyContent = Justify.Center;
+            _modalLayer.style.display = DisplayStyle.None;
+            _modalLayer.style.opacity = 0f;
+            _modalLayer.RegisterCallback<PointerDownEvent>(e =>
+            {
+                if (e.target == _modalLayer) CloseModal();
+            });
+            Root.Add(_modalLayer);
+
+            _playersModal = ModalCard("Игроки", 660f, out var playersBody);
+            _playersBox = Ui.Column();
+            playersBody.Add(_playersBox);
+            _settingsModal = ModalCard("Настройки", 480f, out _settingsBody);
+            _rulesModal = ModalCard("Правила", 1200f, out _rulesBody);
 
             // ---------- Оверлеи и эффекты
             _overlay = new VisualElement();
@@ -474,10 +763,11 @@ namespace CityHighways.Presentation
             _toastHolder = Ui.Row();
             _toastHolder.style.position = Position.Absolute;
             _toastHolder.style.left = 0f;
-            _toastHolder.style.right = SidebarWidth;
-            _toastHolder.style.top = 70f;
+            _toastHolder.style.right = 0f;
+            _toastHolder.pickingMode = PickingMode.Ignore;
+            _toastHolder.style.top = TopBarHeight + 120f;
             _toastHolder.style.justifyContent = Justify.Center;
-            _toast = Ui.Text("", 20f, Theme.Accent, true);
+            _toast = Ui.Text("", 20f, Theme.Gold, true);
             _toast.style.backgroundColor = new Color(0.08f, 0.09f, 0.11f, 0.92f);
             _toast.style.whiteSpace = WhiteSpace.NoWrap;
             Ui.Radius(_toast, 22f);
@@ -485,6 +775,8 @@ namespace CityHighways.Presentation
             _toastHolder.Add(_toast);
             Ui.Show(_toastHolder, false);
             _fx.Add(_toastHolder);
+
+            Root.RegisterCallback<GeometryChangedEvent>(_ => AdaptLayout());
         }
 
         // ================================================================== Партия
@@ -522,7 +814,7 @@ namespace CityHighways.Presentation
         public void StartOnline()
         {
             _net.SeatsChanged += () => _dirty = true;
-            _net.Notice += text => Toast(text, Theme.Accent);
+            _net.Notice += text => Toast(text, Theme.Gold);
             _net.Resynced += () =>
             {
                 if (_game != null)
@@ -591,8 +883,20 @@ namespace CityHighways.Presentation
 
             _map.TiltEnabled = _app.Display == null || _app.Display.tiltedBoard;
             _map.SetGame(_game);
+            _minimap.SetGame(_game);
+            bool minimap = _app.Display == null || _app.Display.showMinimap;
+            _minimap.style.display = minimap ? DisplayStyle.Flex : DisplayStyle.None;
+            _minimap.style.opacity = minimap ? 1f : 0f;
             BuildFaceUpRow();
             BuildPlayerRows();
+            // Новая партия — панели закрыты, откроются сами, когда понадобятся.
+            if (_sheet != SheetKind.None) CloseSheet();
+            CloseDrawer();
+            CloseModal();
+            _autoSheetKey = null;
+            _autoChoiceOpen = false;
+            _logSeenTotal = 0;
+            _seenGoalOwners = 0;
 
             _log.Clear();
             _logShownTotal = -1;
@@ -925,12 +1229,18 @@ namespace CityHighways.Presentation
                 return;
             }
 
-            _tooltipText.text = RoadTooltip(route);
+            ShowMapTooltip(RoadTooltip(route), position);
+        }
+
+        /// <summary>Подсказка рядом с курсором над картой, не вылезая за край поля.</summary>
+        void ShowMapTooltip(string text, Vector2 position)
+        {
+            _tooltipText.text = text;
             var local = _fx.WorldToLocal(_map.LocalToWorld(position));
             var mapBounds = _map.worldBound;
             var mapMax = _fx.WorldToLocal(new Vector2(mapBounds.xMax, mapBounds.yMax));
             _tooltip.style.left = Mathf.Min(local.x + 18f, mapMax.x - 310f);
-            _tooltip.style.top = Mathf.Min(local.y + 18f, mapMax.y - 110f);
+            _tooltip.style.top = Mathf.Min(local.y + 18f, mapMax.y - 130f);
             Ui.Show(_tooltip, true);
         }
 
@@ -1103,7 +1413,7 @@ namespace CityHighways.Presentation
             if (_game.FinalWarningNumber > _lastFinalWarningShown)
             {
                 _lastFinalWarningShown = _game.FinalWarningNumber;
-                Toast($"Скоро финал: у кого-то осталось {_game.FewestPieces} уч. При {_game.Config.FinalRoundPieces} — последний круг", Theme.Accent);
+                Toast($"Скоро финал: у кого-то осталось {_game.FewestPieces} уч. При {_game.Config.FinalRoundPieces} — последний круг", Theme.Gold);
             }
             if (_game.FinalOrderNumber > _lastFinalOrderShown)
             {
@@ -1114,7 +1424,7 @@ namespace CityHighways.Presentation
                     string where = $"{LocationName(order.A)} — {LocationName(order.B)}";
                     Toast(_game.FinalOrderWinner >= 0
                         ? $"{_game.Players[_game.FinalOrderWinner].Name} выполняет финальный заказ: +{_game.Config.FinalOrderBonus}"
-                        : $"Последний круг! Финальный заказ мэрии: {where}, +{_game.Config.FinalOrderBonus} тому, кто построит", Theme.Accent);
+                        : $"Последний круг! Финальный заказ мэрии: {where}, +{_game.Config.FinalOrderBonus} тому, кто построит", Theme.Gold);
                 }
             }
 
@@ -1142,7 +1452,7 @@ namespace CityHighways.Presentation
                 _lastAuctionShown = _game.AuctionNumber;
                 if (_game.Phase == GamePhase.Bidding && _game.AuctionContract != null)
                 {
-                    Toast("Аукцион мэрии: " + ContractTitle(_game.AuctionContract), Theme.Accent);
+                    Toast("Аукцион мэрии: " + ContractTitle(_game.AuctionContract), Theme.Gold);
                     _app.Sound.Play(Sfx.Fanfare, 0.3f);
                 }
                 else if (_game.LastAuction != null)
@@ -1177,10 +1487,10 @@ namespace CityHighways.Presentation
                 string who = _game.Players[pair.Value].Name;
                 _app.Tweener.After(claimDuration + 0.15f, () =>
                 {
-                    Toast($"Цель мэрии «{goal.Name}»: {who} первым, +{goal.Points}", Theme.Accent);
+                    Toast($"Цель мэрии «{goal.Name}»: {who} первым, +{goal.Points}", Theme.Gold);
                     // Салют над серединой карты — цветом компании, взявшей цель.
                     _map.Fireworks(_map.contentRect.center + new Vector2(-80f, -40f), Palette.PlayerColor(pair.Value), 48);
-                    _map.Fireworks(_map.contentRect.center + new Vector2(90f, 10f), Theme.Accent, 40);
+                    _map.Fireworks(_map.contentRect.center + new Vector2(90f, 10f), Theme.Gold, 40);
                     _app.Sound.Play(Sfx.Fanfare, 0.7f);
                 });
             }
@@ -1192,7 +1502,7 @@ namespace CityHighways.Presentation
             {
                 int gain = now.Earned[me] - before.Earned[me];
                 _app.Tweener.After(claimDuration + 0.3f, () =>
-                    Toast($"Соперник проехал по вашим дорогам: +{gain} очк.", Theme.Accent));
+                    Toast($"Соперник проехал по вашим дорогам: +{gain} очк.", Theme.Gold));
             }
             foreach (var roadId in now.Jammed)
             {
@@ -1211,7 +1521,7 @@ namespace CityHighways.Presentation
                 {
                     int diff = now.Points[i] - before.Points[i];
                     if (diff == 0 || i >= _playerRows.Length) continue;
-                    var row = _playerRows[i].Root;
+                    var row = PlayerAnchor(i);
                     _app.Tweener.After(claimDuration * 0.8f, () => FloatText(row, diff > 0 ? $"+{diff}" : $"{diff}", diff > 0 ? Theme.Success : Theme.Danger));
                 }
 
@@ -1282,8 +1592,8 @@ namespace CityHighways.Presentation
             if (_game.Phase == GamePhase.SetupContracts)
                 Toast(_game.ActingPlayerIndex >= 0 && _game.Players[_game.ActingPlayerIndex].CharacterOffer.Count > 0
                     ? $"{name}, выберите компанию и стартовые контракты"
-                    : $"{name}, выберите стартовые контракты", Theme.Accent);
-            else Toast(HumanCount > 1 ? "Ходит " + name : "Ваш ход", Theme.Accent);
+                    : $"{name}, выберите стартовые контракты", Theme.Gold);
+            else Toast(HumanCount > 1 ? "Ходит " + name : "Ваш ход", Theme.Gold);
         }
 
         static float ClaimDuration(Road road) => road == null ? 0f : 0.12f * road.Length + 0.1f;
@@ -1313,9 +1623,9 @@ namespace CityHighways.Presentation
 
         void FlyCard(int playerIndex, Resource color, int faceUpSlot, float delay)
         {
-            VisualElement from = faceUpSlot >= 0 && faceUpSlot < _faceUp.Length ? (VisualElement)_faceUp[faceUpSlot] : _deckButton;
+            VisualElement from = faceUpSlot >= 0 ? FaceUpAnchor(faceUpSlot) : DeckAnchor;
             bool toHand = playerIndex == Viewer && !IsBot(playerIndex) && !NeedsHandoff;
-            VisualElement to = toHand ? (VisualElement)_hand[color] : _playerRows[playerIndex].Root;
+            VisualElement to = toHand ? (VisualElement)_hand[color] : PlayerAnchor(playerIndex);
             if (!IsLaidOut(from) || !IsLaidOut(to)) return;
 
             // Цвет видно, если карта была открытой или летит в руку того, кто смотрит на экран.
@@ -1347,7 +1657,7 @@ namespace CityHighways.Presentation
             }, () =>
             {
                 card.RemoveFromHierarchy();
-                if (to is CardView target) _app.Tweener.Add(0.3f, target.Pulse, () => target.Pulse(0f), 0f, false);
+                if (to is ResourceChip chip) chip.Pulse();
             }, delay);
         }
 
@@ -1385,7 +1695,7 @@ namespace CityHighways.Presentation
                     _app.Tweener.After(start, () => FloatAt(burnt, $"−{passage.JamFee}", Theme.Danger));
                 }
                 if (passage.Toll <= 0 || passage.Owner < 0 || passage.Owner >= _playerRows.Length) continue;
-                var target = _playerRows[passage.Owner].Root;
+                var target = PlayerAnchor(passage.Owner);
                 if (!IsLaidOut(target)) continue;
                 var to = _fx.WorldToLocal(target.worldBound.center);
 
@@ -1422,13 +1732,13 @@ namespace CityHighways.Presentation
                 }, () =>
                 {
                     coin.RemoveFromHierarchy();
-                    FloatText(target, $"+{passage.Toll}", Theme.Accent);
+                    FloatText(target, $"+{passage.Toll}", Theme.Gold);
                 }, start, false);
             }
             if (payer >= 0 && payer < _playerRows.Length)
             {
                 int total = route.Toll + route.JamFee;
-                var payerRow = _playerRows[payer].Root;
+                var payerRow = PlayerAnchor(payer);
                 _app.Tweener.After(delay, () => FloatText(payerRow, $"−{total}", Theme.Danger));
             }
         }
@@ -1514,8 +1824,8 @@ namespace CityHighways.Presentation
             // Рубашка.
             var back = Ui.Column();
             back.style.alignItems = Align.Center;
-            back.Add(Ui.Text("?", 96f, Theme.Accent, true));
-            back.Add(Ui.Text("УДАЧА", 20f, Theme.Accent, true));
+            back.Add(Ui.Text("?", 96f, Theme.Gold, true));
+            back.Add(Ui.Text("УДАЧА", 20f, Theme.Gold, true));
             card.Add(back);
 
             // Лицо.
@@ -1545,7 +1855,7 @@ namespace CityHighways.Presentation
                 Ui.Show(back, !showFace);
                 Ui.Show(face, showFace);
                 card.style.backgroundColor = showFace ? Theme.Panel : Theme.PanelLight;
-                Ui.Border(card, 3f, showFace ? color : Theme.Accent);
+                Ui.Border(card, 3f, showFace ? color : Theme.Gold);
             }
             void SetFlip(float scaleX) => card.style.scale = new Scale(new Vector3(Mathf.Max(0.001f, scaleX), 1f, 1f));
             SetLook(false);
@@ -1627,6 +1937,17 @@ namespace CityHighways.Presentation
             _coach?.Update();
             RefreshOverlays();
             RefreshMap();
+            RefreshDrawerInfo();
+            AutoPanels();
+            RefreshTabs();
+            _minimap.Refresh();
+        }
+
+        void RefreshDrawerInfo()
+        {
+            _drawerInfo.text = $"Колода: {_game.DeckCount} · сброс {_game.DiscardCount} · контрактов в колоде {_game.ContractDeckCount}"
+                               + (_game.Scenario != ScenarioKind.Standard ? $"
+Сценарий: {Scenarios.Title(_game.Scenario)}" : "");
         }
 
         void BuildFaceUpRow()
@@ -1678,7 +1999,7 @@ namespace CityHighways.Presentation
                                  + (_game.AnnouncedBribes > 0 ? $" · нераскрытых взяток прошлого круга: {_game.AnnouncedBribes}" : "");
             }
             Ui.SetEnabled(_luckButton, HumanToAct && _game.CanDrawLuckCard());
-            _contractsButton.text = "Контракты";
+            _contractsButton.text = "Взять контракты";
             Ui.SetEnabled(_contractsButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction && _game.ContractDeckCount > 0);
             Ui.Show(_tradeButton, _game.Config.TradesEnabled);
             _tradeButton.text = "Сделка";
@@ -1716,8 +2037,8 @@ namespace CityHighways.Presentation
             if (!HumanToAct || _game.Phase != GamePhase.AwaitingAction) return;
             var me = _game.CurrentPlayer;
             var box = DialogBox(600f);
-            Ui.Border(box, 2f, Theme.Accent);
-            box.Add(Ui.Text($"Влияние: {me.Influence}", 26f, Theme.Accent, true));
+            Ui.Border(box, 2f, Theme.Gold);
+            box.Add(Ui.Text($"Влияние: {me.Influence}", 26f, Theme.Gold, true));
             var note = Ui.Text("Раз в ход, до основного действия; ход не тратится (кроме «Контрактов с выбором» — это и есть ход). " +
                                "Влияние дают выполненные контракты, новые районы сети, цели мэрии, «Грант» и отставание от лидера. " +
                                "В очки оно не превращается.", 12f, Theme.TextDim);
@@ -1817,7 +2138,7 @@ namespace CityHighways.Presentation
                     cell.Add(button);
                     string evidence = _game.SuspicionText(target);
                     var hint = Ui.Text(evidence.Length > 0 ? "Улика: " + evidence : "Прошлый ход — без улик", 11f,
-                        evidence.Length > 0 ? Theme.Accent : Theme.TextDim);
+                        evidence.Length > 0 ? Theme.Gold : Theme.TextDim);
                     hint.style.marginTop = 2f;
                     cell.Add(hint);
                     accuseRow.Add(cell);
@@ -1832,76 +2153,136 @@ namespace CityHighways.Presentation
             ShowOverlay(OverlayKind.Influence, Centered(box), Theme.Shade);
         }
 
+        /// <summary>
+        /// Игроки: подробные строки — в окне «Игроки» (портрет, персонаж, способность, очки и участки полосками),
+        /// компактные кружки — во вкладке внизу, всегда на виду (туда же летят карты и монетки).
+        /// </summary>
         void BuildPlayerRows()
         {
             BuildLooks();
             _playersBox.Clear();
+            _playerChipsRow.Clear();
             _playerRows = new PlayerRow[_game.Players.Count];
+            _playerChips = new PlayerChip[_game.Players.Count];
             foreach (var player in _game.Players)
             {
+                var color = Palette.PlayerColor(player.Index);
                 var row = Ui.Column();
-                row.style.marginBottom = 4f;
-                Ui.Padding(row, 4f, 8f);
-                Ui.Radius(row, 8f);
+                row.style.marginBottom = 8f;
+                Ui.Padding(row, 10f, 12f);
+                Ui.Radius(row, 10f);
+                Ui.Transitions(row, "background-color", "border-top-color", "border-bottom-color", "border-left-color", "border-right-color");
 
                 var line = Ui.Row();
                 line.style.alignItems = Align.Center;
-                var portrait = new CharacterView(36f, true);
+                var portrait = new CharacterView(48f, true);
                 portrait.Set(OutfitOf(player.Index));
-                portrait.style.marginRight = 8f;
+                portrait.style.marginRight = 10f;
                 portrait.style.backgroundColor = Theme.Panel;
-                Ui.Radius(portrait, 8f);
-                Ui.Border(portrait, 2f, Palette.PlayerColor(player.Index));
+                Ui.Radius(portrait, 10f);
+                Ui.Border(portrait, 2f, color);
                 line.Add(portrait);
-                var icon = new CharacterIcon(24f, player.Character, Palette.PlayerColor(player.Index));
+                var icon = new CharacterIcon(28f, player.Character, color);
                 icon.style.marginRight = 8f;
                 line.Add(icon);
-                var badge = new ProfileBadge(14f);
-                badge.style.marginRight = 5f;
+                var badge = new ProfileBadge(16f);
+                badge.style.marginRight = 6f;
                 line.Add(badge);
-                var name = Ui.Text("", 14f, null, true);
-                name.style.flexGrow = 1f;
-                name.style.flexShrink = 1f;
+                var names = Ui.Column();
+                names.style.flexGrow = 1f;
+                names.style.flexShrink = 1f;
+                var name = Ui.Text("", 16f, null, true);
                 name.style.overflow = Overflow.Hidden;
                 name.style.textOverflow = TextOverflow.Ellipsis;
                 name.style.whiteSpace = WhiteSpace.NoWrap;
-                line.Add(name);
-                var stats = Ui.Text("", 12f, Theme.TextDim);
-                stats.style.flexShrink = 0f;
-                line.Add(stats);
+                names.Add(name);
+                var title = Ui.Text("", 11f, Theme.Gold, true);
+                names.Add(title);
+                var stats = Ui.Number("", 13f, Theme.TextDim);
+                stats.style.marginTop = 2f;
+                names.Add(stats);
+                line.Add(names);
+                var score = Ui.Number("0", 24f, Theme.Text, true);
+                score.style.marginLeft = 12f;
+                line.Add(score);
                 row.Add(line);
 
-                var title = Ui.Text("", 10f, new Color(0.98f, 0.78f, 0.25f), true);
-                title.style.marginLeft = 32f;
-                row.Add(title);
+                var piecesLine = Ui.Row();
+                piecesLine.style.marginTop = 8f;
+                var piecesCaption = Ui.Text("Участки", 12f, Theme.TextDim);
+                piecesCaption.style.width = 70f;
+                piecesLine.Add(piecesCaption);
+                var pieces = new ProgressBar(220f, 6f, color);
+                piecesLine.Add(pieces);
+                row.Add(piecesLine);
 
-                var ability = Ui.Text("", 11f, Theme.TextDim);
+                var ability = Ui.Text("", 13f, Theme.TextDim);
                 ability.style.whiteSpace = WhiteSpace.Normal;
-                ability.style.marginLeft = 32f;
+                ability.style.marginTop = 6f;
                 row.Add(ability);
 
                 _playersBox.Add(row);
-                _playerRows[player.Index] = new PlayerRow { Root = row, Name = name, Stats = stats, Icon = icon, Ability = ability, Badge = badge, Title = title };
+                _playerRows[player.Index] = new PlayerRow
+                {
+                    Root = row, Name = name, Stats = stats, Icon = icon, Ability = ability, Badge = badge, Title = title,
+                    Pieces = pieces, Score = score
+                };
+
+                // Кружок во вкладке «Игроки».
+                var chip = Ui.Row();
+                chip.pickingMode = PickingMode.Position;
+                chip.style.marginLeft = 6f;
+                var dot = Ui.Box();
+                dot.style.width = 22f;
+                dot.style.height = 22f;
+                dot.style.backgroundColor = color;
+                dot.style.alignItems = Align.Center;
+                dot.style.justifyContent = Justify.Center;
+                Ui.Radius(dot, 11f);
+                Ui.Border(dot, 2f, new Color(0f, 0f, 0f, 0f));
+                Ui.Transitions(dot, "scale", "border-top-color", "border-bottom-color", "border-left-color", "border-right-color");
+                var initial = Ui.Text(player.Name.Length > 0 ? player.Name.Substring(0, 1).ToUpperInvariant() : "?", 11f, new Color(0.08f, 0.08f, 0.10f), true);
+                initial.style.unityTextAlign = TextAnchor.MiddleCenter;
+                dot.Add(initial);
+                chip.Add(dot);
+                var chipScore = Ui.Number("0", 13f, Theme.Text, true);
+                chipScore.style.marginLeft = 4f;
+                chip.Add(chipScore);
+                int index = player.Index;
+                AttachTooltip(chip, () => PlayerTooltip(index));
+                _playerChipsRow.Add(chip);
+                _playerChips[player.Index] = new PlayerChip { Root = chip, Dot = dot, Score = chipScore };
             }
+        }
+
+        string PlayerTooltip(int index)
+        {
+            var player = _game.Players[index];
+            string character = player.Character != CharacterKind.None ? " · " + Characters.Title(player.Character) : "";
+            return $"{player.Name}{character}{BotTag(index)}\n{_game.VisibleScore(player)} очков · {player.RoadPieces} участков · {player.HandSize} карт"
+                   + (_game.Config.InfluenceEnabled ? $" · {player.Influence} влияния" : "")
+                   + "\nПодробнее — в окне «Игроки».";
         }
 
         void RefreshPlayers()
         {
             int acting = _game.ActingPlayerIndex;
+            int start = Math.Max(1, _game.Config.RoadPiecesFor(_game.Players.Count));
             foreach (var player in _game.Players)
             {
                 var row = _playerRows[player.Index];
                 bool active = player.Index == acting;
                 string character = player.Character != CharacterKind.None ? " · " + Characters.Title(player.Character) : "";
                 row.Name.text = player.Name + character + BotTag(player.Index);
-                // Способность — только у того, кто сейчас действует: остальным она пока не нужна.
                 row.Ability.text = player.Character == CharacterKind.None ? "" : Characters.Ability(player.Character, _game.Config)
                     + (player.Character == CharacterKind.Foreman ? $" Осталось: {player.FreeRoadsLeft}." : "");
-                Ui.Show(row.Ability, active && player.Character != CharacterKind.None);
+                Ui.Show(row.Ability, player.Character != CharacterKind.None);
                 // Видимые очки: дороги, цели, удача, штрафы и проезд (он платится по ходу партии). Контракты секретны.
                 int points = _game.VisibleScore(player);
-                row.Stats.text = $"{points} очк · {player.RoadPieces} уч · {player.HandSize} карт"
+                row.Score.text = points.ToString();
+                row.Stats.text = $"{player.RoadPieces} уч · {player.HandSize} карт"
                                  + (_game.Config.InfluenceEnabled ? $" · {player.Influence} вл" : "");
+                row.Pieces.Set(player.RoadPieces / (float)start);
                 row.Root.style.backgroundColor = active ? Theme.PanelHover : Theme.PanelLight;
                 var look = LookOf(player.Index);
                 var frame = Profiles.FrameColor(look.Frame);
@@ -1910,6 +2291,11 @@ namespace CityHighways.Presentation
                 row.Badge.Set(look.Emblem, framed ? frame : new Color(0.98f, 0.78f, 0.25f));
                 row.Title.text = Profiles.TitleText(look.Title);
                 Ui.Show(row.Title, row.Title.text.Length > 0);
+
+                var chip = _playerChips[player.Index];
+                chip.Score.text = points.ToString();
+                Ui.Border(chip.Dot, 2f, active ? Color.white : new Color(0f, 0f, 0f, 0f));
+                chip.Dot.style.scale = new Scale(active ? new Vector3(1.15f, 1.15f, 1f) : Vector3.one);
             }
         }
 
@@ -1941,9 +2327,9 @@ namespace CityHighways.Presentation
         VisualElement CharacterChoiceCard(PlayerState player)
         {
             var card = Ui.Card(12f);
-            Ui.Border(card, 2f, Theme.Accent);
+            Ui.Border(card, 2f, Theme.Gold);
             card.style.marginBottom = 10f;
-            card.Add(Ui.Text("Выберите компанию", 17f, Theme.Accent, true));
+            card.Add(Ui.Text("Выберите компанию", 17f, Theme.Gold, true));
             var hint = Ui.Text("Один персонаж на всю партию. Подумайте о стартовых контрактах: мосты на пути — Мостовику, много контрактов — Чиновнику.", 12f, Theme.TextDim);
             hint.style.whiteSpace = WhiteSpace.Normal;
             hint.style.marginTop = 4f;
@@ -1994,26 +2380,24 @@ namespace CityHighways.Presentation
                     foreach (var c in player.PendingContracts) _selectedContracts.Add(c.Id);
             }
 
-            var card = Ui.Card(12f);
-            Ui.Border(card, 2f, Theme.Accent);
-            card.Add(Ui.Text(setup ? "Стартовые контракты" : "Новые контракты", 17f, Theme.Accent, true));
-            var hint = Ui.Text($"Оставьте хотя бы {required}. Наведите — районы подсветятся на карте. Невыполненный контракт в конце отнимает очки.", 12f, Theme.TextDim);
-            hint.style.marginTop = 4f;
-            hint.style.marginBottom = 8f;
-            card.Add(hint);
+            var header = Ui.Row();
+            header.style.alignItems = Align.FlexEnd;
+            header.style.marginBottom = 4f;
+            header.Add(Ui.Text(setup ? "Стартовые контракты" : "Новые контракты", 18f, Theme.Gold, true));
+            var hint = Ui.Text($"  ·  оставьте хотя бы {required}. Клик по карточке — взять или отказаться. Наведите — районы подсветятся. Невыполненный контракт в конце отнимает очки.", 13f, Theme.TextDim);
+            hint.style.flexShrink = 1f;
+            header.Add(hint);
+            _contractsBox.Add(header);
 
-            foreach (var contract in player.PendingContracts)
-            {
-                bool selected = _selectedContracts.Contains(contract.Id);
-                var row = ContractRow(player.Index, contract, selected ? new Color(0.27f, 0.36f, 0.22f) : Theme.Panel, selected, false);
-                row.RegisterCallback<ClickEvent>(_ =>
+            var cards = player.PendingContracts.Select(contract => ContractCard(player.Index, contract, _choiceCarousel, true,
+                _selectedContracts.Contains(contract.Id), () =>
                 {
                     if (!_selectedContracts.Remove(contract.Id)) _selectedContracts.Add(contract.Id);
                     _app.Sound.Play(Sfx.Click, 0.5f);
                     _dirty = true;
-                });
-                card.Add(row);
-            }
+                })).ToList();
+            _choiceCarousel.SetCards(cards);
+            _contractsBox.Add(_choiceCarousel);
 
             var confirm = Ui.Button($"Взять выбранные ({_selectedContracts.Count})", () =>
             {
@@ -2025,131 +2409,152 @@ namespace CityHighways.Presentation
                 }
                 Act(() => setup ? _game.KeepInitialContracts(player.Index, ids) : _game.KeepContracts(ids));
             }, ButtonKind.Primary, 15f);
-            confirm.style.marginTop = 8f;
+            confirm.style.marginTop = 6f;
+            confirm.style.alignSelf = Align.FlexStart;
             Ui.SetEnabled(confirm, _selectedContracts.Count >= required);
-            card.Add(confirm);
-
-            _contractsBox.Add(card);
+            _contractsBox.Add(confirm);
         }
 
         void BuildContractList()
         {
             var viewer = _game.Players[Viewer];
-            // Заголовок не нужен: вкладка уже называется «Контракты».
-
             if (NeedsHandoff)
             {
-                _contractsBox.Add(Ui.Text("Скрыто до передачи хода.", 13f, Theme.TextDim));
+                _contractsBox.Add(Ui.Text("Скрыто до передачи хода.", 14f, Theme.TextDim));
                 return;
             }
             if (viewer.Contracts.Count == 0)
             {
-                _contractsBox.Add(Ui.Text("Контрактов пока нет.", 13f, Theme.TextDim));
+                _contractsBox.Add(Ui.Text("Контрактов пока нет. Взять новые — кнопка «Взять контракты» в панели «Действия».", 14f, Theme.TextDim));
                 return;
             }
 
-            var tip = Ui.Text("Клик по контракту закрепляет его маршрут на карте, повторный клик снимает.", 11f, Theme.TextDim);
-            tip.style.marginBottom = 6f;
-            tip.style.whiteSpace = WhiteSpace.Normal;
+            var tip = Ui.Text("Тяните карточки влево-вправо или крутите колесо. Наведите — районы и путь подсветятся; клик закрепляет маршрут на карте.", 13f, Theme.TextDim);
+            tip.style.marginBottom = 2f;
             _contractsBox.Add(tip);
 
             // Сначала невыполненные — о них важнее помнить.
             var checks = viewer.Contracts.Select(c => _game.CheckContract(viewer.Index, c)).OrderBy(c => c.Completed).ToList();
-            foreach (var check in checks)
-                _contractsBox.Add(ContractRow(viewer.Index, check.Contract, Theme.PanelLight, check.Completed, true));
+            _contractCarousel.SetCards(checks.Select(check =>
+                ContractCard(viewer.Index, check.Contract, _contractCarousel, false, check.Completed, null)).ToList());
+            _contractsBox.Add(_contractCarousel);
         }
 
         /// <summary>
-        /// Строка контракта. selectionStyle=false — квадратик выбора; true — статус:
-        /// зелёный кружок — выполнен своими дорогами, оранжевый — через чужие (с платой), пустой — ещё нет.
+        /// Карточка контракта: цветная кромка — статус (зелёная — выполнен своими дорогами, латунная — через чужие,
+        /// у выбора — взят или нет), районы с метками цветов подсветки, очки крупно моноширинными цифрами.
+        /// Наведение подсвечивает районы и путь на карте, клик закрепляет маршрут (или берёт контракт при выборе).
         /// </summary>
-        VisualElement ContractRow(int playerIndex, Contract contract, Color background, bool marked, bool statusStyle)
+        VisualElement ContractCard(int playerIndex, Contract contract, CardCarousel carousel, bool selection, bool marked, Action onSelect)
         {
             var check = _game.CheckContract(playerIndex, contract);
             int foreign = check.ForeignRoads.Count;
-            int toll = check.Toll;
+            bool done = !selection && marked;
+            bool pinned = !selection && IsPinned(playerIndex, contract);
 
-            var row = Ui.Row();
-            row.pickingMode = PickingMode.Position;
-            row.style.backgroundColor = background;
-            row.style.marginBottom = 6f;
-            Ui.Radius(row, 7f);
-            Ui.Padding(row, 8f, 10f);
+            var card = Ui.Column();
+            card.pickingMode = PickingMode.Position;
+            card.style.width = ContractCardWidth;
+            card.style.minHeight = 172f;
+            card.style.backgroundColor = pinned ? Theme.PanelHover : Theme.PanelLight;
+            Ui.Radius(card, 12f);
+            Ui.Padding(card, 12f, 14f);
+            Ui.Border(card, pinned ? 2f : 1f, pinned ? Theme.Accent : Theme.Line);
+            var edge = selection ? (marked ? Theme.Success : Theme.TextDim)
+                : done ? (foreign > 0 ? Theme.Gold : Theme.Success)
+                : Theme.PanelHover;
+            card.style.borderTopWidth = 5f;
+            card.style.borderTopColor = edge;
+            Ui.Transitions(card, "translate", "background-color");
 
-            var mark = Ui.Box();
-            mark.style.width = 14f;
-            mark.style.height = 14f;
-            mark.style.marginRight = 10f;
-            Ui.Radius(mark, statusStyle ? 7f : 3f);
-            if (marked) mark.style.backgroundColor = statusStyle && foreign > 0 ? Theme.Accent : Theme.Success;
-            else Ui.Border(mark, 2f, Theme.TextDim);
-            row.Add(mark);
-
-            var texts = Ui.Column();
-            texts.style.flexGrow = 1f;
+            var tags = Ui.Row();
+            string kind = contract.Kind == ContractKind.Transit ? "ТРАНЗИТ" : contract.Kind == ContractKind.Hub ? "УЗЕЛ" : "КОНТРАКТ";
+            tags.Add(Ui.Text(kind, 11f, contract.IsComplex ? MapView.ThirdColor : Theme.TextDim, true));
+            var tagSpace = Ui.Box();
+            tagSpace.style.flexGrow = 1f;
+            tags.Add(tagSpace);
             if (_game.Players[playerIndex].IsMayorContract(contract.Id))
-                texts.Add(Ui.Text($"★ КОНТРАКТ МЭРИИ · выполнен — ещё +{_game.Config.AuctionBonus}", 10f, Theme.Accent, true));
-            if (contract.IsComplex)
-            {
-                string kind = contract.Kind == ContractKind.Transit ? "ТРАНЗИТ" : "УЗЕЛ";
-                if (contract.Kind == ContractKind.Hub && !check.Completed && check.LegsCompleted > 0)
-                    kind += $" · готово {check.LegsCompleted} из {check.LegsTotal}";
-                texts.Add(Ui.Text(kind, 10f, MapView.ThirdColor, true));
-            }
-            texts.Add(DistrictPair(contract, statusStyle && marked ? Theme.TextDim : Theme.Text));
-            if (statusStyle && marked && foreign > 0)
-            {
-                string jam = check.JamFee > 0 ? $" · пробка −{check.JamFee}" : "";
-                string paid = check.Paid ? "оплачено: " : "";
-                texts.Add(Ui.Text($"{paid}через {foreign} чужих уч. · проезд −{toll}{jam}", 11f, Theme.Accent));
-            }
-            row.Add(texts);
+                tags.Add(Ui.Text($"МЭРИЯ +{_game.Config.AuctionBonus}", 11f, Theme.Gold, true));
+            if (selection && marked) tags.Add(Ui.Text("БЕРУ", 11f, Theme.Success, true));
+            card.Add(tags);
 
-            bool pinned = statusStyle && IsPinned(playerIndex, contract);
-            if (pinned)
+            VisualElement DistrictLine(Color chip, string prefix, string district)
             {
-                var pinLabel = Ui.Text("МАРШРУТ ЗАКРЕПЛЁН · клик — снять", 10f, Theme.Accent, true);
-                pinLabel.style.marginTop = 2f;
-                texts.Add(pinLabel);
-            }
-
-            string pointsText = statusStyle && marked ? "+" + contract.Points : contract.Points.ToString();
-            row.Add(Ui.Text(pointsText, 14f, statusStyle && marked ? Theme.Success : Theme.Accent, true));
-
-            void MarkRow(bool on)
-            {
-                row.style.borderLeftWidth = on ? 4f : 0f;
-                row.style.borderLeftColor = Theme.Accent;
-            }
-            if (pinned)
-            {
-                MarkRow(true);
-                row.style.backgroundColor = Theme.PanelHover;
-            }
-
-            row.RegisterCallback<PointerEnterEvent>(_ =>
-            {
-                ShowContractHighlight(playerIndex, contract);
-                MarkRow(true);
-            });
-            row.RegisterCallback<PointerLeaveEvent>(_ =>
-            {
-                // Уводим курсор — возвращается закреплённый маршрут (если есть), а не пустая карта.
-                if (statusStyle) RestorePinnedHighlight();
-                else ClearContractHighlight();
-                MarkRow(pinned);
-            });
-            if (statusStyle)
-            {
-                row.RegisterCallback<ClickEvent>(_ =>
+                var line = Ui.Row();
+                line.style.marginTop = 6f;
+                if (prefix != null)
                 {
-                    if (IsPinned(playerIndex, contract)) _pinnedContracts.Remove(playerIndex);
-                    else _pinnedContracts[playerIndex] = contract.Id;
-                    _app.Sound.Play(Sfx.Click, 0.5f);
-                    _dirty = true;
-                });
+                    var p = Ui.Text(prefix, 13f, Theme.TextDim);
+                    p.style.marginRight = 5f;
+                    line.Add(p);
+                }
+                line.Add(DistrictChip(chip));
+                var name = Ui.Text(DistrictName(district), 16f, done ? Theme.TextDim : Theme.Text, true);
+                name.style.flexShrink = 1f;
+                line.Add(name);
+                return line;
             }
-            return row;
+            card.Add(DistrictLine(MapView.FromColor, null, contract.DistrictA));
+            card.Add(DistrictLine(MapView.ToColor, null, contract.DistrictB));
+            if (contract.IsComplex)
+                card.Add(DistrictLine(MapView.ThirdColor, contract.Kind == ContractKind.Transit ? "через" : "и", contract.DistrictC));
+
+            var space = Ui.Box();
+            space.style.flexGrow = 1f;
+            card.Add(space);
+
+            var bottom = Ui.Row();
+            bottom.style.alignItems = Align.FlexEnd;
+            bottom.style.marginTop = 8f;
+            string status;
+            Color statusColor = Theme.TextDim;
+            if (selection) status = marked ? "Берёте" : "Не берёте";
+            else if (done && foreign > 0)
+            {
+                status = $"через {foreign} чужих · проезд −{check.Toll}" + (check.JamFee > 0 ? $" · пробка −{check.JamFee}" : "");
+                statusColor = Theme.Gold;
+            }
+            else if (done)
+            {
+                status = "Выполнен";
+                statusColor = Theme.Success;
+            }
+            else if (contract.Kind == ContractKind.Hub && check.LegsCompleted > 0)
+                status = $"готово {check.LegsCompleted} из {check.LegsTotal}";
+            else status = "Не выполнен";
+            var statusLabel = Ui.Text(pinned ? status + "\nмаршрут закреплён" : status, 12f, statusColor);
+            statusLabel.style.flexGrow = 1f;
+            statusLabel.style.flexShrink = 1f;
+            bottom.Add(statusLabel);
+            bottom.Add(Ui.Number(done ? "+" + contract.Points : contract.Points.ToString(), 26f, done ? Theme.Success : Theme.Gold, true));
+            card.Add(bottom);
+
+            card.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                card.style.translate = new Translate(new Length(0f), new Length(-4f));
+                ShowContractHighlight(playerIndex, contract);
+            });
+            card.RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                card.style.translate = new Translate(new Length(0f), new Length(0f));
+                // Уводим курсор — возвращается закреплённый маршрут (если есть), а не пустая карта.
+                if (!selection) RestorePinnedHighlight();
+                else ClearContractHighlight();
+            });
+            card.RegisterCallback<ClickEvent>(_ =>
+            {
+                if (carousel != null && carousel.WasDragged) return;
+                if (selection)
+                {
+                    onSelect?.Invoke();
+                    return;
+                }
+                if (IsPinned(playerIndex, contract)) _pinnedContracts.Remove(playerIndex);
+                else _pinnedContracts[playerIndex] = contract.Id;
+                _app.Sound.Play(Sfx.Click, 0.5f);
+                _dirty = true;
+            });
+            return card;
         }
 
         bool IsPinned(int playerIndex, Contract contract) =>
@@ -2243,7 +2648,7 @@ namespace CityHighways.Presentation
         /// </summary>
         void RefreshLog(bool rebuild = false)
         {
-            if (_sideTab != SideTab.Log) return; // журнал собираем, только когда его видно
+            if (_sheet != SheetKind.Log) return; // журнал собираем, только когда его видно
             int fresh = _logTotal - _logShownTotal;
             if (!rebuild && _logShownTotal >= 0 && fresh == 0) return; // ничего нового — прокрутку не трогаем
 
@@ -2280,7 +2685,7 @@ namespace CityHighways.Presentation
         /// <summary>Содержимое журнала поменяло размер — если он был внизу, остаёмся внизу.</summary>
         void KeepLogAtEnd()
         {
-            if (_logStick && _sideTab == SideTab.Log) ScrollLogToEnd();
+            if (_logStick && _sheet == SheetKind.Log) ScrollLogToEnd();
         }
 
         void ScrollLogToEnd()
@@ -2304,7 +2709,7 @@ namespace CityHighways.Presentation
             }
             else
             {
-                _statusChip.style.backgroundColor = Theme.Accent;
+                _statusChip.style.backgroundColor = Theme.Gold;
                 _statusName.text = "Партия окончена";
             }
 
@@ -2312,7 +2717,7 @@ namespace CityHighways.Presentation
             _statusText.style.color = TimerEnabled && HumanToAct && !_timerExpired && _turnTimeLeft <= 10f ? Theme.Danger : Theme.Text;
             MarkLogSeen();
             _finalRound.text = FinalText();
-            _finalRound.style.color = _game.IsFinalRound ? Theme.Accent : Theme.TextDim;
+            _finalRound.style.color = _game.IsFinalRound ? Theme.Gold : Theme.TextDim;
             Ui.Show(_finalRound, _finalRound.text.Length > 0 && _game.Phase != GamePhase.GameOver);
             _flashLabel.text = _flash ?? "";
             Ui.Show(_flashLabel, _flash != null);
@@ -2331,14 +2736,14 @@ namespace CityHighways.Presentation
             {
                 case GamePhase.SetupContracts:
                     return _game.ActingPlayerIndex >= 0 && _game.Players[_game.ActingPlayerIndex].CharacterOffer.Count > 0
-                        ? "Выберите компанию и стартовые контракты на панели справа."
-                        : "Выберите стартовые контракты на панели справа.";
+                        ? "Выберите компанию и стартовые контракты на панели «Контракты» внизу."
+                        : "Выберите стартовые контракты на панели «Контракты» внизу.";
                 case GamePhase.AwaitingAction:
-                    return "Возьмите 2 карты, постройте дорогу кликом по карте (доступные мерцают) или возьмите контракты.";
+                    return "Возьмите 2 карты (панель «Действия»), постройте дорогу кликом по карте — доступные светятся — или возьмите контракты.";
                 case GamePhase.DrawingSecondCard:
                     return "Возьмите вторую карту. Открытую технику сейчас брать нельзя.";
                 case GamePhase.ChoosingContracts:
-                    return "Отметьте справа контракты, которые берёте.";
+                    return "Отметьте в панели «Контракты», какие берёте.";
                 case GamePhase.ChoosingLuck:
                     return "Везунчик: выберите одну из двух карт удачи.";
                 case GamePhase.RespondingTrade:
@@ -2350,20 +2755,18 @@ namespace CityHighways.Presentation
             }
         }
 
+        /// <summary>Ресурсы в верхней панели: деления по картам в руке и полоска оставшихся участков.</summary>
         void RefreshHand()
         {
             var viewer = _game.Players[Viewer];
             bool hidden = NeedsHandoff;
-            _handTitle.text = hidden
-                ? "РУКА СКРЫТА"
-                : $"РЕСУРСЫ · {viewer.Name.ToUpperInvariant()} · УЧАСТКОВ ДОРОГИ: {viewer.RoadPieces}";
-            Ui.Show(_handRow, !hidden);
+            _handTitle.text = hidden ? "рука скрыта" : HumanCount > 1 ? viewer.Name : "";
+            foreach (var pair in _hand) pair.Value.Set(viewer.CardCount(pair.Key), hidden);
 
-            foreach (var pair in _hand)
-            {
-                int count = viewer.CardCount(pair.Key);
-                pair.Value.Set(pair.Key, count, count == 0);
-            }
+            int start = Math.Max(1, _game.Config.RoadPiecesFor(_game.Players.Count));
+            _piecesLabel.text = viewer.RoadPieces.ToString();
+            bool low = viewer.RoadPieces <= _game.Config.FinalWarningPieces;
+            _piecesBar.Set(viewer.RoadPieces / (float)start, low ? Theme.Danger : Theme.Success);
         }
 
         void RefreshMap()
@@ -2476,7 +2879,7 @@ namespace CityHighways.Presentation
             box.style.position = Position.Absolute;
             box.style.width = 340f;
             box.style.backgroundColor = Theme.Panel;
-            Ui.Border(box, 2f, Theme.Accent);
+            Ui.Border(box, 2f, Theme.Gold);
 
             box.Add(Ui.Text($"{LocationName(route.A)} — {LocationName(route.B)}: чем платить?", 15f, null, true));
             if (canBuildFree)
@@ -2533,8 +2936,8 @@ namespace CityHighways.Presentation
         {
             var box = DialogBox(640f);
             box.style.alignItems = Align.Center;
-            Ui.Border(box, 3f, Theme.Accent);
-            box.Add(Ui.Text("Везунчик: какую карту оставить?", 24f, Theme.Accent, true));
+            Ui.Border(box, 3f, Theme.Gold);
+            box.Add(Ui.Text("Везунчик: какую карту оставить?", 24f, Theme.Gold, true));
             var note = Ui.Text("Обе карты уйдут в сброс, сработает только выбранная.", 13f, Theme.TextDim);
             note.style.marginTop = 4f;
             note.style.marginBottom = 16f;
@@ -2610,9 +3013,9 @@ namespace CityHighways.Presentation
 
             var box = DialogBox(580f);
             box.style.alignItems = Align.Center;
-            Ui.Border(box, 3f, Theme.Accent);
+            Ui.Border(box, 3f, Theme.Gold);
             box.Add(Ui.Text("АУКЦИОН МЭРИИ · РАЗ ЗА ПАРТИЮ", 13f, Theme.TextDim, true));
-            var title = Ui.Text(ContractTitle(contract), 26f, Theme.Accent, true);
+            var title = Ui.Text(ContractTitle(contract), 26f, Theme.Gold, true);
             title.style.marginTop = 6f;
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
             title.style.whiteSpace = WhiteSpace.Normal;
@@ -2680,8 +3083,8 @@ namespace CityHighways.Presentation
             int minCards = influenceOn || passesOn ? 0 : 1; // с влиянием или пропуском одна из сторон может быть без карт
 
             var box = DialogBox(560f);
-            Ui.Border(box, 2f, Theme.Accent);
-            box.Add(Ui.Text("Сделка", 26f, Theme.Accent, true));
+            Ui.Border(box, 2f, Theme.Gold);
+            box.Add(Ui.Text("Сделка", 26f, Theme.Gold, true));
             var note = Ui.Text("Одна сделка за ход, до основного действия. Ход она не тратит."
                                + (influenceOn ? " Можно доплатить влиянием или купить карты за влияние." : "")
                                + (passesOn ? " Пропуск — бесплатный проезд по всем дорогам продавца до конца партии (пробочный сбор городу остаётся)." : ""),
@@ -2898,7 +3301,7 @@ namespace CityHighways.Presentation
                 report.style.backgroundColor = Theme.PanelLight;
                 report.style.marginBottom = 18f;
                 Ui.Radius(report, 10f);
-                report.Add(Ui.Text("Пока вас не было", 13f, Theme.Accent, true));
+                report.Add(Ui.Text("Пока вас не было", 13f, Theme.Gold, true));
                 const int maxLines = 8;
                 if (unseen.Count > maxLines)
                     report.Add(Ui.Text($"…и ещё {unseen.Count - maxLines} событий раньше", 12f, Theme.TextDim));
@@ -2940,7 +3343,7 @@ namespace CityHighways.Presentation
                 figure.style.marginRight = 6f;
                 hero.Add(figure);
             }
-            var title = Ui.Text("Победа: " + string.Join(", ", result.Winners.Select(w => w.PlayerName)), 34f, Theme.Accent, true);
+            var title = Ui.Text("Победа: " + string.Join(", ", result.Winners.Select(w => w.PlayerName)), 34f, Theme.Gold, true);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
             title.style.marginLeft = 16f;
             title.style.marginBottom = 20f;
@@ -2975,7 +3378,7 @@ namespace CityHighways.Presentation
             if (friends.Count > 0)
             {
                 var friend = Ui.Text("«Друг мэра» — больше всех потратил влияния: " + string.Join(", ", friends.Select(f => $"{f.PlayerName} +{f.FriendBonus}")) + " (в итоге).",
-                    13f, Theme.Accent);
+                    13f, Theme.Gold);
                 friend.style.whiteSpace = WhiteSpace.Normal;
                 friend.style.unityTextAlign = TextAnchor.MiddleCenter;
                 friend.style.marginTop = 8f;
@@ -2997,7 +3400,7 @@ namespace CityHighways.Presentation
             if (_profileCredits != null && _profileCredits.Count > 0)
             {
                 var credit = Ui.Text("В кошелёк профиля: " + string.Join(" · ", _profileCredits.Select(c => $"{c.Profile} +{c.Amount + c.Bonus}"))
-                                     + " — тратится на оформление в «Профиле».", 14f, Theme.Accent, true);
+                                     + " — тратится на оформление в «Профиле».", 14f, Theme.Gold, true);
                 credit.style.whiteSpace = WhiteSpace.Normal;
                 credit.style.unityTextAlign = TextAnchor.MiddleCenter;
                 credit.style.marginTop = 10f;
@@ -3007,7 +3410,7 @@ namespace CityHighways.Presentation
                 {
                     var parts = (c.Unlocked ?? new List<Achievement>()).Select(a => $"«{a.Title}» +{a.Reward}").ToList();
                     if (c.DailyDone) parts.Add($"задание дня +{Achievements.DailyReward}");
-                    var line = Ui.Text($"★ {c.Profile}: " + string.Join(", ", parts), 13f, Theme.Accent);
+                    var line = Ui.Text($"★ {c.Profile}: " + string.Join(", ", parts), 13f, Theme.Gold);
                     line.style.whiteSpace = WhiteSpace.Normal;
                     line.style.unityTextAlign = TextAnchor.MiddleCenter;
                     line.style.marginTop = 4f;
@@ -3035,7 +3438,7 @@ namespace CityHighways.Presentation
             {
                 var done = Ui.Text("Обучение пройдено! В обычной партии есть ещё: городские события, цели мэрии, карты удачи, " +
                                    "персонажи, сделки и пропуска, улучшение дорог, аукцион мэрии и взятки. Всё это — в «Правилах», " +
-                                   "а коротко — в подсказках первой партии.", 14f, Theme.Accent);
+                                   "а коротко — в подсказках первой партии.", 14f, Theme.Gold);
                 done.style.whiteSpace = WhiteSpace.Normal;
                 done.style.unityTextAlign = TextAnchor.MiddleCenter;
                 done.style.marginTop = 14f;
@@ -3066,7 +3469,7 @@ namespace CityHighways.Presentation
                 column.style.flexBasis = 0f;
                 column.style.backgroundColor = Theme.PanelLight;
                 Ui.Radius(column, 10f);
-                column.Add(Ui.Text(caption, 14f, Theme.Accent, true));
+                column.Add(Ui.Text(caption, 14f, Theme.Gold, true));
                 return column;
             }
             Label Line(string text, Color color, bool bold = false)
@@ -3132,7 +3535,7 @@ namespace CityHighways.Presentation
             for (int i = 0; i < cells.Length; i++)
             {
                 bool total = i == cells.Length - 1 && playerIndex >= 0;
-                var cell = Ui.Text(cells[i], total ? 20f : 15f, total ? Theme.Accent : color, total || i == 0);
+                var cell = Ui.Text(cells[i], total ? 20f : 15f, total ? Theme.Gold : color, total || i == 0);
                 cell.style.width = widths[i];
                 cell.style.whiteSpace = WhiteSpace.NoWrap;
                 row.Add(cell);
@@ -3191,21 +3594,21 @@ namespace CityHighways.Presentation
             },
             new TutorialStep
             {
-                Target = () => _contractsPage,
+                Target = () => _contractsTab,
                 Title = "Контракты мэрии",
-                Text = "Контракт — соединить два района, подойдёт любое их место. Выполненный контракт прибавляет очки, невыполненный отнимает. Сложные дороже: транзит — один путь через третий район, узел — первый район связать с двумя другими. Наведите на контракт — районы и путь подсветятся."
+                Text = "Ваши контракты — во вкладке «Контракты» внизу, карточки листаются свайпом. Контракт — соединить два района, подойдёт любое их место. Выполненный контракт прибавляет очки, невыполненный отнимает. Сложные дороже: транзит — один путь через третий район, узел — первый район связать с двумя другими. Наведите на контракт — районы и путь подсветятся."
             },
             new TutorialStep
             {
-                Target = () => _faceUpRow,
+                Target = () => _actionsTab,
                 Title = "Ресурсы",
-                Text = "За ход можно взять 2 карты: открытые или из колоды. Асфальт — улицы, бетон — проспекты, сталь — мосты, щебень — загородные дороги. Техника — джокер, но открытая техника заменяет обе карты."
+                Text = "Открытые карты и колода — в панели «Действия» внизу. За ход можно взять 2 карты: открытые или из колоды. Асфальт — улицы, бетон — проспекты, сталь — мосты, щебень — загородные дороги. Техника — джокер, но открытая техника заменяет обе карты."
             },
             new TutorialStep
             {
                 Target = () => _handRow,
                 Title = "Ваши карты",
-                Text = "Чтобы построить дорогу длиной 3, нужно 3 карты её ресурса. Белые дороги строятся любым одним ресурсом. Мостов мало и стали мало — за них будет борьба."
+                Text = "Ваши карты — вверху: одно деление — одна карта. Чтобы построить дорогу длиной 3, нужно 3 карты её ресурса. Белые дороги строятся любым одним ресурсом. Мостов мало и стали мало — за них будет борьба."
             },
             new TutorialStep
             {
@@ -3215,27 +3618,27 @@ namespace CityHighways.Presentation
             },
             new TutorialStep
             {
-                Target = () => _eventCard,
+                Target = () => _eventPill,
                 Title = "Городские события",
-                Text = "В начале круга может открыться событие (примерно в половине кругов). Час пик — дороги этого круга станут платными вдвое. Ремонт — пара участков закрыта. Субсидия — мосты дешевле. Новый район — на окраине появляются места и контракты."
+                Text = "Событие круга — цветная метка вверху, подробности — при наведении и в «Меню». В начале круга может открыться событие (примерно в половине кругов). Час пик — дороги этого круга станут платными вдвое. Ремонт — пара участков закрыта. Субсидия — мосты дешевле. Новый район — на окраине появляются места и контракты."
             },
             new TutorialStep
             {
-                Target = () => _playersBox,
+                Target = () => _playersTab,
                 Title = "Персонажи",
-                Text = "У каждой компании свой персонаж со способностью — она написана под именем игрока. Везунчик выбирает из двух карт удачи, Прораб раз за партию строит бесплатно, Сборщик пошлин берёт за проезд больше. Играйте от своей способности."
+                Text = "У каждой компании свой персонаж со способностью — она видна в окне «Игроки» (вкладка внизу). Везунчик выбирает из двух карт удачи, Прораб раз за партию строит бесплатно, Сборщик пошлин берёт за проезд больше. Играйте от своей способности."
             },
             new TutorialStep
             {
-                Target = () => _tabGoals,
+                Target = () => _menuButton,
                 Title = "Цели мэрии",
-                Text = "Три общие цели открыты для всех. Награду получает тот, кто выполнит цель первым, — следите за прогрессом соперников."
+                Text = "Цели — в «Меню» справа вверху. Три общие цели открыты для всех. Награду получает тот, кто выполнит цель первым, — следите за прогрессом соперников."
             },
             new TutorialStep
             {
-                Target = () => _luckButton,
+                Target = () => _actionsTab,
                 Title = "Удача",
-                Text = "Когда берёте карты, одну из двух можно заменить картой удачи — не больше одной за ход. Бафы: грант, поставка ресурсов, премия за контракты. Дебафы: штраф, кража карты, отзыв невыполненного контракта. Риск, а не бесплатный бонус."
+                Text = "Кнопка «Удача» — в панели «Действия». Когда берёте карты, одну из двух можно заменить картой удачи — не больше одной за ход. Бафы: грант, поставка ресурсов, премия за контракты. Дебафы: штраф, кража карты, отзыв невыполненного контракта. Риск, а не бесплатный бонус."
             }
         };
 
@@ -3267,7 +3670,7 @@ namespace CityHighways.Presentation
                 frame.style.width = bounds.width + 12f;
                 frame.style.height = bounds.height + 12f;
                 Ui.Radius(frame, 12f);
-                Ui.Border(frame, 3f, Theme.Accent);
+                Ui.Border(frame, 3f, Theme.Gold);
                 layer.Add(frame);
             }
 
@@ -3276,7 +3679,7 @@ namespace CityHighways.Presentation
             card.style.position = Position.Absolute;
             card.style.width = 560f;
             card.style.backgroundColor = Theme.Panel;
-            Ui.Border(card, 2f, Theme.Accent);
+            Ui.Border(card, 2f, Theme.Gold);
             var mapBounds = _map.worldBound;
             var mapTopLeft = _overlay.WorldToLocal(mapBounds.position);
             card.style.left = mapTopLeft.x + mapBounds.width / 2f - 280f;
@@ -3284,7 +3687,7 @@ namespace CityHighways.Presentation
             card.style.top = mapTopLeft.y + (step.Target() == _map ? mapBounds.height - 250f : mapBounds.height / 2f - 110f);
 
             card.Add(Ui.Text($"Обучение · {index + 1} из {steps.Length}", 12f, Theme.TextDim, true));
-            var title = Ui.Text(step.Title, 24f, Theme.Accent, true);
+            var title = Ui.Text(step.Title, 24f, Theme.Gold, true);
             title.style.marginTop = 4f;
             card.Add(title);
             var text = Ui.Text(step.Text, 15f);
@@ -3318,7 +3721,9 @@ namespace CityHighways.Presentation
         {
             var cityEvent = _game.CurrentEvent;
             bool playing = _game.Phase != GamePhase.GameOver && _game.Phase != GamePhase.SetupContracts;
-            Ui.Show(_eventCard, _game.Config.EventsEnabled && playing);
+            bool shown = _game.Config.EventsEnabled && playing;
+            Ui.Show(_eventCard, shown);
+            Ui.Show(_eventPill, shown);
             if (cityEvent == null)
             {
                 // Спокойный круг: событие не выпало.
@@ -3328,6 +3733,7 @@ namespace CityHighways.Presentation
                 _eventTitle.style.color = calm;
                 _eventText.text = "В этом круге событий нет. Новое может открыться в начале следующего круга.";
                 Ui.Border(_eventCard, 2f, new Color(calm.r, calm.g, calm.b, 0.35f));
+                SetEventPill(calm, "Спокойный круг");
                 return;
             }
             var color = EventColor(cityEvent.Kind);
@@ -3336,6 +3742,15 @@ namespace CityHighways.Presentation
             _eventTitle.style.color = color;
             _eventText.text = cityEvent.Describe(_game);
             Ui.Border(_eventCard, 2f, new Color(color.r, color.g, color.b, 0.6f));
+            SetEventPill(color, cityEvent.Title);
+        }
+
+        void SetEventPill(Color color, string title)
+        {
+            _eventPillDot.style.backgroundColor = color;
+            _eventPillText.text = title;
+            _eventPillText.style.color = color;
+            Ui.Border(_eventPill, 1f, new Color(color.r, color.g, color.b, 0.55f));
         }
 
         /// <summary>Карточка события в панели мягко окрашивается цветом события и за пару секунд возвращается к обычной.</summary>
@@ -3347,49 +3762,392 @@ namespace CityHighways.Presentation
             {
                 if (version != _eventGlowVersion) return;
                 float s = Mathf.Sin(Mathf.Min(k, 1f) * Mathf.PI);
-                _eventCard.style.backgroundColor = Color.Lerp(Theme.PanelLight, Color.Lerp(Theme.PanelLight, start, 0.28f), s);
+                var glow = Color.Lerp(Theme.PanelLight, Color.Lerp(Theme.PanelLight, start, 0.28f), s);
+                _eventCard.style.backgroundColor = glow;
+                _eventPill.style.backgroundColor = Color.Lerp(Theme.PanelLight, Color.Lerp(Theme.PanelLight, start, 0.45f), s);
             }, () =>
             {
-                if (version == _eventGlowVersion) _eventCard.style.backgroundColor = Theme.PanelLight;
+                if (version != _eventGlowVersion) return;
+                _eventCard.style.backgroundColor = Theme.PanelLight;
+                _eventPill.style.backgroundColor = Theme.PanelLight;
             }, 0f, false);
         }
 
         int _eventGlowVersion;
 
-        void SelectTab(SideTab tab)
+        // ================================================================== Панели, меню и окна
+
+        VisualElement SheetElement(SheetKind kind) =>
+            kind == SheetKind.Actions ? _actionsSheet : kind == SheetKind.Contracts ? _contractsSheet : kind == SheetKind.Log ? _logSheet : null;
+
+        void ToggleSheet(SheetKind kind)
         {
-            _sideTab = tab;
-            Ui.Show(_contractsPage, tab == SideTab.Contracts);
-            Ui.Show(_goalsPage, tab == SideTab.Goals);
-            Ui.Show(_logPage, tab == SideTab.Log);
-            if (tab != SideTab.Log) Ui.Show(_logNewButton, false);
-            if (tab == SideTab.Goals && _game != null) _seenGoalOwners = _game.ActiveGoals.Count(g => _game.GoalOwner(g.Id).HasValue);
+            if (_sheet == kind) CloseSheet();
+            else OpenSheet(kind);
+        }
+
+        /// <summary>Открыть одну из нижних панелей (другая, если была, уезжает).</summary>
+        void OpenSheet(SheetKind kind)
+        {
+            if (kind == SheetKind.None || _sheet == kind) return;
+            var previous = SheetElement(_sheet);
+            if (previous != null) Ui.Slide(previous, false, 0f, 110f);
+            _sheet = kind;
+            Ui.Slide(SheetElement(kind), true, 0f, 110f);
+            _app.Sound.Play(Sfx.Open, 0.5f);
+            if (kind == SheetKind.Log)
+            {
+                _logSeenTotal = _logTotal;
+                RefreshLog(rebuild: true);
+            }
+            else Ui.Show(_logNewButton, false);
+            if (_game != null) RefreshTabs();
+        }
+
+        void CloseSheet()
+        {
+            var current = SheetElement(_sheet);
+            if (current == null) return;
+            Ui.Slide(current, false, 0f, 110f);
+            _sheet = SheetKind.None;
+            _app.Sound.Play(Sfx.Close, 0.45f);
+            if (_game != null) RefreshTabs();
+        }
+
+        bool _autoChoiceOpen;
+
+        /// <summary>
+        /// Панели открываются сами там, где без них не обойтись: выбор контрактов — панель контрактов,
+        /// начало своего хода — панель действий. Ходят соперники — панель действий уезжает, поле открыто.
+        /// Закрыл панель сам — в этот же ход она больше не выскакивает.
+        /// </summary>
+        void AutoPanels()
+        {
+            if (_game == null || _game.Phase == GamePhase.GameOver) return;
+            if (TryGetContractChooser(out var chooser))
+            {
+                string key = $"choose:{chooser.Index}:{_game.Phase}:{chooser.CharacterOffer.Count}:" + string.Join(",", chooser.PendingContracts.Select(c => c.Id));
+                if (key != _autoSheetKey && _overlayKind == OverlayKind.None)
+                {
+                    _autoSheetKey = key;
+                    _autoChoiceOpen = true;
+                    OpenSheet(SheetKind.Contracts);
+                }
+                return;
+            }
+            if (_autoChoiceOpen)
+            {
+                _autoChoiceOpen = false;
+                if (_sheet == SheetKind.Contracts) CloseSheet();
+            }
+
+            bool myMove = HumanToAct && !NeedsHandoff && _overlayKind == OverlayKind.None &&
+                          (_game.Phase == GamePhase.AwaitingAction || _game.Phase == GamePhase.DrawingSecondCard);
+            if (myMove)
+            {
+                string key = $"turn:{_game.TurnNumber}:{_game.ActingPlayerIndex}";
+                if (key != _autoSheetKey)
+                {
+                    _autoSheetKey = key;
+                    if (_sheet == SheetKind.None) OpenSheet(SheetKind.Actions);
+                }
+            }
+            else if (!HumanToAct && _sheet == SheetKind.Actions) CloseSheet();
+        }
+
+        void ToggleDrawer()
+        {
+            if (_drawerOpen) CloseDrawer();
+            else OpenDrawer();
+        }
+
+        void OpenDrawer()
+        {
+            if (_drawerOpen) return;
+            _drawerOpen = true;
+            Ui.Slide(_drawer, true, 105f, 0f);
+            _app.Sound.Play(Sfx.Open, 0.5f);
             if (_game != null)
             {
+                _seenGoalOwners = _game.ActiveGoals.Count(g => _game.GoalOwner(g.Id).HasValue);
                 RefreshTabs();
-                if (tab == SideTab.Log) RefreshLog(rebuild: true);
             }
         }
 
-        /// <summary>Подписи вкладок: число контрактов, целей; «•» — новая взятая цель, которую ещё не видели.</summary>
+        void CloseDrawer()
+        {
+            if (!_drawerOpen) return;
+            _drawerOpen = false;
+            Ui.Slide(_drawer, false, 105f, 0f);
+            _app.Sound.Play(Sfx.Close, 0.45f);
+        }
+
+        VisualElement ModalElement(Modal modal) =>
+            modal == Modal.Players ? _playersModal : modal == Modal.Settings ? _settingsModal : modal == Modal.Rules ? _rulesModal : null;
+
+        /// <summary>Карточка окна: заголовок с крестиком (или без, если title == null) и тело.</summary>
+        VisualElement ModalCard(string title, float width, out VisualElement body)
+        {
+            var card = Ui.Column();
+            card.pickingMode = PickingMode.Position;
+            card.style.width = width;
+            card.style.maxWidth = Length.Percent(94f);
+            card.style.maxHeight = Length.Percent(92f);
+            card.style.backgroundColor = Theme.Panel;
+            Ui.Radius(card, 16f);
+            Ui.Border(card, 1f, Theme.Line);
+            Ui.Padding(card, 18f, 22f);
+            Ui.Shadow(card, 16f, 22f, 0.6f);
+            var header = Ui.Row();
+            header.style.marginBottom = 12f;
+            header.Add(Ui.Text(title ?? "", 22f, Theme.Text, true));
+            var spacer = Ui.Box();
+            spacer.style.flexGrow = 1f;
+            header.Add(spacer);
+            header.Add(new IconButton(IconButton.Glyph.Close, "", CloseModal, 12f));
+            card.Add(header);
+            if (title == null) Ui.Show(header, false);
+            body = Ui.Column();
+            body.style.flexShrink = 1f;
+            body.style.minHeight = 0f;
+            card.Add(body);
+            card.style.display = DisplayStyle.None;
+            card.style.opacity = 0f;
+            _modalLayer.Add(card);
+            return card;
+        }
+
+        void ToggleModal(Modal modal)
+        {
+            if (_modal == modal) CloseModal();
+            else OpenModal(modal);
+        }
+
+        void OpenModal(Modal modal)
+        {
+            if (modal == Modal.None) return;
+            var previous = ModalElement(_modal);
+            if (previous != null) previous.style.display = DisplayStyle.None;
+            _modal = modal;
+            if (modal == Modal.Settings) BuildSettings();
+            if (modal == Modal.Rules)
+            {
+                _rulesBody.Clear();
+                _rulesBody.Add(MenuRulesPage.Build(_game?.Config ?? new GameConfig(), CloseModal));
+            }
+            if (modal == Modal.Players && _game != null) RefreshPlayers();
+            Ui.Slide(_modalLayer, true, 0f, 0f);
+            Ui.Slide(ModalElement(modal), true, 0f, 4f);
+            _app.Sound.Play(Sfx.Open, 0.5f);
+        }
+
+        void CloseModal()
+        {
+            if (_modal == Modal.None) return;
+            Ui.Slide(ModalElement(_modal), false, 0f, 4f);
+            Ui.Slide(_modalLayer, false, 0f, 0f);
+            _modal = Modal.None;
+            _app.Sound.Play(Sfx.Close, 0.45f);
+        }
+
+        /// <summary>Окно настроек прямо в партии: звук, громкость, наклон поля, мини-карта.</summary>
+        void BuildSettings()
+        {
+            _settingsBody.Clear();
+            var display = _app.Display;
+
+            VisualElement Row(string caption)
+            {
+                var row = Ui.Row();
+                row.style.justifyContent = Justify.SpaceBetween;
+                row.style.marginBottom = 12f;
+                row.Add(Ui.Text(caption, 16f, Theme.Text));
+                _settingsBody.Add(row);
+                return row;
+            }
+
+            void Toggle(string caption, Func<bool> get, Action<bool> set)
+            {
+                var row = Row(caption);
+                var button = Ui.Button(get() ? "Включено" : "Выключено", () => { }, ButtonKind.Secondary, 14f);
+                button.style.width = 170f;
+                button.clicked += () =>
+                {
+                    set(!get());
+                    button.text = get() ? "Включено" : "Выключено";
+                };
+                row.Add(button);
+            }
+
+            Toggle("Звук", () => _app.Sound.Enabled, on =>
+            {
+                _app.Sound.Enabled = on;
+                _setup.sound = on;
+                _setup.Save();
+            });
+
+            if (display != null)
+            {
+                var volumeRow = Row("Громкость");
+                var controls = Ui.Row();
+                var value = Ui.Number($"{Mathf.RoundToInt(display.volume * 100f)}%", 16f, Theme.Text, true);
+                value.style.width = 70f;
+                value.style.unityTextAlign = TextAnchor.MiddleCenter;
+                void Change(float delta)
+                {
+                    display.volume = Mathf.Clamp01(Mathf.Round((display.volume + delta) * 10f) / 10f);
+                    display.Save();
+                    display.Apply();
+                    value.text = $"{Mathf.RoundToInt(display.volume * 100f)}%";
+                    _app.Sound.Play(Sfx.Bell, 0.5f);
+                }
+                var quieter = Ui.Button("–", () => Change(-0.1f), ButtonKind.Secondary, 16f);
+                quieter.style.width = 44f;
+                var louder = Ui.Button("+", () => Change(0.1f), ButtonKind.Secondary, 16f);
+                louder.style.width = 44f;
+                controls.Add(quieter);
+                controls.Add(value);
+                controls.Add(louder);
+                volumeRow.Add(controls);
+
+                Toggle("Наклон поля (2.5D)", () => display.tiltedBoard, on =>
+                {
+                    display.tiltedBoard = on;
+                    display.Save();
+                    _map.TiltEnabled = on;
+                });
+                Toggle("Мини-карта", () => display.showMinimap, on =>
+                {
+                    display.showMinimap = on;
+                    display.Save();
+                    Ui.Slide(_minimap, on, -120f, 0f);
+                });
+            }
+
+            var hint = Ui.Text("Режим экрана и разрешение — в главном меню, раздел «Настройки».", 13f, Theme.TextDim);
+            hint.style.marginTop = 4f;
+            _settingsBody.Add(hint);
+        }
+
+        /// <summary>Подписи вкладок, активная вкладка, точки «есть новое» на журнале и меню.</summary>
         void RefreshTabs()
         {
-            // Выбор контрактов всегда на вкладке «Контракты».
-            if (TryGetContractChooser(out _) && _sideTab != SideTab.Contracts) SelectTab(SideTab.Contracts);
             var viewer = _game.Players[Viewer];
-            int goals = _game.ActiveGoals.Count;
+            bool choosing = TryGetContractChooser(out _);
+            _contractsTab.text = choosing ? "Контракты •" : NeedsHandoff ? "Контракты" : $"Контракты · {viewer.Contracts.Count}";
+            _logTab.text = _logTotal > _logSeenTotal && _sheet != SheetKind.Log ? "Журнал •" : "Журнал";
+            StyleTab(_actionsTab, _sheet == SheetKind.Actions);
+            StyleTab(_contractsTab, _sheet == SheetKind.Contracts);
+            StyleTab(_logTab, _sheet == SheetKind.Log);
+            StyleTab(_playersTab, _modal == Modal.Players);
+            // Красная точка на «Меню» — кто-то выполнил цель мэрии, а вы ещё не смотрели.
             int taken = _game.ActiveGoals.Count(g => _game.GoalOwner(g.Id).HasValue);
-            _tabContracts.text = $"Контракты · {viewer.Contracts.Count}";
-            _tabGoals.text = taken > _seenGoalOwners && _sideTab != SideTab.Goals ? $"Цели · {goals - taken} •" : $"Цели · {goals - taken}";
-            _tabLog.text = "Журнал";
-            Ui.Show(_tabGoals, goals > 0);
-            foreach (var (button, tab) in new[] { (_tabContracts, SideTab.Contracts), (_tabGoals, SideTab.Goals), (_tabLog, SideTab.Log) })
+            Ui.Show(_menuDot, taken > _seenGoalOwners && !_drawerOpen);
+        }
+
+        static void StyleTab(UnityEngine.UIElements.Button tab, bool active)
+        {
+            tab.style.color = active ? Theme.Text : Theme.TextDim;
+            tab.style.borderBottomColor = active ? Theme.Accent : new Color(0f, 0f, 0f, 0f);
+        }
+
+        /// <summary>Куда летят карты и монетки игрока: строка в окне «Игроки», если оно открыто, иначе его кружок внизу.</summary>
+        VisualElement PlayerAnchor(int index)
+        {
+            if (_modal == Modal.Players && index >= 0 && index < _playerRows.Length) return _playerRows[index].Root;
+            return index >= 0 && index < _playerChips.Length ? _playerChips[index].Root : _playersTab;
+        }
+
+        /// <summary>Откуда летит открытая карта: из ряда, если панель действий открыта, иначе от вкладки «Действия».</summary>
+        VisualElement FaceUpAnchor(int slot) =>
+            _sheet == SheetKind.Actions && slot >= 0 && slot < _faceUp.Length ? (VisualElement)_faceUp[slot] : _actionsTab;
+
+        VisualElement DeckAnchor => _sheet == SheetKind.Actions ? (VisualElement)_deckButton : _actionsTab;
+
+        /// <summary>Подсказка при наведении на элемент интерфейса (у UI Toolkit в игре своих подсказок нет).</summary>
+        void AttachTooltip(VisualElement element, Func<string> text)
+        {
+            element.RegisterCallback<PointerEnterEvent>(_ =>
             {
-                bool active = tab == _sideTab;
-                button.style.color = active ? Theme.Accent : Theme.TextDim;
-                button.style.borderBottomWidth = active ? 2f : 0f;
-                button.style.borderBottomColor = Theme.Accent;
+                if (_game == null || _overlayKind != OverlayKind.None) return;
+                var value = text();
+                if (string.IsNullOrEmpty(value)) return;
+                _tooltipText.text = value;
+                var bounds = element.worldBound;
+                var below = _fx.WorldToLocal(new Vector2(bounds.xMin, bounds.yMax + 8f));
+                float maxX = _fx.layout.width - 316f;
+                bool fromBottom = bounds.center.y > _fx.worldBound.center.y;
+                _tooltip.style.left = Mathf.Clamp(below.x, 8f, Mathf.Max(8f, maxX));
+                _tooltip.style.top = fromBottom ? _fx.WorldToLocal(new Vector2(0f, bounds.yMin)).y - 120f : below.y;
+                Ui.Show(_tooltip, true);
+            });
+            element.RegisterCallback<PointerLeaveEvent>(_ => Ui.Show(_tooltip, false));
+        }
+
+        string ResourceTooltip(Resource resource)
+        {
+            if (NeedsHandoff) return "Рука скрыта до передачи хода.";
+            int count = _game.Players[Viewer].CardCount(resource);
+            string name = ResourceInfo.RussianName(resource);
+            string use = resource == Resource.Machinery ? "заменяет любую карту при стройке" : "строит: " + ResourceInfo.RoadKind(resource);
+            return $"{char.ToUpper(name[0]) + name.Substring(1)}: {count} шт.\n{use}. Одно деление — одна карта.";
+        }
+
+        string PiecesTooltip()
+        {
+            var viewer = _game.Players[Viewer];
+            int start = _game.Config.RoadPiecesFor(_game.Players.Count);
+            return $"Участков дороги осталось: {viewer.RoadPieces} из {start}.\n" +
+                   $"Когда у кого-то останется {_game.Config.FinalRoundPieces} или меньше, начнётся последний круг.";
+        }
+
+        /// <summary>Адаптивность: на узком окне прячем второстепенное, панели не шире окна.</summary>
+        void AdaptLayout()
+        {
+            float width = Root.layout.width;
+            if (float.IsNaN(width) || width < 100f) return;
+            Ui.Show(_logo, width >= 1280f);
+            Ui.Show(_resourcesCaption, width >= 1500f);
+            Ui.Show(_handTitle, width >= 1650f);
+            Ui.Show(_viewHint, width >= 1550f);
+            void Fit(VisualElement sheet, float preferred)
+            {
+                float w = Mathf.Min(preferred, width - 24f);
+                sheet.style.width = w;
+                sheet.style.marginLeft = -w / 2f;
             }
+            Fit(_actionsSheet, 860f);
+            Fit(_contractsSheet, 1000f);
+            Fit(_logSheet, 640f);
+            _drawer.style.width = Mathf.Min(DrawerWidth, width * 0.9f);
+        }
+
+        /// <summary>Подсказка над местом карты: район, дороги, ваши контракты с этим районом.</summary>
+        void OnLocationHover(Location location, Vector2 position)
+        {
+            if (location == null || _overlayKind != OverlayKind.None || _game == null) return;
+            ShowMapTooltip(LocationTooltip(location), position);
+        }
+
+        string LocationTooltip(Location location)
+        {
+            var lines = new List<string> { $"{location.Name} · {DistrictName(location.DistrictId)}" };
+            var roads = _game.Map.Roads.Where(r => (r.A == location.Id || r.B == location.Id) && _game.IsRoadOpen(r.Id)).ToList();
+            int free = roads.Count(r => !_game.GetRoadOwner(r.Id).HasValue);
+            lines.Add($"Дорог отсюда: {roads.Count}, свободных: {free}");
+            var owners = roads.Select(r => _game.GetRoadOwner(r.Id)).Where(o => o.HasValue).GroupBy(o => o.Value)
+                .Select(g => $"{_game.Players[g.Key].Name} — {g.Count()}").ToList();
+            if (owners.Count > 0) lines.Add("Построили: " + string.Join(", ", owners));
+            if (!NeedsHandoff)
+            {
+                var viewer = _game.Players[Viewer];
+                foreach (var contract in viewer.Contracts.Where(c => c.Districts.Contains(location.DistrictId)))
+                {
+                    bool done = _game.CheckContract(viewer.Index, contract).Completed;
+                    lines.Add($"• ваш контракт: {ContractTitle(contract)} ({contract.Points}){(done ? " — выполнен" : "")}");
+                }
+            }
+            return string.Join("\n", lines);
         }
 
         /// <summary>Цели мэрии: название, награда, условие и статус — свободна (с прогрессом зрителя) или чья.</summary>
@@ -3398,6 +4156,7 @@ namespace CityHighways.Presentation
             _goalsBox.Clear();
             var goals = _game.ActiveGoals;
             Ui.Show(_goalsBox, goals.Count > 0);
+            Ui.Show(_goalsTitle, goals.Count > 0);
             if (goals.Count == 0) return;
             var goalsNote = Ui.Text("Награду получает тот, кто выполнит цель первым.", 11f, Theme.TextDim);
             goalsNote.style.marginBottom = 6f;
@@ -3426,7 +4185,7 @@ namespace CityHighways.Presentation
                 texts.Add(statusLabel);
                 row.Add(texts);
 
-                row.Add(Ui.Text("+" + goal.Points, 14f, owner.HasValue ? Theme.TextDim : Theme.Accent, true));
+                row.Add(Ui.Text("+" + goal.Points, 14f, owner.HasValue ? Theme.TextDim : Theme.Gold, true));
                 _goalsBox.Add(row);
             }
         }

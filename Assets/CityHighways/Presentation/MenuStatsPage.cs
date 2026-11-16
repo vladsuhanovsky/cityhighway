@@ -23,7 +23,7 @@ namespace CityHighways.Presentation
             var backButton = Ui.Button("← Назад", back, ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             header.Add(backButton);
-            var title = Ui.Text("Счётчик партий", 34f, Theme.Accent, true);
+            var title = Ui.Text("Счётчик партий", 34f, Theme.Gold, true);
             title.style.flexGrow = 1f;
             header.Add(title);
             if (games.Count > 0) header.Add(ResetButton(rebuild));
@@ -90,7 +90,7 @@ namespace CityHighways.Presentation
             card.style.width = 210f;
             Ui.Radius(card, 10f);
             card.Add(Ui.Text(caption, 13f, Theme.TextDim));
-            card.Add(Ui.Text(value, 28f, Theme.Accent, true));
+            card.Add(Ui.Text(value, 28f, Theme.Gold, true));
             if (note != null) card.Add(Ui.Text(note, 12f, Theme.TextDim));
             return card;
         }
