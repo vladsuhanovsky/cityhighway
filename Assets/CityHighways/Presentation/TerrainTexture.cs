@@ -186,9 +186,9 @@ namespace CityHighways.Presentation
             foreach (var r in map.Roads)
                 if (points.TryGetValue(r.A, out var a) && points.TryGetValue(r.B, out var b)) roads.Add(new Seg { A = a, B = b });
             var river = new List<Seg>();
-            foreach (var line in map.Rivers)
-                for (int i = 0; i + 1 < line.Count; i++)
-                    river.Add(new Seg { A = ToPixel(line[i].X, line[i].Y), B = ToPixel(line[i + 1].X, line[i + 1].Y) });
+            foreach (var riverLine in map.Rivers)
+                for (int i = 0; i + 1 < riverLine.Count; i++)
+                    river.Add(new Seg { A = ToPixel(riverLine[i].X, riverLine[i].Y), B = ToPixel(riverLine[i + 1].X, riverLine[i + 1].Y) });
             float NearestPlace(Vector2 p)
             {
                 float best = float.MaxValue;
