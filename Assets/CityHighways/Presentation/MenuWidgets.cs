@@ -11,7 +11,7 @@ namespace CityHighways.Presentation
     /// </summary>
     public sealed class MenuIcon : VisualElement
     {
-        public enum Glyph { Gamepad, Cap, Globe, Book, Chart, Gear, Moon, Sun, Palette, Bell, Close, Skyline, News, Play, Star }
+        public enum Glyph { Gamepad, Cap, Globe, Book, Chart, Gear, Moon, Sun, Palette, Bell, Close, Skyline, News, Play, Star, Person, Trophy, Coins }
 
         Glyph _glyph;
         Color _color;
@@ -207,6 +207,34 @@ namespace CityHighways.Presentation
                     break;
                 case Glyph.Play:
                     Poly(true, 8, 5, 19, 12, 8, 19);
+                    break;
+                case Glyph.Person:
+                    Circle(12f, 7.5f, 4f, false);
+                    p.BeginPath();
+                    p.MoveTo(P(4f, 21f));
+                    p.BezierCurveTo(P(4f, 14f), P(20f, 14f), P(20f, 21f));
+                    p.Stroke();
+                    break;
+                case Glyph.Trophy:
+                    Poly(false, 7, 4, 17, 4, 16, 11, 12, 14, 8, 11);
+                    Line(12f, 14f, 12f, 18f);
+                    Line(8f, 20f, 16f, 20f);
+                    Line(7f, 6f, 4f, 6.5f);
+                    Line(4f, 6.5f, 6f, 10f);
+                    Line(17f, 6f, 20f, 6.5f);
+                    Line(20f, 6.5f, 18f, 10f);
+                    break;
+                case Glyph.Coins:
+                    for (int i = 0; i < 3; i++)
+                    {
+                        float y = 17f - i * 4f;
+                        p.BeginPath();
+                        p.MoveTo(P(5f, y));
+                        p.BezierCurveTo(P(5f, y + 3f), P(19f, y + 3f), P(19f, y));
+                        p.BezierCurveTo(P(19f, y - 3f), P(5f, y - 3f), P(5f, y));
+                        p.ClosePath();
+                        p.Stroke();
+                    }
                     break;
                 default: // Star
                 {

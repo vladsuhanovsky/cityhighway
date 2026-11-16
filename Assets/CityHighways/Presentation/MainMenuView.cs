@@ -639,6 +639,7 @@ namespace CityHighways.Presentation
         public void Tick(float dt)
         {
             _background.Tick(dt);
+            if (_page == Page.Profile) _profile.Tick(dt);
             if (_page != Page.Home) return;
             foreach (var button in _menuButtons) button.Tick(dt);
             _profileCard?.Tick(dt);

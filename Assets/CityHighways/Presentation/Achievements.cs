@@ -134,6 +134,36 @@ namespace CityHighways.Presentation
 
         public static string DateKey(DateTime date) => date.ToString("yyyy-MM-dd");
 
+        /// <summary>Группа достижения на странице профиля.</summary>
+        public static string CategoryOf(Achievement achievement)
+        {
+            switch (achievement.Id)
+            {
+                case "first_contract":
+                case "clean4":
+                case "mayor":
+                case "final_order":
+                    return "Контракты";
+                case "bridges5":
+                case "network8":
+                case "upgrades3":
+                case "traffic3":
+                    return "Стройка";
+                case "first_win":
+                case "honest_win":
+                case "big_win":
+                case "score130":
+                    return "Победы";
+                case "whistle":
+                case "tolls15":
+                    return "Проезд и политика";
+                default:
+                    return "Коллекции";
+            }
+        }
+
+        public static readonly string[] Categories = { "Контракты", "Стройка", "Победы", "Проезд и политика", "Коллекции" };
+
         /// <summary>Задание дня: одно для всех профилей в этот день, по номеру дня — порядок перемешан, но предсказуем.</summary>
         public static DailyTask TaskFor(DateTime date)
         {

@@ -47,6 +47,9 @@ namespace CityHighways.Presentation
 
         public Outfit Outfit => Outfit.Parse(outfit);
 
+        /// <summary>История кошелька: доходы и траты (последние 400 записей). Ведётся с версии 30 — раньше заработанное есть только в итоге.</summary>
+        public List<WalletEntry> history = new List<WalletEntry>();
+
         /// <summary>Вещь персонажа есть: бесплатная (цена 0) или куплена.</summary>
         public bool HasClothing(CharacterItem item) => item != null && (item.price <= 0 || owned.Contains(item.id));
 
@@ -62,6 +65,21 @@ namespace CityHighways.Presentation
         }
 
         public PlayerLook Look => new PlayerLook(emblem, title, frame, Outfit.Serialize());
+    }
+
+    /// <summary>Строка истории кошелька.</summary>
+    [Serializable]
+    public class WalletEntry
+    {
+        /// <summary>Когда: «yyyy-MM-dd HH:mm».</summary>
+        public string time;
+        /// <summary>Сколько влияния: плюс — доход, минус — трата.</summary>
+        public int amount;
+        /// <summary>Откуда: game (остаток с партии), achievement, daily, shop (оформление), clothing (одежда).</summary>
+        public string source;
+        public string note;
+
+        public string Day => time != null && time.Length >= 10 ? time.Substring(0, 10) : "";
     }
 
     [Serializable]
@@ -380,11 +398,21 @@ namespace CityHighways.Presentation
         /// <summary>Как выглядит игрок с таким именем (за одним компьютером); без профиля — без украшений.</summary>
         public static PlayerLook LookFor(string name) => Find(name)?.Look ?? PlayerLook.None;
 
+        /// <summary>Записать доход или трату в историю кошелька (сохраняет вызывающий).</summary>
+        public static void Record(PlayerProfile profile, int amount, string source, string note)
+        {
+            if (profile == null || amount == 0) return;
+            if (profile.history == null) profile.history = new List<WalletEntry>();
+            profile.history.Add(new WalletEntry { time = DateTime.Now.ToString("yyyy-MM-dd HH:mm"), amount = amount, source = source, note = note });
+            if (profile.history.Count > 400) profile.history.RemoveRange(0, profile.history.Count - 400);
+        }
+
         public static string Buy(PlayerProfile profile, ShopItem item)
         {
             if (profile.Owns(item.Id)) return "Уже куплено.";
             if (profile.wallet < item.Price) return $"Нужно {item.Price} влияния, в кошельке {profile.wallet}.";
             profile.wallet -= item.Price;
+            Record(profile, -item.Price, "shop", item.Name);
             profile.owned.Add(item.Id);
             profile.Equip(item.Kind, item.Id);
             Save();
@@ -400,6 +428,7 @@ namespace CityHighways.Presentation
             if (profile.HasClothing(item)) return "Уже есть.";
             if (profile.wallet < item.price) return $"Нужно {item.price} влияния, в кошельке {profile.wallet}.";
             profile.wallet -= item.price;
+            Record(profile, -item.price, "clothing", item.name);
             profile.owned.Add(item.id);
             Wear(profile, item.slot, item.id);
             return null;
@@ -455,7 +484,11 @@ namespace CityHighways.Presentation
                 profile.games++;
                 if (winners.Contains(i)) profile.wins++;
                 if (profile.achievements == null) profile.achievements = new List<string>();
+                Record(profile, Math.Max(0, player.Influence), "game",
+                    winners.Contains(i) ? "Остаток влияния с партии · победа" : "Остаток влияния с партии");
                 var outcome = Achievements.Apply(profile, GameFacts.Of(game, i), DateTime.Now);
+                foreach (var achievement in outcome.Unlocked) Record(profile, achievement.Reward, "achievement", achievement.Title);
+                if (outcome.DailyDone) Record(profile, Achievements.DailyReward, "daily", Achievements.Today.Title);
                 credits.Add(new Credit
                 {
                     Profile = profile.name, Amount = Math.Max(0, player.Influence),
