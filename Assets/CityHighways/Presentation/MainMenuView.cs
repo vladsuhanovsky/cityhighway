@@ -207,7 +207,7 @@ namespace CityHighways.Presentation
             rightCity.style.marginLeft = 18f;
             titleRow.Add(rightCity);
             page.Add(titleRow);
-            var subtitle = Ui.Text("Стройте дороги Москвы, выполняйте контракты мэрии и берите плату за проезд", 17f, Theme.Text);
+            var subtitle = Ui.Text("Стройте дороги, выполняйте контракты мэрии и берите плату за проезд", 17f, Theme.Text);
             subtitle.style.unityTextAlign = TextAnchor.MiddleCenter;
             subtitle.style.marginTop = 6f;
             subtitle.style.marginBottom = 18f;
@@ -215,20 +215,30 @@ namespace CityHighways.Presentation
 
             // Новости: что появилось в игре, меняются каждые несколько секунд.
             _newsBox = Ui.Row();
-            _newsBox.style.width = 560f;
+            _newsBox.style.width = 780f;
+            _newsBox.style.alignSelf = Align.Center;
+            _newsBox.style.alignItems = Align.Center;
+            _newsBox.style.minHeight = 48f;
             _newsBox.style.backgroundColor = Theme.PanelGlass;
             Ui.Radius(_newsBox, 12f);
             Ui.Border(_newsBox, 1f, Theme.Line);
             Ui.Padding(_newsBox, 10f, 14f);
             _newsBox.style.marginBottom = 18f;
             Ui.Shadow(_newsBox, 12f);
-            _newsBox.Add(new MenuIcon(MenuIcon.Glyph.News, 22f, Theme.Gold));
+            var newsIcon = new MenuIcon(MenuIcon.Glyph.News, 22f, Theme.Gold);
+            newsIcon.style.flexShrink = 0f;
+            _newsBox.Add(newsIcon);
             var newsCaption = Ui.Text("Новости:", 15f, Theme.Gold, true);
             newsCaption.style.marginLeft = 10f;
             newsCaption.style.marginRight = 8f;
+            // Подпись не сжимается и не переносится: иначе «Новости» рвётся на «Новост / и:».
+            newsCaption.style.flexShrink = 0f;
+            newsCaption.style.whiteSpace = WhiteSpace.NoWrap;
             _newsBox.Add(newsCaption);
             _newsText = Ui.Text(News[0], 15f, Theme.Text);
             _newsText.style.flexShrink = 1f;
+            _newsText.style.flexGrow = 1f;
+            _newsText.style.whiteSpace = WhiteSpace.Normal;
             Ui.Transitions(_newsText, "opacity");
             _newsBox.Add(_newsText);
             page.Add(_newsBox);
