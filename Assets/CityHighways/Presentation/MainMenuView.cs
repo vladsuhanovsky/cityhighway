@@ -607,7 +607,7 @@ namespace CityHighways.Presentation
                 SetOnlineBadge(-1, friends);
                 return;
             }
-            ugs.QueryLobbies((lobbies, error) => SetOnlineBadge(error == null && lobbies != null ? lobbies.Count : -1, friends));
+            ugs.QueryLobbies((lobbies, error) => SetOnlineBadge(error == null && lobbies != null ? lobbies.Count : -1, friends), true);
         }
 
         void SetOnlineBadge(int open, int friends)

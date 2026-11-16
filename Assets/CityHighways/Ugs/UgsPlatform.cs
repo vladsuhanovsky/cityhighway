@@ -35,6 +35,9 @@ namespace CityHighways.Ugs
         }
 
         static Task _signIn;
+        // Пауза для фоновых проверок после сетевой ошибки: растёт 1 → 2 → 4 … 15 минут, сбрасывается при успехе.
+        static float _quietUntil;
+        static float _quietStep;
 
         /// <summary>Инициализация UGS и анонимный вход — один раз за запуск (при ошибке следующая попытка заново).</summary>
         internal static Task EnsureSignedIn()
@@ -69,8 +72,26 @@ namespace CityHighways.Ugs
         public INetTransport JoinByCode(string code) => UgsTransport.Join(code, true);
         public INetTransport JoinById(string lobbyId) => UgsTransport.Join(lobbyId, false);
 
-        public async void QueryLobbies(Action<List<OpenLobby>, string> done)
+        /// <summary>Сетевая ошибка (нет интернета, сервер не найден, таймаут), а не ошибка настройки проекта.</summary>
+        internal static bool IsNetworkError(Exception e)
         {
+            if (e is AggregateException aggregate && aggregate.InnerException != null) e = aggregate.InnerException;
+            if (e is RequestFailedException failed && failed.ErrorCode == CommonErrorCodes.TransportError) return true;
+            string text = e.Message ?? "";
+            return text.IndexOf("resolve", StringComparison.OrdinalIgnoreCase) >= 0
+                   || text.IndexOf("network", StringComparison.OrdinalIgnoreCase) >= 0
+                   || text.IndexOf("connection", StringComparison.OrdinalIgnoreCase) >= 0
+                   || text.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0
+                   || text.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public async void QueryLobbies(Action<List<OpenLobby>, string> done, bool background = false)
+        {
+            if (background && Time.realtimeSinceStartup < _quietUntil)
+            {
+                done(new List<OpenLobby>(), "нет связи с Unity Services");
+                return;
+            }
             try
             {
                 await EnsureSignedIn();
@@ -91,10 +112,19 @@ namespace CityHighways.Ugs
                     Players = l.Players != null ? l.Players.Count : 0,
                     MaxPlayers = l.MaxPlayers
                 }).ToList();
+                _quietStep = 0f;
+                _quietUntil = 0f;
                 done(list, null);
             }
             catch (Exception e)
             {
+                if (IsNetworkError(e))
+                {
+                    _quietStep = _quietStep <= 0f ? 60f : Mathf.Min(_quietStep * 2f, 900f);
+                    _quietUntil = Time.realtimeSinceStartup + _quietStep;
+                    done(new List<OpenLobby>(), "Нет связи с серверами Unity — проверьте интернет (а также VPN и прокси).");
+                    return;
+                }
                 done(new List<OpenLobby>(), Describe(e));
             }
         }

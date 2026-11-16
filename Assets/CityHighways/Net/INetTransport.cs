@@ -95,8 +95,12 @@ namespace CityHighways.Net
         INetTransport CreateHost(string lobbyName, int maxPlayers);
         INetTransport JoinByCode(string code);
         INetTransport JoinById(string lobbyId);
-        /// <summary>Открытые лобби с местами; done(список, ошибка) вызывается в главном потоке.</summary>
-        void QueryLobbies(Action<List<OpenLobby>, string> done);
+        /// <summary>
+        /// Открытые лобби с местами; done(список, ошибка) вызывается в главном потоке.
+        /// background = true — фоновая проверка (значок в меню): после сетевой ошибки она не ходит в сеть,
+        /// пока не пройдёт пауза (1, 2, 4… до 15 минут), чтобы без интернета не засорять консоль повторами входа.
+        /// </summary>
+        void QueryLobbies(Action<List<OpenLobby>, string> done, bool background = false);
     }
 
     public static class NetPlatforms
