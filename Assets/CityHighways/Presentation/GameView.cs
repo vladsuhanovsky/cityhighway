@@ -1305,9 +1305,18 @@ namespace CityHighways.Presentation
             if (finished)
             {
                 if (!Online && !_setup.tutorial) SaveSystem.Delete();
-                if (!_setup.tutorial) StatsLog.Append(_game, _setup, _playSeconds);
-                else TutorialCoach.MarkDone();
+                // Сначала профили (они знают, какие достижения открыла партия), потом запись в статистику.
                 _profileCredits = Profiles.CreditAfterGame(_game, _setup, Online ? _net.LocalSeat : (int?)null);
+                if (!_setup.tutorial)
+                {
+                    var achievements = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var credit in _profileCredits)
+                        if (credit.Unlocked != null && credit.Unlocked.Count > 0)
+                            achievements[Online && _net.LocalSeat >= 0 && _net.LocalSeat < _game.Players.Count ? _game.Players[_net.LocalSeat].Name : credit.Profile] =
+                                credit.Unlocked.Select(a => a.Title).ToList();
+                    StatsLog.Append(_game, _setup, _playSeconds, Online, achievements);
+                }
+                else TutorialCoach.MarkDone();
             }
             else if (now.Phase != GamePhase.GameOver && !Online && !_setup.tutorial)
             {

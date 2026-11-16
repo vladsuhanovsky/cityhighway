@@ -49,6 +49,36 @@ namespace CityHighways.Presentation
     {
         /// <summary>Вызывается при нажатии любой кнопки — приложение проигрывает щелчок.</summary>
         public static Action ButtonClicked;
+        /// <summary>Тихий звук наведения на пункт навигации (вкладки, разделы, строки истории); задаёт приложение.</summary>
+        public static Action Hovered;
+        /// <summary>Звук изменения настройки (переключатель, слайдер); задаёт приложение.</summary>
+        public static Action Changed;
+        /// <summary>«Меньше анимаций» (Доступность): переходы почти мгновенные, контент появляется без сдвига.</summary>
+        public static bool ReducedMotion;
+
+        /// <summary>
+        /// Единое появление контента при смене вкладки или раздела: проявление и подъём на 14 px за 0,28 с.
+        /// Вешайте на контейнер раздела, а не на интерактивные плитки (у тех свои переходы).
+        /// </summary>
+        public static void Appear(VisualElement e, long delayMs = 0)
+        {
+            if (e == null) return;
+            if (ReducedMotion)
+            {
+                e.style.opacity = 1f;
+                e.style.translate = new Translate(new Length(0f), new Length(0f));
+                return;
+            }
+            e.style.transitionDuration = new StyleList<TimeValue>(new List<TimeValue> { new TimeValue(0f) });
+            e.style.opacity = 0f;
+            e.style.translate = new Translate(new Length(0f), new Length(14f));
+            e.schedule.Execute(() =>
+            {
+                Transitions(e, 0.28f, "opacity", "translate");
+                e.style.opacity = 1f;
+                e.style.translate = new Translate(new Length(0f), new Length(0f));
+            }).ExecuteLater(16 + delayMs);
+        }
 
         public static VisualElement Box()
         {
@@ -329,6 +359,7 @@ namespace CityHighways.Presentation
 
         public static void Transitions(VisualElement e, float seconds, params string[] properties)
         {
+            if (ReducedMotion) seconds = Mathf.Min(seconds, 0.04f);
             var names = new List<StylePropertyName>();
             var durations = new List<TimeValue>();
             var easings = new List<EasingFunction>();

@@ -11,10 +11,33 @@ namespace CityHighways.Presentation
     /// </summary>
     public sealed class MenuIcon : VisualElement
     {
-        public enum Glyph { Gamepad, Cap, Globe, Book, Chart, Gear, Moon, Sun, Palette, Bell, Close, Skyline, News, Play, Star, Person, Trophy, Coins }
+        public enum Glyph
+        {
+            Gamepad, Cap, Globe, Book, Chart, Gear, Moon, Sun, Palette, Bell, Close, Skyline, News, Play, Star, Person, Trophy, Coins,
+            Search, Flame, Snow, Speaker, Monitor, Access, Road, Swap, Document, Envelope, Flag, Clock, Pin, Chevron
+        }
 
         Glyph _glyph;
         Color _color;
+        int _level = 3;
+
+        /// <summary>Для динамика: 0 — перечёркнут, 1–3 — сколько «волн» звука; для шеврона: 0 — вправо, 1 — вниз, 2 — влево.</summary>
+        public int Level
+        {
+            get => _level;
+            set
+            {
+                if (_level == value) return;
+                _level = value;
+                MarkDirtyRepaint();
+            }
+        }
+
+        public void SetGlyph(Glyph glyph)
+        {
+            _glyph = glyph;
+            MarkDirtyRepaint();
+        }
 
         public MenuIcon(Glyph glyph, float size, Color color)
         {
@@ -234,6 +257,128 @@ namespace CityHighways.Presentation
                         p.BezierCurveTo(P(19f, y - 3f), P(5f, y - 3f), P(5f, y));
                         p.ClosePath();
                         p.Stroke();
+                    }
+                    break;
+                case Glyph.Search:
+                    Circle(10f, 10f, 6f, false);
+                    p.lineWidth = 2.6f * u;
+                    Line(14.5f, 14.5f, 20f, 20f);
+                    break;
+                case Glyph.Flame:
+                    p.BeginPath();
+                    p.MoveTo(P(12f, 2.5f));
+                    p.BezierCurveTo(P(14f, 7f), P(19.5f, 9.5f), P(18.5f, 15f));
+                    p.BezierCurveTo(P(18f, 19f), P(15f, 21.5f), P(12f, 21.5f));
+                    p.BezierCurveTo(P(8f, 21.5f), P(5.5f, 18.5f), P(5.5f, 15f));
+                    p.BezierCurveTo(P(5.5f, 11f), P(8.5f, 9.5f), P(9f, 6.5f));
+                    p.BezierCurveTo(P(10.5f, 8f), P(11f, 9.5f), P(11f, 11f));
+                    p.BezierCurveTo(P(12.5f, 9f), P(12.5f, 5.5f), P(12f, 2.5f));
+                    p.ClosePath();
+                    p.Fill();
+                    break;
+                case Glyph.Snow:
+                    // Шесть лучей, на каждом — «ёлочка» из двух веточек.
+                    for (int i = 0; i < 6; i++)
+                    {
+                        float a = i * Mathf.PI / 3f - Mathf.PI / 2f;
+                        Line(12f, 12f, 12f + Mathf.Cos(a) * 9.5f, 12f + Mathf.Sin(a) * 9.5f);
+                        float bx = 12f + Mathf.Cos(a) * 5.5f, by = 12f + Mathf.Sin(a) * 5.5f;
+                        Line(bx, by, bx + Mathf.Cos(a + 0.8f) * 3.2f, by + Mathf.Sin(a + 0.8f) * 3.2f);
+                        Line(bx, by, bx + Mathf.Cos(a - 0.8f) * 3.2f, by + Mathf.Sin(a - 0.8f) * 3.2f);
+                    }
+                    break;
+                case Glyph.Speaker:
+                    Poly(true, 3, 9, 7, 9, 12, 4.5f, 12, 19.5f, 7, 15, 3, 15);
+                    if (_level <= 0)
+                    {
+                        Line(15f, 9f, 21f, 15f);
+                        Line(21f, 9f, 15f, 15f);
+                        break;
+                    }
+                    for (int w = 1; w <= Mathf.Min(3, _level); w++)
+                    {
+                        float radius = 2.5f + w * 2.8f;
+                        p.BeginPath();
+                        p.Arc(P(11f, 12f), radius * u, Angle.Degrees(-45f), Angle.Degrees(45f));
+                        p.Stroke();
+                    }
+                    break;
+                case Glyph.Monitor:
+                    Poly(false, 3, 4, 21, 4, 21, 16, 3, 16);
+                    Line(12f, 16f, 12f, 20f);
+                    Line(8f, 20.5f, 16f, 20.5f);
+                    break;
+                case Glyph.Access:
+                    Circle(12f, 4.5f, 2f, true);
+                    Line(4.5f, 8.5f, 19.5f, 8.5f);
+                    Line(12f, 8.5f, 12f, 14f);
+                    Line(12f, 14f, 8f, 21f);
+                    Line(12f, 14f, 16f, 21f);
+                    break;
+                case Glyph.Road:
+                    Poly(false, 8, 3, 16, 3, 21, 21, 3, 21);
+                    p.lineWidth = 1.6f * u;
+                    Line(12f, 5f, 12f, 8f);
+                    Line(12f, 10.5f, 12f, 13.5f);
+                    Line(12f, 16f, 12f, 19.5f);
+                    break;
+                case Glyph.Swap:
+                    Line(4f, 8f, 19f, 8f);
+                    Line(15f, 4f, 19f, 8f);
+                    Line(15f, 12f, 19f, 8f);
+                    Line(20f, 16f, 5f, 16f);
+                    Line(9f, 12f, 5f, 16f);
+                    Line(9f, 20f, 5f, 16f);
+                    break;
+                case Glyph.Document:
+                    Poly(false, 5, 3, 15, 3, 19, 7, 19, 21, 5, 21);
+                    Line(8f, 10f, 16f, 10f);
+                    Line(8f, 13.5f, 16f, 13.5f);
+                    Line(8f, 17f, 13f, 17f);
+                    break;
+                case Glyph.Envelope:
+                    Poly(false, 3, 6, 21, 6, 21, 18, 3, 18);
+                    p.BeginPath();
+                    p.MoveTo(P(3f, 6f));
+                    p.LineTo(P(12f, 13f));
+                    p.LineTo(P(21f, 6f));
+                    p.Stroke();
+                    break;
+                case Glyph.Flag:
+                    Line(5f, 3f, 5f, 21f);
+                    Poly(true, 5, 4, 19, 4, 16, 8.5f, 19, 13, 5, 13);
+                    break;
+                case Glyph.Clock:
+                    Circle(12f, 12f, 9f, false);
+                    Line(12f, 12f, 12f, 6.5f);
+                    Line(12f, 12f, 16f, 14f);
+                    break;
+                case Glyph.Pin:
+                    p.BeginPath();
+                    p.MoveTo(P(12f, 22f));
+                    p.BezierCurveTo(P(6f, 15f), P(4.5f, 12f), P(4.5f, 9.5f));
+                    p.BezierCurveTo(P(4.5f, 5f), P(8f, 2f), P(12f, 2f));
+                    p.BezierCurveTo(P(16f, 2f), P(19.5f, 5f), P(19.5f, 9.5f));
+                    p.BezierCurveTo(P(19.5f, 12f), P(18f, 15f), P(12f, 22f));
+                    p.ClosePath();
+                    p.Stroke();
+                    Circle(12f, 9.5f, 2.6f, true);
+                    break;
+                case Glyph.Chevron:
+                    if (_level == 1)
+                    {
+                        Line(6f, 9f, 12f, 15f);
+                        Line(12f, 15f, 18f, 9f);
+                    }
+                    else if (_level == 2)
+                    {
+                        Line(15f, 6f, 9f, 12f);
+                        Line(9f, 12f, 15f, 18f);
+                    }
+                    else
+                    {
+                        Line(9f, 6f, 15f, 12f);
+                        Line(15f, 12f, 9f, 18f);
                     }
                     break;
                 default: // Star

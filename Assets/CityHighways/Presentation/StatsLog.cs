@@ -29,6 +29,10 @@ namespace CityHighways.Presentation
         public int goalPoints;
         public int luckPoints;
         public int characterPoints;
+        /// <summary>Дороги игрока к концу партии (id) — для тепловой карты. В старых записях пусто.</summary>
+        public string[] roads;
+        /// <summary>Достижения профиля, открытые этой партией (названия). В старых записях пусто.</summary>
+        public string[] achievements;
     }
 
     [Serializable]
@@ -39,6 +43,11 @@ namespace CityHighways.Presentation
         public int turns;
         public int seconds;
         public PlayerStat[] results;
+        /// <summary>Сетевая партия (Relay или Steam).</summary>
+        public bool online;
+        /// <summary>Сценарий партии (название) и путь карты в Resources — для обзора партии и тепловой карты.</summary>
+        public string scenario;
+        public string mapPath;
     }
 
     /// <summary>Итоги каждой партии — по строке JSON в cityhighways_stats.jsonl (удобно смотреть баланс).</summary>
@@ -46,7 +55,9 @@ namespace CityHighways.Presentation
     {
         public static string FilePath => Path.Combine(Application.persistentDataPath, "cityhighways_stats.jsonl");
 
-        public static void Append(Game game, GameSetup setup, float seconds)
+        /// <param name="achievementsByName">Открытые этой партией достижения по имени профиля (из Profiles.CreditAfterGame).</param>
+        public static void Append(Game game, GameSetup setup, float seconds, bool online = false,
+            Dictionary<string, List<string>> achievementsByName = null)
         {
             if (game?.Result == null) return;
             try
@@ -58,6 +69,9 @@ namespace CityHighways.Presentation
                     map = game.Map.Name,
                     turns = game.TurnNumber,
                     seconds = Mathf.RoundToInt(seconds),
+                    online = online,
+                    scenario = setup != null ? Scenarios.Title((ScenarioKind)Mathf.Clamp(setup.scenario, 0, Scenarios.All.Count - 1)) : "",
+                    mapPath = setup?.mapResourcePath ?? "",
                     results = game.Result.Ranking.Select(s => new PlayerStat
                     {
                         name = s.PlayerName,
@@ -76,7 +90,10 @@ namespace CityHighways.Presentation
                         character = s.Character == CharacterKind.None ? "" : Characters.Title(s.Character),
                         goalPoints = s.GoalPoints,
                         luckPoints = s.LuckPoints,
-                        characterPoints = s.CharacterPoints
+                        characterPoints = s.CharacterPoints,
+                        roads = game.Map.Roads.Where(r => game.GetRoadOwner(r.Id) == s.PlayerIndex).Select(r => r.Id).ToArray(),
+                        achievements = achievementsByName != null && achievementsByName.TryGetValue(s.PlayerName, out var list)
+                            ? list.ToArray() : new string[0]
                     }).ToArray()
                 };
                 File.AppendAllText(FilePath, JsonUtility.ToJson(stat) + "\n");

@@ -61,12 +61,15 @@ namespace CityHighways.Presentation
             if (usedFont != null) _root.style.unityFontDefinition = new StyleFontDefinition(FontDefinition.FromFont(usedFont));
 
             Display = DisplaySettings.Load();
+            DisplaySettings.Panel = settings;
             Display.Apply();
 
             var audio = gameObject.AddComponent<AudioSource>();
             audio.playOnAwake = false;
             Sound = new SoundBank(audio);
-            Ui.ButtonClicked = () => Sound.Play(Sfx.Click, 0.6f);
+            Ui.ButtonClicked = () => { if (Display.uiSounds) Sound.Play(Sfx.Click, 0.6f); };
+            Ui.Hovered = () => { if (Display.uiSounds) Sound.Play(Sfx.Tick, 0.3f); };
+            Ui.Changed = () => { if (Display.uiSounds) Sound.Play(Sfx.Tick, 0.55f); };
 
             ShowMenu();
 

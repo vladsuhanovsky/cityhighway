@@ -162,6 +162,16 @@ namespace CityHighways.Presentation
 
         public static readonly string[] PaletteNames = { "Синий час", "Закат", "Неон" };
 
+        /// <summary>Цвета палитры для превью в настройках: небо сверху и снизу, окна.</summary>
+        public static (Color top, Color bottom, Color window) PreviewColors(int palette, bool night)
+        {
+            var p = Palettes[Mathf.Clamp(palette, 0, Palettes.Length - 1)];
+            return night ? (p.SkyNightTop, p.SkyNightBottom, p.Window) : (p.SkyDayTop, p.SkyDayBottom, p.WindowAlt);
+        }
+
+        /// <summary>Ночь ли сейчас для режима «по часам» (тот же порог, что у фона).</summary>
+        public static bool IsNightNow() => DateTime.Now.Hour < 7 || DateTime.Now.Hour >= 20;
+
         readonly List<Building>[] _layers = { new List<Building>(), new List<Building>(), new List<Building>() };
         readonly ColorMesh _mesh = new ColorMesh();
         float _time;

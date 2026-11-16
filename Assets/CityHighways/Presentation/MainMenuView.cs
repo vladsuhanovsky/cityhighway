@@ -22,7 +22,6 @@ namespace CityHighways.Presentation
         readonly CityHighwaysApp _app;
         readonly GameSetup _setup;
         readonly DisplaySettings _display;
-        readonly List<Vector2Int> _resolutions;
 
         readonly VisualElement _playersList;
         readonly UnityEngine.UIElements.Button _addPlayerButton;
@@ -31,10 +30,7 @@ namespace CityHighways.Presentation
         readonly Label _trainsValue;
         readonly UnityEngine.UIElements.Button _hideCardsButton;
         readonly UnityEngine.UIElements.Button _timerButton;
-        readonly UnityEngine.UIElements.Button _soundButton;
-        readonly UnityEngine.UIElements.Button _screenModeButton;
-        readonly UnityEngine.UIElements.Button _resolutionButton;
-        readonly Label _volumeValue;
+        readonly MenuSettingsPage _settings;
         readonly Label _hint;
         readonly VisualElement _overlay;
 
@@ -51,7 +47,6 @@ namespace CityHighways.Presentation
             _app = app;
             _setup = setup;
             _display = app.Display ?? DisplaySettings.Load();
-            _resolutions = DisplaySettings.AvailableResolutions();
 
             Root = new VisualElement();
             Root.style.flexGrow = 1f;
@@ -73,7 +68,7 @@ namespace CityHighways.Presentation
                 var local = Root.WorldToLocal(e.position);
                 _background.SetPointer(new Vector2(local.x / size.x, local.y / size.y));
             });
-            MenuButton.Hovered = () => _app.Sound.Play(Sfx.Tick, 0.35f);
+            MenuButton.Hovered = () => { if (_display.uiSounds) _app.Sound.Play(Sfx.Tick, 0.35f); };
             Profiles.SyncSteam();
 
             _pageHost = Ui.Column();
@@ -91,7 +86,8 @@ namespace CityHighways.Presentation
             _pages[Page.Profile] = _profile.Root;
             _pages[Page.Rules] = MenuRulesPage.Build(new GameConfig(), () => ShowPage(Page.Home));
             _pages[Page.Stats] = MenuStatsPage.Build(() => ShowPage(Page.Home), () => ShowPage(Page.Stats), RebuildStats);
-            _pages[Page.Settings] = BuildSettings(out _screenModeButton, out _resolutionButton, out _soundButton, out _volumeValue);
+            _settings = new MenuSettingsPage(app, _setup, _display, () => ShowPage(Page.Home), ApplyBackgroundSettings);
+            _pages[Page.Settings] = _settings.Root;
             foreach (var page in _pages.Values) _pageHost.Add(page);
 
             _overlay = new VisualElement();
@@ -124,6 +120,9 @@ namespace CityHighways.Presentation
         {
             _page = page;
             foreach (var pair in _pages) Ui.Show(pair.Value, pair.Key == page);
+            // Единый переход: страница проявляется и чуть поднимается.
+            if (page != Page.Home && _pages.TryGetValue(page, out var shown)) Ui.Appear(shown);
+            if (page == Page.Settings) _settings.Rebuild();
             // На страницах с текстом фон приглушается, верхние значки и уведомления — только на главной.
             _background.Dim = page == Page.Home ? 0f : 1f;
             if (_topBar != null) Ui.Show(_topBar, page == Page.Home);
@@ -425,6 +424,14 @@ namespace CityHighways.Presentation
             bar.Add(right);
             RefreshLightButtons();
             return bar;
+        }
+
+        /// <summary>Свет и палитра фона поменялись в «Настройках» (или сброшены) — применить к живому фону.</summary>
+        void ApplyBackgroundSettings()
+        {
+            _background.Mode = (MenuBackground.LightMode)Mathf.Clamp(_display.menuLight, 0, 2);
+            _background.PaletteIndex = Mathf.Clamp(_display.menuPalette, 0, MenuBackground.PaletteNames.Length - 1);
+            RefreshLightButtons();
         }
 
         void SetLight(MenuBackground.LightMode mode)
@@ -748,93 +755,6 @@ namespace CityHighways.Presentation
             return page;
         }
 
-        // ================================================================== Настройки
-
-        VisualElement BuildSettings(out UnityEngine.UIElements.Button screenMode, out UnityEngine.UIElements.Button resolution,
-            out UnityEngine.UIElements.Button sound, out Label volume)
-        {
-            var page = Ui.Column();
-            page.style.alignItems = Align.Center;
-            var title = PageTitle("Настройки", () => ShowPage(Page.Home));
-            page.Add(title);
-
-            var card = Ui.Card(24f);
-            card.style.backgroundColor = Theme.Panel;
-            card.style.width = 620f;
-
-            card.Add(Ui.SectionTitle("Экран"));
-            var modeRow = SettingRow("Режим");
-            screenMode = Ui.Button("", ToggleScreenMode, ButtonKind.Secondary, 14f);
-            screenMode.style.width = 200f;
-            modeRow.Add(screenMode);
-            card.Add(modeRow);
-
-            var resolutionRow = SettingRow("Разрешение");
-            resolution = Ui.Button("", NextResolution, ButtonKind.Secondary, 14f);
-            resolution.style.width = 200f;
-            resolutionRow.Add(resolution);
-            card.Add(resolutionRow);
-
-            var tiltRow = SettingRow("Наклон поля (2.5D)");
-            var tiltButton = Ui.Button(_display.tiltedBoard ? "Включён" : "Выключен", () => { }, ButtonKind.Secondary, 14f);
-            tiltButton.style.width = 200f;
-            tiltButton.clicked += () =>
-            {
-                _display.tiltedBoard = !_display.tiltedBoard;
-                _display.Save();
-                tiltButton.text = _display.tiltedBoard ? "Включён" : "Выключен";
-            };
-            tiltRow.Add(tiltButton);
-            card.Add(tiltRow);
-
-            var editorNote = Ui.Text("В редакторе режим и разрешение задаёт окно Game — они применятся в собранной игре.", 12f, Theme.TextDim);
-            editorNote.style.whiteSpace = WhiteSpace.Normal;
-            editorNote.style.marginBottom = 10f;
-            Ui.Show(editorNote, Application.isEditor);
-            card.Add(editorNote);
-
-            var soundTitle = Ui.SectionTitle("Звук");
-            soundTitle.style.marginTop = 12f;
-            card.Add(soundTitle);
-            var soundRow = SettingRow("Звук");
-            sound = Ui.Button("", ToggleSound, ButtonKind.Secondary, 14f);
-            sound.style.width = 200f;
-            soundRow.Add(sound);
-            card.Add(soundRow);
-
-            var volumeRow = SettingRow("Громкость");
-            var quieter = Ui.Button("–", () => ChangeVolume(-0.1f), ButtonKind.Secondary, 18f);
-            quieter.style.width = 44f;
-            volumeRow.Add(quieter);
-            volume = Ui.Text("", 18f, null, true);
-            volume.style.width = 112f;
-            volume.style.unityTextAlign = TextAnchor.MiddleCenter;
-            volumeRow.Add(volume);
-            var louder = Ui.Button("+", () => ChangeVolume(0.1f), ButtonKind.Secondary, 18f);
-            louder.style.width = 44f;
-            volumeRow.Add(louder);
-            card.Add(volumeRow);
-
-            var tutorialTitle = Ui.SectionTitle("Обучение");
-            tutorialTitle.style.marginTop = 12f;
-            card.Add(tutorialTitle);
-            var tutorialRow = SettingRow("Подсказки на первом ходу");
-            var tutorialButton = Ui.Button("Показать снова", () => { }, ButtonKind.Secondary, 14f);
-            tutorialButton.style.width = 200f;
-            tutorialButton.clicked += () =>
-            {
-                PlayerPrefs.DeleteKey(GameView.TutorialPrefsKey);
-                PlayerPrefs.Save();
-                tutorialButton.text = "Покажем в новой партии";
-                Ui.SetEnabled(tutorialButton, false);
-            };
-            tutorialRow.Add(tutorialButton);
-            card.Add(tutorialRow);
-
-            page.Add(card);
-            return page;
-        }
-
         VisualElement ContinueCard(SaveFile saved)
         {
             var card = Ui.Row();
@@ -898,10 +818,6 @@ namespace CityHighways.Presentation
             _trainsValue.text = _setup.roadPieces > 0 ? _setup.roadPieces.ToString() : "по правилам";
             _hideCardsButton.text = _setup.hideCardsBetweenTurns ? "Да" : "Нет";
             _timerButton.text = _setup.turnSeconds > 0 ? $"{_setup.turnSeconds / 60}:{_setup.turnSeconds % 60:00}" : "Без таймера";
-            _soundButton.text = _setup.sound ? "Включён" : "Выключен";
-            _screenModeButton.text = _display.fullscreen ? "Полный экран" : "В окне";
-            _resolutionButton.text = _display.width > 0 ? $"{_display.width} × {_display.height}" : "Как у монитора";
-            _volumeValue.text = Mathf.RoundToInt(_display.volume * 100f) + "%";
 
             int humans = _setup.players.Count(p => !p.isBot);
             _hint.text = humans == 0
@@ -1043,43 +959,6 @@ namespace CityHighways.Presentation
         void ToggleHideCards()
         {
             _setup.hideCardsBetweenTurns = !_setup.hideCardsBetweenTurns;
-            Refresh();
-        }
-
-        void ToggleSound()
-        {
-            _setup.sound = !_setup.sound;
-            _app.Sound.Enabled = _setup.sound;
-            _setup.Save();
-            Refresh();
-        }
-
-        void ToggleScreenMode()
-        {
-            _display.fullscreen = !_display.fullscreen;
-            ApplyDisplay();
-        }
-
-        void NextResolution()
-        {
-            int current = _resolutions.FindIndex(r => r.x == _display.width && r.y == _display.height);
-            var next = _resolutions[(current + 1) % _resolutions.Count];
-            _display.width = next.x;
-            _display.height = next.y;
-            ApplyDisplay();
-        }
-
-        void ChangeVolume(float delta)
-        {
-            _display.volume = Mathf.Clamp01(Mathf.Round((_display.volume + delta) * 10f) / 10f);
-            ApplyDisplay();
-            _app.Sound.Play(Sfx.Bell, 0.6f);
-        }
-
-        void ApplyDisplay()
-        {
-            _display.Save();
-            _display.Apply();
             Refresh();
         }
 
