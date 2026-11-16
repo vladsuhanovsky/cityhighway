@@ -19,6 +19,10 @@ namespace CityHighways.Presentation
         public bool tiltedBoard = true;
         /// <summary>Мини-карта в углу игрового поля.</summary>
         public bool showMinimap = true;
+        /// <summary>Свет фона главного меню: 0 — по часам компьютера, 1 — день, 2 — ночь.</summary>
+        public int menuLight;
+        /// <summary>Палитра фона главного меню (MenuBackground.PaletteNames).</summary>
+        public int menuPalette;
 
         public static DisplaySettings Load()
         {

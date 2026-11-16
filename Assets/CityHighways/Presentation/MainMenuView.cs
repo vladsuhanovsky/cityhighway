@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CityHighways.Core;
+using CityHighways.Net;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -58,7 +59,21 @@ namespace CityHighways.Presentation
             Root.style.justifyContent = Justify.Center;
             Root.style.backgroundColor = Theme.Background;
 
-            AddDecorations();
+            // Живой город на заднем плане: параллакс за мышью, день и ночь.
+            _background = new MenuBackground
+            {
+                Mode = (MenuBackground.LightMode)Mathf.Clamp(_display.menuLight, 0, 2),
+                PaletteIndex = Mathf.Clamp(_display.menuPalette, 0, MenuBackground.PaletteNames.Length - 1)
+            };
+            Root.Add(_background);
+            Root.RegisterCallback<PointerMoveEvent>(e =>
+            {
+                var size = Root.layout.size;
+                if (size.x < 1f || size.y < 1f) return;
+                var local = Root.WorldToLocal(e.position);
+                _background.SetPointer(new Vector2(local.x / size.x, local.y / size.y));
+            });
+            MenuButton.Hovered = () => _app.Sound.Play(Sfx.Tick, 0.35f);
             Profiles.SyncSteam();
 
             _pageHost = Ui.Column();
@@ -88,6 +103,10 @@ namespace CityHighways.Presentation
 
             _profileCorner = BuildProfileCorner();
             Root.Add(_profileCorner);
+            _topBar = BuildTopBar();
+            Root.Add(_topBar);
+            _bellPanel = BuildBellPanel();
+            Root.Add(_bellPanel);
             Root.Add(_overlay);
 
             ShowPage(Page.Home);
@@ -103,7 +122,17 @@ namespace CityHighways.Presentation
 
         void ShowPage(Page page)
         {
+            _page = page;
             foreach (var pair in _pages) Ui.Show(pair.Value, pair.Key == page);
+            // На страницах с текстом фон приглушается, верхние значки и уведомления — только на главной.
+            _background.Dim = page == Page.Home ? 0f : 1f;
+            if (_topBar != null) Ui.Show(_topBar, page == Page.Home);
+            if (_bellOpen) ToggleBell();
+            if (page == Page.Home)
+            {
+                RefreshNotifications();
+                RefreshOnlineBadge();
+            }
             if (_profileCorner != null)
             {
                 // Аватар в углу — на главной; на остальных страницах он только мешал бы.
@@ -113,59 +142,25 @@ namespace CityHighways.Presentation
         }
 
         VisualElement _profileCorner;
-        CharacterView _cornerFigure;
-        Label _cornerName;
-        Label _cornerWallet;
+        ProfileCard _profileCard;
 
-        /// <summary>Аватар профиля в левом нижнем углу главного меню: клик — страница «Профиль».</summary>
+        /// <summary>Карточка профиля в левом нижнем углу главного меню: клик — полный профиль.</summary>
         VisualElement BuildProfileCorner()
         {
-            var corner = Ui.Row();
-            corner.style.position = Position.Absolute;
-            corner.style.left = 28f;
-            corner.style.bottom = 28f;
-            corner.style.alignItems = Align.Center;
-            corner.style.backgroundColor = Theme.Panel;
-            Ui.Radius(corner, 14f);
-            Ui.Padding(corner, 10f, 12f);
-            Ui.Border(corner, 1f, Theme.Line);
-            corner.pickingMode = PickingMode.Position;
-
-            _cornerFigure = new CharacterView(64f);
-            _cornerFigure.style.marginRight = 12f;
-            corner.Add(_cornerFigure);
-            var texts = Ui.Column();
-            texts.pickingMode = PickingMode.Ignore;
-            _cornerName = Ui.Text("", 17f, Theme.Text, true);
-            _cornerName.pickingMode = PickingMode.Ignore;
-            texts.Add(_cornerName);
-            _cornerWallet = Ui.Text("", 13f, Theme.Gold);
-            _cornerWallet.pickingMode = PickingMode.Ignore;
-            texts.Add(_cornerWallet);
-            var hint = Ui.Text("Профиль и оформление", 11f, Theme.TextDim);
-            hint.pickingMode = PickingMode.Ignore;
-            texts.Add(hint);
-            corner.Add(texts);
-
-            corner.RegisterCallback<ClickEvent>(_ =>
+            _profileCard = new ProfileCard(() =>
             {
                 _profile.Rebuild();
                 ShowPage(Page.Profile);
             });
-            corner.RegisterCallback<PointerEnterEvent>(_ => corner.style.backgroundColor = Theme.PanelHover);
-            corner.RegisterCallback<PointerLeaveEvent>(_ => corner.style.backgroundColor = Theme.Panel);
+            _profileCard.style.position = Position.Absolute;
+            _profileCard.style.left = 28f;
+            _profileCard.style.bottom = 28f;
             // Аватар Steam приходит не сразу — подтягиваем, пока не появится.
-            corner.schedule.Execute(RefreshProfileCorner).Every(1000);
-            return corner;
+            _profileCard.schedule.Execute(RefreshProfileCorner).Every(1000);
+            return _profileCard;
         }
 
-        void RefreshProfileCorner()
-        {
-            var profile = Profiles.Active;
-            _cornerFigure.Set(profile.Outfit);
-            _cornerName.text = profile.name;
-            _cornerWallet.text = $"Кошелёк: {profile.wallet} влияния";
-        }
+        void RefreshProfileCorner() => _profileCard?.Set(Profiles.Active);
 
         /// <summary>Счётчик партий пересобирается после сброса статистики.</summary>
         void RebuildStats()
@@ -198,47 +193,462 @@ namespace CityHighways.Presentation
             var page = Ui.Column();
             page.style.alignItems = Align.Center;
 
+            // Заголовок между двумя силуэтами города.
+            var titleRow = Ui.Row();
+            titleRow.style.alignItems = Align.Center;
+            var leftCity = new MenuIcon(MenuIcon.Glyph.Skyline, 52f, new Color(Theme.Gold.r, Theme.Gold.g, Theme.Gold.b, 0.85f));
+            leftCity.style.marginRight = 18f;
+            titleRow.Add(leftCity);
             var title = Ui.Text("City Highways", 72f, Theme.Gold, true);
             Fonts.Apply(title, Fonts.Weight.Logo);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
-            page.Add(title);
-            var subtitle = Ui.Text("Стройте дороги Москвы, выполняйте контракты мэрии и берите плату за проезд", 17f, Theme.TextDim);
+            titleRow.Add(title);
+            var rightCity = new MenuIcon(MenuIcon.Glyph.Skyline, 52f, new Color(Theme.Gold.r, Theme.Gold.g, Theme.Gold.b, 0.85f));
+            rightCity.style.marginLeft = 18f;
+            titleRow.Add(rightCity);
+            page.Add(titleRow);
+            var subtitle = Ui.Text("Стройте дороги Москвы, выполняйте контракты мэрии и берите плату за проезд", 17f, Theme.Text);
             subtitle.style.unityTextAlign = TextAnchor.MiddleCenter;
             subtitle.style.marginTop = 6f;
-            subtitle.style.marginBottom = 34f;
+            subtitle.style.marginBottom = 18f;
             page.Add(subtitle);
+
+            // Новости: что появилось в игре, меняются каждые несколько секунд.
+            _newsBox = Ui.Row();
+            _newsBox.style.width = 560f;
+            _newsBox.style.backgroundColor = Theme.PanelGlass;
+            Ui.Radius(_newsBox, 12f);
+            Ui.Border(_newsBox, 1f, Theme.Line);
+            Ui.Padding(_newsBox, 10f, 14f);
+            _newsBox.style.marginBottom = 18f;
+            Ui.Shadow(_newsBox, 12f);
+            _newsBox.Add(new MenuIcon(MenuIcon.Glyph.News, 22f, Theme.Gold));
+            var newsCaption = Ui.Text("Новости:", 15f, Theme.Gold, true);
+            newsCaption.style.marginLeft = 10f;
+            newsCaption.style.marginRight = 8f;
+            _newsBox.Add(newsCaption);
+            _newsText = Ui.Text(News[0], 15f, Theme.Text);
+            _newsText.style.flexShrink = 1f;
+            Ui.Transitions(_newsText, "opacity");
+            _newsBox.Add(_newsText);
+            page.Add(_newsBox);
 
             if (saved != null)
             {
                 var card = ContinueCard(saved);
-                card.style.width = 640f;
+                card.style.width = 560f;
                 page.Add(card);
             }
 
             var buttons = Ui.Column();
-            buttons.style.width = 420f;
+            buttons.style.width = 480f;
             page.Add(buttons);
 
-            void Add(string text, Action onClick, ButtonKind kind)
+            MenuButton Add(MenuIcon.Glyph glyph, string text, Action onClick, bool primary)
             {
-                var button = Ui.Button(text, onClick, kind, 21f);
-                button.style.height = 54f;
-                button.style.marginBottom = 10f;
+                var button = new MenuButton(glyph, text, onClick, primary);
+                _menuButtons.Add(button);
                 buttons.Add(button);
+                return button;
             }
-            Add("Новая игра", () => ShowPage(Page.NewGame), saved != null ? ButtonKind.Secondary : ButtonKind.Primary);
-            Add(TutorialCoach.IsDone ? "Обучение" : "Обучение — начните отсюда", _app.StartTutorial, ButtonKind.Secondary);
-            Add("Сетевая игра", () => ShowPage(Page.Online), ButtonKind.Secondary);
-            Add("Правила", () => ShowPage(Page.Rules), ButtonKind.Secondary);
-            Add("Счётчик партий", () => ShowPage(Page.Stats), ButtonKind.Secondary);
-            Add("Настройки", () => ShowPage(Page.Settings), ButtonKind.Secondary);
-            if (!Application.isEditor && Application.platform != RuntimePlatform.WebGLPlayer)
-                Add("Выход", Application.Quit, ButtonKind.Ghost);
+            var newGame = Add(MenuIcon.Glyph.Gamepad, "Новая игра", () => ShowPage(Page.NewGame), saved == null);
+            // «Быстрый старт» — сразу в партию с последними настройками.
+            var quick = Ui.Button("Быстрый старт", StartGame, ButtonKind.Secondary, 13f);
+            quick.style.minHeight = 30f;
+            Ui.Padding(quick, 4f, 12f);
+            quick.style.backgroundColor = new Color(1f, 1f, 1f, 0.16f);
+            newGame.Badge.Add(quick);
+            Add(MenuIcon.Glyph.Cap, TutorialCoach.IsDone ? "Обучение" : "Обучение — начните отсюда", _app.StartTutorial, false);
+            _onlineButton = Add(MenuIcon.Glyph.Globe, "Сетевая игра", () => ShowPage(Page.Online), false);
+            _onlineBadge = Pill("");
+            Ui.Show(_onlineBadge, false);
+            _onlineButton.Badge.Add(_onlineBadge);
+            Add(MenuIcon.Glyph.Book, "Правила", () => ShowPage(Page.Rules), false);
+            Add(MenuIcon.Glyph.Chart, "Счётчик партий", () => ShowPage(Page.Stats), false);
+            Add(MenuIcon.Glyph.Gear, "Настройки", () => ShowPage(Page.Settings), false);
 
-            var summary = Ui.Text(StatsLog.Summary(), 13f, Theme.TextDim);
-            summary.style.marginTop = 10f;
+            var summary = Ui.Text(StatsLog.Summary(), 14f, Theme.Text);
+            summary.style.marginTop = 8f;
             page.Add(summary);
             return page;
+        }
+
+        /// <summary>Маленькая плашка-значок (счётчик «онлайн», «новое»).</summary>
+        static Label Pill(string text)
+        {
+            var pill = Ui.Text(text, 12f, Color.white, true);
+            pill.style.backgroundColor = new Color(1f, 1f, 1f, 0.16f);
+            pill.style.whiteSpace = WhiteSpace.NoWrap;
+            Ui.Radius(pill, 10f);
+            Ui.Padding(pill, 3f, 9f);
+            return pill;
+        }
+
+        // ------------------------------------------------------------------ Новости
+
+        /// <summary>Что нового в игре — короткие строки для ленты на главной.</summary>
+        static readonly string[] News =
+        {
+            "Новый интерфейс партии: карта на весь экран, мини-карта и карточки контрактов",
+            "Поле с наклоном 2.5D: утро, день, закат и ночь в одной партии",
+            "Сценарии: Зима, Большая Москва, Год ремонта и Выборы мэра",
+            "Обучающая партия с наставником — лучший способ начать",
+            "Пробки и пропуска: объезды выгоднее, магистрали не стоят в пробках",
+            "Достижения и задание дня приносят влияние на гардероб персонажа"
+        };
+
+        /// <summary>Номер выпуска новостей: если больше прочитанного — в уведомлениях «Что нового».</summary>
+        const int NewsVersion = 29;
+        const string NewsSeenKey = "CityHighways.NewsSeen";
+
+        int _newsIndex;
+        float _newsTimer;
+
+        void TickNews(float dt)
+        {
+            if (_newsText == null) return;
+            _newsTimer += dt;
+            if (_newsTimer < 7f) return;
+            _newsTimer = 0f;
+            _newsIndex = (_newsIndex + 1) % News.Length;
+            int index = _newsIndex;
+            _newsText.style.opacity = 0f;
+            _newsText.schedule.Execute(() =>
+            {
+                _newsText.text = News[index];
+                _newsText.style.opacity = 1f;
+            }).ExecuteLater(320);
+        }
+
+        // ------------------------------------------------------------------ Верхняя панель
+
+        VisualElement _topBar;
+        VisualElement _bellPanel;
+        VisualElement _bellList;
+        Label _bellCount;
+        bool _bellOpen;
+        Label _lightCaption;
+        VisualElement _moonButton, _sunButton;
+
+        /// <summary>Круглая кнопка-значок в верхней панели меню.</summary>
+        VisualElement TopIcon(MenuIcon.Glyph glyph, Action onClick)
+        {
+            var button = Ui.Box();
+            button.pickingMode = PickingMode.Position;
+            button.style.width = 42f;
+            button.style.height = 42f;
+            button.style.marginRight = 8f;
+            button.style.alignItems = Align.Center;
+            button.style.justifyContent = Justify.Center;
+            button.style.backgroundColor = Theme.PanelGlass;
+            Ui.Radius(button, 21f);
+            Ui.Border(button, 1f, Theme.Line);
+            Ui.Transitions(button, "background-color", "translate", "border-top-color", "border-bottom-color", "border-left-color", "border-right-color");
+            button.Add(new MenuIcon(glyph, 20f, Theme.Text));
+            button.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                button.style.backgroundColor = Theme.PanelHover;
+                button.style.translate = new Translate(new Length(0f), new Length(-2f));
+                MenuButton.Hovered?.Invoke();
+            });
+            button.RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                button.style.backgroundColor = Theme.PanelGlass;
+                button.style.translate = new Translate(new Length(0f), new Length(0f));
+            });
+            button.RegisterCallback<ClickEvent>(_ =>
+            {
+                Ui.ButtonClicked?.Invoke();
+                onClick?.Invoke();
+            });
+            return button;
+        }
+
+        VisualElement BuildTopBar()
+        {
+            var bar = Ui.Row();
+            bar.style.position = Position.Absolute;
+            bar.style.left = 24f;
+            bar.style.right = 24f;
+            bar.style.top = 18f;
+            bar.style.justifyContent = Justify.SpaceBetween;
+
+            // Слева — свет фона: ночь, день, палитра.
+            var left = Ui.Row();
+            _moonButton = TopIcon(MenuIcon.Glyph.Moon, () => SetLight(_background.Mode == MenuBackground.LightMode.Night
+                ? MenuBackground.LightMode.Auto : MenuBackground.LightMode.Night));
+            _sunButton = TopIcon(MenuIcon.Glyph.Sun, () => SetLight(_background.Mode == MenuBackground.LightMode.Day
+                ? MenuBackground.LightMode.Auto : MenuBackground.LightMode.Day));
+            left.Add(_moonButton);
+            left.Add(_sunButton);
+            left.Add(TopIcon(MenuIcon.Glyph.Palette, NextPalette));
+            _lightCaption = Ui.Text("", 13f, Theme.Text);
+            _lightCaption.style.marginLeft = 4f;
+            _lightCaption.style.backgroundColor = new Color(0f, 0f, 0f, 0.3f);
+            Ui.Radius(_lightCaption, 8f);
+            Ui.Padding(_lightCaption, 4f, 10f);
+            left.Add(_lightCaption);
+            bar.Add(left);
+
+            // Справа — уведомления, настройки, выход.
+            var right = Ui.Row();
+            var bell = TopIcon(MenuIcon.Glyph.Bell, ToggleBell);
+            _bellCount = Ui.Number("", 11f, Color.white, true);
+            _bellCount.style.position = Position.Absolute;
+            _bellCount.style.top = -4f;
+            _bellCount.style.right = -4f;
+            _bellCount.style.minWidth = 18f;
+            _bellCount.style.height = 18f;
+            _bellCount.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _bellCount.style.backgroundColor = Theme.Accent;
+            Ui.Radius(_bellCount, 9f);
+            Ui.Padding(_bellCount, 0f, 4f);
+            bell.Add(_bellCount);
+            right.Add(bell);
+            right.Add(TopIcon(MenuIcon.Glyph.Gear, () => ShowPage(Page.Settings)));
+            if (Application.platform != RuntimePlatform.WebGLPlayer)
+            {
+                var quit = TopIcon(MenuIcon.Glyph.Close, ConfirmQuit);
+                quit.style.marginRight = 0f;
+                right.Add(quit);
+            }
+            bar.Add(right);
+            RefreshLightButtons();
+            return bar;
+        }
+
+        void SetLight(MenuBackground.LightMode mode)
+        {
+            _background.Mode = mode;
+            _display.menuLight = (int)mode;
+            _display.Save();
+            RefreshLightButtons();
+        }
+
+        void NextPalette()
+        {
+            _background.PaletteIndex = (_background.PaletteIndex + 1) % MenuBackground.PaletteNames.Length;
+            _display.menuPalette = _background.PaletteIndex;
+            _display.Save();
+            RefreshLightButtons();
+        }
+
+        void RefreshLightButtons()
+        {
+            var mode = _background.Mode;
+            Ui.Border(_moonButton, mode == MenuBackground.LightMode.Night ? 2f : 1f, mode == MenuBackground.LightMode.Night ? Theme.Accent : Theme.Line);
+            Ui.Border(_sunButton, mode == MenuBackground.LightMode.Day ? 2f : 1f, mode == MenuBackground.LightMode.Day ? Theme.Accent : Theme.Line);
+            string light = mode == MenuBackground.LightMode.Night ? "ночь" : mode == MenuBackground.LightMode.Day ? "день" : "по часам";
+            _lightCaption.text = $"Свет: {light} · {MenuBackground.PaletteNames[_background.PaletteIndex]}";
+        }
+
+        void ConfirmQuit()
+        {
+            _overlay.Clear();
+            var box = Ui.Card(24f);
+            box.pickingMode = PickingMode.Position;
+            box.style.width = 420f;
+            box.style.backgroundColor = Theme.Panel;
+            Ui.Shadow(box, 10f, 20f, 0.6f);
+            box.Add(Ui.Text("Выйти из City Highways?", 22f, Theme.Text, true));
+            var note = Ui.Text("Незаконченная партия сохранится — её можно будет продолжить.", 14f, Theme.TextDim);
+            note.style.marginTop = 6f;
+            note.style.marginBottom = 16f;
+            box.Add(note);
+            var row = Ui.Row();
+            var quit = Ui.Button("Выйти", Quit, ButtonKind.Primary, 15f);
+            quit.style.marginRight = 10f;
+            row.Add(quit);
+            row.Add(Ui.Button("Остаться", () => Ui.Show(_overlay, false), ButtonKind.Secondary, 15f));
+            box.Add(row);
+            _overlay.Add(box);
+            Ui.Show(_overlay, true);
+        }
+
+        static void Quit()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
+
+        // ------------------------------------------------------------------ Уведомления
+
+        VisualElement BuildBellPanel()
+        {
+            var panel = Ui.Column();
+            panel.pickingMode = PickingMode.Position;
+            panel.style.position = Position.Absolute;
+            panel.style.top = 70f;
+            panel.style.right = 24f;
+            panel.style.width = 380f;
+            panel.style.backgroundColor = Theme.Panel;
+            Ui.Radius(panel, 14f);
+            Ui.Border(panel, 1f, Theme.Line);
+            Ui.Padding(panel, 12f, 14f);
+            Ui.Shadow(panel, 14f, 18f, 0.55f);
+            panel.Add(Ui.Text("Уведомления", 18f, Theme.Text, true));
+            _bellList = Ui.Column();
+            _bellList.style.marginTop = 8f;
+            panel.Add(_bellList);
+            panel.style.display = DisplayStyle.None;
+            panel.style.opacity = 0f;
+            return panel;
+        }
+
+        void ToggleBell()
+        {
+            _bellOpen = !_bellOpen;
+            if (_bellOpen) RefreshNotifications();
+            Ui.Slide(_bellPanel, _bellOpen, 0f, -6f);
+            _app.Sound.Play(_bellOpen ? Sfx.Open : Sfx.Close, 0.45f);
+        }
+
+        /// <summary>Что стоит сделать: задание дня, покупка на накопленное влияние, незаконченная партия, новости, обучение.</summary>
+        List<(MenuIcon.Glyph glyph, string text, Action action)> Notifications()
+        {
+            var list = new List<(MenuIcon.Glyph, string, Action)>();
+            var profile = Profiles.Active;
+            void OpenProfile()
+            {
+                _profile.Rebuild();
+                ShowPage(Page.Profile);
+            }
+            if (profile != null && profile.dailyDone != Achievements.DateKey(DateTime.Now))
+                list.Add((MenuIcon.Glyph.Star, $"Задание дня: {Achievements.Today.Title} (+{Achievements.DailyReward} влияния)", OpenProfile));
+            if (profile != null)
+            {
+                var item = Profiles.Catalog.Where(i => !profile.Owns(i.Id) && i.Price > 0 && i.Price <= profile.wallet)
+                    .OrderByDescending(i => i.Price).FirstOrDefault();
+                if (item != null) list.Add((MenuIcon.Glyph.Palette, $"Хватает влияния на «{item.Name}» ({item.Price}) — загляните в профиль", OpenProfile));
+            }
+            var saved = SaveSystem.Load();
+            if (saved != null) list.Add((MenuIcon.Glyph.Gamepad, "Есть незаконченная партия — можно продолжить", () => _app.ContinueGame(saved)));
+            if (PlayerPrefs.GetInt(NewsSeenKey, 0) < NewsVersion)
+                list.Add((MenuIcon.Glyph.News, "Что нового: " + News[0], () =>
+                {
+                    PlayerPrefs.SetInt(NewsSeenKey, NewsVersion);
+                    PlayerPrefs.Save();
+                    RefreshNotifications();
+                }));
+            if (!TutorialCoach.IsDone) list.Add((MenuIcon.Glyph.Cap, "Обучение ещё не пройдено — 10 минут с наставником", _app.StartTutorial));
+            return list;
+        }
+
+        void RefreshNotifications()
+        {
+            if (_bellList == null) return;
+            var list = Notifications();
+            _bellCount.text = list.Count.ToString();
+            Ui.Show(_bellCount, list.Count > 0);
+            _bellList.Clear();
+            if (list.Count == 0)
+            {
+                _bellList.Add(Ui.Text("Новых уведомлений нет.", 14f, Theme.TextDim));
+                return;
+            }
+            foreach (var (glyph, text, action) in list)
+            {
+                var row = Ui.Row();
+                row.pickingMode = PickingMode.Position;
+                row.style.alignItems = Align.Center;
+                row.style.marginBottom = 6f;
+                row.style.backgroundColor = Theme.PanelLight;
+                Ui.Radius(row, 10f);
+                Ui.Padding(row, 8f, 10f);
+                Ui.Transitions(row, "background-color");
+                var icon = new MenuIcon(glyph, 20f, Theme.Gold);
+                icon.style.marginRight = 10f;
+                row.Add(icon);
+                var label = Ui.Text(text, 14f, Theme.Text);
+                label.style.flexShrink = 1f;
+                row.Add(label);
+                var act = action;
+                row.RegisterCallback<PointerEnterEvent>(_ => row.style.backgroundColor = Theme.PanelHover);
+                row.RegisterCallback<PointerLeaveEvent>(_ => row.style.backgroundColor = Theme.PanelLight);
+                row.RegisterCallback<ClickEvent>(_ =>
+                {
+                    Ui.ButtonClicked?.Invoke();
+                    if (_bellOpen) ToggleBell();
+                    act?.Invoke();
+                });
+                _bellList.Add(row);
+            }
+        }
+
+        // ------------------------------------------------------------------ «Онлайн»
+
+        MenuButton _onlineButton;
+        Label _onlineBadge;
+        float _onlineTimer;
+
+        /// <summary>
+        /// Плашка у «Сетевой игры»: сколько открытых игр в Unity Gaming Services и сколько друзей Steam в лобби.
+        /// Только настоящие числа: нет сервиса или ничего не нашлось — плашки нет.
+        /// </summary>
+        void RefreshOnlineBadge()
+        {
+            if (_onlineBadge == null) return;
+            int friends = 0;
+            try
+            {
+                var steam = NetPlatforms.Steam;
+                if (steam != null && steam.Available) friends = steam.FriendsInLobbies()?.Count ?? 0;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Steam: не удалось узнать друзей в лобби: " + e.Message);
+            }
+            var ugs = NetPlatforms.Ugs;
+            if (ugs == null)
+            {
+                SetOnlineBadge(-1, friends);
+                return;
+            }
+            ugs.QueryLobbies((lobbies, error) => SetOnlineBadge(error == null && lobbies != null ? lobbies.Count : -1, friends));
+        }
+
+        void SetOnlineBadge(int open, int friends)
+        {
+            var parts = new List<string>();
+            if (open > 0) parts.Add($"{open} {Plural(open, "открытая игра", "открытые игры", "открытых игр")}");
+            if (friends > 0) parts.Add($"друзей в лобби: {friends}");
+            _onlineBadge.text = string.Join(" · ", parts);
+            Ui.Show(_onlineBadge, parts.Count > 0);
+        }
+
+        static string Plural(int n, string one, string few, string many)
+        {
+            int last = n % 10, lastTwo = n % 100;
+            if (last == 1 && lastTwo != 11) return one;
+            if (last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)) return few;
+            return many;
+        }
+
+        // ------------------------------------------------------------------ Кадр
+
+        MenuBackground _background;
+        readonly List<MenuButton> _menuButtons = new List<MenuButton>();
+        VisualElement _newsBox;
+        Label _newsText;
+        Page _page = Page.Home;
+
+        /// <summary>Анимация меню: фон, блики на кнопках, рамка профиля, лента новостей, плашка «онлайн».</summary>
+        public void Tick(float dt)
+        {
+            _background.Tick(dt);
+            if (_page != Page.Home) return;
+            foreach (var button in _menuButtons) button.Tick(dt);
+            _profileCard?.Tick(dt);
+            TickNews(dt);
+            _onlineTimer += dt;
+            if (_onlineTimer > 30f)
+            {
+                _onlineTimer = 0f;
+                RefreshOnlineBadge();
+            }
         }
 
         // ================================================================== Новая игра
@@ -451,33 +861,6 @@ namespace CityHighways.Presentation
             label.style.flexGrow = 1f;
             row.Add(label);
             return row;
-        }
-
-        /// <summary>Несколько «участков дороги» разных ресурсов по углам — чтобы меню не было пустым.</summary>
-        void AddDecorations()
-        {
-            var resources = new[] { Resource.Asphalt, Resource.Concrete, Resource.Steel, Resource.Gravel, Resource.Machinery, Resource.Asphalt };
-            for (int i = 0; i < resources.Length; i++)
-            {
-                var piece = Ui.Box();
-                piece.style.position = Position.Absolute;
-                piece.style.width = 70f;
-                piece.style.height = 20f;
-                piece.style.backgroundColor = Palette.Card(resources[i]);
-                piece.style.opacity = 0.25f;
-                Ui.Radius(piece, 4f);
-                if (i < 3)
-                {
-                    piece.style.left = 60f + i * 84f;
-                    piece.style.top = 50f;
-                }
-                else
-                {
-                    piece.style.right = 60f + (i - 3) * 84f;
-                    piece.style.bottom = 50f;
-                }
-                Root.Add(piece);
-            }
         }
 
         void Refresh()

@@ -93,6 +93,7 @@ namespace CityHighways.Presentation
             Net?.Poll();
             Tweener.Tick(Time.deltaTime);
             _game?.Tick(Time.deltaTime);
+            _menu?.Tick(Time.deltaTime);
         }
 
         void OnDestroy()
