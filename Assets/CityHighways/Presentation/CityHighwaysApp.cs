@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Collections;
 using System.IO;
 using CityHighways.Core;
@@ -27,6 +30,8 @@ namespace CityHighways.Presentation
 
         VisualElement _root;
         GameView _game;
+        /// <summary>Партия «Логистического магната» (вместо _game).</summary>
+        MagnateView _magnate;
         MainMenuView _menu;
 
         /// <summary>Текущая сетевая сессия (лобби или партия); null — сети нет.</summary>
@@ -85,7 +90,7 @@ namespace CityHighways.Presentation
 
         void OnSteamJoinRequested(ulong lobby)
         {
-            if (_game != null) return; // посреди партии приглашения не принимаем
+            if (_game != null || _magnate != null) return; // посреди партии приглашения не принимаем
             if (_menu == null) ShowMenu();
             _menu?.JoinSteamLobby(lobby);
         }
@@ -96,12 +101,15 @@ namespace CityHighways.Presentation
             Net?.Poll();
             Tweener.Tick(Time.deltaTime);
             _game?.Tick(Time.deltaTime);
+            _magnate?.Tick(Time.deltaTime);
             _menu?.Tick(Time.deltaTime);
         }
 
         void OnDestroy()
         {
             _game?.Release3D();
+            _magnate?.Release3D();
+            _magnate = null;
             CloseNet();
             NetPlatforms.Steam?.Shutdown();
         }
@@ -118,6 +126,8 @@ namespace CityHighways.Presentation
             CloseNet();
             Tweener.Clear();
             _game?.Release3D();
+            _magnate?.Release3D();
+            _magnate = null;
             _game = null;
             _root.Clear();
             var setup = GameSetup.Load();
@@ -167,12 +177,39 @@ namespace CityHighways.Presentation
             _root.Clear();
             _menu = null;
             _game?.Release3D();
+            _magnate?.Release3D();
+            _magnate = null;
             _game = new GameView(this, setup, Net);
             _root.Add(_game.Root);
             _game.StartOnline();
         }
 
         public void StartGame(GameSetup setup)
+        {
+            if (setup.magnate)
+            {
+                StartMagnate(setup);
+                return;
+            }
+            setup.Save();
+            Sound.Enabled = setup.sound;
+            CloseNet();
+            Tweener.Clear();
+            _root.Clear();
+            _menu = null;
+            _game?.Release3D();
+            _magnate?.Release3D();
+            _magnate = null;
+            _game = new GameView(this, setup);
+            _root.Add(_game.Root);
+            _game.StartNewGame();
+        }
+
+        /// <summary>
+        /// «Логистический магнат»: экран загрузки, город генерируется заново (каждый раз новое зерно),
+        /// создаётся партия и экран, строится 3D-город — по шагу за кадр, чтобы полоса загрузки двигалась.
+        /// </summary>
+        public void StartMagnate(GameSetup setup)
         {
             setup.Save();
             Sound.Enabled = setup.sound;
@@ -181,9 +218,40 @@ namespace CityHighways.Presentation
             _root.Clear();
             _menu = null;
             _game?.Release3D();
-            _game = new GameView(this, setup);
-            _root.Add(_game.Root);
-            _game.StartNewGame();
+            _game = null;
+            _magnate?.Release3D();
+            _magnate = null;
+
+            var loading = new MagnateLoading("Логистический магнат");
+            _root.Add(loading.Root);
+            int seed = Environment.TickCount & 0x7FFFFFFF;
+            var names = setup.players.Select(p => p.name).ToList();
+            var bots = setup.players.Select(p => p.isBot).ToList();
+            GeneratedCity city = null;
+            LogisticsGame game = null;
+            MagnateView view = null;
+            var steps = new List<(string, Action)>
+            {
+                ("Прокладываем реки и намечаем кварталы…", () => city = CityGenerator.Generate(seed)),
+                ("Расставляем аэропорты, вокзалы и порты…", () => game = new LogisticsGame(city, names, bots, seed)),
+                ("Рисуем карту и дороги…", () =>
+                {
+                    view = new MagnateView(this, setup, game);
+                    _root.Insert(0, view.Root);
+                    view.Begin();
+                }),
+                ("Поднимаем дома, сажаем деревья, наполняем реки…", () => view.Setup3D()),
+                ("Грузим первые фуры…", () => { }),
+            };
+            loading.Run(this, steps, () =>
+            {
+                _magnate = view;
+                loading.Root.RemoveFromHierarchy();
+            }, () =>
+            {
+                view?.Release3D();
+                ShowMenu();
+            });
         }
 
         /// <summary>Обучающая партия: настройки и сохранение игрока не трогает.</summary>
@@ -197,6 +265,8 @@ namespace CityHighways.Presentation
             _root.Clear();
             _menu = null;
             _game?.Release3D();
+            _magnate?.Release3D();
+            _magnate = null;
             _game = new GameView(this, setup);
             _root.Add(_game.Root);
             _game.StartNewGame();
@@ -211,6 +281,8 @@ namespace CityHighways.Presentation
             _root.Clear();
             _menu = null;
             _game?.Release3D();
+            _magnate?.Release3D();
+            _magnate = null;
             _game = new GameView(this, file.setup);
             _root.Add(_game.Root);
             _game.ContinueGame(file);

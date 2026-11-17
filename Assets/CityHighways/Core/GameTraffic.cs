@@ -56,11 +56,14 @@ namespace CityHighways.Core
         public int LastPaidPlayer { get; private set; } = -1;
 
         /// <summary>Сколько маршрутов соперников владельца едет по дороге.</summary>
-        public int TrafficOn(string roadId) => roadId != null && _traffic.TryGetValue(roadId, out var n) ? n : 0;
+        public int TrafficOn(string roadId) =>
+            roadId == null ? 0
+            : (_traffic.TryGetValue(roadId, out var n) ? n : 0) + (_logisticsTraffic.TryGetValue(roadId, out var m) ? m : 0);
 
-        /// <summary>Дорога в пробке: не магистраль, а загрузка не меньше порога.</summary>
+        /// <summary>Дорога в пробке: не магистраль, а загрузка не меньше порога (в «Логистическом магнате» — по его правилам).</summary>
         public bool IsJammed(string roadId) =>
-            Config.JamThreshold > 0 && !_rushHourRoads.Contains(roadId) && TrafficOn(roadId) >= Config.JamThreshold;
+            roadId != null && (_logisticsJams.Contains(roadId) ||
+            (Config.JamThreshold > 0 && !_rushHourRoads.Contains(roadId) && TrafficOn(roadId) >= Config.JamThreshold));
 
         /// <summary>Сколько сверх проезда стоит проехать по дороге сейчас (уходит городу).</summary>
         public int JamFeeFor(string roadId) => IsJammed(roadId) ? Config.JamFee : 0;

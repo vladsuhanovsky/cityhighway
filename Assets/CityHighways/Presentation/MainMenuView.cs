@@ -717,7 +717,14 @@ namespace CityHighways.Presentation
             gameCard.Add(_mapHint);
 
             var modeRow = SettingRow("Режим");
-            _modeButton = Ui.Button("", () => { _setup.cooperative = !_setup.cooperative; Refresh(); }, ButtonKind.Secondary, 14f);
+            // Режимы по кругу: Магнат → Соревнование → Кооператив.
+            _modeButton = Ui.Button("", () =>
+            {
+                if (_setup.magnate) { _setup.magnate = false; _setup.cooperative = false; }
+                else if (!_setup.cooperative) _setup.cooperative = true;
+                else { _setup.cooperative = false; _setup.magnate = true; }
+                Refresh();
+            }, ButtonKind.Secondary, 14f);
             _modeButton.style.width = 170f;
             modeRow.Add(_modeButton);
             gameCard.Add(modeRow);
@@ -830,9 +837,17 @@ namespace CityHighways.Presentation
                 var map = GameSetup.MapOf(_setup.mapResourcePath);
                 _mapButton.text = map.Title;
                 _mapHint.text = map.Hint;
-                _modeButton.text = _setup.cooperative ? "Кооператив" : "Соревнование";
+                _modeButton.text = _setup.magnate ? "Магнат" : _setup.cooperative ? "Кооператив" : "Соревнование";
                 var rules = new GameConfig();
-                _modeHint.text = _setup.cooperative
+                var magnateRules = new MagnateConfig();
+                if (_setup.magnate)
+                {
+                    _mapButton.text = "Новый город";
+                    _mapHint.text = "Город генерируется заново при каждом запуске: реки, станции, аэропорты, вокзалы и порты.";
+                }
+                _modeHint.text = _setup.magnate
+                    ? $"«Логистический магнат»: компании возят грузы с хабов — скоропорт, тяжеловес, опасный. {magnateRules.Rounds} раундов, ходы планируются тайно, фуры едут разом; перегруженная дорога — пробка."
+                    : _setup.cooperative
                     ? $"«Город против всех»: все — одна команда. Выполните {rules.CoopOrdersToWin(_setup.players.Count)} заказов города, пока кризис не дошёл до {rules.CoopCrisisMax}. Проезд между союзниками бесплатный."
                     : "Каждый сам за себя: больше всех очков — победа.";
             }
@@ -975,6 +990,7 @@ namespace CityHighways.Presentation
 
         void NextMap()
         {
+            if (_setup.magnate) return; // в магнате город генерируется сам
             int index = System.Array.FindIndex(GameSetup.Maps, m => m.Path == GameSetup.MapOf(_setup.mapResourcePath).Path);
             _setup.mapResourcePath = GameSetup.Maps[(index + 1) % GameSetup.Maps.Length].Path;
             Refresh();

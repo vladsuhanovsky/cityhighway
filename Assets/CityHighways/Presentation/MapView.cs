@@ -105,6 +105,19 @@ namespace CityHighways.Presentation
 
         bool RoadVisible(Road road) => _game.IsRoadOpen(road.Id) && (RoadHidden == null || !RoadHidden(road.Id));
 
+        /// <summary>Клик по станции (только если на событие кто-то подписан — иначе клик идёт дороге под ней).</summary>
+        public event Action<Location, Vector2> LocationClicked;
+        /// <summary>Дополнительный рисунок поверх карты (фуры и грузы магната) — в координатах карты.</summary>
+        public Action<Painter2D> Overlay;
+        /// <summary>Цвет городских (общих) дорог магната — владелец за пределами списка игроков.</summary>
+        public static readonly Color PublicRoadColor = new Color(0.70f, 0.72f, 0.76f);
+
+        Color OwnerColor(int owner) =>
+            _game != null && owner >= _game.Players.Count ? PublicRoadColor : Palette.PlayerColor(owner);
+
+        /// <summary>Точка карты на экране (для фур магната).</summary>
+        public Vector2 ScreenPositionOf(string locationId) => _layout.LocationPosition(locationId);
+
         /// <summary>Пересчитать раскладку поля (например, после смены угла камеры).</summary>
         public void RefreshLayout() => Relayout();
         /// <summary>Наклон камеры 3D-города от вертикали, градусы (30–45).</summary>
@@ -202,6 +215,16 @@ namespace CityHighways.Presentation
             {
                 if (_game == null) return;
                 Vector2 position = e.localPosition;
+                // Клик по станции (режим магната: «ехать сюда») — раньше дороги под ней.
+                if (e.button == 0 && Interactive && LocationClicked != null)
+                {
+                    var clicked = LocationAt(position);
+                    if (clicked != null)
+                    {
+                        LocationClicked(clicked, position);
+                        return;
+                    }
+                }
                 var road = e.button == 0 && Interactive ? OpenRoadAt(position) : null;
                 if (road != null)
                 {
@@ -342,6 +365,15 @@ namespace CityHighways.Presentation
 
             foreach (var district in game.Map.Districts)
             {
+                // Разбросанные по карте районы (аэропорты по разным окраинам, вокзалы вокруг центра) без подписи:
+                // подпись встала бы посередине — там, где этого района нет.
+                var members = game.Map.LocationsIn(district.Id);
+                if (members.Count > 1)
+                {
+                    float mx = members.Average(l => l.X), my = members.Average(l => l.Y);
+                    float spread = members.Max(l => Mathf.Sqrt(Mathf.Pow((l.X - mx) * 1400f, 2f) + Mathf.Pow((l.Y - my) * 780f, 2f)));
+                    if (spread > 230f) continue;
+                }
                 var label = Ui.Text(district.Name.ToUpperInvariant(), 14f, DistrictLabelColor, true);
                 label.style.letterSpacing = 3f;
                 label.style.whiteSpace = WhiteSpace.NoWrap;
@@ -795,6 +827,7 @@ namespace CityHighways.Presentation
                 if (_game.IsLocationOpen(location.Id)) DrawLocation(p, location);
             DrawCones(p);
             DrawSnowfall(p, area);
+            Overlay?.Invoke(p);
 
             if (_dimLevel > 0.001f) DrawContractHighlight(p, area);
             DrawFireworks(p, dt);
@@ -1384,7 +1417,7 @@ namespace CityHighways.Presentation
             // Построенные участки слегка светятся цветом компании (ночью — сильнее: город в огнях).
             if (owner.HasValue)
             {
-                var c = Palette.PlayerColor(owner.Value);
+                var c = OwnerColor(owner.Value);
                 p.strokeColor = new Color(c.r, c.g, c.b, 0.30f + 0.22f * _night);
                 p.lineWidth = 7f;
                 for (int i = 0; i < built; i++)
@@ -1444,7 +1477,7 @@ namespace CityHighways.Presentation
             var segments = _layout.GetSegments(road);
             int built = BuiltSegments(road, segments.Count);
             var baseColor = NightRoadColor(road);
-            var ownerColor = owner.HasValue ? Palette.PlayerColor(owner.Value) : baseColor;
+            var ownerColor = owner.HasValue ? OwnerColor(owner.Value) : baseColor;
             bool isBridge = road.IsBridge;
             // В 3D мост той же ширины, что дорога: рамки и перила не выходят за полотно.
             bool wideBridge = isBridge && !_use3D;

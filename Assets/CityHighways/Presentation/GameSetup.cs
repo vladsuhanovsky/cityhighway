@@ -58,6 +58,8 @@ namespace CityHighways.Presentation
         public int scenario;
         /// <summary>Кооператив «Город против всех»: все компании — одна команда против города.</summary>
         public bool cooperative;
+        /// <summary>«Логистический магнат» — основной режим: город генерируется заново, компании возят грузы.</summary>
+        public bool magnate = true;
 
         /// <summary>Карта для меню: путь в Resources, название и одна строка описания.</summary>
         public sealed class MapChoice
