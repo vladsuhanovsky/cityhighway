@@ -4123,21 +4123,21 @@ namespace CityHighways.Presentation
                 var angleButtons = new List<Button>();
                 foreach (var degrees in DisplaySettings.TiltOptions)
                 {
-                    float value = degrees;
-                    var button = Ui.Button($"{value:0}°", () => { }, ButtonKind.Secondary, 14f);
+                    float angle = degrees;
+                    var button = Ui.Button($"{angle:0}°", () => { }, ButtonKind.Secondary, 14f);
                     button.style.width = 56f;
                     button.style.marginLeft = 4f;
                     button.clicked += () =>
                     {
-                        display.tiltDegrees = value;
+                        display.tiltDegrees = angle;
                         display.Save();
-                        _map.CameraTiltDegrees = value;
+                        _map.CameraTiltDegrees = angle;
                         _map.RefreshLayout();
                         foreach (var other in angleButtons)
                             other.style.borderBottomColor = other == button ? Theme.Accent : Color.clear;
                     };
                     button.style.borderBottomWidth = 3f;
-                    button.style.borderBottomColor = Mathf.Approximately(display.tiltDegrees, value) ? Theme.Accent : Color.clear;
+                    button.style.borderBottomColor = Mathf.Approximately(display.tiltDegrees, angle) ? Theme.Accent : Color.clear;
                     angleButtons.Add(button);
                     angles.Add(button);
                 }
