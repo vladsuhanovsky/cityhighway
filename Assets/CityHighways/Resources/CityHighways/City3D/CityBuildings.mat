@@ -13,6 +13,8 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _EMISSION
+  - _ENVIRONMENTREFLECTIONS_OFF
+  - _SPECULARHIGHLIGHTS_OFF
   m_InvalidKeywords: []
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
@@ -29,8 +31,8 @@ Material:
     m_Floats:
     - _Smoothness: 0.18
     - _Metallic: 0
-    - _SpecularHighlights: 1
-    - _EnvironmentReflections: 1
+    - _SpecularHighlights: 0
+    - _EnvironmentReflections: 0
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}

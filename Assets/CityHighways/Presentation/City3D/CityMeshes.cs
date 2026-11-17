@@ -22,7 +22,12 @@ namespace CityHighways.Presentation
         /// <summary>Четырёхугольник a-b-c-d по часовой стрелке, если смотреть на лицевую сторону (так Unity видит грань).</summary>
         public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Rect uv)
         {
-            var normal = Vector3.Cross(b - a, c - a).normalized;
+            // Нормаль по диагоналям: не обнуляется, если у грани схлопнуто одно ребро (верх конуса, конёк крыши).
+            // Совсем вырожденную грань пропускаем — нулевая нормаль даёт NaN в освещении, а Bloom
+            // раздувает такой пиксель во вспышку на весь экран.
+            var cross = Vector3.Cross(c - a, d - b);
+            if (!(cross.sqrMagnitude > 1e-14f)) return;
+            var normal = cross.normalized;
             int i = _vertices.Count;
             _vertices.Add(a); _vertices.Add(b); _vertices.Add(c); _vertices.Add(d);
             for (int k = 0; k < 4; k++) _normals.Add(normal);
@@ -37,7 +42,9 @@ namespace CityHighways.Presentation
         /// <summary>Треугольник a-b-c по часовой стрелке со стороны лица.</summary>
         public void Tri(Vector3 a, Vector3 b, Vector3 c, Rect uv)
         {
-            var normal = Vector3.Cross(b - a, c - a).normalized;
+            var cross = Vector3.Cross(b - a, c - a);
+            if (!(cross.sqrMagnitude > 1e-14f)) return;
+            var normal = cross.normalized;
             int i = _vertices.Count;
             _vertices.Add(a); _vertices.Add(b); _vertices.Add(c);
             for (int k = 0; k < 3; k++) _normals.Add(normal);
@@ -55,10 +62,18 @@ namespace CityHighways.Presentation
             for (int i = 0; i < other._vertices.Count; i++)
             {
                 _vertices.Add(transform.MultiplyPoint3x4(other._vertices[i]));
-                _normals.Add(normalMatrix.MultiplyVector(other._normals[i]).normalized);
+                _normals.Add(SafeNormal(normalMatrix.MultiplyVector(other._normals[i])));
                 _uvs.Add(other._uvs[i]);
             }
             foreach (var t in other._triangles) _triangles.Add(t + offset);
+        }
+
+        /// <summary>Нормаль без NaN и нулей (матрица с нулевым масштабом или вырожденная грань) — иначе вверх.</summary>
+        static Vector3 SafeNormal(Vector3 n)
+        {
+            float m = n.sqrMagnitude;
+            if (!(m > 1e-14f) || float.IsInfinity(m)) return Vector3.up;
+            return n / Mathf.Sqrt(m);
         }
 
         public void Clear()

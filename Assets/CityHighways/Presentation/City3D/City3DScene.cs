@@ -116,6 +116,9 @@ namespace CityHighways.Presentation
             data.renderPostProcessing = quality > 0;
             data.antialiasing = quality > 0 ? AntialiasingMode.SubpixelMorphologicalAntiAliasing : AntialiasingMode.None;
             data.renderShadows = quality > 0;
+            // Страховка: пиксели NaN/Inf (если где-то всё же проскочит вырожденная нормаль) заменяются чёрными
+            // до пост-обработки, а не растекаются по Bloom белыми вспышками.
+            data.stopNaN = quality > 0;
             int rendererIndex = FindUniversalRenderer();
             if (rendererIndex >= 0) data.SetRenderer(rendererIndex);
             else SwapToRuntimePipeline();
@@ -162,9 +165,13 @@ namespace CityHighways.Presentation
                 profile.hideFlags = HideFlags.DontSave;
                 _owned.Add(profile);
                 _bloom = profile.Add<Bloom>(true);
-                _bloom.threshold.Override(0.95f);
+                // Clamp режет «светлячки»: один пересвеченный пиксель (блик солнца на ребре здания или воде)
+                // больше не раздувается во вспышку при движении камеры.
+                _bloom.threshold.Override(1.1f);
                 _bloom.intensity.Override(0.35f);
-                _bloom.scatter.Override(0.6f);
+                _bloom.scatter.Override(0.55f);
+                _bloom.clamp.Override(3f);
+                _bloom.highQualityFiltering.Override(quality > 1);
                 var tonemapping = profile.Add<Tonemapping>(true);
                 tonemapping.mode.Override(TonemappingMode.Neutral);
                 var vignette = profile.Add<Vignette>(true);
@@ -229,6 +236,7 @@ namespace CityHighways.Presentation
             _buildings.SetTexture("_BaseMap", CityAtlas.Albedo);
             _buildings.SetTexture("_EmissionMap", CityAtlas.Emission);
             _buildings.SetFloat("_Smoothness", 0.18f);
+            NoSpecular(_buildings);
             _buildings.EnableKeyword("_EMISSION");
             _buildings.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             _buildings.SetColor("_EmissionColor", Color.black);
@@ -236,11 +244,24 @@ namespace CityHighways.Presentation
             _ground = LoadMaterial("CityGround", Color.white);
             _ground.SetTexture("_BaseMap", TerrainTexture.ForCity3D(_map, plan.Footprints));
             _ground.SetFloat("_Smoothness", 0.04f);
+            NoSpecular(_ground);
 
             _water = LoadMaterial("CityWater", new Color(0.55f, 0.74f, 0.88f));
             _water.SetTexture("_BaseMap", RoadTextures.Water);
             _water.SetTextureScale("_BaseMap", new Vector2(1f, 1f));
-            _water.SetFloat("_Smoothness", 0.88f);
+            _water.SetFloat("_Smoothness", 0.72f);
+        }
+
+        /// <summary>
+        /// Матовая поверхность: без бликов солнца и отражений неба. У низкополигональных граней блик
+        /// мерцает на рёбрах при зуме, а на атласе с окнами смотрится как шум.
+        /// </summary>
+        static void NoSpecular(Material material)
+        {
+            material.SetFloat("_SpecularHighlights", 0f);
+            material.SetFloat("_EnvironmentReflections", 0f);
+            material.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+            material.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
         }
 
         GameObject AddMesh(string name, Mesh mesh, Material material, Transform parent, bool castShadows)
