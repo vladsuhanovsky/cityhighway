@@ -65,6 +65,32 @@ namespace CityHighways.Presentation
             return _cached;
         }
 
+        static Texture2D _cached3D;
+        static CityMap _cached3DMap;
+
+        /// <summary>
+        /// Земля для 3D-города: та же местность (трава, поля, серые улицы, лесная подстилка парков), но без плоских
+        /// крыш и крон — их заменяют 3D-здания и деревья. Под каждым основанием здания — мягкое затемнение
+        /// (вместо ambient occlusion). footprints — прямоугольники оснований в координатах карты: центр и полуразмеры.
+        /// </summary>
+        public static Texture2D ForCity3D(CityMap map, IReadOnlyList<Vector4> footprints)
+        {
+            if (_cached3D != null && _cached3DMap == map) return _cached3D;
+            if (_cached3D != null)
+            {
+                if (Application.isPlaying) UnityEngine.Object.Destroy(_cached3D);
+                else UnityEngine.Object.DestroyImmediate(_cached3D);
+            }
+            float span = 1f + 2f * Margin;
+            int w = Mathf.Min(MaxWidth, Mathf.RoundToInt(1400f * span));
+            float k = w / (1400f * span);
+            int h = Mathf.RoundToInt(780f * span * k);
+            _cached3D = Bake(map, w, h, k, 900f * k, footprints);
+            _cached3D.name = "CityHighways_Terrain3D";
+            _cached3DMap = map;
+            return _cached3D;
+        }
+
         // ================================================================== Шум
 
         static float Hash(long x, long y, int salt)
@@ -147,8 +173,9 @@ namespace CityHighways.Presentation
             return best;
         }
 
-        static Texture2D Bake(CityMap map, int w, int h, float k, float fullHeight)
+        static Texture2D Bake(CityMap map, int w, int h, float k, float fullHeight, IReadOnlyList<Vector4> footprints = null)
         {
+            bool city3D = footprints != null;
             float span = 1f + 2f * Margin;
             Vector2 ToPixel(float x, float y) => new Vector2((x + Margin) / span * w, (y + Margin) / span * h);
             // Положение относительно городской черты: 0 в центре, 1 на кольце. У Москвы — МКАД (эллипс 0.40 × 0.49
@@ -222,11 +249,24 @@ namespace CityHighways.Presentation
                 return false;
             }
 
-            // ---- Кварталы: крыши сверху с тенью, улицы между кварталами.
+            // ---- Кварталы: крыши сверху с тенью, улицы между кварталами (в 3D-городе их заменяют здания).
             float cell = 13f * k;
             int line = Mathf.Max(1, Mathf.RoundToInt(k));
             int cols = Mathf.CeilToInt(w / cell), rows = Mathf.CeilToInt(h / cell);
             var shadow = new Color(0.04f, 0.06f, 0.02f);
+            if (city3D)
+            {
+                // Мягкое затемнение вокруг оснований: два ореола и сама площадка (её закроет здание).
+                foreach (var f in footprints)
+                {
+                    var c = ToPixel(f.x, f.y);
+                    float hw = f.z / span * w, hh = f.w / span * h;
+                    canvas.Rect(c.x - hw - 3f * k, c.y - hh - 3f * k, c.x + hw + 3f * k, c.y + hh + 3f * k, shadow, 0.10f);
+                    canvas.Rect(c.x - hw - 1.5f * k, c.y - hh - 1.5f * k, c.x + hw + 1.5f * k, c.y + hh + 1.5f * k, shadow, 0.16f);
+                    canvas.Rect(c.x - hw, c.y - hh, c.x + hw, c.y + hh, Pavement * 0.55f, 0.6f);
+                }
+                rows = -1; // кварталы не рисуем
+            }
             for (int iy = 0; iy <= rows; iy++)
             for (int ix = 0; ix <= cols; ix++)
             {
@@ -288,7 +328,7 @@ namespace CityHighways.Presentation
                 trees.Add(new Vector3(p.x, p.y, (3f + Hash(ix, iy, 54) * 2.5f) * k));
             }
             trees.Sort((a, b) => a.y.CompareTo(b.y));
-            foreach (var t in trees) Tree(canvas, t.x, t.y, t.z);
+            if (!city3D) foreach (var t in trees) Tree(canvas, t.x, t.y, t.z);
 
             var texture = new Texture2D(w, h, TextureFormat.RGBA32, false)
             {

@@ -20,6 +20,15 @@ namespace CityHighways.Presentation
         public bool tiltedBoard = true;
         /// <summary>Мини-карта в углу игрового поля.</summary>
         public bool showMinimap = true;
+        /// <summary>3D-город под картой: здания, деревья, река с набережными, мосты, свет и тени.</summary>
+        public bool city3D = true;
+        /// <summary>Качество 3D-города: 0 — низкое (меньше зданий, без теней), 1 — среднее, 2 — высокое.</summary>
+        public int city3DQuality = 2;
+        /// <summary>Наклон камеры 3D-города от вертикали, градусы (TiltOptions).</summary>
+        public float tiltDegrees = 38f;
+
+        public static readonly float[] TiltOptions = { 30f, 38f, 45f };
+        public static readonly string[] City3DQualityNames = { "Низкое", "Среднее", "Высокое" };
         /// <summary>Свет фона главного меню: 0 — по часам компьютера, 1 — день, 2 — ночь.</summary>
         public int menuLight;
         /// <summary>Палитра фона главного меню (MenuBackground.PaletteNames).</summary>
@@ -44,9 +53,9 @@ namespace CityHighways.Presentation
             preset == Preset.LowEnd ? "Для слабого ПК" : preset == Preset.Cinematic ? "Кинематографичный" : "Киберспорт";
 
         public static string PresetHint(Preset preset) =>
-            preset == Preset.LowEnd ? "Низкое качество, плоское поле, меньше анимаций"
-            : preset == Preset.Cinematic ? "Максимум качества, наклон 2.5D, все анимации, свет по часам"
-            : "Плоское поле для чёткости, мини-карта, без лишних анимаций";
+            preset == Preset.LowEnd ? "Низкое качество, плоская карта без 3D-города, меньше анимаций"
+            : preset == Preset.Cinematic ? "Максимум качества, 3D-город под углом 45°, все анимации, свет по часам"
+            : "3D-город сверху для чёткости, мини-карта, без лишних анимаций";
 
         /// <summary>Пресет меняет графику и анимации; громкость, экран и разрешение не трогает.</summary>
         public void ApplyPreset(Preset preset)
@@ -59,6 +68,8 @@ namespace CityHighways.Presentation
                     tiltedBoard = false;
                     reducedMotion = true;
                     showMinimap = true;
+                    city3D = false;
+                    city3DQuality = 0;
                     break;
                 case Preset.Cinematic:
                     quality = top;
@@ -66,12 +77,17 @@ namespace CityHighways.Presentation
                     reducedMotion = false;
                     showMinimap = false;
                     menuLight = 0;
+                    city3D = true;
+                    city3DQuality = 2;
+                    tiltDegrees = 45f;
                     break;
                 default:
                     quality = top;
                     tiltedBoard = false;
                     reducedMotion = true;
                     showMinimap = true;
+                    city3D = true;
+                    city3DQuality = 1;
                     break;
             }
         }

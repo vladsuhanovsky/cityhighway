@@ -355,6 +355,27 @@ namespace CityHighways.Presentation
                 Save();
                 UpdatePreview(on ? "Поле наклонено: дальние дороги тоньше, ближние крупнее." : "Плоская карта сверху — всё одного масштаба.");
             })));
+            s.Add(Row("3D-город", "Здания, деревья, река с набережными и мосты на опорах под картой; свет и тени по времени суток.", new SwitchToggle(_display.city3D, on =>
+            {
+                _display.city3D = on;
+                Save();
+                UpdatePreview(on ? "Под дорогами — объёмный город: тени, окна светятся ночью." : "Плоская нарисованная карта — легче для слабого ПК.");
+            })));
+            int angle = Mathf.Max(0, Array.IndexOf(DisplaySettings.TiltOptions, _display.tiltDegrees));
+            s.Add(Row("Угол камеры", "Наклон камеры 3D-города: 30° — почти сверху, 45° — панорама.",
+                new Segmented(new[] { "30°", "38°", "45°" }, angle, i =>
+                {
+                    _display.tiltDegrees = DisplaySettings.TiltOptions[i];
+                    Save();
+                    UpdatePreview($"Камера наклонена на {DisplaySettings.TiltOptions[i]:0}°.");
+                })));
+            s.Add(Row("Качество 3D", "Низкое — меньше зданий и без теней; высокое — мягкие тени, сглаживание и свечение.",
+                new Segmented(DisplaySettings.City3DQualityNames, Mathf.Clamp(_display.city3DQuality, 0, 2), i =>
+                {
+                    _display.city3DQuality = i;
+                    Save();
+                    UpdatePreview($"Качество 3D-города: {DisplaySettings.City3DQualityNames[i].ToLowerInvariant()}.");
+                })));
             s.Add(Row("Мини-карта", "Уменьшенная карта в углу поля: клик переносит обзор.", new SwitchToggle(_display.showMinimap, on =>
             {
                 _display.showMinimap = on;

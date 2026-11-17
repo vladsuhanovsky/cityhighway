@@ -101,8 +101,15 @@ namespace CityHighways.Presentation
 
         void OnDestroy()
         {
+            _game?.Release3D();
             CloseNet();
             NetPlatforms.Steam?.Shutdown();
+        }
+
+        /// <summary>Под интерфейсом рисуется 3D-сцена: корень прозрачный, иначе — сплошной фон.</summary>
+        public void SetSceneBehind(bool on)
+        {
+            if (_root != null) _root.style.backgroundColor = on ? Color.clear : Theme.Background;
         }
 
         public void ShowMenu()
@@ -110,6 +117,7 @@ namespace CityHighways.Presentation
             if (_root == null) return;
             CloseNet();
             Tweener.Clear();
+            _game?.Release3D();
             _game = null;
             _root.Clear();
             var setup = GameSetup.Load();
@@ -158,6 +166,7 @@ namespace CityHighways.Presentation
             Tweener.Clear();
             _root.Clear();
             _menu = null;
+            _game?.Release3D();
             _game = new GameView(this, setup, Net);
             _root.Add(_game.Root);
             _game.StartOnline();
@@ -171,6 +180,7 @@ namespace CityHighways.Presentation
             Tweener.Clear();
             _root.Clear();
             _menu = null;
+            _game?.Release3D();
             _game = new GameView(this, setup);
             _root.Add(_game.Root);
             _game.StartNewGame();
@@ -186,6 +196,7 @@ namespace CityHighways.Presentation
             Tweener.Clear();
             _root.Clear();
             _menu = null;
+            _game?.Release3D();
             _game = new GameView(this, setup);
             _root.Add(_game.Root);
             _game.StartNewGame();
@@ -199,6 +210,7 @@ namespace CityHighways.Presentation
             Tweener.Clear();
             _root.Clear();
             _menu = null;
+            _game?.Release3D();
             _game = new GameView(this, file.setup);
             _root.Add(_game.Root);
             _game.ContinueGame(file);

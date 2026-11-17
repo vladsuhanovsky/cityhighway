@@ -79,6 +79,36 @@ namespace CityHighways.Presentation
         public bool Interactive = true;
         /// <summary>Наклонять поле (2.5D). Берётся из настроек экрана при старте партии.</summary>
         public bool TiltEnabled = true;
+
+        /// <summary>
+        /// Под картой живёт 3D-город (City3DScene): местность, река, доска и виньетка не рисуются —
+        /// их заменяет сцена, а интерфейс остаётся прозрачным слоем дорог, мест и подписей поверх неё.
+        /// </summary>
+        public bool Use3D
+        {
+            get => _use3D;
+            set
+            {
+                if (_use3D == value) return;
+                _use3D = value;
+                Relayout();
+                _waterLayer?.MarkDirtyRepaint();
+                _roadUnderLayer?.MarkDirtyRepaint();
+            }
+        }
+        bool _use3D;
+        /// <summary>Пересчитать раскладку поля (например, после смены угла камеры).</summary>
+        public void RefreshLayout() => Relayout();
+        /// <summary>Наклон камеры 3D-города от вертикали, градусы (30–45).</summary>
+        public float CameraTiltDegrees = 38f;
+        /// <summary>Раскладка поля — 3D-сцена берёт из неё ту же камеру.</summary>
+        public BoardLayout Layout => _layout;
+        /// <summary>Текущий свет времени суток — для солнца, луны, окон и тумана 3D-города.</summary>
+        public CityLight Light => new CityLight
+        {
+            Hour = _hour, Daylight = _daylight, Night = _night, Golden = _golden,
+            Morning = _morning, Twilight = _twilight, Lamps = _lamps, SunX = _sunX,
+        };
         /// <summary>Дорога, выбранная для стройки или улучшения (открыто окно оплаты), — в светлом контуре.</summary>
         public string SelectedRoadId { get; set; }
 
@@ -564,9 +594,10 @@ namespace CityHighways.Presentation
             var rect = contentRect;
             if (float.IsNaN(rect.width) || rect.width < 50f || rect.height < 50f) return;
             float tilt = Smooth01(_tiltProgress);
+            _layout.SetPerspective(_use3D, Mathf.Clamp(CameraTiltDegrees, 20f, 50f));
             _layout.Fit(new Rect(0f, 0f, rect.width, rect.height), tilt, _zoom, _pan);
             _pan = _layout.Pan;
-            _terrainLayer.style.backgroundColor = Color.Lerp(Land, Table, tilt);
+            _terrainLayer.style.backgroundColor = _use3D ? Color.clear : Color.Lerp(Land, Table, tilt);
 
             foreach (var pair in _locationLabels)
             {
@@ -633,7 +664,7 @@ namespace CityHighways.Presentation
         /// </summary>
         void DrawTerrain(MeshGenerationContext context)
         {
-            if (!CanDraw) return;
+            if (!CanDraw || _use3D) return;
             const float m = TerrainTexture.Margin;
             const float span = 1f + 2f * m;
             var inner = _layout.InnerSize;
@@ -722,6 +753,12 @@ namespace CityHighways.Presentation
             p.lineCap = LineCap.Round;
             var area = new Rect(0f, 0f, rect.width, rect.height);
 
+            if (_use3D)
+            {
+                // Земля, набережные и виньетка — в 3D-сцене; поверх неё — только МКАД (она читается как дорога).
+                DrawRing(p);
+                return;
+            }
             DrawBoard(p);
             DrawDistrictZones(p);
             DrawRiver(p);
@@ -844,6 +881,9 @@ namespace CityHighways.Presentation
                 RectPath(p, area);
                 p.Fill();
             }
+
+            // В 3D свет, сумерки и туман дают солнце и луна сцены — плоские заливки не нужны.
+            if (_use3D) return;
 
             // Направленный свет: сторона к солнцу чуть теплее и светлее, дальняя — в лёгкой тени.
             // Слои-полосы накладываются друг на друга, поэтому переход плавный, без ступенек.
@@ -1117,6 +1157,14 @@ namespace CityHighways.Presentation
                 if (_game.IsRoadOpen(road.Id)) DrawRoadUnder(p, road);
         }
 
+        /// <summary>Высота дороги над городом (в единицах мира): обычная 0.1, магистраль 0.2, контракт/активная 0.3.</summary>
+        float RoadLift(Road road, RoadLook look, int? owner)
+        {
+            if (PathRoads.ContainsKey(road.Id) || look == RoadLook.Active) return 0.3f;
+            if (owner.HasValue && _game.IsRushHourRoad(road.Id)) return 0.2f;
+            return 0.1f;
+        }
+
         void DrawRoadUnder(Painter2D p, Road road)
         {
             int? owner = _game.GetRoadOwner(road.Id);
@@ -1125,8 +1173,32 @@ namespace CityHighways.Presentation
             var look = LookOf(road, owner);
             float tilt = _layout.Tilt;
 
+            // 3D: дорога приподнята над городом и отбрасывает тень от солнца. Высота — по иерархии:
+            // обычная 0.1, магистраль 0.2, путь контракта и активная 0.3 (в пикселях поля — ×20).
+            if (_use3D)
+            {
+                float lift = RoadLift(road, look, owner) * 20f * _layout.ScaleAt(segments.Count > 0 ? segments[0].Center : Vector2.zero);
+                var shadow = _shadowDir * lift * 0.55f + new Vector2(0f, lift * 0.35f * tilt);
+                float alpha = Mathf.Lerp(0.16f, 0.34f, _daylight) * (built > 0 ? 1f : 0.55f);
+                p.fillColor = new Color(0.02f, 0.03f, 0.06f, alpha);
+                foreach (var segment in segments)
+                {
+                    SegmentPath(p, segment, 1.2f, shadow);
+                    p.Fill();
+                }
+                // Торец: чем выше дорога, тем толще видна её боковина.
+                if (built > 0)
+                {
+                    p.fillColor = new Color(0.05f, 0.05f, 0.07f, 0.9f);
+                    for (int i = 0; i < built; i++)
+                    {
+                        SegmentPath(p, segments[i], 0.6f, new Vector2(0f, (1.2f + lift * 0.45f) * tilt));
+                        p.Fill();
+                    }
+                }
+            }
             // 2.5D: у уложенного участка есть толщина — тёмный торец чуть ниже покрытия.
-            if (built > 0 && tilt > 0.01f)
+            else if (built > 0 && tilt > 0.01f)
             {
                 p.fillColor = new Color(0.04f, 0.04f, 0.05f, 0.85f);
                 for (int i = 0; i < built; i++)
@@ -1301,8 +1373,10 @@ namespace CityHighways.Presentation
                     p.lineWidth = 2.4f;
                     Line(p, a + normal * half, b + normal * half);
                     Line(p, a - normal * half, b - normal * half);
+                    // Магистраль: двойная разделительная полоса и бегущий пунктир по обеим полосам движения.
+                    if (_game.IsRushHourRoad(road.Id)) DrawHighwayMarks(p, a, b, dir, normal, half, i);
                     // Разметка: асфальт — белый пунктир, бетон — жёлтая осевая.
-                    if (road.Resource == Resource.Asphalt) DrawLaneMark(p, segment, new Color(1f, 1f, 1f, 0.85f));
+                    else if (road.Resource == Resource.Asphalt) DrawLaneMark(p, segment, new Color(1f, 1f, 1f, 0.85f));
                     else if (road.Resource == Resource.Concrete) DrawLaneMark(p, segment, new Color(1f, 0.82f, 0.25f, 0.85f));
                 }
                 else
@@ -1440,7 +1514,7 @@ namespace CityHighways.Presentation
         /// </summary>
         void DrawWater(MeshGenerationContext context)
         {
-            if (!CanDraw) return;
+            if (!CanDraw || _use3D) return;
             _quads.Clear();
             foreach (var river in _game.Map.Rivers)
                 if (river.Count >= 2) AddWater(river);
@@ -1549,6 +1623,36 @@ namespace CityHighways.Presentation
                 case Resource.Steel: return new Color(0.42f, 0.68f, 1f);
                 case Resource.Gravel: return new Color(0.90f, 0.64f, 0.34f);
                 default: return Palette.Card(road.Resource.Value);
+            }
+        }
+
+        /// <summary>
+        /// Разметка магистрали: жёлтый двойной разделитель по оси и белые штрихи по полосам — штрихи
+        /// бегут навстречу друг другу (движение в обе стороны), так магистраль видна издалека.
+        /// </summary>
+        void DrawHighwayMarks(Painter2D p, Vector2 a, Vector2 b, Vector2 dir, Vector2 normal, float half, int index)
+        {
+            p.strokeColor = new Color(1f, 0.78f, 0.22f, 0.95f);
+            p.lineWidth = 1f;
+            Line(p, a + normal * 0.9f, b + normal * 0.9f);
+            Line(p, a - normal * 0.9f, b - normal * 0.9f);
+
+            float length = (b - a).magnitude;
+            const float dash = 3.2f, gap = 3.6f;
+            float period = dash + gap;
+            float shift = Mathf.Repeat(PulseTime * 9f + index * 1.7f, period);
+            p.strokeColor = new Color(1f, 1f, 1f, 0.8f);
+            p.lineWidth = 1.1f;
+            for (int lane = -1; lane <= 1; lane += 2)
+            {
+                var side = normal * (half * 0.52f * lane);
+                float offset = lane > 0 ? shift : period - shift;
+                for (float t = offset - period; t < length; t += period)
+                {
+                    float t0 = Mathf.Max(0f, t), t1 = Mathf.Min(length, t + dash);
+                    if (t1 - t0 < 0.4f) continue;
+                    Line(p, a + dir * t0 + side, a + dir * t1 + side);
+                }
             }
         }
 

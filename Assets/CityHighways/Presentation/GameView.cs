@@ -893,6 +893,7 @@ namespace CityHighways.Presentation
 
             _map.TiltEnabled = _app.Display == null || _app.Display.tiltedBoard;
             _map.SetGame(_game);
+            Setup3D();
             _minimap.SetGame(_game);
             bool minimap = _app.Display == null || _app.Display.showMinimap;
             _minimap.style.display = minimap ? DisplayStyle.Flex : DisplayStyle.None;
@@ -935,6 +936,7 @@ namespace CityHighways.Presentation
             if (_game == null) return;
 
             _map.Tick(deltaTime);
+            Sync3D(deltaTime);
             if (_game.Phase != GamePhase.GameOver) _playSeconds += deltaTime;
 
             if (_flash != null && Time.time > _flashUntil)
@@ -951,6 +953,47 @@ namespace CityHighways.Presentation
 
             TickTurnTimer(deltaTime);
             TickBots(deltaTime);
+        }
+
+        // ---------------------------------------------------------------- 3D-город под картой
+
+        City3DScene _city3D;
+
+        /// <summary>
+        /// Построить 3D-город для карты партии (если включён в настройках и рендер его тянет).
+        /// Не вышло — остаётся прежняя плоская карта, игра от этого не зависит.
+        /// </summary>
+        void Setup3D()
+        {
+            Release3D();
+            var display = _app.Display;
+            _map.CameraTiltDegrees = display != null ? display.tiltDegrees : 38f;
+            if (display == null || display.city3D)
+                _city3D = City3DScene.TryCreate(_game.Map, display != null ? Mathf.Clamp(display.city3DQuality, 0, 2) : 2);
+            bool on = _city3D != null;
+            _map.Use3D = on;
+            Root.style.backgroundColor = on ? Color.clear : Theme.Background;
+            _app.SetSceneBehind(on);
+        }
+
+        /// <summary>Убрать 3D-город (выход в меню, новая партия, выключили в настройках).</summary>
+        public void Release3D()
+        {
+            if (_city3D == null) return;
+            _city3D.Dispose();
+            _city3D = null;
+            _map.Use3D = false;
+            Root.style.backgroundColor = Theme.Background;
+            _app.SetSceneBehind(false);
+        }
+
+        void Sync3D(float deltaTime)
+        {
+            if (_city3D == null || _map.panel == null) return;
+            var panelSize = _map.panel.visualTree.layout.size;
+            if (float.IsNaN(panelSize.x) || panelSize.x < 10f) return;
+            var game = _game;
+            _city3D.Sync(_map.Layout, panelSize, _map.worldBound.position, _map.Light, id => game.IsDistrictOpen(id), deltaTime);
         }
 
         bool TimerEnabled => _setup.turnSeconds > 0;
@@ -4066,6 +4109,39 @@ namespace CityHighways.Presentation
                     display.Save();
                     _map.TiltEnabled = on;
                 });
+                Toggle("3D-город", () => display.city3D, on =>
+                {
+                    display.city3D = on;
+                    display.Save();
+                    if (on) Setup3D();
+                    else Release3D();
+                });
+
+                // Угол камеры 3D-города: 30° — почти сверху, 45° — панорама.
+                var angleRow = Row("Угол камеры");
+                var angles = Ui.Row();
+                var angleButtons = new List<Button>();
+                foreach (var degrees in DisplaySettings.TiltOptions)
+                {
+                    float value = degrees;
+                    var button = Ui.Button($"{value:0}°", () => { }, ButtonKind.Secondary, 14f);
+                    button.style.width = 56f;
+                    button.style.marginLeft = 4f;
+                    button.clicked += () =>
+                    {
+                        display.tiltDegrees = value;
+                        display.Save();
+                        _map.CameraTiltDegrees = value;
+                        _map.RefreshLayout();
+                        foreach (var other in angleButtons)
+                            other.style.borderBottomColor = other == button ? Theme.Accent : Color.clear;
+                    };
+                    button.style.borderBottomWidth = 3f;
+                    button.style.borderBottomColor = Mathf.Approximately(display.tiltDegrees, value) ? Theme.Accent : Color.clear;
+                    angleButtons.Add(button);
+                    angles.Add(button);
+                }
+                angleRow.Add(angles);
                 Toggle("Мини-карта", () => display.showMinimap, on =>
                 {
                     display.showMinimap = on;

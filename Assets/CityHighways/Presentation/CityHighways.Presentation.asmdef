@@ -3,7 +3,9 @@
     "rootNamespace": "CityHighways.Presentation",
     "references": [
         "CityHighways.Core",
-        "CityHighways.Net"
+        "CityHighways.Net",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
