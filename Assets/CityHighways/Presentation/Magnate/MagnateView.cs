@@ -8,18 +8,16 @@ using UnityEngine.UIElements;
 namespace CityHighways.Presentation
 {
     /// <summary>
-    /// Экран «Логистического магната». Карта спокойная: одно покрытие дорог, крупные фишки, значки хабов, фокус под
-    /// курсором, слои (подписи, грузы, фуры, загрузка дорог, свободные дороги), свободные дороги бледнеют в фазе маршрутов.
-    /// Обучение — MagnateView.Coach.cs.
-    /// Карта (MapView по доске LogisticsGame.Board, с 3D-городом и мини-картой справа внизу),
-    /// сверху — раунд и компании с репутацией, справа — панель хода: событие раунда, стройка (дорога — купить,
-    /// своя — магистраль, хаб — развить), маршруты фур с предпросмотром, заказы мэрии, грузы с фильтрами, правила,
-    /// журнал. Поверх карты — фуры (кабина и кузов цвета компании, груз — цветом вида), очереди в пробках
-    /// с часами, перекрытые дороги, уровни хабов. Все фуры едут разом: скоропорт быстрее, тяжёлые — медленнее.
+    /// Экран «Логистического магната». Карта на всю ширину между верхней строкой (город, раунд, событие, компании
+    /// с репутацией) и нижней панелью (MagnateView.Panel.cs: контекстный раздел, «Грузы», «Заказы мэрии», «Действия»
+    /// и всплывающие окна над ними). Карта спокойная: одно покрытие дорог, крупные фишки, значки хабов, фокус под
+    /// курсором, слои; мини-карта слева внизу. Поверх карты — фуры (кабина и кузов цвета компании, груз — цветом
+    /// вида), очереди в пробках с часами, перекрытые дороги, уровни хабов. Все фуры едут разом: скоропорт быстрее,
+    /// тяжёлые — медленнее. Обучение — MagnateView.Coach.cs.
     /// </summary>
     public sealed partial class MagnateView
     {
-        const float TopBarHeight = 56f, PanelWidth = 400f, AnimationSeconds = 2.2f;
+        const float TopBarHeight = 56f, AnimationSeconds = 2.2f;
 
         readonly CityHighwaysApp _app;
         readonly GameSetup _setup;
@@ -27,16 +25,12 @@ namespace CityHighways.Presentation
         readonly System.Random _botRandom = new System.Random(17);
 
         public VisualElement Root { get; }
-        readonly VisualElement _mapArea, _players, _panel, _handoff, _results;
-        readonly ScrollView _panelScroll;
-        readonly Label _roundLabel, _tooltip, _banner;
+        readonly VisualElement _mapArea, _players, _handoff, _results;
+        readonly Label _roundLabel, _eventChip, _tooltip, _banner;
         readonly MapView _map;
         readonly MiniMapView _minimap;
         readonly List<string> _log = new List<string>();
         readonly HashSet<CargoKind> _hiddenKinds = new HashSet<CargoKind>();
-        /// <summary>Свёрнутые разделы панели (на всю сессию).</summary>
-        static readonly HashSet<string> s_collapsed = new HashSet<string>();
-        static bool s_defaultsApplied;
         VisualElement _layersPanel;
         readonly VisualElement _layersList;
 
@@ -72,9 +66,9 @@ namespace CityHighways.Presentation
             _mapArea = Ui.Box();
             _mapArea.style.position = Position.Absolute;
             _mapArea.style.left = 0f;
-            _mapArea.style.right = PanelWidth;
+            _mapArea.style.right = 0f;
             _mapArea.style.top = TopBarHeight;
-            _mapArea.style.bottom = 0f;
+            _mapArea.style.bottom = BottomHeight;
             Root.Add(_mapArea);
 
             _map = new MapView();
@@ -89,7 +83,7 @@ namespace CityHighways.Presentation
             // Мини-карта: грузы на хабах (цвет вида) и фуры (цвет компании).
             _minimap = new MiniMapView(_map, 200f, 150f);
             _minimap.style.position = Position.Absolute;
-            _minimap.style.right = 14f;
+            _minimap.style.left = 14f;
             _minimap.style.bottom = 14f;
             _minimap.Extra = DrawMinimap;
             _mapArea.Add(_minimap);
@@ -160,8 +154,18 @@ namespace CityHighways.Presentation
             title.style.marginRight = 14f;
             top.Add(title);
             _roundLabel = Ui.Text("", 14f, Theme.TextDim);
-            _roundLabel.style.marginRight = 18f;
+            _roundLabel.style.marginRight = 12f;
             top.Add(_roundLabel);
+            // Событие раунда — плашка в верхней строке (подробности во всплывающей подсказке).
+            _eventChip = Ui.Text("", 12f, Theme.Gold, true);
+            _eventChip.style.backgroundColor = new Color(0.30f, 0.20f, 0.12f);
+            Ui.Padding(_eventChip, 3f, 8f);
+            Ui.Radius(_eventChip, 6f);
+            Ui.Border(_eventChip, 1f, Theme.Gold);
+            _eventChip.style.marginRight = 14f;
+            _eventChip.pickingMode = PickingMode.Position;
+            Ui.Show(_eventChip, false);
+            top.Add(_eventChip);
             _players = Ui.Row();
             _players.style.flexGrow = 1f;
             _players.style.overflow = Overflow.Hidden;
@@ -174,19 +178,7 @@ namespace CityHighways.Presentation
             menu.style.width = 96f;
             top.Add(menu);
 
-            _panel = new VisualElement();
-            _panel.style.position = Position.Absolute;
-            _panel.style.right = 0f;
-            _panel.style.top = TopBarHeight;
-            _panel.style.bottom = 0f;
-            _panel.style.width = PanelWidth;
-            _panel.style.backgroundColor = Theme.Panel;
-            Root.Add(_panel);
-            _panelScroll = new ScrollView(ScrollViewMode.Vertical);
-            _panelScroll.style.flexGrow = 1f;
-            Ui.StyleScroller(_panelScroll);
-            _panel.Add(_panelScroll);
-
+            BuildBottomBar();
             BuildCoach();
 
             _handoff = Overlay();
@@ -223,8 +215,6 @@ namespace CityHighways.Presentation
             _log.Add($"Город {_game.Map.Name}, сложность «{MagnateConfig.Title(_game.Config.Difficulty)}». " +
                      $"Хабы: {string.Join(", ", _game.Hubs.Select(h => _game.Map.LocationName(h.LocationId)))}.");
             ApplyLayers();
-            if (_setup.magnateTutorialDone && !s_defaultsApplied) s_collapsed.Add("Правила коротко");
-            s_defaultsApplied = true;
             StartTurn();
             if (!_setup.magnateTutorialDone && _game.Players.Any(p => !p.IsBot)) StartCoach();
             _dirty = true;
@@ -826,7 +816,7 @@ namespace CityHighways.Presentation
                 OnLocationHover(location, position);
                 return;
             }
-            if (_selectedTruck < 0) { Toast("Сначала выберите фуру в панели справа."); return; }
+            if (_selectedTruck < 0) { Toast("Сначала выберите фуру в разделе «Маршруты фур» внизу."); return; }
             var plan = _game.PlanTruck(_selectedTruck, null, location.Id);
             if (plan != null) { Toast(plan); _app.Sound.Play(Sfx.Error, 0.5f); }
             else _app.Sound.Play(Sfx.Click, 0.6f);
@@ -838,430 +828,6 @@ namespace CityHighways.Presentation
             _banner.text = text;
             Ui.Show(_banner, true);
             _app.Tweener.After(seconds, () => { if (_banner.text == text) Ui.Show(_banner, false); });
-        }
-
-        // ================================================================== Панель
-
-        void Refresh()
-        {
-            _roundLabel.text = $"{_game.Map.Name} · раунд {_game.Round}/{_game.Config.Rounds} · {MagnateConfig.Title(_game.Config.Difficulty)}";
-            RefreshPlayers();
-            RefreshHighlights();
-            SyncHubs();
-            _panelScroll.Clear();
-            var c = _panelScroll.contentContainer;
-            var player = _game.CurrentPlayer;
-
-            if (_game.Phase == MagnatePhase.GameOver) { c.Add(Section("Партия окончена")); return; }
-            if (_animating != null) { c.Add(Section("Фуры в пути…")); AddLog(c); return; }
-
-            AddEvents(c);
-            var head = Ui.Text(player.Name, 22f, Palette.PlayerColor(player.Index), true);
-            head.style.marginTop = 12f;
-            c.Add(Padded(head));
-            if (player.IsBot)
-            {
-                c.Add(Padded(Ui.Text(_game.Phase == MagnatePhase.Build ? "Строит дороги и развивает хабы…" : "Планирует маршруты…", 15f, Theme.TextDim)));
-                AddContracts(c);
-                AddCargoBoard(c);
-                AddLog(c);
-                return;
-            }
-            if (_awaitingHandoff) return;
-
-            if (_game.Phase == MagnatePhase.Build)
-            {
-                c.Add(Section($"Стройка · очков: {player.BuildPoints}"));
-                c.Add(Padded(Wrap($"Клик по свободной дороге — купить (цена = длина, мост +{_game.Config.BridgeExtraCost}). Клик по своей — магистраль: " +
-                                  "пропускает больше фур. Клик по хабу — развить: больше и дороже грузы, плата с соперников за погрузку, вы грузите первым. " +
-                                  $"Каждый раунд +{_game.Config.BuildPointsPerRound} очков стройки (до {_game.Config.MaxBuildPoints}).")));
-                var next = Ui.Button("Дальше: маршруты фур →", () => { _game.FinishBuild(); _app.Sound.Play(Sfx.Click, 0.6f); }, ButtonKind.Primary, 15f);
-                next.style.marginTop = 6f;
-                if (_coachTarget == "next") Highlight(next);
-                c.Add(Padded(next));
-            }
-            else
-            {
-                c.Add(Section("Маршруты фур"));
-                c.Add(Padded(Wrap("Выберите фуру. На хабе — возьмите груз, и фура повезёт его к получателю. Или наведите на станцию — " +
-                                  "увидите маршрут, время, плату и риск пробок; клик — ехать туда.")));
-                foreach (var truck in _game.Trucks.Where(t => t.Owner == player.Index)) c.Add(TruckCard(truck));
-                var done = Ui.Button(_game.IsLastTurnInRound ? "Готово — фуры поедут" : "Готово — передать ход", () =>
-                {
-                    _game.FinishPlanning();
-                    _app.Sound.Play(Sfx.Ticket, 0.6f);
-                    AfterTurn();
-                }, ButtonKind.Primary, 15f);
-                done.style.marginTop = 8f;
-                if (_coachTarget == "done") Highlight(done);
-                c.Add(Padded(done));
-            }
-            AddContracts(c);
-            AddCargoBoard(c);
-            AddRules(c);
-            AddLog(c);
-        }
-
-        void AddEvents(VisualElement c)
-        {
-            foreach (var e in _game.Events)
-            {
-                var card = Ui.Card(10f);
-                card.style.marginLeft = 14f;
-                card.style.marginRight = 14f;
-                card.style.marginTop = 12f;
-                card.style.backgroundColor = new Color(0.30f, 0.20f, 0.12f);
-                Ui.Border(card, 1f, Theme.Gold);
-                card.Add(Ui.Text($"Событие: {e.Title}" + (e.EndRound > _game.Round ? $" (до раунда {e.EndRound})" : ""), 14f, Theme.Gold, true));
-                card.Add(Wrap(e.Description, 12f));
-                c.Add(card);
-            }
-        }
-
-        VisualElement TruckCard(Truck truck)
-        {
-            var card = Ui.Card(10f);
-            card.style.marginLeft = 14f;
-            card.style.marginRight = 14f;
-            card.style.marginBottom = 8f;
-            bool selected = truck.Id == _selectedTruck;
-            card.style.backgroundColor = selected ? Theme.PanelHover : Theme.PanelLight;
-            Ui.Border(card, selected ? 2f : 1f, selected ? GameColors.Accent : Theme.Line);
-            if (!selected && _coachTarget == "truck") Highlight(card);
-            card.pickingMode = PickingMode.Position;
-            card.RegisterCallback<ClickEvent>(_ =>
-            {
-                _selectedTruck = selected ? -1 : truck.Id;
-                _preview = null;
-                _dirty = true;
-            });
-
-            int number = _game.Trucks.Where(t => t.Owner == truck.Owner).ToList().IndexOf(truck) + 1;
-            var cargo = _game.GetCargo(truck.Cargo);
-            var planned = _game.GetCargo(truck.PlannedCargo);
-            var kind = cargo?.Kind ?? planned?.Kind;
-            card.Add(Ui.Text($"Фура {number} · {_game.Map.LocationName(truck.Location)} · скорость {_game.SpeedOf(kind)}", 15f, Theme.Text, true));
-            string status = cargo != null
-                ? $"Везёт: {LogisticsGame.KindTitle(cargo.Kind).ToLowerInvariant()} → {_game.Map.LocationName(cargo.To)} " +
-                  $"(~{_game.ValueIfDelivered(cargo, _game.RouteRounds(truck.Route, cargo.Kind), truck.Owner)} очк.)" +
-                  (cargo.Kind == CargoKind.Valuable ? (cargo.Escorted ? " · с охраной" : " · без охраны!") : "")
-                : planned != null ? $"Берёт: {LogisticsGame.KindTitle(planned.Kind).ToLowerInvariant()} → {_game.Map.LocationName(planned.To)}"
-                : truck.Target != null ? $"Пустая → {_game.Map.LocationName(truck.Target)}"
-                : "Стоит, ждёт задания";
-            card.Add(Wrap(status, 13f));
-            if (truck.Route.Count > 0)
-            {
-                bool center = kind == CargoKind.Hazard && _game.RouteEntersBribeZone(truck.Location, truck.Route);
-                card.Add(Wrap($"Маршрут: {_game.RouteLength(truck.Route)} участков, ~{_game.RouteRounds(truck.Route, kind)} р. · проезд −{_game.RouteTolls(truck.Owner, truck.Route)}" +
-                              $" · забитых дорог: {_game.RouteRisk(truck.Route)}" + (center ? $" · через Центр: взятка {_game.Config.HazardBribe}" : ""), 12f, Theme.TextDim));
-            }
-            if (!selected) return card;
-
-            // Выбрана: грузы на её хабе (с расчётом пути) и сброс маршрута.
-            if (cargo == null)
-            {
-                var waiting = _game.WaitingAt(truck.Location).ToList();
-                if (waiting.Count == 0) card.Add(Wrap("Здесь нет грузов. Наведите на хаб (квадратики над ним — грузы) и кликните, чтобы поехать.", 12f, Theme.TextDim));
-                foreach (var item in waiting)
-                {
-                    var path = _game.FindRoute(truck.Owner, truck.Location, item.To, item.Kind);
-                    var row = CargoRow(item, true, path);
-                    row.RegisterCallback<ClickEvent>(e =>
-                    {
-                        e.StopPropagation();
-                        var error = _game.PlanTruck(truck.Id, item.Id, null);
-                        if (error != null) { Toast(error); _app.Sound.Play(Sfx.Error, 0.5f); }
-                        else _app.Sound.Play(Sfx.Card, 0.6f);
-                    });
-                    card.Add(row);
-                }
-            }
-            if (truck.Route.Count > 0 || truck.PlannedCargo != null)
-            {
-                var clear = Ui.Button("Отменить маршрут", () => _game.ClearTruck(truck.Id), ButtonKind.Ghost, 12f);
-                clear.style.marginTop = 4f;
-                card.Add(clear);
-            }
-            return card;
-        }
-
-        VisualElement CargoRow(Cargo cargo, bool clickable, List<string> route = null)
-        {
-            var row = Ui.Row();
-            row.style.alignItems = Align.Center;
-            row.style.marginTop = 4f;
-            Ui.Padding(row, 4f, 6f);
-            Ui.Radius(row, 6f);
-            row.style.backgroundColor = clickable ? new Color(1f, 1f, 1f, 0.06f) : Color.clear;
-            if (clickable) row.pickingMode = PickingMode.Position;
-            // Срочный скоропорт — красная рамка: норма кончается.
-            if (Urgent(cargo)) Ui.Border(row, 1.5f, new Color(0.95f, 0.25f, 0.2f));
-            else if (clickable && _coachTarget == "cargo") Highlight(row);
-            row.Add(Chip(cargo.Kind, 20f));
-            int roundsLeft = cargo.Kind == CargoKind.Perishable ? Mathf.Max(0, cargo.SpawnRound + cargo.Norm - _game.Round) : -1;
-            string extra = "";
-            if (clickable)
-                extra = route != null
-                    ? $" · {_game.RouteRounds(route, cargo.Kind)} р., проезд −{_game.RouteTolls(_game.CurrentPlayerIndex, route)}"
-                    : " · сейчас не проехать";
-            var text = Ui.Text($"{LogisticsGame.KindTitle(cargo.Kind)} → {_game.Map.LocationName(cargo.To)} · {cargo.Value} очк." +
-                               (roundsLeft >= 0 ? $" · норма ещё {roundsLeft} р." : "") + (ForContract(cargo) ? " · для заказа мэрии" : "") + extra, 12f, Theme.Text);
-            text.style.whiteSpace = WhiteSpace.Normal;
-            text.style.flexShrink = 1f;
-            row.Add(text);
-            return row;
-        }
-
-        static Label Chip(CargoKind kind, float size)
-        {
-            var chip = Ui.Text(KindLetter(kind), size * 0.6f, new Color(0.08f, 0.08f, 0.1f), true);
-            chip.style.width = size;
-            chip.style.height = size;
-            chip.style.unityTextAlign = TextAnchor.MiddleCenter;
-            chip.style.backgroundColor = KindColor(kind);
-            Ui.Radius(chip, 4f);
-            chip.style.marginRight = 8f;
-            chip.style.flexShrink = 0f;
-            return chip;
-        }
-
-        void AddContracts(VisualElement c)
-        {
-            if (_game.Contracts.Count == 0) return;
-            if (!Fold(c, "Заказы мэрии")) return;
-            foreach (var contract in _game.Contracts)
-            {
-                var card = Ui.Card(10f);
-                card.style.marginLeft = 14f;
-                card.style.marginRight = 14f;
-                card.style.marginBottom = 8f;
-                card.style.backgroundColor = Theme.PanelLight;
-                var titleRow = Ui.Row();
-                titleRow.style.alignItems = Align.Center;
-                if (contract.Kind.HasValue) titleRow.Add(Chip(contract.Kind.Value, 18f));
-                var title = Ui.Text(contract.Title, 14f, Theme.Text, true);
-                title.style.whiteSpace = WhiteSpace.Normal;
-                title.style.flexShrink = 1f;
-                titleRow.Add(title);
-                card.Add(titleRow);
-                card.Add(Wrap($"Первому: +{contract.RewardPoints} очков, +{contract.RewardInfluence} влияния и репутация. Срок — до конца раунда {contract.EndRound}.", 12f, Theme.TextDim));
-                foreach (var company in _game.Players)
-                {
-                    var row = Ui.Row();
-                    row.style.alignItems = Align.Center;
-                    row.style.marginTop = 3f;
-                    var name = Ui.Text(company.Name, 11f, Theme.TextDim);
-                    name.style.width = 90f;
-                    row.Add(name);
-                    var track = new VisualElement();
-                    track.style.flexGrow = 1f;
-                    track.style.height = 6f;
-                    track.style.backgroundColor = new Color(1f, 1f, 1f, 0.08f);
-                    Ui.Radius(track, 3f);
-                    var fill = new VisualElement();
-                    fill.style.height = Length.Percent(100f);
-                    fill.style.width = Length.Percent(100f * Mathf.Clamp01(contract.Progress[company.Index] / (float)Math.Max(1, contract.Needed)));
-                    fill.style.backgroundColor = Palette.PlayerColor(company.Index);
-                    Ui.Radius(fill, 3f);
-                    track.Add(fill);
-                    row.Add(track);
-                    var count = Ui.Text($" {contract.Progress[company.Index]}/{contract.Needed}", 11f, Theme.TextDim);
-                    count.style.width = 34f;
-                    row.Add(count);
-                    card.Add(row);
-                }
-                c.Add(card);
-            }
-        }
-
-        void AddCargoBoard(VisualElement c)
-        {
-            if (!Fold(c, "Грузы на хабах")) return;
-            // Фильтры: какие виды показывать на карте, мини-карте и в списке.
-            var filters = Ui.Row();
-            filters.style.flexWrap = UnityEngine.UIElements.Wrap.Wrap;
-            filters.style.marginLeft = 14f;
-            filters.style.marginRight = 14f;
-            filters.style.marginBottom = 4f;
-            foreach (CargoKind kind in Enum.GetValues(typeof(CargoKind)))
-            {
-                bool hidden = _hiddenKinds.Contains(kind);
-                var chip = Chip(kind, 22f);
-                chip.style.opacity = hidden ? 0.25f : 1f;
-                chip.style.marginBottom = 4f;
-                chip.tooltip = LogisticsGame.KindTitle(kind) + (hidden ? " — скрыт, клик — показать" : " — клик, чтобы скрыть");
-                chip.pickingMode = PickingMode.Position;
-                chip.RegisterCallback<ClickEvent>(_ =>
-                {
-                    if (!_hiddenKinds.Remove(kind)) _hiddenKinds.Add(kind);
-                    _dirty = true;
-                });
-                filters.Add(chip);
-            }
-            c.Add(filters);
-            bool any = false;
-            foreach (var hub in _game.Hubs)
-            {
-                var waiting = _game.WaitingAt(hub.LocationId).Where(x => !_hiddenKinds.Contains(x.Kind)).ToList();
-                if (waiting.Count == 0) continue;
-                any = true;
-                var title = Ui.Text($"{_game.Map.LocationName(hub.LocationId)} · ур. {hub.Level}", 13f, Theme.TextDim, true);
-                title.style.marginLeft = 16f;
-                title.style.marginTop = 4f;
-                c.Add(title);
-                foreach (var cargo in waiting)
-                {
-                    var row = CargoRow(cargo, false);
-                    row.style.marginLeft = 12f;
-                    row.style.marginRight = 12f;
-                    c.Add(row);
-                }
-            }
-            if (!any) c.Add(Padded(Ui.Text(_hiddenKinds.Count > 0 ? "Нет грузов выбранных видов." : "Пусто — новые грузы появятся в следующем раунде.", 13f, Theme.TextDim)));
-        }
-
-        void AddRules(VisualElement c)
-        {
-            if (!Fold(c, "Правила коротко")) return;
-            foreach (CargoKind kind in Enum.GetValues(typeof(CargoKind)))
-            {
-                var row = Ui.Row();
-                row.style.marginLeft = 14f;
-                row.style.marginRight = 14f;
-                row.style.marginBottom = 4f;
-                row.Add(Chip(kind, 18f));
-                var text = Wrap($"{LogisticsGame.KindTitle(kind)}: {LogisticsGame.KindRule(kind, _game.Config)}", 12f);
-                text.style.flexShrink = 1f;
-                row.Add(text);
-                c.Add(row);
-            }
-            c.Add(Padded(Wrap($"Пропускная способность за раунд: улица {_game.Config.CapacityStreet}, широкая дорога и мост {_game.Config.CapacityWide}, " +
-                              $"магистраль {_game.Config.CapacityHighway}. Больше фур — пробка: все они стоят, каждая −{_game.Config.JamPenalty}. " +
-                              "Серые дороги — городские: общие и бесплатные. Репутация растёт за доставки вовремя и заказы мэрии, " +
-                              "падает за пробки и потери; с уровнем растут очки за доставку (до ×1,5).", 12f, Theme.TextDim)));
-        }
-
-        void AddLog(VisualElement c)
-        {
-            if (!Fold(c, "Журнал")) return;
-            foreach (var line in _log.Skip(Math.Max(0, _log.Count - 12)).Reverse())
-                c.Add(Padded(Wrap(line, 12f, Theme.TextDim)));
-        }
-
-        void RefreshPlayers()
-        {
-            _players.Clear();
-            foreach (var p in _game.Players)
-            {
-                var chip = Ui.Row();
-                chip.style.alignItems = Align.Center;
-                chip.style.marginRight = 10f;
-                Ui.Padding(chip, 4f, 8f);
-                Ui.Radius(chip, 8f);
-                bool current = p.Index == _game.CurrentPlayerIndex && _game.Phase != MagnatePhase.GameOver;
-                chip.style.backgroundColor = current ? new Color(1f, 1f, 1f, 0.10f) : Color.clear;
-                var dot = new VisualElement();
-                dot.style.width = 12f;
-                dot.style.height = 12f;
-                dot.style.backgroundColor = Palette.PlayerColor(p.Index);
-                Ui.Radius(dot, 3f);
-                dot.style.marginRight = 6f;
-                chip.Add(dot);
-                chip.Add(Ui.Text($"{p.Name}  {p.Score}", 14f, Theme.Text, current));
-                // Значок репутации: звёзды по уровню (Новичок — одна, Легенда — пять).
-                var stars = Ui.Text(" " + new string('★', (int)p.Level + 1), 12f, Theme.Gold);
-                stars.tooltip = $"Репутация {p.Reputation}: {LogisticsGame.LevelTitle(p.Level)} (очки за доставку ×{LogisticsGame.LevelMultiplier(p.Level):0.##})";
-                stars.pickingMode = PickingMode.Position;
-                chip.Add(stars);
-                chip.Add(Ui.Text($"  влияние {p.Influence}" + (current ? $" · стройка {p.BuildPoints}" : ""), 12f, Theme.TextDim));
-                _players.Add(chip);
-            }
-        }
-
-        /// <summary>Подсветка: в стройку — доступные дороги, в план — маршруты своих фур (выбранная ярче) и предпросмотр.</summary>
-        void RefreshHighlights()
-        {
-            _map.Affordable.Clear();
-            _map.PathRoads.Clear();
-            if (!HumanTurn) return;
-            var player = _game.CurrentPlayer;
-            if (_game.Phase == MagnatePhase.Build)
-            {
-                foreach (var road in _game.Map.Roads)
-                    if (!_game.IsBuilt(road.Id) && _game.Board.IsRoadOpen(road.Id) && _game.BuildCost(road) <= player.BuildPoints)
-                        _map.Affordable.Add(road.Id);
-                return;
-            }
-            var color = Palette.PlayerColor(player.Index);
-            foreach (var truck in _game.Trucks.Where(t => t.Owner == player.Index))
-            {
-                var c = truck.Id == _selectedTruck ? Color.white : new Color(color.r, color.g, color.b, 0.75f);
-                foreach (var id in truck.Route) _map.PathRoads[id] = c;
-            }
-            if (_preview != null)
-                foreach (var id in _preview) _map.PathRoads[id] = new Color(0.45f, 0.9f, 1f, 0.9f);
-        }
-
-        void SyncHubs()
-        {
-            if (_city3D == null) return;
-            foreach (var hub in _game.Hubs)
-                _city3D.SetHub(hub.LocationId, hub.Kind == HubKind.Airport ? 0 : hub.Kind == HubKind.Station ? 1 : 2, hub.Level);
-        }
-
-        /// <summary>Заголовок сворачиваемого раздела: клик — свернуть или развернуть. Возвращает «развёрнут».</summary>
-        bool Fold(VisualElement c, string title)
-        {
-            bool open = !s_collapsed.Contains(title);
-            var header = Ui.Row();
-            header.style.alignItems = Align.Center;
-            header.style.marginTop = 14f;
-            header.style.marginBottom = 6f;
-            header.style.marginLeft = 12f;
-            header.style.marginRight = 12f;
-            Ui.Padding(header, 3f, 4f);
-            Ui.Radius(header, 6f);
-            header.pickingMode = PickingMode.Position;
-            var arrow = Ui.Text(open ? "▾" : "▸", 13f, Theme.TextDim, true);
-            arrow.style.width = 16f;
-            header.Add(arrow);
-            header.Add(Ui.Text(title, 15f, Theme.Text, true));
-            header.tooltip = open ? "Свернуть раздел" : "Развернуть раздел";
-            header.RegisterCallback<PointerEnterEvent>(_ => header.style.backgroundColor = new Color(1f, 1f, 1f, 0.05f));
-            header.RegisterCallback<PointerLeaveEvent>(_ => header.style.backgroundColor = Color.clear);
-            header.RegisterCallback<ClickEvent>(_ =>
-            {
-                if (!s_collapsed.Remove(title)) s_collapsed.Add(title);
-                _dirty = true;
-            });
-            c.Add(header);
-            return open;
-        }
-
-        static void Highlight(VisualElement e) => Ui.Border(e, 2f, Theme.Gold);
-
-        static Label Section(string text)
-        {
-            var label = Ui.Text(text, 15f, Theme.Text, true);
-            label.style.marginTop = 16f;
-            label.style.marginBottom = 6f;
-            label.style.marginLeft = 16f;
-            return label;
-        }
-
-        static VisualElement Padded(VisualElement e)
-        {
-            e.style.marginLeft = 16f;
-            e.style.marginRight = 16f;
-            e.style.marginBottom = 6f;
-            return e;
-        }
-
-        static Label Wrap(string text, float size = 13f, Color? color = null)
-        {
-            var label = Ui.Text(text, size, color ?? Theme.Text);
-            label.style.whiteSpace = WhiteSpace.Normal;
-            return label;
         }
 
         // ================================================================== Итоги
