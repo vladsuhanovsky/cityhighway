@@ -480,18 +480,29 @@ namespace CityHighways.Presentation
             var water = new MeshBuilder();
             var banks = new MeshBuilder();
             var granite = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Granite);
+            float half = RiverWidth / 2f;
+
+            // Проход 1: сглаженные русла. Конец у края карты уходит за доску до горизонта (окрестности — 30 м),
+            // а конец внутри карты (приток впадает в другую реку) — продлевается чуть-чуть, чтобы вода слилась.
             foreach (var line in _map.Rivers)
             {
                 if (line.Count < 2) continue;
                 var raw = line.Select(p => BoardLayout.World(p.X, p.Y)).ToList();
-                // Продлеваем концы за край карты, чтобы вода не обрывалась на кромке поля.
-                // Река уходит за край доски до горизонта (окрестности тянутся на 30 м).
-                raw.Insert(0, raw[0] + (raw[0] - raw[1]).normalized * 0.6f);
-                raw.Insert(0, raw[0] + (raw[0] - raw[1]).normalized * 30f);
-                raw.Add(raw[raw.Count - 1] + (raw[raw.Count - 1] - raw[raw.Count - 2]).normalized * 0.6f);
-                raw.Add(raw[raw.Count - 1] + (raw[raw.Count - 1] - raw[raw.Count - 2]).normalized * 30f);
-                var points = Smooth(raw, 5);
-                _riverLines.Add(points);
+                bool startAtEdge = AtMapEdge(line[0].X, line[0].Y), endAtEdge = AtMapEdge(line[line.Count - 1].X, line[line.Count - 1].Y);
+                raw.Insert(0, raw[0] + (raw[0] - raw[1]).normalized * (startAtEdge ? 0.6f : half * 0.6f));
+                if (startAtEdge) raw.Insert(0, raw[0] + (raw[0] - raw[1]).normalized * 30f);
+                raw.Add(raw[raw.Count - 1] + (raw[raw.Count - 1] - raw[raw.Count - 2]).normalized * (endAtEdge ? 0.6f : half * 0.6f));
+                if (endAtEdge) raw.Add(raw[raw.Count - 1] + (raw[raw.Count - 1] - raw[raw.Count - 2]).normalized * 30f);
+                _riverLines.Add(Smooth(raw, 5));
+            }
+
+            // Проход 2: вода и набережные. Там, где русло заходит в воду другой реки (слияние, пересечение),
+            // набережная не строится — иначе гранитная стенка перегородила бы воду.
+            for (int r = 0; r < _riverLines.Count; r++)
+            {
+                var points = _riverLines[r];
+                // Каждая следующая река чуть выше предыдущей: на слиянии вода не мерцает.
+                var wl = Vector3.up * (WaterLevel + r * 0.0003f);
                 float along = 0f;
                 for (int i = 0; i + 1 < points.Count; i++)
                 {
@@ -502,15 +513,13 @@ namespace CityHighways.Presentation
                     float length = Vector3.Distance(a, b);
                     float u0 = along / 0.9f, u1 = (along + length) / 0.9f;
                     along += length;
-                    float half = RiverWidth / 2f;
-                    var wl = Vector3.up * WaterLevel;
-                    // Вода: левый и правый край.
                     water.Quad(a + na * half + wl, a - na * half + wl, b - nb * half + wl, b + nb * half + wl, new Rect(u0, 0f, u1 - u0, 1f));
                     // Набережные: верх, стенка к воде, стенка к земле — на каждом берегу.
                     for (int s = -1; s <= 1; s += 2)
                     {
                         var ia = a + na * half * s; var ib = b + nb * half * s;
                         var oa = a + na * (half + BankWidth) * s; var ob = b + nb * (half + BankWidth) * s;
+                        if (InOtherRiver(r, (ia + ib + oa + ob) * 0.25f, half + BankWidth * 0.5f)) continue;
                         var up = Vector3.up * BankHeight;
                         // Порядок вершин подобран так, чтобы все грани смотрели наружу (верх — вверх, стенки — от камня).
                         if (s > 0)
@@ -534,6 +543,29 @@ namespace CityHighways.Presentation
             // Коллайдер на слое Water — по нему RoadBuilder находит реку лучом (LayerMask «Water»).
             if (waterMesh.vertexCount > 0) waterObject.AddComponent<MeshCollider>().sharedMesh = waterMesh;
             AddMesh("Embankments", banks.ToMesh("City3D Embankments"), _buildings, _root.transform, true);
+        }
+
+        /// <summary>Точка реки у края карты (там река уходит за доску), а не внутри (впадает в другую реку).</summary>
+        static bool AtMapEdge(float x, float y) => x < 0.03f || x > 0.97f || y < 0.03f || y > 0.97f;
+
+        /// <summary>Лежит ли точка в воде другой реки (по горизонтали ближе radius к её руслу).</summary>
+        bool InOtherRiver(int self, Vector3 point, float radius)
+        {
+            var p = new Vector2(point.x, point.z);
+            float limit = radius * radius;
+            for (int r = 0; r < _riverLines.Count; r++)
+            {
+                if (r == self) continue;
+                var line = _riverLines[r];
+                for (int i = 0; i + 1 < line.Count; i++)
+                {
+                    var a = new Vector2(line[i].x, line[i].z);
+                    var ab = new Vector2(line[i + 1].x, line[i + 1].z) - a;
+                    float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / Mathf.Max(1e-8f, ab.sqrMagnitude));
+                    if ((p - (a + ab * t)).sqrMagnitude < limit) return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>Перпендикуляр к руслу в точке i (по горизонтали), направлен «вправо» по течению.</summary>

@@ -392,6 +392,7 @@ namespace CityHighways.Presentation
         public const float OutskirtsLeft = -800f, OutskirtsRight = 2200f, OutskirtsTop = -1150f, OutskirtsBottom = 1050f;
         /// <summary>Лес в окрестностях (тот же шум рисует тёмную подстилку на текстуре окрестностей).</summary>
         public static float ForestNoise(float x, float y) => Noise(x, y, 150f, 301);
+        static bool EdgePoint(float x, float y) => x < 0.03f || x > 0.97f || y < 0.03f || y > 0.97f;
         public static float VillageNoise(float x, float y) => Noise(x, y, 230f, 302);
         public const float ForestLevel = 0.56f, VillageLevel = 0.72f;
 
@@ -409,8 +410,9 @@ namespace CityHighways.Presentation
                 if (line.Count < 2) continue;
                 Vector2 F(int i) => new Vector2(line[i].X * FieldW, line[i].Y * FieldH);
                 var a = F(0); var a2 = F(1); var b = F(line.Count - 1); var b2 = F(line.Count - 2);
-                rivers.Add(new Seg { A = a, B = a + (a - a2).normalized * 4000f });
-                rivers.Add(new Seg { A = b, B = b + (b - b2).normalized * 4000f });
+                // Наружу уходят только концы у края карты; приток, впадающий в другую реку, кончается в ней.
+                if (EdgePoint(line[0].X, line[0].Y)) rivers.Add(new Seg { A = a, B = a + (a - a2).normalized * 4000f });
+                if (EdgePoint(line[line.Count - 1].X, line[line.Count - 1].Y)) rivers.Add(new Seg { A = b, B = b + (b - b2).normalized * 4000f });
             }
             bool Outside(Vector2 p, float pad) => p.x < -pad || p.x > FieldW + pad || p.y < -pad || p.y > FieldH + pad;
             float BeyondField(Vector2 p) => Mathf.Max(Mathf.Max(-p.x, p.x - FieldW), Mathf.Max(-p.y, p.y - FieldH));

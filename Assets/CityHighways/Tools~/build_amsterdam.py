@@ -18,7 +18,7 @@ expansions = {"zaandam", "ijburg", "amstelveen"}
 
 # id, название, район, x (запад→восток), y (север→юг), 0..1 — до «лупы».
 locations = [
-    ("dam", "Дам", "center", 0.48, 0.45), ("centraal", "Вокзал", "center", 0.51, 0.40),
+    ("dam", "Дам", "center", 0.48, 0.45), ("centraal", "Вокзал", "center", 0.516, 0.402),
     ("nieuwmarkt", "Ньюмаркт", "center", 0.555, 0.445),
     ("jordaan", "Йордан", "west", 0.42, 0.425), ("westerpark", "Вестерпарк", "west", 0.355, 0.40),
     ("bosenlommer", "Бос-эн-Ломмер", "west", 0.30, 0.47), ("oudwest", "Оуд-Вест", "west", 0.335, 0.54),
@@ -33,11 +33,11 @@ locations = [
     ("pta", "Терминал", "docks", 0.585, 0.40), ("javaeiland", "Ява-эйланд", "docks", 0.665, 0.405),
     ("knsm", "КНСМ", "docks", 0.75, 0.40),
     ("ndsm", "NDSM", "noord", 0.39, 0.29), ("eye", "Музей EYE", "noord", 0.50, 0.325),
-    ("noorderpark", "Нордерпарк", "noord", 0.45, 0.205), ("buikslotermeer", "Бёйкслотермер", "noord", 0.57, 0.20),
+    ("noorderpark", "Нордерпарк", "noord", 0.51, 0.235), ("buikslotermeer", "Бёйкслотермер", "noord", 0.57, 0.20),
     ("nieuwendam", "Ньювендам", "noord", 0.68, 0.27),
-    ("sloterdijk", "Слотердейк", "newwest", 0.265, 0.385), ("slotermeer", "Слотермер", "newwest", 0.19, 0.495),
+    ("sloterdijk", "Слотердейк", "newwest", 0.265, 0.396), ("slotermeer", "Слотермер", "newwest", 0.19, 0.495),
     ("osdorp", "Осдорп", "newwest", 0.105, 0.575), ("slotervaart", "Слотерварт", "newwest", 0.25, 0.61),
-    ("westpoort", "Вестпорт", "port", 0.06, 0.43), ("houthavens", "Хаутхавенс", "port", 0.165, 0.40),
+    ("westpoort", "Вестпорт", "port", 0.06, 0.43), ("houthavens", "Хаутхавенс", "port", 0.165, 0.408),
     ("arena", "Арена", "zuidoost", 0.72, 0.80), ("bijlmer", "Бейлмер", "zuidoost", 0.79, 0.90),
     ("gaasperdam", "Гаспердам", "zuidoost", 0.89, 0.81),
     ("schiphol", "Схипхол", "airports", 0.15, 0.82), ("cargo", "Схипхол-Карго", "airports", 0.06, 0.70),
@@ -49,7 +49,7 @@ locations = [
 # Дороги: (a, b[, ресурс[, длина]]). Ресурс не задан — подберётся (мост через Эй или Амстел — всегда сталь).
 roads = [
     # центр и каналы
-    ("dam", "centraal", A), ("dam", "nieuwmarkt", ANY), ("centraal", "nieuwmarkt", C), ("dam", "jordaan", A),
+    ("dam", "centraal"), ("dam", "nieuwmarkt"), ("centraal", "nieuwmarkt", C), ("dam", "jordaan", A),
     ("dam", "leidseplein", C), ("dam", "rembrandtplein", A), ("nieuwmarkt", "waterlooplein", A),
     ("centraal", "pta", ANY), ("nieuwmarkt", "pta", C), ("leidseplein", "rembrandtplein", ANY),
     ("leidseplein", "rijksmuseum", A), ("leidseplein", "jordaan", C), ("leidseplein", "oudwest", A),
@@ -70,12 +70,12 @@ roads = [
     # Восточные доки
     ("pta", "javaeiland", A), ("javaeiland", "knsm", ANY), ("knsm", "indischebuurt", C), ("knsm", "nieuwendam"),
     # Норд
-    ("centraal", "eye"), ("eye", "ndsm", A), ("eye", "noorderpark", C), ("eye", "buikslotermeer", A),
-    ("noorderpark", "buikslotermeer", ANY), ("buikslotermeer", "nieuwendam", C), ("ndsm", "noorderpark", G),
+    ("centraal", "eye"), ("eye", "ndsm"), ("eye", "noorderpark", C), ("eye", "buikslotermeer", A),
+    ("noorderpark", "buikslotermeer", ANY), ("buikslotermeer", "nieuwendam", C), ("ndsm", "noorderpark"),
     ("eye", "nieuwendam", A),
     # запад и Новый Запад
     ("jordaan", "westerpark", A), ("westerpark", "bosenlommer", C), ("bosenlommer", "oudwest", ANY),
-    ("westerpark", "ndsm"), ("westerpark", "sloterdijk", A), ("jordaan", "centraal", C),
+    ("westerpark", "ndsm"), ("westerpark", "sloterdijk", A), ("jordaan", "centraal"),
     ("sloterdijk", "houthavens", C), ("sloterdijk", "bosenlommer", A), ("bosenlommer", "slotermeer", G),
     ("slotermeer", "osdorp", G), ("osdorp", "slotervaart", A), ("slotervaart", "oudwest", C),
     ("slotermeer", "slotervaart", A),
@@ -86,17 +86,20 @@ roads = [
     # Зёйдост
     ("arena", "bijlmer", A), ("bijlmer", "gaasperdam", ANY), ("arena", "gaasperdam", C),
     # районы-расширения
-    ("zaandam", "zaanseschans", ANY), ("zaandam", "houthavens"), ("zaandam", "ndsm", G), ("zaanseschans", "noorderpark", G),
+    ("zaandam", "zaanseschans", ANY), ("zaandam", "houthavens"), ("zaandam", "ndsm", G), ("zaanseschans", "noorderpark"),
     ("ijburg", "blijburg", ANY), ("ijburg", "indischebuurt", A), ("ijburg", "knsm", C), ("blijburg", "diemen", G),
     ("amstelveen", "amsterdamsebos", ANY), ("amstelveen", "buitenveldert", A), ("amsterdamsebos", "schiphol", G),
     ("amsterdamsebos", "zuidas", G), ("amstelveen", "bijlmer"),
 ]
 
-# Залив Эй: с запада (Нордзеканал) на восток (Эймер). Амстел: с юга до центра (дальше — каналы).
+# Залив Эй: с запада (Нордзеканал) на восток (Эймер). Амстел: с юга через центр (между Дам и Вокзалом) впадает в Эй.
 rivers = [
     [(0.0, 0.355), (0.10, 0.36), (0.20, 0.365), (0.30, 0.355), (0.40, 0.37), (0.47, 0.375), (0.53, 0.37),
      (0.62, 0.36), (0.72, 0.345), (0.81, 0.37), (0.90, 0.41), (1.0, 0.44)],
-    [(0.665, 1.0), (0.65, 0.89), (0.625, 0.78), (0.598, 0.68), (0.57, 0.60), (0.548, 0.54), (0.535, 0.50)],
+    [(0.665, 1.0), (0.655, 0.92), (0.64, 0.845), (0.622, 0.77), (0.602, 0.70), (0.583, 0.635), (0.565, 0.575),
+     (0.55, 0.525), (0.535, 0.485), (0.515, 0.45), (0.497, 0.415), (0.482, 0.385), (0.472, 0.372)],
+    # Нордхолландский канал: от Эй на север через Норд (между NDSM и Музеем EYE).
+    [(0.468, 0.372), (0.462, 0.33), (0.455, 0.28), (0.45, 0.22), (0.442, 0.15), (0.435, 0.08), (0.43, 0.0)],
 ]
 
 goals = [
@@ -104,18 +107,16 @@ goals = [
     {"id": "g2", "name": "Город мостов", "kind": "bridges", "count": 3, "points": 8},
     {"id": "g3", "name": "Вся агломерация", "kind": "network", "count": 7, "points": 8},
     {"id": "g4", "name": "Польдерные дороги", "kind": "resource_pieces", "resource": "gravel", "count": 9, "points": 6},
-    {"id": "g5", "name": "Кольцевая A10", "kind": "long_roads", "length": 3, "count": 3, "points": 7},
+    {"id": "g5", "name": "Дальние трассы", "kind": "long_roads", "length": 3, "count": 3, "points": 7},
     {"id": "g6", "name": "Сердце Амстердама", "kind": "locations", "district": "center", "count": 3, "points": 8},
     {"id": "g7", "name": "Портовый город", "kind": "locations", "district": "docks", "count": 3, "points": 6},
 ]
 
 spec = {
     "name": "Амстердам", "districts": districts, "expansions": expansions, "locations": locations,
-    "roads": roads, "rivers": rivers, "river_names": ["Эй", "Амстел"],
+    "roads": roads, "rivers": rivers, "river_names": ["Эй", "Амстел", "Нордхолландский канал"],
     "center": "dam", "spread_k": 0.45, "spread_s": 300.0,
     "contract_counts": (12, 14, 8), "pieces_scale": 0.85,
-    # Кольцевая A10 — вокруг центра (после «лупы»), с юга по Зёйдасу, с севера через Норд.
-    "ring": {"name": "A10", "cx": 0.47, "cy": 0.475, "rx": 0.215, "ry": 0.285},
     "expansion_contracts": [("zaandam", "center"), ("zaandam", "zuid"), ("ijburg", "center"), ("ijburg", "west"),
                             ("amstelveen", "center"), ("amstelveen", "noord")],
     "transit": [("noord", "zuid", "center"), ("newwest", "east", "canals"), ("newwest", "docks", "center"),

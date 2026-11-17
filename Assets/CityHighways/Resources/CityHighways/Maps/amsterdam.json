@@ -85,8 +85,8 @@
    "id": "centraal",
    "name": "Вокзал",
    "district": "center",
-   "x": 0.523,
-   "y": 0.378
+   "x": 0.532,
+   "y": 0.381
   },
   {
    "id": "nieuwmarkt",
@@ -267,8 +267,8 @@
    "id": "noorderpark",
    "name": "Нордерпарк",
    "district": "noord",
-   "x": 0.441,
-   "y": 0.133
+   "x": 0.52,
+   "y": 0.166
   },
   {
    "id": "buikslotermeer",
@@ -288,8 +288,8 @@
    "id": "sloterdijk",
    "name": "Слотердейк",
    "district": "newwest",
-   "x": 0.231,
-   "y": 0.375
+   "x": 0.23,
+   "y": 0.387
   },
   {
    "id": "slotermeer",
@@ -324,7 +324,7 @@
    "name": "Хаутхавенс",
    "district": "port",
    "x": 0.149,
-   "y": 0.397
+   "y": 0.406
   },
   {
    "id": "arena",
@@ -410,20 +410,20 @@
    "from": "dam",
    "to": "centraal",
    "length": 1,
-   "resource": "asphalt"
+   "resource": "steel"
   },
   {
    "id": "r02",
    "from": "dam",
    "to": "nieuwmarkt",
    "length": 2,
-   "resource": "any"
+   "resource": "steel"
   },
   {
    "id": "r03",
    "from": "centraal",
    "to": "nieuwmarkt",
-   "length": 2,
+   "length": 1,
    "resource": "concrete"
   },
   {
@@ -746,13 +746,13 @@
    "from": "eye",
    "to": "ndsm",
    "length": 3,
-   "resource": "asphalt"
+   "resource": "steel"
   },
   {
    "id": "r50",
    "from": "eye",
    "to": "noorderpark",
-   "length": 2,
+   "length": 1,
    "resource": "concrete"
   },
   {
@@ -766,7 +766,7 @@
    "id": "r52",
    "from": "noorderpark",
    "to": "buikslotermeer",
-   "length": 4,
+   "length": 2,
    "resource": "any"
   },
   {
@@ -780,8 +780,8 @@
    "id": "r54",
    "from": "ndsm",
    "to": "noorderpark",
-   "length": 2,
-   "resource": "gravel"
+   "length": 4,
+   "resource": "steel"
   },
   {
    "id": "r55",
@@ -830,7 +830,7 @@
    "from": "jordaan",
    "to": "centraal",
    "length": 3,
-   "resource": "concrete"
+   "resource": "steel"
   },
   {
    "id": "r62",
@@ -983,8 +983,8 @@
    "id": "r83",
    "from": "zaanseschans",
    "to": "noorderpark",
-   "length": 4,
-   "resource": "gravel"
+   "length": 5,
+   "resource": "steel"
   },
   {
    "id": "r84",
@@ -1484,28 +1484,85 @@
      "y": 0.985
     },
     {
-     "x": 0.661,
-     "y": 0.919
+     "x": 0.664,
+     "y": 0.944
     },
     {
-     "x": 0.645,
-     "y": 0.825
+     "x": 0.654,
+     "y": 0.88
     },
     {
-     "x": 0.625,
-     "y": 0.733
+     "x": 0.643,
+     "y": 0.816
     },
     {
-     "x": 0.599,
-     "y": 0.649
+     "x": 0.628,
+     "y": 0.753
     },
     {
-     "x": 0.574,
-     "y": 0.575
+     "x": 0.612,
+     "y": 0.687
+    },
+    {
+     "x": 0.594,
+     "y": 0.618
+    },
+    {
+     "x": 0.577,
+     "y": 0.554
     },
     {
      "x": 0.558,
-     "y": 0.521
+     "y": 0.5
+    },
+    {
+     "x": 0.53,
+     "y": 0.45
+    },
+    {
+     "x": 0.505,
+     "y": 0.399
+    },
+    {
+     "x": 0.483,
+     "y": 0.357
+    },
+    {
+     "x": 0.469,
+     "y": 0.338
+    }
+   ]
+  },
+  {
+   "name": "Нордхолландский канал",
+   "points": [
+    {
+     "x": 0.463,
+     "y": 0.338
+    },
+    {
+     "x": 0.455,
+     "y": 0.281
+    },
+    {
+     "x": 0.446,
+     "y": 0.218
+    },
+    {
+     "x": 0.441,
+     "y": 0.149
+    },
+    {
+     "x": 0.433,
+     "y": 0.079
+    },
+    {
+     "x": 0.427,
+     "y": 0.017
+    },
+    {
+     "x": 0.425,
+     "y": 0.015
     }
    ]
   }
@@ -1543,7 +1600,7 @@
   },
   {
    "id": "g5",
-   "name": "Кольцевая A10",
+   "name": "Дальние трассы",
    "kind": "long_roads",
    "length": 3,
    "count": 3,
@@ -1566,12 +1623,5 @@
    "points": 6
   }
  ],
- "piecesScale": 0.85,
- "ring": {
-  "name": "A10",
-  "cx": 0.47,
-  "cy": 0.475,
-  "rx": 0.215,
-  "ry": 0.285
- }
+ "piecesScale": 0.85
 }
