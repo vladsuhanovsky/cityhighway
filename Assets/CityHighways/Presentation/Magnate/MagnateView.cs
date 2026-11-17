@@ -8,13 +8,16 @@ using UnityEngine.UIElements;
 namespace CityHighways.Presentation
 {
     /// <summary>
-    /// Экран «Логистического магната»: карта (MapView по доске LogisticsGame.Board, с 3D-городом и мини-картой),
+    /// Экран «Логистического магната». Карта спокойная: одно покрытие дорог, крупные фишки, значки хабов, фокус под
+    /// курсором, слои (подписи, грузы, фуры, загрузка дорог, свободные дороги), свободные дороги бледнеют в фазе маршрутов.
+    /// Обучение — MagnateView.Coach.cs.
+    /// Карта (MapView по доске LogisticsGame.Board, с 3D-городом и мини-картой справа внизу),
     /// сверху — раунд и компании с репутацией, справа — панель хода: событие раунда, стройка (дорога — купить,
     /// своя — магистраль, хаб — развить), маршруты фур с предпросмотром, заказы мэрии, грузы с фильтрами, правила,
     /// журнал. Поверх карты — фуры (кабина и кузов цвета компании, груз — цветом вида), очереди в пробках
     /// с часами, перекрытые дороги, уровни хабов. Все фуры едут разом: скоропорт быстрее, тяжёлые — медленнее.
     /// </summary>
-    public sealed class MagnateView
+    public sealed partial class MagnateView
     {
         const float TopBarHeight = 56f, PanelWidth = 400f, AnimationSeconds = 2.2f;
 
@@ -31,6 +34,11 @@ namespace CityHighways.Presentation
         readonly MiniMapView _minimap;
         readonly List<string> _log = new List<string>();
         readonly HashSet<CargoKind> _hiddenKinds = new HashSet<CargoKind>();
+        /// <summary>Свёрнутые разделы панели (на всю сессию).</summary>
+        static readonly HashSet<string> s_collapsed = new HashSet<string>();
+        static bool s_defaultsApplied;
+        VisualElement _layersPanel;
+        readonly VisualElement _layersList;
 
         City3DScene _city3D;
         bool _dirty = true;
@@ -79,12 +87,37 @@ namespace CityHighways.Presentation
             _mapArea.Add(_map);
 
             // Мини-карта: грузы на хабах (цвет вида) и фуры (цвет компании).
-            _minimap = new MiniMapView(_map, 236f, 150f);
+            _minimap = new MiniMapView(_map, 200f, 150f);
             _minimap.style.position = Position.Absolute;
-            _minimap.style.left = 14f;
+            _minimap.style.right = 14f;
             _minimap.style.bottom = 14f;
             _minimap.Extra = DrawMinimap;
             _mapArea.Add(_minimap);
+
+            // Слои карты: кнопка в правом верхнем углу карты, по клику — список переключателей.
+            _layersPanel = new VisualElement();
+            _layersPanel.style.position = Position.Absolute;
+            _layersPanel.style.right = 14f;
+            _layersPanel.style.top = 14f;
+            _layersPanel.style.alignItems = Align.FlexEnd;
+            var layersButton = Ui.Button("Слои карты", () =>
+            {
+                Ui.Show(_layersList, _layersList.style.display == DisplayStyle.None);
+                _app.Sound.Play(Sfx.Click, 0.4f);
+            }, ButtonKind.Secondary, 13f);
+            layersButton.style.width = 130f;
+            _layersPanel.Add(layersButton);
+            _layersList = new VisualElement();
+            _layersList.style.marginTop = 6f;
+            _layersList.style.backgroundColor = Theme.PanelGlass;
+            _layersList.style.width = 220f;
+            Ui.Padding(_layersList, 8f, 10f);
+            Ui.Radius(_layersList, 10f);
+            Ui.Border(_layersList, 1f, Theme.Line);
+            Ui.Show(_layersList, false);
+            _layersPanel.Add(_layersList);
+            _mapArea.Add(_layersPanel);
+            BuildLayersList();
 
             _banner = Ui.Text("", 16f, Theme.Text, true);
             _banner.style.position = Position.Absolute;
@@ -133,6 +166,10 @@ namespace CityHighways.Presentation
             _players.style.flexGrow = 1f;
             _players.style.overflow = Overflow.Hidden;
             top.Add(_players);
+            var help = Ui.Button("? Обучение", () => StartCoach(), ButtonKind.Ghost, 13f);
+            help.style.width = 110f;
+            help.style.marginRight = 8f;
+            top.Add(help);
             var menu = Ui.Button("Меню", () => _app.ShowMenu(), ButtonKind.Secondary, 14f);
             menu.style.width = 96f;
             top.Add(menu);
@@ -149,6 +186,8 @@ namespace CityHighways.Presentation
             _panelScroll.style.flexGrow = 1f;
             Ui.StyleScroller(_panelScroll);
             _panel.Add(_panelScroll);
+
+            BuildCoach();
 
             _handoff = Overlay();
             _results = Overlay();
@@ -173,12 +212,21 @@ namespace CityHighways.Presentation
         public void Begin()
         {
             _map.TiltEnabled = _app.Display == null || _app.Display.tiltedBoard;
+            // Спокойная карта магната: одно покрытие дорог, крупные фишки, значки хабов, фокус под курсором.
+            _map.CalmRoads = true;
+            _map.LocationScale = 1.3f;
+            _map.HubIcons = true;
+            _map.FocusExempt = id => _game.HubAt(id) != null;
             _map.SetGame(_game.Board);
             _minimap.SetGame(_game.Board);
             Ui.Show(_minimap, _app.Display == null || _app.Display.showMinimap);
             _log.Add($"Город {_game.Map.Name}, сложность «{MagnateConfig.Title(_game.Config.Difficulty)}». " +
                      $"Хабы: {string.Join(", ", _game.Hubs.Select(h => _game.Map.LocationName(h.LocationId)))}.");
+            ApplyLayers();
+            if (_setup.magnateTutorialDone && !s_defaultsApplied) s_collapsed.Add("Правила коротко");
+            s_defaultsApplied = true;
             StartTurn();
+            if (!_setup.magnateTutorialDone && _game.Players.Any(p => !p.IsBot)) StartCoach();
             _dirty = true;
         }
 
@@ -208,6 +256,81 @@ namespace CityHighways.Presentation
                 _dirty = false;
                 Refresh();
             }
+            UpdateMapEmphasis();
+            CoachTick();
+        }
+
+        // ================================================================== Слои карты
+
+        [Flags]
+        public enum Layer
+        {
+            StationNames = 1, DistrictNames = 2, Cargo = 4, Trucks = 8, Traffic = 16, FreeRoads = 32, Focus = 64
+        }
+
+        static readonly (Layer layer, string title, string hint)[] LayerItems =
+        {
+            (Layer.StationNames, "Названия станций", "Подписи под станциями"),
+            (Layer.DistrictNames, "Названия районов", "Крупные подписи районов"),
+            (Layer.Cargo, "Грузы", "Квадратики грузов над хабами"),
+            (Layer.Trucks, "Фуры", "Фуры компаний на карте"),
+            (Layer.Traffic, "Загрузка дорог", "Цвет по прошлому раунду: зелёный — свободно, жёлтый — почти полно, красный — пробка"),
+            (Layer.FreeRoads, "Свободные дороги", "Ничьи дороги. В фазе маршрутов они бледные: фуры по ним не ездят"),
+            (Layer.Focus, "Фокус под курсором", "Вдали от курсора карта тускнеет"),
+        };
+
+        bool Has(Layer layer) => ((Layer)_setup.magnateLayers & layer) != 0;
+
+        void BuildLayersList()
+        {
+            _layersList.Clear();
+            var caption = Ui.Text("Что показывать на карте", 12f, Theme.TextDim, true);
+            caption.style.marginBottom = 6f;
+            _layersList.Add(caption);
+            foreach (var item in LayerItems)
+            {
+                bool on = Has(item.layer);
+                var row = Ui.Row();
+                row.style.alignItems = Align.Center;
+                row.style.marginBottom = 4f;
+                row.pickingMode = PickingMode.Position;
+                row.tooltip = item.hint;
+                var box = Ui.Text(on ? "✓" : "", 12f, new Color(0.08f, 0.08f, 0.1f), true);
+                box.style.width = 16f;
+                box.style.height = 16f;
+                box.style.unityTextAlign = TextAnchor.MiddleCenter;
+                box.style.backgroundColor = on ? GameColors.Accent : new Color(1f, 1f, 1f, 0.08f);
+                Ui.Radius(box, 4f);
+                box.style.marginRight = 8f;
+                row.Add(box);
+                row.Add(Ui.Text(item.title, 13f, on ? Theme.Text : Theme.TextDim));
+                var layer = item.layer;
+                row.RegisterCallback<ClickEvent>(_ =>
+                {
+                    _setup.magnateLayers ^= (int)layer;
+                    _setup.Save();
+                    ApplyLayers();
+                    BuildLayersList();
+                });
+                _layersList.Add(row);
+            }
+        }
+
+        void ApplyLayers()
+        {
+            _map.SetLabelLayers(Has(Layer.StationNames), Has(Layer.DistrictNames));
+            _map.FocusRadius = Has(Layer.Focus) ? 230f : 0f;
+            UpdateMapEmphasis();
+        }
+
+        /// <summary>
+        /// Иерархия карты по фазе: в стройку свободные дороги видны (их покупают), в маршруты — бледные
+        /// (фуры ездят только по построенным), выключенный слой — не видны вовсе.
+        /// </summary>
+        void UpdateMapEmphasis()
+        {
+            float free = !Has(Layer.FreeRoads) ? 0f : _game.Phase == MagnatePhase.Build && HumanTurn ? 1f : 0.3f;
+            _map.FreeRoadAlpha = free;
         }
 
         void StartTurn()
@@ -429,27 +552,45 @@ namespace CityHighways.Presentation
                     p.strokeColor = Palette.PlayerColor(hub.Owner);
                     p.lineWidth = 2.4f;
                     p.BeginPath();
-                    p.Arc(at, 15f, Angle.Degrees(0f), Angle.Degrees(360f));
+                    p.Arc(at, 18f, Angle.Degrees(0f), Angle.Degrees(360f));
                     p.Stroke();
                 }
                 for (int l = 0; l < hub.Level; l++)
-                    Square(p, at + new Vector2(-10f + l * 5f, 16f), 1.7f, l == 0 ? new Color(1f, 1f, 1f, 0.5f) : Theme.Gold);
+                    Square(p, at + new Vector2(-10f + l * 5f, 20f), 1.8f, l == 0 ? new Color(1f, 1f, 1f, 0.5f) : Theme.Gold);
+                // Обучение: хабы пульсируют, пока о них рассказывает подсказка.
+                if (_coachStep == CoachHubs)
+                {
+                    float pulse = 0.5f + 0.5f * Mathf.Sin(_time * 4f);
+                    p.strokeColor = new Color(1f, 0.85f, 0.3f, 0.45f + 0.5f * pulse);
+                    p.lineWidth = 3f;
+                    p.BeginPath();
+                    p.Arc(at, 20f + 6f * pulse, Angle.Degrees(0f), Angle.Degrees(360f));
+                    p.Stroke();
+                }
+                if (!Has(Layer.Cargo)) continue;
                 int k = 0;
                 foreach (var waiting in _game.WaitingAt(hub.LocationId))
                 {
                     if (_hiddenKinds.Contains(waiting.Kind)) continue;
-                    var c = at + new Vector2(14f + k * 11f, -16f);
-                    Square(p, c, 4.8f, new Color(0f, 0f, 0f, 0.6f));
-                    Square(p, c, 4f, KindColor(waiting.Kind));
+                    var c = at + new Vector2(16f + k * 13f, -18f);
+                    // Срочный скоропорт — пульсирующая красная рамка; груз для заказа мэрии — золотая точка.
+                    if (Urgent(waiting))
+                        Square(p, c, 6.6f + 0.8f * Mathf.Sin(_time * 6f), new Color(0.95f, 0.2f, 0.18f, 0.9f));
+                    Square(p, c, 5.6f, new Color(0f, 0f, 0f, 0.65f));
+                    Square(p, c, 4.7f, KindColor(waiting.Kind));
+                    if (ForContract(waiting)) Disc(p, c + new Vector2(4.5f, -4.5f), 2.2f, Theme.Gold);
                     k++;
                 }
             }
+
+            if (Has(Layer.Traffic)) DrawTraffic(p);
 
             // Фуры, а над очередями в пробках — часы.
             var fan = new Dictionary<string, int>();
             var clocks = new HashSet<string>();
             foreach (var truck in _game.Trucks)
             {
+                if (!Has(Layer.Trucks)) break;
                 fan.TryGetValue(truck.Location, out int index);
                 fan[truck.Location] = index + 1;
                 TruckPose(truck, index, out var position, out var heading);
@@ -467,6 +608,31 @@ namespace CityHighways.Presentation
                 var to = _map.ScreenPositionOf(jammed.A == parts[1] ? jammed.B : jammed.A);
                 var dir = (to - from).sqrMagnitude > 0.01f ? (to - from).normalized : Vector2.right;
                 Clock(p, from + dir * 34f + new Vector2(0f, -17f));
+            }
+        }
+
+        /// <summary>Скоропорт, которому до конца нормы остался раунд или меньше.</summary>
+        bool Urgent(Cargo cargo) => cargo.Kind == CargoKind.Perishable && cargo.SpawnRound + cargo.Norm - _game.Round <= 1;
+
+        /// <summary>Груз засчитывается в действующий заказ мэрии.</summary>
+        bool ForContract(Cargo cargo) => _game.Contracts.Any(c => c.Winner < 0 && (!c.Kind.HasValue || c.Kind == cargo.Kind));
+
+        /// <summary>Загрузка дорог по прошлому раунду: линия по оси построенной дороги — зелёная, жёлтая, красная.</summary>
+        void DrawTraffic(Painter2D p)
+        {
+            foreach (var road in _game.Map.Roads)
+            {
+                if (!_game.IsBuilt(road.Id)) continue;
+                int traffic = _game.LastTraffic(road.Id);
+                if (traffic == 0) continue;
+                float load = traffic / (float)Math.Max(1, _game.Capacity(road));
+                var color = load > 1f ? new Color(0.95f, 0.22f, 0.18f, 0.95f) : load >= 0.75f ? new Color(1f, 0.78f, 0.2f, 0.9f) : new Color(0.35f, 0.85f, 0.4f, 0.85f);
+                p.strokeColor = color;
+                p.lineWidth = 2.6f;
+                p.BeginPath();
+                p.MoveTo(_map.ScreenPositionOf(road.A));
+                p.LineTo(_map.ScreenPositionOf(road.B));
+                p.Stroke();
             }
         }
 
@@ -544,6 +710,7 @@ namespace CityHighways.Presentation
         {
             foreach (var hub in _game.Hubs)
             {
+                if (!Has(Layer.Cargo)) break;
                 var location = _game.Map.GetLocation(hub.LocationId);
                 if (location == null) continue;
                 int k = 0;
@@ -556,6 +723,7 @@ namespace CityHighways.Presentation
             }
             foreach (var truck in _game.Trucks)
             {
+                if (!Has(Layer.Trucks)) break;
                 var location = _game.Map.GetLocation(truck.Location);
                 if (location == null) continue;
                 Disc(p, toMini(location.X, location.Y) + new Vector2((truck.Id % 3 - 1) * 2.5f, 3f), 1.8f, Palette.PlayerColor(truck.Owner));
@@ -709,6 +877,7 @@ namespace CityHighways.Presentation
                                   $"Каждый раунд +{_game.Config.BuildPointsPerRound} очков стройки (до {_game.Config.MaxBuildPoints}).")));
                 var next = Ui.Button("Дальше: маршруты фур →", () => { _game.FinishBuild(); _app.Sound.Play(Sfx.Click, 0.6f); }, ButtonKind.Primary, 15f);
                 next.style.marginTop = 6f;
+                if (_coachTarget == "next") Highlight(next);
                 c.Add(Padded(next));
             }
             else
@@ -724,6 +893,7 @@ namespace CityHighways.Presentation
                     AfterTurn();
                 }, ButtonKind.Primary, 15f);
                 done.style.marginTop = 8f;
+                if (_coachTarget == "done") Highlight(done);
                 c.Add(Padded(done));
             }
             AddContracts(c);
@@ -757,6 +927,7 @@ namespace CityHighways.Presentation
             bool selected = truck.Id == _selectedTruck;
             card.style.backgroundColor = selected ? Theme.PanelHover : Theme.PanelLight;
             Ui.Border(card, selected ? 2f : 1f, selected ? GameColors.Accent : Theme.Line);
+            if (!selected && _coachTarget == "truck") Highlight(card);
             card.pickingMode = PickingMode.Position;
             card.RegisterCallback<ClickEvent>(_ =>
             {
@@ -823,6 +994,9 @@ namespace CityHighways.Presentation
             Ui.Radius(row, 6f);
             row.style.backgroundColor = clickable ? new Color(1f, 1f, 1f, 0.06f) : Color.clear;
             if (clickable) row.pickingMode = PickingMode.Position;
+            // Срочный скоропорт — красная рамка: норма кончается.
+            if (Urgent(cargo)) Ui.Border(row, 1.5f, new Color(0.95f, 0.25f, 0.2f));
+            else if (clickable && _coachTarget == "cargo") Highlight(row);
             row.Add(Chip(cargo.Kind, 20f));
             int roundsLeft = cargo.Kind == CargoKind.Perishable ? Mathf.Max(0, cargo.SpawnRound + cargo.Norm - _game.Round) : -1;
             string extra = "";
@@ -831,7 +1005,7 @@ namespace CityHighways.Presentation
                     ? $" · {_game.RouteRounds(route, cargo.Kind)} р., проезд −{_game.RouteTolls(_game.CurrentPlayerIndex, route)}"
                     : " · сейчас не проехать";
             var text = Ui.Text($"{LogisticsGame.KindTitle(cargo.Kind)} → {_game.Map.LocationName(cargo.To)} · {cargo.Value} очк." +
-                               (roundsLeft >= 0 ? $" · норма ещё {roundsLeft} р." : "") + extra, 12f, Theme.Text);
+                               (roundsLeft >= 0 ? $" · норма ещё {roundsLeft} р." : "") + (ForContract(cargo) ? " · для заказа мэрии" : "") + extra, 12f, Theme.Text);
             text.style.whiteSpace = WhiteSpace.Normal;
             text.style.flexShrink = 1f;
             row.Add(text);
@@ -854,7 +1028,7 @@ namespace CityHighways.Presentation
         void AddContracts(VisualElement c)
         {
             if (_game.Contracts.Count == 0) return;
-            c.Add(Section("Заказы мэрии"));
+            if (!Fold(c, "Заказы мэрии")) return;
             foreach (var contract in _game.Contracts)
             {
                 var card = Ui.Card(10f);
@@ -902,7 +1076,7 @@ namespace CityHighways.Presentation
 
         void AddCargoBoard(VisualElement c)
         {
-            c.Add(Section("Грузы на хабах"));
+            if (!Fold(c, "Грузы на хабах")) return;
             // Фильтры: какие виды показывать на карте, мини-карте и в списке.
             var filters = Ui.Row();
             filters.style.flexWrap = UnityEngine.UIElements.Wrap.Wrap;
@@ -948,7 +1122,7 @@ namespace CityHighways.Presentation
 
         void AddRules(VisualElement c)
         {
-            c.Add(Section("Правила коротко"));
+            if (!Fold(c, "Правила коротко")) return;
             foreach (CargoKind kind in Enum.GetValues(typeof(CargoKind)))
             {
                 var row = Ui.Row();
@@ -969,7 +1143,7 @@ namespace CityHighways.Presentation
 
         void AddLog(VisualElement c)
         {
-            c.Add(Section("Журнал"));
+            if (!Fold(c, "Журнал")) return;
             foreach (var line in _log.Skip(Math.Max(0, _log.Count - 12)).Reverse())
                 c.Add(Padded(Wrap(line, 12f, Theme.TextDim)));
         }
@@ -1034,6 +1208,37 @@ namespace CityHighways.Presentation
             foreach (var hub in _game.Hubs)
                 _city3D.SetHub(hub.LocationId, hub.Kind == HubKind.Airport ? 0 : hub.Kind == HubKind.Station ? 1 : 2, hub.Level);
         }
+
+        /// <summary>Заголовок сворачиваемого раздела: клик — свернуть или развернуть. Возвращает «развёрнут».</summary>
+        bool Fold(VisualElement c, string title)
+        {
+            bool open = !s_collapsed.Contains(title);
+            var header = Ui.Row();
+            header.style.alignItems = Align.Center;
+            header.style.marginTop = 14f;
+            header.style.marginBottom = 6f;
+            header.style.marginLeft = 12f;
+            header.style.marginRight = 12f;
+            Ui.Padding(header, 3f, 4f);
+            Ui.Radius(header, 6f);
+            header.pickingMode = PickingMode.Position;
+            var arrow = Ui.Text(open ? "▾" : "▸", 13f, Theme.TextDim, true);
+            arrow.style.width = 16f;
+            header.Add(arrow);
+            header.Add(Ui.Text(title, 15f, Theme.Text, true));
+            header.tooltip = open ? "Свернуть раздел" : "Развернуть раздел";
+            header.RegisterCallback<PointerEnterEvent>(_ => header.style.backgroundColor = new Color(1f, 1f, 1f, 0.05f));
+            header.RegisterCallback<PointerLeaveEvent>(_ => header.style.backgroundColor = Color.clear);
+            header.RegisterCallback<ClickEvent>(_ =>
+            {
+                if (!s_collapsed.Remove(title)) s_collapsed.Add(title);
+                _dirty = true;
+            });
+            c.Add(header);
+            return open;
+        }
+
+        static void Highlight(VisualElement e) => Ui.Border(e, 2f, Theme.Gold);
 
         static Label Section(string text)
         {

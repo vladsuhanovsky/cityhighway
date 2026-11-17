@@ -94,6 +94,8 @@ namespace CityHighways.Core
 
         /// <summary>Полуширина воды с набережной в пикселях генератора (3D: река 0,26 м + набережная, 1 м = 100 px).</summary>
         public const float WaterHalfWidth = 16f;
+        /// <summary>Самый крутой допустимый изгиб русла (радиус в пикселях генератора): круче — набережные слипаются.</summary>
+        public const float MinBendRadius = 60f;
 
         /// <summary>
         /// Проверка карты на воду — так, как реку рисует 3D (русло сглаживается сплайном Катмулла — Рома):
@@ -125,6 +127,21 @@ namespace CityHighways.Core
             {
                 var l = map.GetLocation(id);
                 return new P(l.X * W, l.Y * H);
+            }
+
+            // Изгибы русла: радиус по трём точкам через одну-четыре — не круче MinBendRadius.
+            foreach (var l in lines)
+            {
+                const int stride = 4;
+                float worst = float.MaxValue;
+                for (int i = 0; i + 2 * stride < l.Count; i++)
+                {
+                    var a = l[i]; var b = l[i + stride]; var c = l[i + 2 * stride];
+                    float cross = Math.Abs(Cross(a, b, c));
+                    if (cross < 1e-4f) continue;
+                    worst = Math.Min(worst, Dist(a, b) * Dist(b, c) * Dist(c, a) / (2f * cross));
+                }
+                if (worst < MinBendRadius) issues.Add($"Река изгибается слишком круто (радиус {worst:0} px).");
             }
 
             foreach (var location in map.Locations)
@@ -221,7 +238,7 @@ namespace CityHighways.Core
             for (int i = 0; i <= 10; i++)
             {
                 float t = i / 10f;
-                float y = y0 + amp * (float)Math.Sin(phase + t * freq * Math.PI) + (R() - 0.5f) * 20f;
+                float y = y0 + amp * (float)Math.Sin(phase + t * freq * Math.PI) + (R() - 0.5f) * 8f;
                 main.Add(new P(t * W, Math.Min(Math.Max(y, 0.14f * H), 0.86f * H)));
             }
             var rivers = new List<List<P>> { main };
@@ -232,11 +249,15 @@ namespace CityHighways.Core
                 var smoothMain = Smooth(main);
                 var join = smoothMain.OrderBy(p => Math.Abs(p.X - jx)).First();
                 float ex = jx + (R() - 0.5f) * 300f, ey = top ? 0f : H;
+                // Приток петляет плавно: одна большая дуга и одна малая волна (раньше каждая точка сдвигалась
+                // случайно, и на коротких отрезках получались крутые изломы).
+                float bend = (R() - 0.5f) * 120f, wave = (R() - 0.5f) * 50f;
                 var tributary = new List<P>();
-                for (int i = 0; i <= 5; i++)
+                for (int i = 0; i <= 7; i++)
                 {
-                    float t = i / 5f;
-                    tributary.Add(new P(ex + (join.X - ex) * t + (float)Math.Sin(t * Math.PI) * (R() - 0.5f) * 80f, ey + (join.Y - ey) * t));
+                    float t = i / 7f;
+                    tributary.Add(new P(ex + (join.X - ex) * t + (float)Math.Sin(t * Math.PI) * bend + (float)Math.Sin(2f * t * Math.PI) * wave,
+                        ey + (join.Y - ey) * t));
                 }
                 tributary[tributary.Count - 1] = join;
                 rivers.Add(tributary);

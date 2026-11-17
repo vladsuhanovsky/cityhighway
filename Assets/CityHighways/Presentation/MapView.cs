@@ -103,7 +103,7 @@ namespace CityHighways.Presentation
         /// </summary>
         public Func<string, bool> RoadHidden;
 
-        bool RoadVisible(Road road) => _game.IsRoadOpen(road.Id) && (RoadHidden == null || !RoadHidden(road.Id));
+        bool RoadVisible(Road road) => _game.IsRoadOpen(road.Id) && (RoadHidden == null || !RoadHidden(road.Id)) && !IsFreeHidden(road);
 
         /// <summary>Клик по станции (только если на событие кто-то подписан — иначе клик идёт дороге под ней).</summary>
         public event Action<Location, Vector2> LocationClicked;
@@ -111,6 +111,83 @@ namespace CityHighways.Presentation
         public Action<Painter2D> Overlay;
         /// <summary>Цвет городских (общих) дорог магната — владелец за пределами списка игроков.</summary>
         public static readonly Color PublicRoadColor = new Color(0.70f, 0.72f, 0.76f);
+
+        // ---------------------------------------------------------------- Режим магната: спокойная карта
+
+        /// <summary>
+        /// Спокойные дороги (магнат): одно покрытие для всех дорог (асфальт, у мостов — настил), без разметки
+        /// по ресурсам, доступные для покупки — тонкий светлый контур без пульсирующего золотого ореола.
+        /// </summary>
+        public bool CalmRoads;
+        /// <summary>Прозрачность свободных (никому не принадлежащих) дорог: 1 — как обычно, 0 — не рисуются.</summary>
+        public float FreeRoadAlpha = 1f;
+        /// <summary>
+        /// Фокус под курсором (пиксели экрана; 0 — выключен): дороги и места дальше радиуса плавно тускнеют
+        /// до FocusMinAlpha, рядом с курсором — яркие. Пути (PathRoads) и места из FocusExempt не тускнеют.
+        /// </summary>
+        public float FocusRadius;
+        public const float FocusMinAlpha = 0.28f;
+        /// <summary>Места, которые всегда яркие (хабы магната).</summary>
+        public Func<string, bool> FocusExempt;
+        /// <summary>Размер фишек мест (1 — как в классике); зона клика растёт вместе с ним и ещё на 10 px.</summary>
+        public float LocationScale = 1f;
+        /// <summary>Порты (район «port») — с якорем внутри, как аэропорты и вокзалы со своими значками.</summary>
+        public bool HubIcons;
+
+        Vector2 _pointer;
+        bool _pointerInside;
+        float _focusLevel;   // 0..1 — фокус проявляется и гаснет плавно
+        float _fade = 1f;    // множитель прозрачности текущей рисуемой дороги или места
+        bool _showLocationLabels = true, _showDistrictLabels = true;
+        readonly Dictionary<string, float> _labelFade = new Dictionary<string, float>();
+
+        /// <summary>Слои подписей: названия мест и районов.</summary>
+        public void SetLabelLayers(bool locations, bool districts)
+        {
+            _showLocationLabels = locations;
+            _showDistrictLabels = districts;
+            if (_game == null) return;
+            foreach (var pair in _locationLabels) Ui.Show(pair.Value, locations && _game.IsLocationOpen(pair.Key));
+            foreach (var pair in _districtLabels) Ui.Show(pair.Value, districts && _game.IsDistrictOpen(pair.Key));
+        }
+
+        Color Fade(Color c) => _fade >= 0.999f ? c : new Color(c.r, c.g, c.b, c.a * _fade);
+
+        static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)
+        {
+            var ab = b - a;
+            float t = ab.sqrMagnitude < 1e-6f ? 0f : Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
+            return Vector2.Distance(p, a + ab * t);
+        }
+
+        float FocusFade(float distance)
+        {
+            if (_focusLevel <= 0.001f || FocusRadius <= 0f) return 1f;
+            float k = Mathf.Clamp01((distance - FocusRadius) / FocusRadius);
+            k = k * k * (3f - 2f * k);
+            return 1f - _focusLevel * k * (1f - FocusMinAlpha);
+        }
+
+        bool IsFreeHidden(Road road) =>
+            FreeRoadAlpha <= 0.01f && !_game.GetRoadOwner(road.Id).HasValue && !PathRoads.ContainsKey(road.Id);
+
+        /// <summary>Прозрачность дороги: свободная — FreeRoadAlpha, дальше от курсора — тусклее; путь и выбранная — ярко.</summary>
+        float RoadFade(Road road)
+        {
+            if (PathRoads.ContainsKey(road.Id) || IsSelected(road)) return 1f;
+            float alpha = _game.GetRoadOwner(road.Id).HasValue ? 1f : FreeRoadAlpha;
+            if (_focusLevel > 0.001f)
+                alpha *= FocusFade(DistanceToSegment(_pointer, _layout.LocationPosition(road.A), _layout.LocationPosition(road.B)));
+            return alpha;
+        }
+
+        float LocationFade(Location location)
+        {
+            if (_focusLevel <= 0.001f || (FocusExempt != null && FocusExempt(location.Id))) return 1f;
+            return FocusFade(Vector2.Distance(_pointer, _layout.LocationPosition(location.Id)));
+        }
+
+        static readonly Color CalmRoadColor = new Color(0.80f, 0.82f, 0.86f);
 
         Color OwnerColor(int owner) =>
             _game != null && owner >= _game.Players.Count ? PublicRoadColor : Palette.PlayerColor(owner);
@@ -193,6 +270,8 @@ namespace CityHighways.Presentation
             RegisterCallback<PointerMoveEvent>(e =>
             {
                 Vector2 position = e.localPosition;
+                _pointer = position;
+                _pointerInside = true;
                 if (_panning && e.pointerId == _panPointer)
                 {
                     // Перетаскивание карты: сдвиг идёт за курсором без задержки.
@@ -208,6 +287,7 @@ namespace CityHighways.Presentation
             });
             RegisterCallback<PointerLeaveEvent>(_ =>
             {
+                _pointerInside = false;
                 SetHover(null, Vector2.zero);
                 SetHoverLocation(null, Vector2.zero);
             });
@@ -313,7 +393,7 @@ namespace CityHighways.Presentation
         {
             if (_layout == null) return null;
             Location best = null;
-            float bestDistance = BoardLayout.LocationRadius + 6f;
+            float bestDistance = BoardLayout.LocationRadius * LocationScale + (LocationScale > 1.01f ? 10f : 6f);
             foreach (var location in _game.Map.Locations)
             {
                 if (!_game.IsLocationOpen(location.Id)) continue;
@@ -377,6 +457,9 @@ namespace CityHighways.Presentation
                 var label = Ui.Text(district.Name.ToUpperInvariant(), 14f, DistrictLabelColor, true);
                 label.style.letterSpacing = 3f;
                 label.style.whiteSpace = WhiteSpace.NoWrap;
+                // Обводка: подпись района читается и поверх дорог, и поверх светлых крыш.
+                label.style.unityTextOutlineWidth = 0.9f;
+                label.style.unityTextOutlineColor = new Color(0f, 0f, 0f, 0.75f);
                 SmoothChanges(label);
                 var holder = Holder(240f);
                 holder.Add(label);
@@ -388,6 +471,8 @@ namespace CityHighways.Presentation
             {
                 var label = Ui.Text(location.Name, 12f, Ink, true);
                 label.style.whiteSpace = WhiteSpace.NoWrap;
+                label.style.unityTextOutlineWidth = 0.4f;
+                label.style.unityTextOutlineColor = new Color(0f, 0f, 0f, 0.8f);
                 label.style.backgroundColor = LabelBack;
                 Ui.Radius(label, 4f);
                 Ui.Padding(label, 1f, 5f);
@@ -417,15 +502,15 @@ namespace CityHighways.Presentation
         Road OpenRoadAt(Vector2 position)
         {
             var road = _layout.RoadAt(position);
-            return road != null && _game.IsRoadOpen(road.Id) ? road : null;
+            return road != null && _game.IsRoadOpen(road.Id) && !IsFreeHidden(road) ? road : null;
         }
 
         /// <summary>Спрятать подписи ещё не открытых районов (вызывается при каждом обновлении экрана).</summary>
         public void RefreshVisibility()
         {
             if (_game == null) return;
-            foreach (var pair in _locationLabels) Ui.Show(pair.Value, _game.IsLocationOpen(pair.Key));
-            foreach (var pair in _districtLabels) Ui.Show(pair.Value, _game.IsDistrictOpen(pair.Key));
+            foreach (var pair in _locationLabels) Ui.Show(pair.Value, _showLocationLabels && _game.IsLocationOpen(pair.Key));
+            foreach (var pair in _districtLabels) Ui.Show(pair.Value, _showDistrictLabels && _game.IsDistrictOpen(pair.Key));
             // Открылся новый район — фон (зоны, парки) тоже меняется.
             int open = _game.Map.Locations.Count(l => _game.IsLocationOpen(l.Id));
             if (open != _openLocations)
@@ -463,6 +548,19 @@ namespace CityHighways.Presentation
 
         Color HighlightColor(string districtId) =>
             districtId == HighlightFrom ? FromColor : districtId == HighlightThird ? ThirdColor : ToColor;
+
+        /// <summary>Подписи мест тускнеют вместе с фишками (меняем стиль, только если прозрачность заметно сдвинулась).</summary>
+        void UpdateLabelFocus()
+        {
+            foreach (var location in _game.Map.Locations)
+            {
+                if (!_locationLabels.TryGetValue(location.Id, out var holder)) continue;
+                float fade = LocationFade(location);
+                if (_labelFade.TryGetValue(location.Id, out var shown) && Mathf.Abs(shown - fade) < 0.03f) continue;
+                _labelFade[location.Id] = fade;
+                holder.style.opacity = fade;
+            }
+        }
 
         void UpdateLabelDimming()
         {
@@ -506,6 +604,12 @@ namespace CityHighways.Presentation
         void Animate(float dt)
         {
             UpdateAtmosphere(dt);
+            _focusLevel = Mathf.MoveTowards(_focusLevel, FocusRadius > 0f && _pointerInside && !_panning ? 1f : 0f, dt / 0.25f);
+            if (FocusRadius > 0f || _labelFade.Count > 0)
+            {
+                UpdateLabelFocus();
+                if (FocusRadius <= 0f && _focusLevel <= 0.001f) _labelFade.Clear();
+            }
 
             // Наклон поля появляется плавно в начале партии (и уходит, если его выключили).
             float tiltTarget = TiltEnabled ? 1f : 0f;
@@ -643,7 +747,7 @@ namespace CityHighways.Presentation
             {
                 var p = _layout.LocationPosition(pair.Key);
                 pair.Value.style.left = p.x - 100f;
-                pair.Value.style.top = p.y + BoardLayout.LocationRadius + 4f;
+                pair.Value.style.top = p.y + BoardLayout.LocationRadius * LocationScale + 4f;
             }
 
             foreach (var pair in _districtLabels)
@@ -1290,6 +1394,7 @@ namespace CityHighways.Presentation
 
         void DrawRoadUnder(Painter2D p, Road road)
         {
+            _fade = RoadFade(road);
             s_roadWidthScale = RoadWidthScale(road);
             int? owner = _game.GetRoadOwner(road.Id);
             var segments = _layout.GetSegments(road);
@@ -1304,7 +1409,7 @@ namespace CityHighways.Presentation
                 float lift = RoadLift(road, look, owner) * 20f * _layout.ScaleAt(segments.Count > 0 ? segments[0].Center : Vector2.zero);
                 var shadow = _shadowDir * lift * 0.55f + new Vector2(0f, lift * 0.35f * tilt);
                 float alpha = Mathf.Lerp(0.16f, 0.34f, _daylight) * (built > 0 ? 1f : 0.55f);
-                p.fillColor = new Color(0.02f, 0.03f, 0.06f, alpha);
+                p.fillColor = Fade(new Color(0.02f, 0.03f, 0.06f, alpha));
                 foreach (var segment in segments)
                 {
                     SegmentPath(p, segment, 1.2f, shadow);
@@ -1313,7 +1418,7 @@ namespace CityHighways.Presentation
                 // Торец: чем выше дорога, тем толще видна её боковина.
                 if (built > 0)
                 {
-                    p.fillColor = new Color(0.05f, 0.05f, 0.07f, 0.9f);
+                    p.fillColor = Fade(new Color(0.05f, 0.05f, 0.07f, 0.9f));
                     for (int i = 0; i < built; i++)
                     {
                         SegmentPath(p, segments[i], 0.6f, new Vector2(0f, (1.2f + lift * 0.45f) * tilt));
@@ -1324,7 +1429,7 @@ namespace CityHighways.Presentation
             // 2.5D: у уложенного участка есть толщина — тёмный торец чуть ниже покрытия.
             else if (built > 0 && tilt > 0.01f)
             {
-                p.fillColor = new Color(0.04f, 0.04f, 0.05f, 0.85f);
+                p.fillColor = Fade(new Color(0.04f, 0.04f, 0.05f, 0.85f));
                 for (int i = 0; i < built; i++)
                 {
                     SegmentPath(p, segments[i], 0.6f, new Vector2(0f, 2.4f * tilt));
@@ -1333,10 +1438,10 @@ namespace CityHighways.Presentation
             }
 
             // Активная дорога: двойное свечение — широкий мягкий ореол и яркая сердцевина, пульсируют.
-            if (look == RoadLook.Active && !PathRoads.ContainsKey(road.Id))
+            if (look == RoadLook.Active && !PathRoads.ContainsKey(road.Id) && !CalmRoads)
             {
                 float pulse = 0.5f + 0.5f * Mathf.Sin(PulseTime * 3.2f);
-                p.strokeColor = new Color(Glow.r, Glow.g, Glow.b, 0.10f + 0.10f * pulse);
+                p.strokeColor = Fade(new Color(Glow.r, Glow.g, Glow.b, 0.10f + 0.10f * pulse));
                 p.lineWidth = 16f;
                 foreach (var segment in segments)
                 {
@@ -1359,6 +1464,11 @@ namespace CityHighways.Presentation
                 glow = new Color(1f, 1f, 1f, 0.30f * _hoverFade);
                 glowWidth = 12f;
             }
+            else if (look == RoadLook.Active && CalmRoads)
+            {
+                glow = new Color(1f, 1f, 1f, 0.10f);
+                glowWidth = 5f;
+            }
             else if (look == RoadLook.Active)
             {
                 glow = new Color(Glow.r, Glow.g, Glow.b, 0.50f + 0.25f * Mathf.Sin(PulseTime * 3.2f));
@@ -1372,7 +1482,7 @@ namespace CityHighways.Presentation
             }
             if (glow.HasValue)
             {
-                p.strokeColor = glow.Value;
+                p.strokeColor = Fade(glow.Value);
                 p.lineWidth = glowWidth;
                 foreach (var segment in segments)
                 {
@@ -1396,14 +1506,14 @@ namespace CityHighways.Presentation
                     if (alpha > 0.01f)
                     {
                         int count = Mathf.Clamp(Mathf.CeilToInt(lit * segments.Count), 0, segments.Count);
-                        p.strokeColor = new Color(RouteColor.r, RouteColor.g, RouteColor.b, 0.85f * alpha);
+                        p.strokeColor = Fade(new Color(RouteColor.r, RouteColor.g, RouteColor.b, 0.85f * alpha));
                         p.lineWidth = 12f;
                         for (int i = 0; i < count; i++)
                         {
                             SegmentPath(p, segments[i], 1.5f, Vector2.zero);
                             p.Stroke();
                         }
-                        p.strokeColor = new Color(1f, 1f, 1f, 0.9f * alpha);
+                        p.strokeColor = Fade(new Color(1f, 1f, 1f, 0.9f * alpha));
                         p.lineWidth = 3.5f;
                         for (int i = 0; i < count; i++)
                         {
@@ -1418,7 +1528,7 @@ namespace CityHighways.Presentation
             if (owner.HasValue)
             {
                 var c = OwnerColor(owner.Value);
-                p.strokeColor = new Color(c.r, c.g, c.b, 0.30f + 0.22f * _night);
+                p.strokeColor = Fade(CalmRoads ? new Color(c.r, c.g, c.b, 0.16f + 0.14f * _night) : new Color(c.r, c.g, c.b, 0.30f + 0.22f * _night));
                 p.lineWidth = 7f;
                 for (int i = 0; i < built; i++)
                 {
@@ -1426,6 +1536,7 @@ namespace CityHighways.Presentation
                     p.Stroke();
                 }
             }
+            _fade = 1f;
         }
 
         // ---------------------------------------------------------------- Проход 2: текстуры покрытий
@@ -1437,18 +1548,23 @@ namespace CityHighways.Presentation
             foreach (var road in _game.Map.Roads)
             {
                 if (!RoadVisible(road)) continue;
-                var texture = RoadTextures.For(road);
+                var texture = CalmRoads ? (road.IsBridge ? RoadTextures.SteelDeck : RoadTextures.Asphalt) : RoadTextures.For(road);
                 s_roadWidthScale = RoadWidthScale(road);
                 var segments = _layout.GetSegments(road);
                 int built = BuiltSegments(road, segments.Count);
                 var look = LookOf(road, _game.GetRoadOwner(road.Id));
                 // Свободный участок — проступающее «будущее» покрытие: у активной дороги ярче,
                 // у заблокированной — бледное и серое.
-                var free = look == RoadLook.Active ? new Color(1f, 1f, 1f, 0.85f)
+                var free = CalmRoads
+                    ? new Color(0.82f, 0.84f, 0.88f, look == RoadLook.Active ? 0.5f : look == RoadLook.Blocked ? 0.22f : 0.38f)
+                    : look == RoadLook.Active ? new Color(1f, 1f, 1f, 0.85f)
                     : look == RoadLook.Blocked ? new Color(0.70f, 0.70f, 0.74f, 0.25f)
                     : new Color(1f, 1f, 1f, 0.55f);
+                float fade = RoadFade(road);
+                var builtTint = new Color(1f, 1f, 1f, fade);
+                free.a *= fade;
                 for (int i = 0; i < segments.Count; i++)
-                    AddSegmentTexture(texture, segments[i], i < built ? Color.white : free);
+                    AddSegmentTexture(texture, segments[i], i < built ? builtTint : free);
             }
             _quads.Flush(context);
         }
@@ -1472,11 +1588,12 @@ namespace CityHighways.Presentation
 
         void DrawRoadOver(Painter2D p, Road road)
         {
+            _fade = RoadFade(road);
             s_roadWidthScale = RoadWidthScale(road);
             int? owner = _game.GetRoadOwner(road.Id);
             var segments = _layout.GetSegments(road);
             int built = BuiltSegments(road, segments.Count);
-            var baseColor = NightRoadColor(road);
+            var baseColor = CalmRoads ? CalmRoadColor : NightRoadColor(road);
             var ownerColor = owner.HasValue ? OwnerColor(owner.Value) : baseColor;
             bool isBridge = road.IsBridge;
             // В 3D мост той же ширины, что дорога: рамки и перила не выходят за полотно.
@@ -1497,35 +1614,42 @@ namespace CityHighways.Presentation
                 if (isBuilt)
                 {
                     // Бордюры цвета компании по обеим сторонам — так видно, чья дорога.
-                    p.strokeColor = ownerColor;
+                    p.strokeColor = Fade(ownerColor);
                     p.lineWidth = 2.4f;
                     Line(p, a + normal * half, b + normal * half);
                     Line(p, a - normal * half, b - normal * half);
                     // Магистраль: двойная разделительная полоса и бегущий пунктир по обеим полосам движения.
                     if (_game.IsRushHourRoad(road.Id)) DrawHighwayMarks(p, a, b, dir, normal, half, i);
+                    // Спокойные дороги: одна неяркая белая разметка у всех.
+                    else if (CalmRoads) DrawLaneMark(p, segment, Fade(new Color(1f, 1f, 1f, 0.42f)));
                     // Разметка: асфальт — белый пунктир, бетон — жёлтая осевая.
-                    else if (road.Resource == Resource.Asphalt) DrawLaneMark(p, segment, new Color(1f, 1f, 1f, 0.85f));
-                    else if (road.Resource == Resource.Concrete) DrawLaneMark(p, segment, new Color(1f, 0.82f, 0.25f, 0.85f));
+                    else if (road.Resource == Resource.Asphalt) DrawLaneMark(p, segment, Fade(new Color(1f, 1f, 1f, 0.85f)));
+                    else if (road.Resource == Resource.Concrete) DrawLaneMark(p, segment, Fade(new Color(1f, 0.82f, 0.25f, 0.85f)));
                 }
                 else
                 {
                     // Свободный участок — неоновая обводка цвета ресурса: у активной — яркая и толще,
                     // у заблокированной — серая и тонкая.
-                    if (look == RoadLook.Active)
+                    if (CalmRoads)
+                    {
+                        p.strokeColor = Fade(new Color(baseColor.r, baseColor.g, baseColor.b, look == RoadLook.Active ? 0.55f : look == RoadLook.Blocked ? 0.18f : 0.35f));
+                        p.lineWidth = look == RoadLook.Active ? 1.5f : 1.1f;
+                    }
+                    else if (look == RoadLook.Active)
                     {
                         var bright = Color.Lerp(baseColor, Color.white, 0.35f);
-                        p.strokeColor = new Color(bright.r, bright.g, bright.b, 1f);
+                        p.strokeColor = Fade(new Color(bright.r, bright.g, bright.b, 1f));
                         p.lineWidth = 2.2f;
                     }
                     else if (look == RoadLook.Blocked)
                     {
                         var muted = Color.Lerp(baseColor, new Color(0.5f, 0.5f, 0.52f), 0.6f);
-                        p.strokeColor = new Color(muted.r, muted.g, muted.b, 0.35f);
+                        p.strokeColor = Fade(new Color(muted.r, muted.g, muted.b, 0.35f));
                         p.lineWidth = 1.2f;
                     }
                     else
                     {
-                        p.strokeColor = new Color(baseColor.r, baseColor.g, baseColor.b, 0.85f);
+                        p.strokeColor = Fade(new Color(baseColor.r, baseColor.g, baseColor.b, 0.85f));
                         p.lineWidth = 1.6f;
                     }
                     SegmentPath(p, segment, 0f, Vector2.zero);
@@ -1537,7 +1661,7 @@ namespace CityHighways.Presentation
                 {
                     float railOffset = _use3D ? half - 1.2f : half + 2.5f;
                     var rail = new Color(0.66f, 0.82f, 1f, isBuilt ? 0.95f : look == RoadLook.Blocked ? 0.3f : 0.6f);
-                    p.strokeColor = rail;
+                    p.strokeColor = Fade(rail);
                     p.lineWidth = 1.8f;
                     Line(p, a + normal * railOffset, b + normal * railOffset);
                     Line(p, a - normal * railOffset, b - normal * railOffset);
@@ -1545,7 +1669,7 @@ namespace CityHighways.Presentation
                     for (int k = 0; k <= posts; k++)
                     {
                         var point = Vector2.Lerp(a, b, k / (float)posts);
-                        p.fillColor = rail;
+                        p.fillColor = Fade(rail);
                         CirclePath(p, point + normal * railOffset, 1.2f);
                         p.Fill();
                         CirclePath(p, point - normal * railOffset, 1.2f);
@@ -1556,7 +1680,7 @@ namespace CityHighways.Presentation
                 // Магистраль: оранжевая рамка вокруг каждого участка.
                 if (isBuilt && _game.IsRushHourRoad(road.Id))
                 {
-                    p.strokeColor = new Color(1f, 0.60f, 0.20f, 0.95f);
+                    p.strokeColor = Fade(new Color(1f, 0.60f, 0.20f, 0.95f));
                     p.lineWidth = 2.2f;
                     SegmentPath(p, segment, wideBridge ? 5f : 3.5f, Vector2.zero);
                     p.Stroke();
@@ -1566,7 +1690,7 @@ namespace CityHighways.Presentation
                 if (!owner.HasValue && road.Id == HintRoad)
                 {
                     float pulse = 0.5f + 0.45f * Mathf.Sin(PulseTime * 4f);
-                    p.strokeColor = new Color(0.35f, 0.85f, 1f, pulse);
+                    p.strokeColor = Fade(new Color(0.35f, 0.85f, 1f, pulse));
                     p.lineWidth = 3.4f;
                     SegmentPath(p, segment, wideBridge ? 7f : 5.5f, Vector2.zero);
                     p.Stroke();
@@ -1576,7 +1700,7 @@ namespace CityHighways.Presentation
                 if (!owner.HasValue && road.Id == _game.FinalOrderRoadId)
                 {
                     float glow = 0.55f + 0.4f * Mathf.Sin(PulseTime * 2.4f);
-                    p.strokeColor = new Color(1f, 0.80f, 0.25f, glow);
+                    p.strokeColor = Fade(new Color(1f, 0.80f, 0.25f, glow));
                     p.lineWidth = 3f;
                     SegmentPath(p, segment, wideBridge ? 6f : 4.5f, Vector2.zero);
                     p.Stroke();
@@ -1586,7 +1710,7 @@ namespace CityHighways.Presentation
                 if (isBuilt && _game.IsJammed(road.Id))
                 {
                     float jam = 0.55f + 0.35f * Mathf.Sin(PulseTime * 3f);
-                    p.strokeColor = new Color(0.95f, 0.22f, 0.18f, jam);
+                    p.strokeColor = Fade(new Color(0.95f, 0.22f, 0.18f, jam));
                     p.lineWidth = 2.4f;
                     SegmentPath(p, segment, wideBridge ? 5f : 3.5f, Vector2.zero);
                     p.Stroke();
@@ -1597,7 +1721,7 @@ namespace CityHighways.Presentation
                 // Год ремонта: участки, которые закроют в следующем круге, — тонкая оранжевая рамка.
                 else if (!owner.HasValue && _game.IsNextRepair(road.Id))
                 {
-                    p.strokeColor = new Color(1f, 0.55f, 0.15f, 0.75f);
+                    p.strokeColor = Fade(new Color(1f, 0.55f, 0.15f, 0.75f));
                     p.lineWidth = 1.6f;
                     SegmentPath(p, segment, wideBridge ? 5f : 3.5f, Vector2.zero);
                     p.Stroke();
@@ -1607,16 +1731,17 @@ namespace CityHighways.Presentation
                 // и тонкая золотая обводка снаружи — проявляются за доли секунды.
                 if (selected)
                 {
-                    p.strokeColor = new Color(1f, 1f, 1f, 0.95f * _hoverFade);
+                    p.strokeColor = Fade(new Color(1f, 1f, 1f, 0.95f * _hoverFade));
                     p.lineWidth = 2.2f;
                     SegmentPath(p, segment, wideBridge ? 6f : 4f, Vector2.zero);
                     p.Stroke();
-                    p.strokeColor = new Color(Glow.r, Glow.g, Glow.b, 0.6f * _hoverFade);
+                    p.strokeColor = Fade(new Color(Glow.r, Glow.g, Glow.b, 0.6f * _hoverFade));
                     p.lineWidth = 1.4f;
                     SegmentPath(p, segment, wideBridge ? 8.5f : 6.5f, Vector2.zero);
                     p.Stroke();
                 }
             }
+            _fade = 1f;
         }
 
         /// <summary>Плоская заливка — для пути контракта поверх затемнения (текстуры остаются под ним).</summary>
@@ -1762,7 +1887,7 @@ namespace CityHighways.Presentation
         /// </summary>
         void DrawHighwayMarks(Painter2D p, Vector2 a, Vector2 b, Vector2 dir, Vector2 normal, float half, int index)
         {
-            p.strokeColor = new Color(1f, 0.78f, 0.22f, 0.95f);
+            p.strokeColor = Fade(new Color(1f, 0.78f, 0.22f, 0.95f));
             p.lineWidth = 1f;
             Line(p, a + normal * 0.9f, b + normal * 0.9f);
             Line(p, a - normal * 0.9f, b - normal * 0.9f);
@@ -1771,7 +1896,7 @@ namespace CityHighways.Presentation
             const float dash = 3.2f, gap = 3.6f;
             float period = dash + gap;
             float shift = Mathf.Repeat(PulseTime * 9f + index * 1.7f, period);
-            p.strokeColor = new Color(1f, 1f, 1f, 0.8f);
+            p.strokeColor = Fade(new Color(1f, 1f, 1f, 0.8f));
             p.lineWidth = 1.1f;
             for (int lane = -1; lane <= 1; lane += 2)
             {
@@ -1802,8 +1927,9 @@ namespace CityHighways.Presentation
         /// </summary>
         void DrawLocation(Painter2D p, Location location)
         {
+            _fade = LocationFade(location);
             var ground = _layout.LocationPosition(location.Id);
-            float r = BoardLayout.LocationRadius;
+            float r = BoardLayout.LocationRadius * LocationScale;
             int index = _districtIndex.TryGetValue(location.DistrictId, out var i) ? i : 0;
             float tilt = _layout.Tilt;
 
@@ -1825,13 +1951,13 @@ namespace CityHighways.Presentation
                 if (_daylight > 0.02f)
                 {
                     var offset = _shadowDir * (thickness + rise + 2f);
-                    p.fillColor = new Color(0f, 0f, 0f, 0.30f * _daylight * tilt);
+                    p.fillColor = Fade(new Color(0f, 0f, 0f, 0.30f * _daylight * tilt));
                     EllipsePath(p, foot + offset, ringRadius + 1f, (ringRadius + 1f) * _layout.Squash);
                     p.Fill();
                 }
                 // Торец: от верха фишки до земли, темнее кольца.
                 float halfWidth = square ? ringRadius * 0.92f : ringRadius;
-                p.fillColor = new Color(0.30f, 0.32f, 0.36f);
+                p.fillColor = Fade(new Color(0.30f, 0.32f, 0.36f));
                 ShapePath(p, shape, foot, ringRadius);
                 p.Fill();
                 RectPath(p, new Rect(c.x - halfWidth, c.y, 2f * halfWidth, foot.y - c.y));
@@ -1841,28 +1967,28 @@ namespace CityHighways.Presentation
             if (lit > 0.01f)
             {
                 float pulse = 1f + 0.2f * Mathf.Sin(PulseTime * 5f);
-                p.fillColor = new Color(litColor.r, litColor.g, litColor.b, 0.45f * lit);
+                p.fillColor = Fade(new Color(litColor.r, litColor.g, litColor.b, 0.45f * lit));
                 CirclePath(p, c, (r + 10f) * pulse * (0.6f + 0.4f * lit));
                 p.Fill();
             }
 
             var district = Color.Lerp(Palette.DistrictColor(index), litColor, lit);
             // Ореол цвета района — место «горит» на ночной карте (ночью ярче).
-            p.fillColor = new Color(district.r, district.g, district.b, 0.18f + 0.22f * _night);
+            p.fillColor = Fade(new Color(district.r, district.g, district.b, 0.18f + 0.22f * _night));
             CirclePath(p, c, r + 5f + 3f * _night);
             p.Fill();
 
             var ring = Color.Lerp(new Color(0.92f, 0.94f, 0.98f), litColor, lit);
             ShapePath(p, shape, c, ringRadius);
-            p.fillColor = ring;
+            p.fillColor = Fade(ring);
             p.Fill();
             ShapePath(p, shape, c, r);
-            p.fillColor = new Color(0.07f, 0.08f, 0.12f);
+            p.fillColor = Fade(new Color(0.07f, 0.08f, 0.12f));
             p.Fill();
 
             // Значок внутри: самолёт у аэропортов, рельсы у вокзалов, звезда у Кремля, иначе точка района.
-            p.fillColor = district;
-            p.strokeColor = district;
+            p.fillColor = Fade(district);
+            p.strokeColor = Fade(district);
             switch (shape)
             {
                 case Shape.Airport:
@@ -1882,17 +2008,28 @@ namespace CityHighways.Presentation
                     StarPath(p, c, r * 0.72f, r * 0.30f);
                     p.Fill();
                     break;
+                case Shape.Port:
+                    // Якорь: веретено, шток, дуга лап.
+                    p.lineWidth = 1.6f;
+                    Line(p, c + new Vector2(0f, -r * 0.55f), c + new Vector2(0f, r * 0.55f));
+                    Line(p, c + new Vector2(-r * 0.32f, -r * 0.28f), c + new Vector2(r * 0.32f, -r * 0.28f));
+                    p.BeginPath();
+                    p.Arc(c + new Vector2(0f, r * 0.05f), r * 0.5f, Angle.Degrees(20f), Angle.Degrees(160f));
+                    p.Stroke();
+                    break;
                 default:
                     CirclePath(p, c, r * (0.45f + 0.15f * lit));
                     p.Fill();
                     break;
             }
+            _fade = 1f;
         }
 
-        enum Shape { Circle, Airport, Station, Kremlin }
+        enum Shape { Circle, Airport, Station, Kremlin, Port }
 
-        static Shape LocationShape(Location location)
+        Shape LocationShape(Location location)
         {
+            if (HubIcons && location.DistrictId == "port") return Shape.Port;
             if (location.DistrictId == "airports") return Shape.Airport;
             if (location.DistrictId == "vokzaly") return Shape.Station;
             if (location.Id == "kremlin" || location.Name == "Кремль") return Shape.Kremlin;

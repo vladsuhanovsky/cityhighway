@@ -489,11 +489,16 @@ namespace CityHighways.Presentation
                 if (line.Count < 2) continue;
                 var raw = line.Select(p => BoardLayout.World(p.X, p.Y)).ToList();
                 bool startAtEdge = AtMapEdge(line[0].X, line[0].Y), endAtEdge = AtMapEdge(line[line.Count - 1].X, line[line.Count - 1].Y);
-                raw.Insert(0, raw[0] + (raw[0] - raw[1]).normalized * (startAtEdge ? 0.6f : half * 0.6f));
-                if (startAtEdge) raw.Insert(0, raw[0] + (raw[0] - raw[1]).normalized * 30f);
-                raw.Add(raw[raw.Count - 1] + (raw[raw.Count - 1] - raw[raw.Count - 2]).normalized * (endAtEdge ? 0.6f : half * 0.6f));
-                if (endAtEdge) raw.Add(raw[raw.Count - 1] + (raw[raw.Count - 1] - raw[raw.Count - 2]).normalized * 30f);
-                _riverLines.Add(Smooth(raw, 5));
+                // Сначала сглаживаем само русло, и только потом достраиваем прямые продолжения. Раньше 30-метровый
+                // хвост входил в сплайн: рядом с коротким отрезком у края касательная становилась огромной, и кривая
+                // уходила от края внутрь карты почти на 2 м прямым «языком» — вода ложилась на дома (их ставят
+                // по настоящему руслу), а у края получался кривой излом.
+                var smooth = Smooth(raw, 5);
+                var startDir = (smooth[0] - smooth[1]).normalized;
+                var endDir = (smooth[smooth.Count - 1] - smooth[smooth.Count - 2]).normalized;
+                smooth.Insert(0, smooth[0] + startDir * (startAtEdge ? 30f : half * 0.6f));
+                smooth.Add(smooth[smooth.Count - 1] + endDir * (endAtEdge ? 30f : half * 0.6f));
+                _riverLines.Add(smooth);
             }
 
             // Проход 2: вода и набережные. Там, где русло заходит в воду другой реки (слияние, пересечение),
