@@ -29,7 +29,8 @@ namespace CityHighways.Presentation
         readonly Label _characterHint;
         int _lastCharacterSlot = -1;
         // Строки параметров, которых нет в «Логистическом магнате» (прячутся при выборе режима).
-        VisualElement _scenarioRow, _piecesRow, _hideRow, _timerRow, _difficultyRow;
+        VisualElement _scenarioRow, _piecesRow, _hideRow, _timerRow, _difficultyRow, _mapRow;
+        const float NewGameCardsHeight = 530f;
         UnityEngine.UIElements.Button _difficultyButton;
         Label _difficultyHint;
         readonly Label _trainsValue;
@@ -691,8 +692,11 @@ namespace CityHighways.Presentation
             var page = Ui.Column();
             page.Add(PageTitle("Новая игра", () => ShowPage(Page.Home)));
 
+            // Высота карточек постоянная (по самому длинному режиму — соревнованию): при смене режима и числа
+            // игроков страница не прыгает вверх-вниз (она отцентрована по высоте экрана).
             var cards = Ui.Row();
-            cards.style.alignItems = Align.FlexStart;
+            cards.style.alignItems = Align.Stretch;
+            cards.style.height = NewGameCardsHeight;
             page.Add(cards);
 
             var playersCard = Ui.Card(20f);
@@ -720,6 +724,7 @@ namespace CityHighways.Presentation
             gameCard.Add(Ui.SectionTitle("Параметры партии"));
 
             var mapRow = SettingRow("Карта");
+            _mapRow = mapRow;
             _mapButton = Ui.Button("", NextMap, ButtonKind.Secondary, 14f);
             _mapButton.style.width = 170f;
             mapRow.Add(_mapButton);
@@ -893,6 +898,9 @@ namespace CityHighways.Presentation
 
             // В магнате нет сценариев, участков, карт на руке, персонажей и таймера хода — эти строки прячем.
             bool classic = !_setup.magnate;
+            // У магната город генерируется заново — выбирать карту не нужно.
+            Ui.Show(_mapRow, classic);
+            Ui.Show(_mapHint, classic);
             Ui.Show(_scenarioRow, classic);
             Ui.Show(_scenarioHint, classic);
             Ui.Show(_piecesRow, classic);

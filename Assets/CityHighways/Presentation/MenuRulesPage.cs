@@ -95,7 +95,8 @@ namespace CityHighways.Presentation
             // Поиск: значок лупы и поле.
             var searchBox = Ui.Row();
             searchBox.style.alignItems = Align.Center;
-            searchBox.style.width = 360f;
+            searchBox.style.width = 560f;
+            searchBox.style.minHeight = 42f;
             searchBox.style.backgroundColor = Theme.PanelLight;
             Ui.Radius(searchBox, 10f);
             Ui.Border(searchBox, 1f, Theme.Line);
@@ -111,6 +112,12 @@ namespace CityHighways.Presentation
             input.style.color = Theme.Text;
             Ui.Border(input, 0f, Color.clear);
             input.style.minHeight = 34f;
+            // Текст и подсказка «Найти правило…» — по центру поля по высоте, с отступом от лупы.
+            input.style.unityTextAlign = TextAnchor.MiddleLeft;
+            input.style.paddingTop = 0f;
+            input.style.paddingBottom = 0f;
+            input.style.paddingLeft = 8f;
+            _search.style.alignSelf = Align.Center;
             _search.RegisterValueChangedCallback(e => OnSearch(e.newValue));
             searchBox.Add(_search);
             header.Add(searchBox);
