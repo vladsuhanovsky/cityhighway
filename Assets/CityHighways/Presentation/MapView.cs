@@ -1879,7 +1879,10 @@ namespace CityHighways.Presentation
                 var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
                 var start = segments[0].Center - dir * segments[0].Length / 2f;
                 var end = segments[segments.Count - 1].Center + dir * segments[segments.Count - 1].Length / 2f;
-                float length = Mathf.Max(1f, (end - start).magnitude);
+                // Скорость — в пикселях ПОЛЯ (длина дороги по карте), а не экрана: иначе при зуме менялась бы
+                // скорость, а фаза PulseTime × скорость прыгала бы вместе с ней — машинки «разгонялись».
+                float length = MapLength(road);
+                float scale = _use3D ? Mathf.Clamp(RoadWidthScale(road), 0.6f, 2.5f) : 1f;
                 int cars = road.Length >= 4 ? 2 : 1;
                 bool busy = _game.IsRushHourRoad(road.Id);
                 bool jammed = _game.IsJammed(road.Id);
@@ -1896,21 +1899,31 @@ namespace CityHighways.Presentation
                     var heading = forward ? dir : -dir;
                     var normal = new Vector2(-heading.y, heading.x);
                     // Правостороннее движение: машинка чуть правее середины.
-                    pos += normal * 2.2f;
-                    // Фары: днём еле видны, ночью светят вперёд.
+                    pos += normal * (2.2f * scale);
+                    // Фары: днём еле видны, ночью светят вперёд. В 3D размеры — по ширине дороги на экране.
                     p.fillColor = new Color(1f, 0.95f, 0.75f, 0.22f + 0.30f * _night);
-                    CirclePath(p, pos + heading * (4f + 2f * _night), 4.5f + 2f * _night);
+                    CirclePath(p, pos + heading * ((4f + 2f * _night) * scale), (4.5f + 2f * _night) * scale);
                     p.Fill();
                     p.fillColor = new Color(1f, 0.97f, 0.85f, 0.95f);
-                    CirclePath(p, pos + heading * 1.5f + normal * 1.3f, 1.1f);
+                    CirclePath(p, pos + (heading * 1.5f + normal * 1.3f) * scale, 1.1f * scale);
                     p.Fill();
-                    CirclePath(p, pos + heading * 1.5f - normal * 1.3f, 1.1f);
+                    CirclePath(p, pos + (heading * 1.5f - normal * 1.3f) * scale, 1.1f * scale);
                     p.Fill();
                     p.fillColor = new Color(1f, 0.25f, 0.2f, 0.85f);
-                    CirclePath(p, pos - heading * 2f, 0.9f);
+                    CirclePath(p, pos - heading * (2f * scale), 0.9f * scale);
                     p.Fill();
                 }
             }
+        }
+
+        /// <summary>Длина дороги в пикселях поля 1400 × 780 — от зума и наклона не зависит.</summary>
+        float MapLength(Road road)
+        {
+            var la = _game.Map.GetLocation(road.A);
+            var lb = _game.Map.GetLocation(road.B);
+            if (la == null || lb == null) return 100f;
+            float dx = (lb.X - la.X) * CityPlanner.FieldW, dy = (lb.Y - la.Y) * CityPlanner.FieldH;
+            return Mathf.Max(10f, Mathf.Sqrt(dx * dx + dy * dy) - 2f * (BoardLayout.LocationRadius + 3f));
         }
 
         struct Spark
