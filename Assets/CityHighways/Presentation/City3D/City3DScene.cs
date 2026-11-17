@@ -151,6 +151,7 @@ namespace CityHighways.Presentation
             BuildDistricts(plan);
             BuildTrees(plan);
             SetupRoads();
+            BuildJunctions();
             BuildBridges();
             SetupReflections(quality);
         }
@@ -814,6 +815,118 @@ namespace CityHighways.Presentation
             return AddMesh("Template " + name, builder.ToMesh("City3D Road " + name), _buildings, parent.transform, true);
         }
 
+        /// <summary>Верх перекрёстка — чуть выше дороги (0,006), чтобы стык не мерцал.</summary>
+        const float JunctionTop = 0.0062f;
+        /// <summary>Радиус скругления бордюра между соседними дорогами на перекрёстке.</summary>
+        const float JunctionFillet = 0.06f;
+
+        /// <summary>
+        /// Каждая станция — перекрёсток: асфальтовый пятачок, рукава по всем дорогам станции длиной
+        /// BoardLayout.JunctionArm, скругления бордюра между соседними рукавами и «зебра» на краю каждого рукава.
+        /// Дороги (3D и интерфейса) начинаются у края рукава и вливаются в перекрёсток без щелей и острых углов.
+        /// Перекрёстки районов-расширений прячутся вместе с районом.
+        /// </summary>
+        void BuildJunctions()
+        {
+            var asphalt = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Asphalt);
+            var paint = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
+            var builders = new Dictionary<string, MeshBuilder>();
+            var neighbours = new List<Vector2>();
+            var dirs = new List<Vector2>();
+            var corners = new List<JunctionGeometry.Corner>();
+            float half = RoadWidth / 2f, arm = BoardLayout.JunctionArm;
+            Vector3 W(Vector2 p, float y) => new Vector3(p.x, y, p.y);
+
+            foreach (var location in _map.Locations)
+            {
+                var c3 = BoardLayout.World(location.X, location.Y);
+                var center = new Vector2(c3.x, c3.z);
+                neighbours.Clear();
+                foreach (var road in _map.Roads)
+                {
+                    string other = road.A == location.Id ? road.B : road.B == location.Id ? road.A : null;
+                    var target = other == null ? null : _map.GetLocation(other);
+                    if (target == null) continue;
+                    var w = BoardLayout.World(target.X, target.Y);
+                    neighbours.Add(new Vector2(w.x, w.z));
+                }
+                JunctionGeometry.Directions(center, neighbours, dirs);
+                if (dirs.Count == 0) continue;
+
+                string key = _map.GetDistrict(location.DistrictId)?.IsExpansion == true ? location.DistrictId : "_";
+                if (!builders.TryGetValue(key, out var b)) builders[key] = b = new MeshBuilder();
+
+                // Пятачок в центре — круг по ширине дороги: заполняет промежутки между рукавами.
+                const int sides = 18;
+                for (int s = 0; s < sides; s++)
+                {
+                    float a0 = Mathf.PI * 2f * s / sides, a1 = Mathf.PI * 2f * (s + 1) / sides;
+                    TriUp(b, W(center, JunctionTop), W(center + new Vector2(Mathf.Cos(a0), Mathf.Sin(a0)) * half, JunctionTop),
+                        W(center + new Vector2(Mathf.Cos(a1), Mathf.Sin(a1)) * half, JunctionTop), asphalt);
+                }
+                // Рукава и «зебра» на краю каждого рукава (полосы вдоль дороги, поперёк — пять штук).
+                foreach (var d in dirs)
+                {
+                    var n = new Vector2(-d.y, d.x);
+                    QuadUp(b, W(center - n * half, JunctionTop), W(center + n * half, JunctionTop),
+                        W(center + n * half + d * arm, JunctionTop), W(center - n * half + d * arm, JunctionTop), asphalt);
+                    const int stripes = 5;
+                    float stripe = RoadWidth / (stripes * 2f - 1f);
+                    float near = arm - 0.036f, far = arm - 0.014f, y = JunctionTop + 0.0004f;
+                    for (int k = 0; k < stripes; k++)
+                    {
+                        float x0 = -half + stripe * 2f * k, x1 = x0 + stripe;
+                        QuadUp(b, W(center + n * x0 + d * near, y), W(center + n * x1 + d * near, y),
+                            W(center + n * x1 + d * far, y), W(center + n * x0 + d * far, y), paint);
+                    }
+                }
+                // Скругления бордюра между соседними рукавами.
+                JunctionGeometry.Corners(center, dirs, half, arm, JunctionFillet, corners);
+                foreach (var corner in corners)
+                {
+                    const int steps = 8;
+                    var previous = corner.T1;
+                    for (int j = 1; j <= steps; j++)
+                    {
+                        var next = JunctionGeometry.Curve(corner, j / (float)steps);
+                        TriUp(b, W(corner.X, JunctionTop), W(previous, JunctionTop), W(next, JunctionTop), asphalt);
+                        previous = next;
+                    }
+                }
+            }
+            foreach (var pair in builders)
+            {
+                if (pair.Value.VertexCount == 0) continue;
+                var go = AddMesh("Junctions " + pair.Key, pair.Value.ToMesh("City3D Junctions " + pair.Key), _buildings, _root.transform, false);
+                if (pair.Key != "_") _districts[pair.Key + "#junctions"] = go;
+            }
+        }
+
+        /// <summary>Треугольник лицом вверх (порядок вершин подбирается сам).</summary>
+        static void TriUp(MeshBuilder b, Vector3 p0, Vector3 p1, Vector3 p2, Rect uv)
+        {
+            if (Vector3.Cross(p1 - p0, p2 - p0).y < 0f) b.Tri(p0, p2, p1, uv);
+            else b.Tri(p0, p1, p2, uv);
+        }
+
+        static void QuadUp(MeshBuilder b, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Rect uv)
+        {
+            TriUp(b, p0, p1, p2, uv);
+            TriUp(b, p0, p2, p3, uv);
+        }
+
+        /// <summary>Дорога начинается у края рукава перекрёстка (с небольшим нахлёстом), а не в центре станции.</summary>
+        static void TrimForJunctions(ref Vector3 start, ref Vector3 end)
+        {
+            var flat = end - start;
+            flat.y = 0f;
+            float length = flat.magnitude, trim = BoardLayout.JunctionArm * 0.95f;
+            if (length < trim * 2.5f) return;
+            var along = flat / length;
+            start += along * trim;
+            end -= along * trim;
+        }
+
         /// <summary>Мосты карты стоят всегда (как и раньше); мосты к районам-расширениям прячутся вместе с ними.</summary>
         void BuildBridges()
         {
@@ -824,6 +937,7 @@ namespace CityHighways.Presentation
                 if (la == null || lb == null) continue;
                 var start = BoardLayout.World(la.X, la.Y);
                 var end = BoardLayout.World(lb.X, lb.Y);
+                TrimForJunctions(ref start, ref end);
                 var built = _roads.BuildRoad(start, end, false);
                 if (built == null) continue;
                 if (!built.HasBridge)
@@ -895,6 +1009,7 @@ namespace CityHighways.Presentation
                     if (la == null || lb == null) continue;
                     var start = BoardLayout.World(la.X, la.Y);
                     var end = BoardLayout.World(lb.X, lb.Y);
+                    TrimForJunctions(ref start, ref end);
                     if (animated && _construction != null)
                     {
                         // Стройка: дорога проявляется по фронту, вокруг — рабочие, экскаватор и каток.

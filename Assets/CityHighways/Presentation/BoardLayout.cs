@@ -357,8 +357,33 @@ namespace CityHighways.Presentation
         public Vector2 LocationPosition(string locationId) =>
             _positions.TryGetValue(locationId, out var p) ? p : Vector2.zero;
 
+        /// <summary>
+        /// Длина «рукава» перекрёстка станции в 3D (метры сцены): 3D-перекрёсток со скруглениями занимает её,
+        /// а дорога интерфейса начинается у края рукава — станция видна как перекрёсток.
+        /// </summary>
+        public const float JunctionArm = 0.15f;
+
         public void GetTrack(Road road, out Vector2 start, out Vector2 end)
         {
+            if (Perspective)
+            {
+                var la = _map.GetLocation(road.A);
+                var lb = _map.GetLocation(road.B);
+                if (la != null && lb != null)
+                {
+                    var wa = World(la.X, la.Y);
+                    var wb = World(lb.X, lb.Y);
+                    var along = wb - wa;
+                    float length = along.magnitude;
+                    if (length > JunctionArm * 2.5f)
+                    {
+                        along /= length;
+                        start = WorldToScreen(wa + along * JunctionArm);
+                        end = WorldToScreen(wb - along * JunctionArm);
+                        return;
+                    }
+                }
+            }
             var a = LocationPosition(road.A);
             var b = LocationPosition(road.B);
             var direction = (b - a).normalized;

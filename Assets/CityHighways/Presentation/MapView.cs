@@ -1162,6 +1162,7 @@ namespace CityHighways.Presentation
             var p = context.painter2D;
             p.lineJoin = LineJoin.Round;
             p.lineCap = LineCap.Round;
+            if (!_use3D) DrawJunctions(p);   // в 3D перекрёстки строит сама сцена
             foreach (var road in _game.Map.Roads)
                 if (RoadVisible(road)) DrawRoadUnder(p, road);
         }
@@ -1180,6 +1181,61 @@ namespace CityHighways.Presentation
         /// без 3D — 1 (прежние 11 px).
         /// </summary>
         static float s_roadWidthScale = 1f;
+
+        readonly List<Vector2> _junctionNeighbours = new List<Vector2>();
+        readonly List<Vector2> _junctionDirs = new List<Vector2>();
+        readonly List<JunctionGeometry.Corner> _junctionCorners = new List<JunctionGeometry.Corner>();
+        static readonly Color JunctionColor = new Color(0.19f, 0.20f, 0.22f, 0.92f);
+
+        /// <summary>
+        /// Плоская карта: каждая станция — перекрёсток. Под фишкой станции — асфальтовый пятачок, рукава по
+        /// открытым дорогам до начала дороги (с нахлёстом) и скругления бордюра между соседними рукавами.
+        /// </summary>
+        void DrawJunctions(Painter2D p)
+        {
+            float half = BoardLayout.RoadThickness / 2f;
+            float arm = BoardLayout.LocationRadius + 5f;     // дорога начинается в LocationRadius + 3
+            const float fillet = 7f;
+            p.fillColor = JunctionColor;
+            foreach (var location in _game.Map.Locations)
+            {
+                if (!_game.IsLocationOpen(location.Id)) continue;
+                var center = _layout.LocationPosition(location.Id);
+                _junctionNeighbours.Clear();
+                foreach (var road in _game.Map.Roads)
+                {
+                    if (!_game.IsRoadOpen(road.Id)) continue;
+                    string other = road.A == location.Id ? road.B : road.B == location.Id ? road.A : null;
+                    if (other != null) _junctionNeighbours.Add(_layout.LocationPosition(other));
+                }
+                JunctionGeometry.Directions(center, _junctionNeighbours, _junctionDirs);
+                if (_junctionDirs.Count == 0) continue;
+
+                CirclePath(p, center, half);
+                p.Fill();
+                foreach (var d in _junctionDirs)
+                {
+                    var n = new Vector2(-d.y, d.x);
+                    p.BeginPath();
+                    p.MoveTo(center - n * half);
+                    p.LineTo(center + n * half);
+                    p.LineTo(center + n * half + d * arm);
+                    p.LineTo(center - n * half + d * arm);
+                    p.ClosePath();
+                    p.Fill();
+                }
+                JunctionGeometry.Corners(center, _junctionDirs, half, arm, fillet, _junctionCorners);
+                foreach (var corner in _junctionCorners)
+                {
+                    p.BeginPath();
+                    p.MoveTo(corner.X);
+                    p.LineTo(corner.T1);
+                    for (int j = 1; j <= 6; j++) p.LineTo(JunctionGeometry.Curve(corner, j / 6f));
+                    p.ClosePath();
+                    p.Fill();
+                }
+            }
+        }
 
         float RoadWidthScale(Road road)
         {
