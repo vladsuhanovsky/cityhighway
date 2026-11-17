@@ -26,9 +26,8 @@ namespace CityHighways.Tests
             var errors = map.Validate(new GameConfig().MaxRoadLength);
             Assert.IsEmpty(errors, string.Join("\n", errors));
             Assert.AreEqual("Амстердам", map.Name);
-            Assert.AreEqual(2, map.Rivers.Count, "Эй и Амстел");
-            Assert.IsNotNull(map.Ring, "кольцевая A10");
-            Assert.AreEqual("A10", map.Ring.Name);
+            Assert.AreEqual(3, map.Rivers.Count, "Эй, Амстел и Нордхолландский канал");
+            Assert.IsNull(map.Ring, "кольцевая A10 убрана с карты");
             Assert.Less(map.PiecesScale, 1f);
             Assert.AreEqual(3, map.Districts.Count(d => d.IsExpansion));
             Assert.GreaterOrEqual(map.Roads.Count(r => r.IsBridge), 8);
