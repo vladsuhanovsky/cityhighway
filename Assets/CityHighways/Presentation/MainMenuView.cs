@@ -27,6 +27,8 @@ namespace CityHighways.Presentation
         readonly UnityEngine.UIElements.Button _addPlayerButton;
         readonly Label _characterHint;
         int _lastCharacterSlot = -1;
+        // Строки параметров, которых нет в «Логистическом магнате» (прячутся при выборе режима).
+        VisualElement _scenarioRow, _piecesRow, _hideRow, _timerRow;
         readonly Label _trainsValue;
         readonly UnityEngine.UIElements.Button _hideCardsButton;
         readonly UnityEngine.UIElements.Button _timerButton;
@@ -736,6 +738,7 @@ namespace CityHighways.Presentation
             _scenarioButton.style.width = 170f;
             scenarioRow.Add(_scenarioButton);
             gameCard.Add(scenarioRow);
+            _scenarioRow = scenarioRow;
             _scenarioHint = Ui.Text("", 12f, Theme.TextDim);
             _scenarioHint.style.whiteSpace = WhiteSpace.Normal;
             _scenarioHint.style.marginTop = -4f;
@@ -754,18 +757,21 @@ namespace CityHighways.Presentation
             plus.style.width = 40f;
             piecesRow.Add(plus);
             gameCard.Add(piecesRow);
+            _piecesRow = piecesRow;
 
             var hideRow = SettingRow("Скрывать карты при передаче хода");
             hideCards = Ui.Button("", ToggleHideCards, ButtonKind.Secondary, 14f);
             hideCards.style.width = 120f;
             hideRow.Add(hideCards);
             gameCard.Add(hideRow);
+            _hideRow = hideRow;
 
             var timerRow = SettingRow("Таймер хода");
             timer = Ui.Button("", NextTimer, ButtonKind.Secondary, 14f);
             timer.style.width = 120f;
             timerRow.Add(timer);
             gameCard.Add(timerRow);
+            _timerRow = timerRow;
 
             hint = Ui.Text("", 13f, Theme.TextDim);
             hint.style.marginTop = 10f;
@@ -863,8 +869,19 @@ namespace CityHighways.Presentation
             _hideCardsButton.text = _setup.hideCardsBetweenTurns ? "Да" : "Нет";
             _timerButton.text = _setup.turnSeconds > 0 ? $"{_setup.turnSeconds / 60}:{_setup.turnSeconds % 60:00}" : "Без таймера";
 
+            // В магнате нет сценариев, участков, карт на руке, персонажей и таймера хода — эти строки прячем.
+            bool classic = !_setup.magnate;
+            Ui.Show(_scenarioRow, classic);
+            Ui.Show(_scenarioHint, classic);
+            Ui.Show(_piecesRow, classic);
+            Ui.Show(_hideRow, classic);
+            Ui.Show(_timerRow, classic);
+            Ui.Show(_characterHint, classic);
+
             int humans = _setup.players.Count(p => !p.isBot);
-            _hint.text = humans == 0
+            _hint.text = _setup.magnate
+                ? (humans > 1 ? "Игра за одним компьютером: перед каждым ходом заставка — соперники не видят ваши маршруты." : "Наведите на дорогу или станцию — подсказка покажет пропускную способность, владельца и грузы.")
+                : humans == 0
                 ? "Все игроки — боты: можно просто смотреть партию."
                 : humans == 1
                     ? "Наведите на дорогу — подсказка покажет, хватает ли ресурсов. Умный бот охотно ездит по чужим дорогам — стройте мосты!"
@@ -932,8 +949,12 @@ namespace CityHighways.Presentation
                 Palette.PlayerColor(index));
             icon.style.marginRight = 6f;
             icon.style.opacity = slot.character > 0 ? 1f : 0.35f;
-            row.Add(icon);
-            row.Add(character);
+            // В магнате персонажей нет — кнопку не показываем.
+            if (!_setup.magnate)
+            {
+                row.Add(icon);
+                row.Add(character);
+            }
 
             var remove = Ui.Button("×", () =>
             {
