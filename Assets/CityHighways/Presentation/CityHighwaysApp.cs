@@ -233,7 +233,8 @@ namespace CityHighways.Presentation
             var steps = new List<(string, Action)>
             {
                 ("Прокладываем реки и намечаем кварталы…", () => city = CityGenerator.Generate(seed)),
-                ("Расставляем аэропорты, вокзалы и порты…", () => game = new LogisticsGame(city, names, bots, seed)),
+                ("Расставляем аэропорты, вокзалы и порты…", () => game = new LogisticsGame(city, names, bots, seed,
+                    MagnateConfig.For((MagnateDifficulty)Mathf.Clamp(setup.magnateDifficulty, 0, 3)))),
                 ("Рисуем карту и дороги…", () =>
                 {
                     view = new MagnateView(this, setup, game);

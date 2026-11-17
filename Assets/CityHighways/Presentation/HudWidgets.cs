@@ -530,6 +530,9 @@ namespace CityHighways.Presentation
             Refresh();
         }
 
+        /// <summary>Свой рисунок поверх мини-карты: (painter, перевод координат карты 0..1 в мини-карту).</summary>
+        public Action<Painter2D, Func<float, float, Vector2>> Extra;
+
         public void Refresh() => _canvas.MarkDirtyRepaint();
 
         Rect Area
@@ -597,7 +600,8 @@ namespace CityHighways.Presentation
                 var b = map.GetLocation(road.B);
                 if (a == null || b == null) continue;
                 var owner = _game.GetRoadOwner(road.Id);
-                p.strokeColor = owner.HasValue ? Palette.PlayerColor(owner.Value) : new Color(1f, 1f, 1f, 0.22f);
+                p.strokeColor = !owner.HasValue ? new Color(1f, 1f, 1f, 0.22f)
+                    : owner.Value >= _game.Players.Count ? MapView.PublicRoadColor : Palette.PlayerColor(owner.Value);
                 p.lineWidth = owner.HasValue ? 2.4f : 1f;
                 p.BeginPath();
                 p.MoveTo(ToMini(a.X, a.Y));
@@ -617,6 +621,9 @@ namespace CityHighways.Presentation
                 p.Arc(ToMini(location.X, location.Y), 2f, Angle.Degrees(0f), Angle.Degrees(360f));
                 p.Fill();
             }
+
+            // Дополнительные отметки (грузы и фуры магната) — в координатах мини-карты.
+            Extra?.Invoke(p, ToMini);
 
             // Рамка обзора: что сейчас видно на поле (с наклоном — трапеция).
             if (_map.Zoom > 1.01f)

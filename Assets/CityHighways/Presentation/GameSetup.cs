@@ -60,6 +60,8 @@ namespace CityHighways.Presentation
         public bool cooperative;
         /// <summary>«Логистический магнат» — основной режим: город генерируется заново, компании возят грузы.</summary>
         public bool magnate = true;
+        /// <summary>Сложность магната (MagnateDifficulty как int): 0 лёгкая, 1 обычная, 2 сложная, 3 эксперт.</summary>
+        public int magnateDifficulty = 1;
 
         /// <summary>Карта для меню: путь в Resources, название и одна строка описания.</summary>
         public sealed class MapChoice

@@ -42,6 +42,15 @@ namespace CityHighways.Core
                 .Where(r => game.Board.GetRoadOwner(r.Id) == me && !game.IsHighway(r.Id) && game.LastTraffic(r.Id) >= game.Capacity(r) - 1)
                 .OrderByDescending(r => game.LastTraffic(r.Id)).FirstOrDefault();
             if (busy != null && player.BuildPoints >= game.UpgradeCost(busy) + 2) game.BuildOrUpgrade(busy.Id);
+            // Хаб: развивать свой (или ничей) хаб, у которого стоят его фуры, — больше грузов и плата с соперников.
+            if (game.Round <= game.Config.Rounds - 4)
+            {
+                var hub = game.Hubs
+                    .Where(h => (h.Owner < 0 || h.Owner == me) && h.Level < 5)
+                    .OrderByDescending(h => game.Trucks.Count(t => t.Owner == me && t.Location == h.LocationId) * 2 + (h.Owner == me ? 1 : 0) + rng.NextDouble())
+                    .FirstOrDefault();
+                if (hub != null && player.BuildPoints >= game.HubUpgradeCost(hub) + 2) game.UpgradeHub(hub.LocationId);
+            }
             game.FinishBuild();
         }
 
@@ -79,8 +88,13 @@ namespace CityHighways.Core
                     if (route == null) continue;
                     if (cargo.Kind == CargoKind.Hazard && game.CurrentPlayer.Influence < game.Config.HazardBribe
                         && game.RouteEntersBribeZone(truck.Location, route)) continue;
-                    int rounds = game.RouteRounds(route);
-                    float score = game.ValueIfDelivered(cargo, rounds) / (float)rounds;
+                    int rounds = game.RouteRounds(route, cargo.Kind);
+                    float score = game.ValueIfDelivered(cargo, rounds, me) / (float)rounds;
+                    // Заказ мэрии на этот вид — груз ценнее.
+                    foreach (var contract in game.Contracts)
+                        if (contract.Winner < 0 && (!contract.Kind.HasValue || contract.Kind == cargo.Kind)) score += contract.RewardPoints / (float)contract.Needed / rounds * 0.6f;
+                    if (cargo.Kind == CargoKind.Valuable && game.CurrentPlayer.Influence < game.Config.EscortCost) score *= 0.6f;
+                    if (cargo.Kind == CargoKind.Fragile) score -= game.RouteRisk(route) * 0.8f;
                     if (score > bestScore) { bestScore = score; bestCargo = cargo; }
                 }
                 if (bestCargo != null && game.PlanTruck(truck.Id, bestCargo.Id, null, planned) == null)
@@ -141,7 +155,7 @@ namespace CityHighways.Core
                 {
                     bool mine = road.Id == extra;
                     if (!mine && !game.Allowed(road, kind)) continue;
-                    if (mine && kind == CargoKind.Heavy && !game.IsWide(road)) continue;
+                    if (mine && (kind == CargoKind.Heavy || kind == CargoKind.Oversized) && !game.IsWide(road)) continue;
                     string v = road.A == u ? road.B : road.A;
                     float cost = road.Length;
                     var owner = game.Board.GetRoadOwner(road.Id);

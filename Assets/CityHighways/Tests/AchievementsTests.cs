@@ -27,6 +27,27 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void Magnate_OpensOnlyLogisticsAchievements_NoDaily()
+        {
+            var profile = new PlayerProfile();
+            var facts = new GameFacts
+            {
+                Magnate = true, Won = true, Players = 3, Total = 200, Delivered = 7, Jams = 0, PerishableOnTime = 4,
+                MaxHubLevel = 5, ContractsWon = 2, Reputation = ReputationLevel.Legendary, Difficulty = MagnateDifficulty.Expert
+            };
+            var outcome = Achievements.Apply(profile, facts, Day);
+            var ids = outcome.Unlocked.Select(a => a.Id).ToList();
+            CollectionAssert.IsSubsetOf(new[] { "mg_first", "mg_win", "mg_nojam", "mg_cold", "mg_hub", "mg_contracts", "mg_legend", "mg_expert" }, ids);
+            Assert.IsFalse(ids.Contains("first_win"), "Классическая победа магнатом не открывается");
+            Assert.IsFalse(ids.Contains("score130"));
+            Assert.IsFalse(outcome.DailyDone, "Задание дня — только в классике");
+            Assert.IsTrue(outcome.Unlocked.All(a => Achievements.CategoryOf(a) == "Логистика"));
+
+            var classic = Achievements.Apply(new PlayerProfile(), new GameFacts { Won = true, Delivered = 5 }, Day);
+            Assert.IsFalse(classic.Unlocked.Any(a => a.Id.StartsWith("mg_")), "Магнатские — только в магнате");
+        }
+
+        [Test]
         public void Daily_OncePerDay_NextDayAgain()
         {
             var task = Achievements.TaskFor(Day);

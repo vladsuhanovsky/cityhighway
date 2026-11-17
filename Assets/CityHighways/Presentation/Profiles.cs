@@ -498,5 +498,35 @@ namespace CityHighways.Presentation
             if (credits.Count > 0) Save();
             return credits;
         }
+
+        /// <summary>
+        /// Конец партии «Логистического магната»: остаток влияния людей — в их профили (по имени игрока),
+        /// счётчики партий и побед, достижения режима «Логистика». Задание дня здесь не засчитывается.
+        /// </summary>
+        public static List<Credit> CreditAfterMagnate(LogisticsGame game, GameSetup setup)
+        {
+            var credits = new List<Credit>();
+            if (game == null || game.Phase != MagnatePhase.GameOver) return credits;
+            int best = game.Players.Max(p => p.Score);
+            for (int i = 0; i < game.Players.Count; i++)
+            {
+                var player = game.Players[i];
+                if (player.IsBot || i >= setup.players.Count || setup.players[i].isBot) continue;
+                var profile = GetOrCreate(player.Name);
+                int left = Math.Max(0, player.Influence);
+                bool won = player.Score == best;
+                profile.wallet += left;
+                profile.earnedTotal += left;
+                profile.games++;
+                if (won) profile.wins++;
+                if (profile.achievements == null) profile.achievements = new List<string>();
+                Record(profile, left, "game", won ? "Остаток влияния с партии магната · победа" : "Остаток влияния с партии магната");
+                var outcome = Achievements.Apply(profile, GameFacts.Of(game, i), DateTime.Now);
+                foreach (var achievement in outcome.Unlocked) Record(profile, achievement.Reward, "achievement", achievement.Title);
+                credits.Add(new Credit { Profile = profile.name, Amount = left, Unlocked = outcome.Unlocked, DailyDone = false, Bonus = outcome.Reward });
+            }
+            if (credits.Count > 0) Save();
+            return credits;
+        }
     }
 }

@@ -31,6 +31,34 @@ namespace CityHighways.Presentation
         /// <summary>Название карты партии (Москва, Амстердам, Чунцин).</summary>
         public string Map;
 
+        /// <summary>«Логистический магнат»: факты партии режима (классические достижения в нём не считаются).</summary>
+        public bool Magnate;
+        public MagnateDifficulty Difficulty;
+        public int Delivered, Jams, ContractsWon, PerishableOnTime, MaxHubLevel, Losses;
+        public ReputationLevel Reputation;
+
+        public static GameFacts Of(LogisticsGame game, int index)
+        {
+            var player = game.Players[index];
+            int best = game.Players.Max(p => p.Score);
+            return new GameFacts
+            {
+                Magnate = true,
+                Won = player.Score == best,
+                Players = game.Players.Count,
+                Total = player.Score,
+                Difficulty = game.Config.Difficulty,
+                Delivered = player.Delivered,
+                Jams = player.Jams,
+                ContractsWon = player.ContractsWon,
+                PerishableOnTime = player.PerishableOnTime,
+                MaxHubLevel = game.Hubs.Where(h => h.Owner == index).Select(h => h.Level).DefaultIfEmpty(0).Max(),
+                Losses = player.Confiscated + player.Thefts,
+                Reputation = player.Level,
+                Map = null
+            };
+        }
+
         public static GameFacts Of(Game game, int index)
         {
             var player = game.Players[index];
@@ -114,6 +142,14 @@ namespace CityHighways.Presentation
             new Achievement { Id = "big_win", Title = "Против всех", Description = "Выиграйте партию на пятерых (в соревновании).", Reward = 8, Check = f => f.Won && !f.Cooperative && f.Players >= 5 },
             new Achievement { Id = "coop_win", Title = "Город спасён", Description = "Выиграйте кооперативную партию «Город против всех».", Reward = 8, Check = f => f.Won && f.Cooperative },
             new Achievement { Id = "coop_clean", Title = "Ни одного срыва", Description = "Выиграйте кооператив, не просрочив ни одного заказа города.", Reward = 10, Check = f => f.Won && f.Cooperative && f.CoopFailedOrders == 0 },
+            new Achievement { Id = "mg_first", Title = "Первая доставка", Description = "Магнат: доставьте первый груз.", Reward = 3, Check = f => f.Delivered > 0 },
+            new Achievement { Id = "mg_win", Title = "Логистический магнат", Description = "Магнат: выиграйте партию.", Reward = 6, Check = f => f.Won },
+            new Achievement { Id = "mg_nojam", Title = "Зелёная волна", Description = "Магнат: доставьте 6 грузов и ни разу не встаньте в пробку.", Reward = 6, Check = f => f.Delivered >= 6 && f.Jams == 0 },
+            new Achievement { Id = "mg_cold", Title = "Холодная цепь", Description = "Магнат: довезите вовремя 4 скоропортящихся груза.", Reward = 5, Check = f => f.PerishableOnTime >= 4 },
+            new Achievement { Id = "mg_hub", Title = "Мегахаб", Description = "Магнат: разовьите хаб до 5-го уровня.", Reward = 6, Check = f => f.MaxHubLevel >= 5 },
+            new Achievement { Id = "mg_contracts", Title = "Подрядчик мэрии", Description = "Магнат: первым выполните 2 заказа мэрии за партию.", Reward = 5, Check = f => f.ContractsWon >= 2 },
+            new Achievement { Id = "mg_legend", Title = "Легенда дорог", Description = "Магнат: поднимите репутацию до уровня «Легенда».", Reward = 8, Check = f => f.Reputation == ReputationLevel.Legendary },
+            new Achievement { Id = "mg_expert", Title = "Эксперт", Description = "Магнат: выиграйте на сложности «Эксперт».", Reward = 10, Check = f => f.Won && f.Difficulty == MagnateDifficulty.Expert },
             new Achievement
             {
                 Id = "seasons", Title = "Все сезоны", Description = "Выиграйте в каждом сценарии: Зима, Большой город, Год ремонта, Выборы мэра.",
@@ -178,11 +214,12 @@ namespace CityHighways.Presentation
                 case "tolls15":
                     return "Проезд и политика";
                 default:
+                    if (achievement.Id.StartsWith("mg_", StringComparison.Ordinal)) return "Логистика";
                     return "Коллекции";
             }
         }
 
-        public static readonly string[] Categories = { "Контракты", "Стройка", "Победы", "Проезд и политика", "Коллекции" };
+        public static readonly string[] Categories = { "Контракты", "Стройка", "Победы", "Проезд и политика", "Логистика", "Коллекции" };
 
         /// <summary>Задание дня: одно для всех профилей в этот день, по номеру дня — порядок перемешан, но предсказуем.</summary>
         public static DailyTask TaskFor(DateTime date)
@@ -217,7 +254,7 @@ namespace CityHighways.Presentation
         {
             var outcome = new Outcome();
             if (!string.IsNullOrEmpty(facts.Map)) profile.AddMark("map:" + facts.Map);
-            if (facts.Won)
+            if (facts.Won && !facts.Magnate)
             {
                 profile.AddMark("win_scenario:" + facts.Scenario);
                 if (facts.Character != CharacterKind.None) profile.AddMark("win_character:" + facts.Character);
@@ -225,13 +262,15 @@ namespace CityHighways.Presentation
             foreach (var achievement in All)
             {
                 if (Unlocked(profile, achievement)) continue;
+                // Разовые достижения — только своего режима: классические не открываются магнатом и наоборот.
+                if (!achievement.Cumulative && achievement.Id.StartsWith("mg_", StringComparison.Ordinal) != facts.Magnate) continue;
                 bool done = achievement.Cumulative ? achievement.Progress(profile) >= achievement.Target : achievement.Check(facts);
                 if (!done) continue;
                 profile.achievements.Add(achievement.Id);
                 outcome.Unlocked.Add(achievement);
             }
             string today = DateKey(now);
-            if (profile.dailyDone != today && TaskFor(now).Check(facts))
+            if (!facts.Magnate && profile.dailyDone != today && TaskFor(now).Check(facts))
             {
                 profile.dailyDone = today;
                 profile.dailyTotal++;

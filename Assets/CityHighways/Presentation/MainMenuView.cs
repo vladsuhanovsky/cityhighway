@@ -28,7 +28,9 @@ namespace CityHighways.Presentation
         readonly Label _characterHint;
         int _lastCharacterSlot = -1;
         // Строки параметров, которых нет в «Логистическом магнате» (прячутся при выборе режима).
-        VisualElement _scenarioRow, _piecesRow, _hideRow, _timerRow;
+        VisualElement _scenarioRow, _piecesRow, _hideRow, _timerRow, _difficultyRow;
+        UnityEngine.UIElements.Button _difficultyButton;
+        Label _difficultyHint;
         readonly Label _trainsValue;
         readonly UnityEngine.UIElements.Button _hideCardsButton;
         readonly UnityEngine.UIElements.Button _timerButton;
@@ -773,6 +775,19 @@ namespace CityHighways.Presentation
             gameCard.Add(timerRow);
             _timerRow = timerRow;
 
+            // Сложность магната: частота грузов, награды, события, штрафы за пробки и стартовые очки стройки.
+            var difficultyRow = SettingRow("Сложность");
+            _difficultyButton = Ui.Button("", NextDifficulty, ButtonKind.Secondary, 14f);
+            _difficultyButton.style.width = 150f;
+            difficultyRow.Add(_difficultyButton);
+            gameCard.Add(difficultyRow);
+            _difficultyRow = difficultyRow;
+            _difficultyHint = Ui.Text("", 12f, Theme.TextDim);
+            _difficultyHint.style.whiteSpace = WhiteSpace.Normal;
+            _difficultyHint.style.marginTop = -4f;
+            _difficultyHint.style.marginBottom = 12f;
+            gameCard.Add(_difficultyHint);
+
             hint = Ui.Text("", 13f, Theme.TextDim);
             hint.style.marginTop = 10f;
             hint.style.whiteSpace = WhiteSpace.Normal;
@@ -876,6 +891,11 @@ namespace CityHighways.Presentation
             Ui.Show(_piecesRow, classic);
             Ui.Show(_hideRow, classic);
             Ui.Show(_timerRow, classic);
+            Ui.Show(_difficultyRow, !classic);
+            Ui.Show(_difficultyHint, !classic);
+            var difficulty = (MagnateDifficulty)Mathf.Clamp(_setup.magnateDifficulty, 0, 3);
+            if (_difficultyButton != null) _difficultyButton.text = MagnateConfig.Title(difficulty);
+            if (_difficultyHint != null) _difficultyHint.text = DifficultyHint(difficulty);
             Ui.Show(_characterHint, classic);
 
             int humans = _setup.players.Count(p => !p.isBot);
@@ -1030,6 +1050,24 @@ namespace CityHighways.Presentation
             current = Mathf.Clamp(current + step, 0, PieceOptions.Length - 1);
             _setup.roadPieces = PieceOptions[current];
             Refresh();
+        }
+
+        void NextDifficulty()
+        {
+            _setup.magnateDifficulty = (Mathf.Clamp(_setup.magnateDifficulty, 0, 3) + 1) % 4;
+            _setup.Save();
+            Refresh();
+        }
+
+        static string DifficultyHint(MagnateDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case MagnateDifficulty.Easy: return "Грузов больше, награды ×1,2, событий и краж меньше, на старте 8 очков стройки.";
+                case MagnateDifficulty.Hard: return "Грузов меньше, награды ×0,9, событий больше, пробка стоит −2.";
+                case MagnateDifficulty.Expert: return "Мало грузов, награды ×0,8, частые события и кражи, пробка −2, на старте 4 очка стройки и +3 за раунд.";
+                default: return "Обычные правила: 15 раундов, 3 фуры, 6 очков стройки на старте и +4 за раунд.";
+            }
         }
 
         void NextTimer()

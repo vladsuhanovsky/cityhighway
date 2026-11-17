@@ -879,6 +879,126 @@ namespace CityHighways.Presentation
             _construction.Init(_roads, crew);
         }
 
+        // ================================================================== Хабы магната
+
+        readonly Dictionary<string, (GameObject go, int level)> _hubs = new Dictionary<string, (GameObject, int)>();
+
+        /// <summary>
+        /// Комплекс хаба по уровню (вид: 0 — аэропорт, 1 — вокзал, 2 — порт): 1 — терминал, 2 — склады,
+        /// 3 — кран (у порта — портальный), 4 — расширенная площадка и ещё склады, 5 — большой комплекс
+        /// (у аэропорта — с вертолётной площадкой). Стоит в самом широком промежутке между дорогами станции,
+        /// за перекрёстком. Пересобирается только при смене уровня.
+        /// </summary>
+        public void SetHub(string locationId, int kind, int level)
+        {
+            if (_hubs.TryGetValue(locationId, out var old))
+            {
+                if (old.level == level) return;
+                if (old.go != null) Destroy(old.go);
+            }
+            var location = _map.GetLocation(locationId);
+            if (location == null) return;
+            var center = BoardLayout.World(location.X, location.Y);
+
+            // Самый широкий промежуток между дорогами станции — туда и ставим комплекс.
+            var angles = _map.RoadsAt(locationId).Select(r =>
+            {
+                var other = _map.GetLocation(r.A == locationId ? r.B : r.A);
+                var w = BoardLayout.World(other.X, other.Y) - center;
+                return Mathf.Atan2(w.z, w.x);
+            }).OrderBy(a => a).ToList();
+            float direction = 0f;
+            if (angles.Count > 0)
+            {
+                float bestGap = -1f;
+                for (int i = 0; i < angles.Count; i++)
+                {
+                    float a = angles[i], b = i + 1 < angles.Count ? angles[i + 1] : angles[0] + Mathf.PI * 2f;
+                    if (b - a > bestGap) { bestGap = b - a; direction = (a + b) / 2f; }
+                }
+            }
+            var forward = new Vector3(Mathf.Cos(direction), 0f, Mathf.Sin(direction));
+            var origin = center + forward * 0.25f;
+            float yaw = -direction * Mathf.Rad2Deg + 90f;
+
+            var builder = new MeshBuilder();
+            var local = new MeshBuilder();
+            var random = new System.Random(locationId.GetHashCode());
+            var asphalt = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Asphalt);
+            var yellow = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Spire);
+            var white = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
+            var red = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.ChimneyStripe);
+            var rotation = Quaternion.Euler(0f, yaw, 0f);
+            void Put(CityShapes.Kind shape, float x, float z, float w, float d, float h, float angle = 0f)
+            {
+                local.Clear();
+                CityShapes.Build(local, shape, w, d, h, random);
+                builder.Append(local, Matrix4x4.TRS(origin + rotation * new Vector3(x, 0f, z), rotation * Quaternion.Euler(0f, angle, 0f), Vector3.one));
+            }
+            Vector3 P(float x, float y, float z) => origin + rotation * new Vector3(x, y, z);
+
+            // Площадка: с уровнем растёт (уровень 4 — расширенная территория).
+            float pad = level >= 4 ? 0.13f : level >= 2 ? 0.09f : 0.06f;
+            builder.Quad(P(-pad, 0.0035f, -pad), P(-pad, 0.0035f, pad), P(pad, 0.0035f, pad), P(pad, 0.0035f, -pad), asphalt);
+            // 1: терминал.
+            Put(kind == 0 ? CityShapes.Kind.Hangar : kind == 2 ? CityShapes.Kind.Warehouse : CityShapes.Kind.Parapet, 0f, -0.02f, 0.05f, 0.035f, 0.04f);
+            // 2: склады.
+            if (level >= 2)
+            {
+                Put(CityShapes.Kind.Warehouse, -0.055f, 0.035f, 0.045f, 0.025f, 0.028f);
+                Put(CityShapes.Kind.Warehouse, 0.055f, 0.035f, 0.045f, 0.025f, 0.028f);
+            }
+            // 3: кран — портальный у порта, башенный у остальных.
+            if (level >= 3)
+            {
+                if (kind == 2)
+                {
+                    for (int s = -1; s <= 1; s += 2)
+                    {
+                        builder.Beam(P(-0.03f, 0f, 0.06f * s), P(-0.03f, 0.075f, 0.06f * s), 0.006f, 0.006f, yellow, yellow);
+                        builder.Beam(P(0.03f, 0f, 0.06f * s), P(0.03f, 0.075f, 0.06f * s), 0.006f, 0.006f, yellow, yellow);
+                    }
+                    builder.Beam(P(-0.03f, 0.075f, -0.09f), P(-0.03f, 0.075f, 0.09f), 0.007f, 0.007f, yellow, yellow);
+                    builder.Beam(P(0.03f, 0.075f, -0.09f), P(0.03f, 0.075f, 0.09f), 0.007f, 0.007f, yellow, yellow);
+                }
+                else
+                {
+                    builder.Beam(P(0.07f, 0f, -0.05f), P(0.07f, 0.11f, -0.05f), 0.006f, 0.006f, yellow, yellow);
+                    builder.Beam(P(0.03f, 0.11f, -0.05f), P(0.13f, 0.11f, -0.05f), 0.005f, 0.005f, yellow, yellow);
+                    builder.Beam(P(0.12f, 0.11f, -0.05f), P(0.12f, 0.06f, -0.05f), 0.0015f, 0.0015f, white, white);
+                }
+            }
+            // 4: ещё склады на расширенной площадке.
+            if (level >= 4)
+            {
+                Put(CityShapes.Kind.Warehouse, -0.06f, -0.075f, 0.05f, 0.03f, 0.03f, 90f);
+                Put(CityShapes.Kind.Sawtooth, 0.07f, -0.085f, 0.05f, 0.035f, 0.035f);
+            }
+            // 5: большой логистический комплекс; у аэропорта — вертолётная площадка на крыше рядом.
+            if (level >= 5)
+            {
+                Put(kind == 0 ? CityShapes.Kind.Stepped : CityShapes.Kind.Block, 0f, 0.09f, 0.07f, 0.04f, 0.08f);
+                if (kind == 0)
+                {
+                    var c = P(-0.095f, 0.0045f, 0.095f);
+                    const int sides = 16;
+                    for (int i = 0; i < sides; i++)
+                    {
+                        float a0 = Mathf.PI * 2f * i / sides, a1 = Mathf.PI * 2f * (i + 1) / sides;
+                        var p0 = c + new Vector3(Mathf.Cos(a0), 0f, Mathf.Sin(a0)) * 0.03f;
+                        var p1 = c + new Vector3(Mathf.Cos(a1), 0f, Mathf.Sin(a1)) * 0.03f;
+                        if (Vector3.Cross(p0 - c, p1 - c).y < 0f) builder.Tri(c, p1, p0, red); else builder.Tri(c, p0, p1, red);
+                    }
+                    var hy = Vector3.up * 0.0052f;
+                    builder.Beam(c + rotation * new Vector3(-0.01f, 0f, -0.013f) + hy, c + rotation * new Vector3(-0.01f, 0f, 0.013f) + hy, 0.004f, 0.0005f, white, white);
+                    builder.Beam(c + rotation * new Vector3(0.01f, 0f, -0.013f) + hy, c + rotation * new Vector3(0.01f, 0f, 0.013f) + hy, 0.004f, 0.0005f, white, white);
+                    builder.Beam(c + rotation * new Vector3(-0.01f, 0f, 0f) + hy, c + rotation * new Vector3(0.01f, 0f, 0f) + hy, 0.004f, 0.0005f, white, white);
+                }
+            }
+            var go = AddMesh("Hub " + locationId, builder.ToMesh("City3D Hub " + locationId), _buildings, _root.transform, true);
+            _hubs[locationId] = (go, level);
+        }
+
         /// <summary>Идёт ли сейчас стройка этой дороги (интерфейс не рисует её поверх, пока видна техника).</summary>
         public bool IsUnderConstruction(string roadId) => _constructing.Contains(roadId);
 
@@ -1250,6 +1370,7 @@ namespace CityHighways.Presentation
             _treeChunks.Clear();
             _builtRoads.Clear();
             _constructing.Clear();
+            _hubs.Clear();
             _roads = null;
             _construction = null;
             if (_root != null) Destroy(_root);

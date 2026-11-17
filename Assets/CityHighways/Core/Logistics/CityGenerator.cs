@@ -11,6 +11,10 @@ namespace CityHighways.Core
     {
         public string LocationId { get; }
         public HubKind Kind { get; }
+        /// <summary>Уровень хаба 1–5: склады, краны, территория, комплекс. Растёт за очки стройки.</summary>
+        public int Level { get; internal set; } = 1;
+        /// <summary>Компания, развивающая хаб (-1 — городской). Владелец грузит первым и берёт плату с чужих погрузок.</summary>
+        public int Owner { get; internal set; } = -1;
         public Hub(string locationId, HubKind kind) { LocationId = locationId; Kind = kind; }
     }
 
