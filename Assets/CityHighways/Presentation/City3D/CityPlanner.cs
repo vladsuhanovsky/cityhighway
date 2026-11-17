@@ -37,10 +37,23 @@ namespace CityHighways.Presentation
             public int Seed;
         }
 
+        /// <summary>Декали на земле — порядок совпадает с плитками атласа CityTextures.Decals.</summary>
+        public enum DecalKind { Parking, Pitch, Court, Plaza, Playground, Dirt, FlowerBed, Wear, FieldWheat, FieldSoil, FieldGreen }
+
+        public struct Decal
+        {
+            public Vector2 Center;     // пиксели поля
+            public float Width, Depth; // пиксели поля
+            public float Angle;        // градусы вокруг вертикали
+            public DecalKind Kind;
+            public string District;
+        }
+
         public sealed class Plan
         {
             public readonly List<Building> Buildings = new List<Building>();
             public readonly List<TreeSpot> Trees = new List<TreeSpot>();
+            public readonly List<Decal> Decals = new List<Decal>();
             /// <summary>Основания для затемнения на земле: центр и полуразмеры в координатах карты.</summary>
             public readonly List<Vector4> Footprints = new List<Vector4>();
         }
@@ -100,6 +113,11 @@ namespace CityHighways.Presentation
                 name.Contains("док") || name.Contains("промзон") || name.Contains("завод")) return Character.Industrial;
             return Character.Regular;
         }
+
+        /// <summary>Слой декали: поля — внизу, пятна — посередине, площадки — сверху.</summary>
+        static int Layer(DecalKind kind) =>
+            kind == DecalKind.FieldWheat || kind == DecalKind.FieldGreen || kind == DecalKind.FieldSoil ? 0
+            : kind == DecalKind.Dirt || kind == DecalKind.Wear ? 1 : 2;
 
         /// <param name="density">0.4–1: сколько зданий оставить (качество графики).</param>
         public static Plan Build(CityMap map, float density = 1f)
@@ -221,7 +239,6 @@ namespace CityHighways.Presentation
                 plan.Footprints.Add(new Vector4(p.x / FieldW, p.y / FieldH, rx / FieldW, rz / FieldH));
             }
 
-            // ---- Деревья: парки (густо), лесополосы за городом, редкие деревья во дворах и вдоль рек.
             var occupied = plan.Buildings.Select(b => b.Center).ToList();
             bool FreeOfBuildings(Vector2 p, float radius)
             {
@@ -229,9 +246,111 @@ namespace CityHighways.Presentation
                     if ((p - c).sqrMagnitude < radius * radius) return false;
                 return true;
             }
+
+            // ---- Декали: парковки, площади, спортплощадки, клумбы, пустыри; за городом — поля.
+            // Твёрдые покрытия и поля запоминаем, чтобы на них не выросли деревья.
+            var paved = new List<Vector3>();
+            const float decalCell = 30f;
+            for (int iy = -1; iy <= Mathf.CeilToInt(FieldH / decalCell); iy++)
+            for (int ix = -1; ix <= Mathf.CeilToInt(FieldW / decalCell); ix++)
+            {
+                var p = new Vector2((ix + 0.5f + (Hash(ix, iy, 70) - 0.5f) * 0.6f) * decalCell, (iy + 0.5f + (Hash(ix, iy, 71) - 0.5f) * 0.6f) * decalCell);
+                float e = Ring(p), u = Urban(e);
+                float roll = Hash(ix, iy, 72) / Mathf.Max(0.4f, density);
+                float sizeRoll = Hash(ix, iy, 73);
+                bool park = InPark(p, 0f);
+                DecalKind kind;
+                float w, d;
+                if (park)
+                {
+                    if (roll < 0.22f) { kind = DecalKind.FlowerBed; w = d = 11f + sizeRoll * 6f; }
+                    else if (roll < 0.27f) { kind = DecalKind.Pitch; w = 30f; d = 20f; }
+                    else continue;
+                }
+                else if (e > 1.1f)
+                {
+                    if (roll < 0.30f)
+                    {
+                        float pick = Hash(ix, iy, 74);
+                        kind = pick < 0.4f ? DecalKind.FieldWheat : pick < 0.7f ? DecalKind.FieldGreen : DecalKind.FieldSoil;
+                        w = 44f + sizeRoll * 30f; d = 30f + Hash(ix, iy, 75) * 22f;
+                    }
+                    else if (roll < 0.35f) { kind = DecalKind.Dirt; w = d = 18f + sizeRoll * 10f; }
+                    else continue;
+                }
+                else
+                {
+                    var location = NearestLocation(p);
+                    var character = CharacterOf(location == null ? null : map.GetDistrict(location.DistrictId));
+                    switch (character)
+                    {
+                        case Character.Center:
+                            if (roll < 0.22f) { kind = DecalKind.Plaza; w = d = 22f + sizeRoll * 10f; }
+                            else if (roll < 0.32f) { kind = DecalKind.Parking; w = 22f; d = 14f; }
+                            else continue;
+                            break;
+                        case Character.Industrial:
+                            if (roll < 0.28f) { kind = DecalKind.Parking; w = 26f; d = 16f; }
+                            else if (roll < 0.52f) { kind = DecalKind.Dirt; w = d = 20f + sizeRoll * 10f; }
+                            else if (roll < 0.62f) { kind = DecalKind.Wear; w = 26f; d = 18f; }
+                            else continue;
+                            break;
+                        case Character.Airport:
+                            if (roll < 0.35f) { kind = DecalKind.Wear; w = 34f; d = 22f; }
+                            else if (roll < 0.55f) { kind = DecalKind.Parking; w = 26f; d = 16f; }
+                            else continue;
+                            break;
+                        default:
+                            if (u > 0.25f)
+                            {
+                                if (roll < 0.10f) { kind = DecalKind.Playground; w = d = 14f + sizeRoll * 4f; }
+                                else if (roll < 0.16f) { kind = DecalKind.Court; w = 13f; d = 19f; }
+                                else if (roll < 0.20f) { kind = DecalKind.Pitch; w = 28f; d = 18f; }
+                                else if (roll < 0.32f) { kind = DecalKind.Parking; w = 20f; d = 13f; }
+                                else if (roll < 0.36f) { kind = DecalKind.FlowerBed; w = d = 10f + sizeRoll * 4f; }
+                                else if (roll < 0.41f) { kind = DecalKind.Dirt; w = d = 14f + sizeRoll * 8f; }
+                                else continue;
+                            }
+                            else
+                            {
+                                if (roll < 0.08f) { kind = DecalKind.Pitch; w = 28f; d = 18f; }
+                                else if (roll < 0.16f) { kind = DecalKind.Dirt; w = d = 16f + sizeRoll * 8f; }
+                                else if (roll < 0.20f) { kind = DecalKind.FlowerBed; w = d = 10f + sizeRoll * 4f; }
+                                else continue;
+                            }
+                            break;
+                    }
+                }
+
+                float radius = 0.5f * Mathf.Sqrt(w * w + d * d);
+                bool field = kind == DecalKind.FieldWheat || kind == DecalKind.FieldGreen || kind == DecalKind.FieldSoil;
+                if (Nearest(p, roads) < radius * 0.75f + 8f || NearestPlace(p) < radius + 12f) continue;
+                if (Nearest(p, river) < radius + 16f || !FreeOfBuildings(p, radius * 0.7f + 10f)) continue;
+                if (field && InPark(p, radius)) continue;
+                if (ringRoad && e > 0.95f && e < 1.07f) continue;
+
+                var owner = NearestLocation(p);
+                float angle = (Hash(ix, iy, 76) < 0.5f ? 0f : 90f) + (Hash(ix, iy, 77) - 0.5f) * (field ? 16f : 8f);
+                plan.Decals.Add(new Decal
+                {
+                    Center = p, Width = w, Depth = d, Angle = angle, Kind = kind,
+                    District = owner == null ? null : map.DistrictOf(owner.Id)
+                });
+                if (kind != DecalKind.Dirt && kind != DecalKind.Wear) paved.Add(new Vector3(p.x, p.y, radius * 0.8f));
+            }
+            // Поля под низом, площадки поверх — декали прозрачные, порядок отрисовки внутри меша = порядок в списке.
+            plan.Decals.Sort((a, b) => Layer(a.Kind).CompareTo(Layer(b.Kind)));
+
+            // ---- Деревья: парки (густо), лесополосы за городом, редкие деревья во дворах и вдоль рек.
+            bool OnPaved(Vector2 p)
+            {
+                foreach (var s in paved)
+                    if ((p - new Vector2(s.x, s.y)).sqrMagnitude < s.z * s.z) return true;
+                return false;
+            }
             void AddTree(Vector2 p, float size, int salt, bool forest)
             {
-                if (Nearest(p, roads) < 11f || NearestPlace(p) < 17f || Nearest(p, river) < 17f || !FreeOfBuildings(p, 11f)) return;
+                if (Nearest(p, roads) < 11f || NearestPlace(p) < 17f || Nearest(p, river) < 17f || !FreeOfBuildings(p, 11f) || OnPaved(p)) return;
                 var location = NearestLocation(p);
                 float pick = Hash((int)p.x, (int)p.y, salt);
                 var kind = forest ? (pick < 0.45f ? CityShapes.Tree.Spruce : CityShapes.Tree.Round)

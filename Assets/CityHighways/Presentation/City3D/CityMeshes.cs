@@ -39,6 +39,20 @@ namespace CityHighways.Presentation
             _triangles.Add(i); _triangles.Add(i + 2); _triangles.Add(i + 3);
         }
 
+        /// <summary>Четырёхугольник с заданной нормалью (карточки деревьев освещаются как кроны, а не как плоскость).</summary>
+        public void QuadWithNormal(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Rect uv, Vector3 normal)
+        {
+            int i = _vertices.Count;
+            _vertices.Add(a); _vertices.Add(b); _vertices.Add(c); _vertices.Add(d);
+            for (int k = 0; k < 4; k++) _normals.Add(normal);
+            _uvs.Add(new Vector2(uv.xMin, uv.yMin));
+            _uvs.Add(new Vector2(uv.xMin, uv.yMax));
+            _uvs.Add(new Vector2(uv.xMax, uv.yMax));
+            _uvs.Add(new Vector2(uv.xMax, uv.yMin));
+            _triangles.Add(i); _triangles.Add(i + 1); _triangles.Add(i + 2);
+            _triangles.Add(i); _triangles.Add(i + 2); _triangles.Add(i + 3);
+        }
+
         /// <summary>Треугольник a-b-c по часовой стрелке со стороны лица.</summary>
         public void Tri(Vector3 a, Vector3 b, Vector3 c, Rect uv)
         {
@@ -82,6 +96,18 @@ namespace CityHighways.Presentation
             _normals.Clear();
             _uvs.Clear();
             _triangles.Clear();
+        }
+
+        /// <summary>Переписать готовый меш (карточки деревьев пересобираются при смене угла камеры).</summary>
+        public void WriteTo(Mesh mesh)
+        {
+            mesh.Clear();
+            mesh.indexFormat = _vertices.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16;
+            mesh.SetVertices(_vertices);
+            mesh.SetNormals(_normals);
+            mesh.SetUVs(0, _uvs);
+            mesh.SetTriangles(_triangles, 0);
+            mesh.RecalculateBounds();
         }
 
         public Mesh ToMesh(string name)

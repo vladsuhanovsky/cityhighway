@@ -28,6 +28,31 @@ namespace CityHighways.Presentation
         /// <summary>Высота воды и набережных (метры сцены). Дороги интерфейса лежат на высоте 0.</summary>
         const float WaterLevel = 0.004f, BankHeight = 0.03f, RiverWidth = 0.26f, BankWidth = 0.025f;
         const float DeckTop = 0.05f;
+        /// <summary>Декали лежат чуть выше земли (0) и ниже воды (WaterLevel).</summary>
+        const float DecalHeight = 0.002f;
+        /// <summary>Слой Unity «Water» (встроенный, номер 4): вода не отражает сама себя.</summary>
+        const int WaterLayer = 4;
+        /// <summary>Сторона клетки для деревьев (м): клетка целиком переключается между объёмными деревьями и карточками.</summary>
+        const float TreeChunkSize = 1.2f;
+        const string ReflectiveShaderName = "CityHighways/City3D Water";
+
+        /// <summary>Деревья одной клетки одного района: объёмный меш и меш карточек (для дали).</summary>
+        sealed class TreeChunk
+        {
+            public string District;
+            public Vector3 Center;
+            public GameObject Root, Full, Cards;
+            public Mesh CardMesh;
+            public bool ShowCards;
+            public readonly List<CardSpot> Spots = new List<CardSpot>();
+        }
+
+        struct CardSpot
+        {
+            public Vector3 At;
+            public float Size;
+            public int Tile;
+        }
 
         readonly CityMap _map;
         readonly GameObject _root;
@@ -37,7 +62,17 @@ namespace CityHighways.Presentation
         Camera _camera;
         Light _sun;
         Bloom _bloom;
-        Material _buildings, _ground, _water;
+        Material _buildings, _ground, _water, _cards, _decals;
+        int _quality, _rendererIndex = -1;
+        readonly List<TreeChunk> _treeChunks = new List<TreeChunk>();
+        float _cardLean = -999f;
+        // Отражения в воде: своя камера рисует зеркальный город в текстуру, шейдер воды берёт из неё картинку.
+        bool _reflective;
+        Camera _reflectionCamera;
+        RenderTexture _reflectionTexture;
+        float _reflectionScale = 0.5f;
+        Vector4 _waveOffset;
+        Color _skyColor = new Color(0.62f, 0.72f, 0.86f);
         RenderPipelineAsset _previousPipeline;
         bool _swappedPipeline;
         float _waterOffset;
@@ -93,12 +128,16 @@ namespace CityHighways.Presentation
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
 
+            _quality = quality;
             SetupRendering(quality);
             CreateMaterials(plan);
             BuildGround();
+            BuildDecals(plan);
             BuildRivers();
             BuildDistricts(plan);
+            BuildTrees(plan);
             BuildBridges();
+            SetupReflections(quality);
         }
 
         void SetupRendering(int quality)
@@ -120,6 +159,7 @@ namespace CityHighways.Presentation
             // до пост-обработки, а не растекаются по Bloom белыми вспышками.
             data.stopNaN = quality > 0;
             int rendererIndex = FindUniversalRenderer();
+            _rendererIndex = rendererIndex;
             if (rendererIndex >= 0) data.SetRenderer(rendererIndex);
             else SwapToRuntimePipeline();
 
@@ -245,11 +285,79 @@ namespace CityHighways.Presentation
             _ground.SetTexture("_BaseMap", TerrainTexture.ForCity3D(_map, plan.Footprints));
             _ground.SetFloat("_Smoothness", 0.04f);
             NoSpecular(_ground);
+            // Неровности земли: крупные (холмы, пригорки парков) на всю доску и мелкая деталь,
+            // повторяющаяся по полю, — шероховатость и пятна (множитель ×2: серый 0,5 цвет не меняет).
+            _ground.SetTexture("_BumpMap", CityTextures.GroundNormal(_map));
+            _ground.SetFloat("_BumpScale", 0.8f);
+            _ground.EnableKeyword("_NORMALMAP");
+            _ground.SetTexture("_DetailAlbedoMap", CityTextures.DetailAlbedo);
+            _ground.SetTexture("_DetailNormalMap", CityTextures.DetailNormal);
+            _ground.SetFloat("_DetailAlbedoMapScale", 1f);
+            _ground.SetFloat("_DetailNormalMapScale", 0.6f);
+            const float detailTiles = 40f;
+            _ground.SetTextureScale("_DetailAlbedoMap", new Vector2(detailTiles, detailTiles * BoardLayout.WorldDepth / BoardLayout.WorldWidth));
+            _ground.EnableKeyword("_DETAIL_MULX2");
 
-            _water = LoadMaterial("CityWater", new Color(0.55f, 0.74f, 0.88f));
-            _water.SetTexture("_BaseMap", RoadTextures.Water);
-            _water.SetTextureScale("_BaseMap", new Vector2(1f, 1f));
-            _water.SetFloat("_Smoothness", 0.72f);
+            // Карточки дальних деревьев: альфа-срез, обе стороны, без бликов.
+            _cards = LoadMaterial("CityTreeCards", Color.white);
+            _cards.SetTexture("_BaseMap", CityTextures.TreeCards);
+            _cards.SetFloat("_AlphaClip", 1f);
+            _cards.SetFloat("_Cutoff", 0.45f);
+            _cards.EnableKeyword("_ALPHATEST_ON");
+            _cards.SetFloat("_Cull", 0f);
+            _cards.SetOverrideTag("RenderType", "TransparentCutout");
+            _cards.renderQueue = (int)RenderQueue.AlphaTest;
+            _cards.SetFloat("_Smoothness", 0.05f);
+            NoSpecular(_cards);
+
+            // Декали: полупрозрачные пятна на земле.
+            _decals = LoadMaterial("CityDecals", Color.white);
+            _decals.SetTexture("_BaseMap", CityTextures.Decals);
+            _decals.SetFloat("_Smoothness", 0.05f);
+            MakeTransparent(_decals);
+            NoSpecular(_decals);
+
+            _water = LoadWater();
+        }
+
+        /// <summary>
+        /// Вода с настоящими отражениями (свой шейдер); если шейдер недоступен — прежняя вода на Lit
+        /// с блеском и течением.
+        /// </summary>
+        Material LoadWater()
+        {
+            var source = Resources.Load<Material>(ResourceFolder + "CityWaterReflective");
+            if (source != null && source.shader != null && source.shader.isSupported && source.shader.name == ReflectiveShaderName)
+            {
+                var reflective = new Material(source) { name = "City3D Reflective Water", hideFlags = HideFlags.DontSave };
+                _owned.Add(reflective);
+                reflective.SetTexture("_BaseMap", RoadTextures.Water);
+                reflective.SetTexture("_WaveMap", CityTextures.WaveNormal);
+                _reflective = true;
+                return reflective;
+            }
+            Debug.Log("3D-город: шейдер отражающей воды недоступен — вода без отражений.");
+            var water = LoadMaterial("CityWater", new Color(0.55f, 0.74f, 0.88f));
+            water.SetTexture("_BaseMap", RoadTextures.Water);
+            water.SetFloat("_Smoothness", 0.72f);
+            return water;
+        }
+
+        /// <summary>Полупрозрачный режим материала Lit (как «Surface Type: Transparent, Blend: Alpha» в инспекторе).</summary>
+        static void MakeTransparent(Material material)
+        {
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetFloat("_SrcBlend", 5f);       // BlendMode.SrcAlpha
+            material.SetFloat("_DstBlend", 10f);      // BlendMode.OneMinusSrcAlpha
+            material.SetFloat("_SrcBlendAlpha", 1f);  // BlendMode.One
+            material.SetFloat("_DstBlendAlpha", 10f);
+            material.SetFloat("_ZWrite", 0f);
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.renderQueue = (int)RenderQueue.Transparent;
+            material.SetShaderPassEnabled("DepthOnly", false);
+            material.SetShaderPassEnabled("ShadowCaster", false);
         }
 
         /// <summary>
@@ -294,7 +402,9 @@ namespace CityHighways.Presentation
                 var uv = new Rect((x0 + m) / span, 1f - (y1 + m) / span, (x1 - x0) / span, (y1 - y0) / span);
                 top.Quad(a, b, c, d, uv);
             }
-            AddMesh("Ground", top.ToMesh("City3D Ground"), _ground, _root.transform, false);
+            var groundMesh = top.ToMesh("City3D Ground");
+            groundMesh.RecalculateTangents(); // карте неровностей нужны касательные, иначе освещение ломается
+            AddMesh("Ground", groundMesh, _ground, _root.transform, false);
 
             // Торцы плиты.
             var sides = new MeshBuilder();
@@ -359,7 +469,8 @@ namespace CityHighways.Presentation
                     }
                 }
             }
-            AddMesh("Water", water.ToMesh("City3D Water"), _water, _root.transform, false);
+            var waterObject = AddMesh("Water", water.ToMesh("City3D Water"), _water, _root.transform, false);
+            waterObject.layer = WaterLayer;
             AddMesh("Embankments", banks.ToMesh("City3D Embankments"), _buildings, _root.transform, true);
         }
 
@@ -411,17 +522,196 @@ namespace CityHighways.Presentation
                     building.Height, random);
                 For(building.District).Append(local, Matrix4x4.TRS(CityPlanner.ToWorld(building.Center), Quaternion.Euler(0f, building.Angle, 0f), Vector3.one));
             }
-            foreach (var tree in plan.Trees)
-            {
-                var random = new System.Random(tree.Seed);
-                CityShapes.BuildTree(For(tree.District), tree.Kind, CityPlanner.ToWorld(tree.At), tree.Size, random, false);
-            }
             foreach (var pair in builders)
             {
                 if (pair.Value.VertexCount == 0) continue;
                 var go = AddMesh("District " + pair.Key, pair.Value.ToMesh("City3D " + pair.Key), _buildings, _root.transform, true);
                 _districts[pair.Key] = go;
             }
+        }
+
+        /// <summary>Декали на земле: один меш на район (поля, пятна, площадки — в порядке слоёв из планировщика).</summary>
+        void BuildDecals(CityPlanner.Plan plan)
+        {
+            var builders = new Dictionary<string, MeshBuilder>();
+            foreach (var decal in plan.Decals)
+            {
+                string key = decal.District ?? "_";
+                if (!builders.TryGetValue(key, out var b)) builders[key] = b = new MeshBuilder();
+                var center = CityPlanner.ToWorld(decal.Center, DecalHeight);
+                float hw = decal.Width / CityPlanner.PixelsPerUnit / 2f, hd = decal.Depth / CityPlanner.PixelsPerUnit / 2f;
+                var rotation = Quaternion.Euler(0f, decal.Angle, 0f);
+                // Порядок углов (юго-запад, северо-запад, северо-восток, юго-восток) — грань смотрит вверх.
+                var a = center + rotation * new Vector3(-hw, 0f, -hd);
+                var nw = center + rotation * new Vector3(-hw, 0f, hd);
+                var ne = center + rotation * new Vector3(hw, 0f, hd);
+                var se = center + rotation * new Vector3(hw, 0f, -hd);
+                b.Quad(a, nw, ne, se, CityTextures.DecalUv(decal.Kind));
+            }
+            foreach (var pair in builders)
+            {
+                var go = AddMesh("Decals " + pair.Key, pair.Value.ToMesh("City3D Decals " + pair.Key), _decals, _root.transform, false);
+                if (pair.Key != "_") _districts[pair.Key + "#decals"] = go;
+            }
+        }
+
+        /// <summary>
+        /// Деревья по клеткам: в каждой — объёмные деревья и их карточки. Вблизи видны объёмные,
+        /// вдали (мелко на экране) — карточки: одна плоскость на дерево, повёрнутая к камере.
+        /// </summary>
+        void BuildTrees(CityPlanner.Plan plan)
+        {
+            var chunks = new Dictionary<string, TreeChunk>();
+            var builders = new Dictionary<string, MeshBuilder>();
+            foreach (var tree in plan.Trees)
+            {
+                var at = CityPlanner.ToWorld(tree.At);
+                int cx = Mathf.FloorToInt(at.x / TreeChunkSize), cz = Mathf.FloorToInt(at.z / TreeChunkSize);
+                string district = tree.District ?? "_";
+                string key = district + "#" + cx + "," + cz;
+                if (!chunks.TryGetValue(key, out var chunk))
+                {
+                    chunk = new TreeChunk { District = district, Center = new Vector3((cx + 0.5f) * TreeChunkSize, 0f, (cz + 0.5f) * TreeChunkSize) };
+                    chunks[key] = chunk;
+                    builders[key] = new MeshBuilder();
+                }
+                CityShapes.BuildTree(builders[key], tree.Kind, at, tree.Size, new System.Random(tree.Seed), false);
+                chunk.Spots.Add(new CardSpot { At = at, Size = tree.Size, Tile = CardTile(tree) });
+            }
+            foreach (var pair in chunks)
+            {
+                var chunk = pair.Value;
+                chunk.Root = new GameObject("Trees " + pair.Key);
+                chunk.Root.transform.SetParent(_root.transform, false);
+                chunk.Full = AddMesh("Trees 3D", builders[pair.Key].ToMesh("City3D Trees " + pair.Key), _buildings, chunk.Root.transform, true);
+                chunk.CardMesh = new Mesh { name = "City3D Tree Cards " + pair.Key, hideFlags = HideFlags.DontSave };
+                chunk.Cards = AddMesh("Tree cards", chunk.CardMesh, _cards, chunk.Root.transform, true);
+                chunk.Cards.SetActive(false);
+                _treeChunks.Add(chunk);
+            }
+            RebuildCards(0f);
+        }
+
+        /// <summary>Плитка карточки — того же вида и оттенка, что объёмное дерево (тот же порядок случайных чисел, что в BuildTree).</summary>
+        static int CardTile(CityPlanner.TreeSpot tree)
+        {
+            var random = new System.Random(tree.Seed);
+            int leaf = random.Next(4);
+            switch (tree.Kind)
+            {
+                case CityShapes.Tree.Spruce: return random.NextDouble() < 0.5 ? CityTextures.CardSpruce : CityTextures.CardSpruceDark;
+                case CityShapes.Tree.Poplar: return CityTextures.CardPoplar + leaf;
+                default: return CityTextures.CardRound + leaf;
+            }
+        }
+
+        /// <summary>
+        /// Пересобрать карточки под наклон камеры: плоскость перпендикулярна взгляду (сверху — лежит, под углом —
+        /// наклонена к зрителю), середина — на половине высоты дерева, низ никогда не уходит под землю.
+        /// </summary>
+        void RebuildCards(float leanDegrees)
+        {
+            _cardLean = leanDegrees;
+            float t = leanDegrees * Mathf.Deg2Rad;
+            var toCamera = new Vector3(0f, Mathf.Cos(t), -Mathf.Sin(t));
+            var cardUp = new Vector3(0f, Mathf.Sin(t), Mathf.Cos(t));
+            // Нормаль почти вверх — карточка освещается как крона, а не как стена.
+            var normal = (Vector3.up + toCamera * 0.4f).normalized;
+            var builder = new MeshBuilder();
+            foreach (var chunk in _treeChunks)
+            {
+                builder.Clear();
+                foreach (var spot in chunk.Spots)
+                {
+                    float size = spot.Size * 1.05f, half = size / 2f;
+                    var center = spot.At + Vector3.up * half;
+                    var right = Vector3.right * half;
+                    var up = cardUp * half;
+                    builder.QuadWithNormal(center - right - up, center - right + up, center + right + up, center + right - up,
+                        CityTextures.CardUv(spot.Tile), normal);
+                }
+                builder.WriteTo(chunk.CardMesh);
+            }
+        }
+
+        /// <summary>Камера отражений (качество среднее и высокое): рисует зеркальный город в текстуру для шейдера воды.</summary>
+        void SetupReflections(int quality)
+        {
+            Shader.SetGlobalFloat("_CityReflectionOn", 0f);
+            Shader.SetGlobalColor("_CitySkyColor", _skyColor);
+            if (!_reflective || quality == 0) return;
+            var cameraObject = new GameObject("City 3D Reflection Camera");
+            cameraObject.transform.SetParent(_root.transform, false);
+            _reflectionCamera = cameraObject.AddComponent<Camera>();
+            _reflectionCamera.depth = _camera.depth - 1f; // рисуется раньше основной камеры
+            _reflectionCamera.clearFlags = CameraClearFlags.SolidColor;
+            _reflectionCamera.backgroundColor = _skyColor;
+            _reflectionCamera.cullingMask = ~(1 << WaterLayer);
+            _reflectionCamera.allowHDR = true;
+            _reflectionCamera.allowMSAA = false;
+            _reflectionCamera.useOcclusionCulling = false;
+            var data = _reflectionCamera.GetUniversalAdditionalCameraData();
+            data.renderPostProcessing = false;
+            data.renderShadows = false;
+            data.antialiasing = AntialiasingMode.None;
+            data.requiresColorOption = CameraOverrideOption.Off;
+            data.requiresDepthOption = CameraOverrideOption.Off;
+            if (_rendererIndex >= 0) data.SetRenderer(_rendererIndex);
+            _reflectionScale = quality >= 2 ? 0.5f : 0.33f;
+        }
+
+        /// <summary>
+        /// Зеркальная камера: мир отражён относительно воды (y = WaterLevel), а чтобы грани не вывернулись,
+        /// отражение дополнено зеркалом по X в пространстве камеры и в проекции — картинка в текстуре
+        /// перевёрнута по горизонтали, но шейдер берёт её той же матрицей, так что всё сходится.
+        /// Косая ближняя плоскость отрезает всё, что ниже воды.
+        /// </summary>
+        void UpdateReflection()
+        {
+            if (_reflectionCamera == null) return;
+            int width = Mathf.Max(64, Mathf.RoundToInt(Screen.width * _reflectionScale));
+            int height = Mathf.Max(64, Mathf.RoundToInt(Screen.height * _reflectionScale));
+            if (_reflectionTexture == null || _reflectionTexture.width != width || _reflectionTexture.height != height)
+            {
+                _reflectionCamera.targetTexture = null;
+                if (_reflectionTexture != null)
+                {
+                    _reflectionTexture.Release();
+                    Destroy(_reflectionTexture);
+                }
+                _reflectionTexture = new RenderTexture(width, height, 24, RenderTextureFormat.DefaultHDR)
+                {
+                    name = "City3D Reflection",
+                    hideFlags = HideFlags.DontSave
+                };
+                _reflectionTexture.Create();
+                _reflectionCamera.targetTexture = _reflectionTexture;
+            }
+
+            var mirror = Matrix4x4.identity;
+            mirror.m11 = -1f;
+            mirror.m13 = 2f * WaterLevel;
+            var flipX = Matrix4x4.Scale(new Vector3(-1f, 1f, 1f));
+            var view = flipX * _camera.worldToCameraMatrix * mirror;
+            var projection = flipX * _camera.projectionMatrix * flipX;
+            _reflectionCamera.worldToCameraMatrix = view;
+            _reflectionCamera.projectionMatrix = projection;
+            _reflectionCamera.cullingMatrix = projection * view;
+            _reflectionCamera.transform.position = mirror.MultiplyPoint(_camera.transform.position);
+            var clip = CameraSpacePlane(view, new Vector3(0f, WaterLevel + 0.002f, 0f), Vector3.up);
+            _reflectionCamera.projectionMatrix = _reflectionCamera.CalculateObliqueMatrix(clip);
+            _reflectionCamera.backgroundColor = _skyColor;
+
+            Shader.SetGlobalMatrix("_CityReflectionVP", projection * view);
+            Shader.SetGlobalTexture("_CityReflectionTex", _reflectionTexture);
+            Shader.SetGlobalFloat("_CityReflectionOn", 1f);
+        }
+
+        static Vector4 CameraSpacePlane(Matrix4x4 view, Vector3 point, Vector3 normal)
+        {
+            var p = view.MultiplyPoint(point);
+            var n = view.MultiplyVector(normal).normalized;
+            return new Vector4(n.x, n.y, n.z, -Vector3.Dot(p, n));
         }
 
         /// <summary>
@@ -511,16 +801,54 @@ namespace CityHighways.Presentation
             _camera.projectionMatrix = layout.CameraProjection(panelSize, offset);
 
             UpdateLight(light, layout.CameraPosition.magnitude);
+            UpdateReflection();
 
             foreach (var pair in _districts)
             {
-                string id = pair.Key.EndsWith("#bridges") ? pair.Key.Substring(0, pair.Key.Length - 8) : pair.Key;
+                int mark = pair.Key.IndexOf('#'); // «район#bridges», «район#decals»
+                string id = mark >= 0 ? pair.Key.Substring(0, mark) : pair.Key;
                 bool open = id == "_" || districtOpen == null || districtOpen(id);
                 if (pair.Value.activeSelf != open) pair.Value.SetActive(open);
             }
 
+            UpdateTrees(layout, districtOpen);
+
             _waterOffset = (_waterOffset + dt * 0.06f) % 1f;
             _water.SetTextureOffset("_BaseMap", new Vector2(-_waterOffset, 0f));
+            if (_reflective)
+            {
+                _waveOffset += new Vector4(0.021f, 0.013f, -0.017f, 0.024f) * dt;
+                _waveOffset = new Vector4(Mathf.Repeat(_waveOffset.x, 1f), Mathf.Repeat(_waveOffset.y, 1f),
+                    Mathf.Repeat(_waveOffset.z, 1f), Mathf.Repeat(_waveOffset.w, 1f));
+                _water.SetVector("_WaveOffset", _waveOffset);
+            }
+        }
+
+        /// <summary>
+        /// Дальние деревья — карточками: клетка переключается, когда метр сцены на экране становится меньше порога
+        /// (с запасом в обе стороны, чтобы не мигало на границе). Зум приближает — деревья снова объёмные.
+        /// </summary>
+        void UpdateTrees(BoardLayout layout, Func<string, bool> districtOpen)
+        {
+            float lean = layout.CameraTilt;
+            if (Mathf.Abs(lean - _cardLean) > 3f) RebuildCards(lean);
+            float threshold = _quality == 0 ? 125f : _quality == 1 ? 100f : 80f;
+            foreach (var chunk in _treeChunks)
+            {
+                bool open = chunk.District == "_" || districtOpen == null || districtOpen(chunk.District);
+                if (chunk.Root.activeSelf != open) chunk.Root.SetActive(open);
+                if (!open) continue;
+                var left = layout.WorldToScreen(chunk.Center - Vector3.right * 0.5f);
+                var right = layout.WorldToScreen(chunk.Center + Vector3.right * 0.5f);
+                float perUnit = (right - left).magnitude;
+                bool cards = perUnit < (chunk.ShowCards ? threshold + 10f : threshold);
+                if (cards != chunk.ShowCards || chunk.Full.activeSelf == cards)
+                {
+                    chunk.ShowCards = cards;
+                    chunk.Full.SetActive(!cards);
+                    chunk.Cards.SetActive(cards);
+                }
+            }
         }
 
         void UpdateLight(CityLight l, float cameraDistance)
@@ -552,6 +880,10 @@ namespace CityHighways.Presentation
 
             // Дымка вдали: на наклонном поле дальний край чуть растворяется.
             RenderSettings.fogColor = Color.Lerp(Color.Lerp(new Color(0.70f, 0.76f, 0.84f), new Color(0.80f, 0.62f, 0.50f), l.Golden), new Color(0.05f, 0.06f, 0.11f), l.Night);
+            // Небо в отражениях воды: днём голубое, на закате тёплое, ночью тёмно-синее.
+            _skyColor = Color.Lerp(Color.Lerp(new Color(0.62f, 0.72f, 0.86f), new Color(0.86f, 0.66f, 0.52f), Mathf.Clamp01(l.Golden + l.Twilight * 0.5f)),
+                new Color(0.04f, 0.05f, 0.10f), l.Night);
+            if (_reflective) Shader.SetGlobalColor("_CitySkyColor", _skyColor);
             RenderSettings.fogStartDistance = cameraDistance * 0.95f;
             RenderSettings.fogEndDistance = cameraDistance * 2.6f;
 
@@ -584,6 +916,15 @@ namespace CityHighways.Presentation
                 RenderSettings.fogStartDistance = _fogStart;
                 RenderSettings.fogEndDistance = _fogEnd;
             }
+            if (_reflectionCamera != null) _reflectionCamera.targetTexture = null;
+            if (_reflectionTexture != null)
+            {
+                _reflectionTexture.Release();
+                Destroy(_reflectionTexture);
+                _reflectionTexture = null;
+            }
+            Shader.SetGlobalFloat("_CityReflectionOn", 0f);
+            _treeChunks.Clear();
             if (_root != null) Destroy(_root);
             foreach (var item in _owned) if (item != null) Destroy(item);
             _owned.Clear();

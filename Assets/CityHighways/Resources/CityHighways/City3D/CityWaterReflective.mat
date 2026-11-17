@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: CityWaterReflective
+  m_Shader: {fileID: 4800000, guid: 5d2a8c7e41f94b03a6e8c1f07b3d9e21, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 2
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _WaveTiling: 2.2
+    - _WaveStrength: 0.35
+    - _Distortion: 0.03
+    - _Reflectivity: 0.7
+    - _Specular: 1.2
+    m_Colors:
+    - _BaseColor: {r: 0.55, g: 0.74, b: 0.88, a: 1}
+    - _DeepColor: {r: 0.1, g: 0.22, b: 0.32, a: 1}
+    - _WaveOffset: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
