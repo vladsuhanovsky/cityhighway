@@ -90,6 +90,68 @@ namespace CityHighways.Core
             throw new InvalidOperationException("Не удалось сгенерировать город.");
         }
 
+        // ================================================================== Проверка воды
+
+        /// <summary>Полуширина воды с набережной в пикселях генератора (3D: река 0,26 м + набережная, 1 м = 100 px).</summary>
+        public const float WaterHalfWidth = 16f;
+
+        /// <summary>
+        /// Проверка карты на воду — так, как реку рисует 3D (русло сглаживается сплайном Катмулла — Рома):
+        /// ни одно место не стоит в реке или вплотную к ней, ни одна дорога без моста не пересекает реку и не идёт
+        /// по воде, мост пересекает реку. Пустой список — карта в порядке. Годится для любой карты, не только
+        /// сгенерированной: координаты берутся в долях карты и переводятся в поле 1400×780.
+        /// </summary>
+        public static List<string> CheckWater(CityMap map)
+        {
+            var issues = new List<string>();
+            var lines = map.Rivers.Where(r => r.Count >= 2).Select(r => Smooth(r.Select(q => new P(q.X * W, q.Y * H)).ToList())).ToList();
+            if (lines.Count == 0) return issues;
+            float RiverDist(P p)
+            {
+                float best = float.MaxValue;
+                foreach (var l in lines)
+                    for (int i = 0; i + 1 < l.Count; i++) best = Math.Min(best, SegDist(p, l[i], l[i + 1]));
+                return best;
+            }
+            int Crossings(P a, P b)
+            {
+                int count = 0;
+                foreach (var l in lines)
+                    for (int k = 0; k + 1 < l.Count; k++)
+                        if (Intersect(a, b, l[k], l[k + 1])) count++;
+                return count;
+            }
+            P At(string id)
+            {
+                var l = map.GetLocation(id);
+                return new P(l.X * W, l.Y * H);
+            }
+
+            foreach (var location in map.Locations)
+            {
+                float d = RiverDist(new P(location.X * W, location.Y * H));
+                if (d < WaterHalfWidth + 10f) issues.Add($"Место «{location.Name}» стоит в реке или на самом берегу ({d:0} px от русла).");
+            }
+            foreach (var road in map.Roads)
+            {
+                if (map.GetLocation(road.A) == null || map.GetLocation(road.B) == null) continue;
+                var a = At(road.A); var b = At(road.B);
+                string name = $"{map.LocationName(road.A)} — {map.LocationName(road.B)}";
+                int crossings = Crossings(a, b);
+                if (road.IsBridge)
+                {
+                    if (crossings == 0) issues.Add($"Мост {name} не пересекает реку.");
+                    continue;
+                }
+                if (crossings > 0) { issues.Add($"Дорога {name} пересекает реку без моста."); continue; }
+                float length = Dist(a, b), near = float.MaxValue;
+                int samples = Math.Max(8, (int)(length / 4f));
+                for (int t = 0; t <= samples; t++) near = Math.Min(near, RiverDist(a + (b - a) * (t / (float)samples)));
+                if (near < WaterHalfWidth) issues.Add($"Дорога {name} идёт по воде ({near:0} px от русла).");
+            }
+            return issues;
+        }
+
         // ================================================================== Геометрия
 
         static float Dist(P a, P b) => (float)Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
@@ -435,8 +497,11 @@ namespace CityHighways.Core
 
             var map = new CityMap(CityFirst[rng.Next(CityFirst.Length)] + CityLast[rng.Next(CityLast.Length)],
                 districts, locations, roads, new Contract[0]);
-            map.SetExtras(rivers.Select(r => (IReadOnlyList<MapPoint>)r.Select(p => new MapPoint(Math.Min(1f, Math.Max(0f, p.X / W)), Math.Min(1f, Math.Max(0f, p.Y / H)))).ToList()), 1f);
-            if (map.Validate(6).Count > 0) return null;
+            // В карту — уже сглаженные русла (по ним проверялись места и дороги): 3D-вода, берега на рельефе и
+            // застройка берут точки как есть. Раньше сюда шли редкие опорные точки — 3D сглаживало их в дугу,
+            // а дома ставились по прямым хордам, и на изгибах притока дома оказывались в воде.
+            map.SetExtras(lines.Select(r => (IReadOnlyList<MapPoint>)r.Select(p => new MapPoint(Math.Min(1f, Math.Max(0f, p.X / W)), Math.Min(1f, Math.Max(0f, p.Y / H)))).ToList()), 1f);
+            if (map.Validate(6).Count > 0 || CheckWater(map).Count > 0) return null;
 
             // Городская сеть: минимальное остовное дерево (мосты чуть «дороже» — их в общей сети меньше).
             var city = new GeneratedCity { Map = map, Seed = seed };

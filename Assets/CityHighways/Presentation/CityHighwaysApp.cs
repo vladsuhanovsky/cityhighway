@@ -209,6 +209,23 @@ namespace CityHighways.Presentation
         /// «Логистический магнат»: экран загрузки, город генерируется заново (каждый раз новое зерно),
         /// создаётся партия и экран, строится 3D-город — по шагу за кадр, чтобы полоса загрузки двигалась.
         /// </summary>
+        /// <summary>
+        /// Город для магната с проверкой при запуске: места не в реке, дороги без моста не идут по воде, мосты
+        /// пересекают реку (CityGenerator.CheckWater — по тем же сглаженным руслам, что рисует 3D). Если что-то не так —
+        /// берём другой город, о каждом отбракованном пишем в консоль.
+        /// </summary>
+        static GeneratedCity GenerateCheckedCity(int seed)
+        {
+            for (int attempt = 0; attempt < 12; attempt++)
+            {
+                var city = CityGenerator.Generate(seed + attempt * 104729);
+                var issues = CityGenerator.CheckWater(city.Map);
+                if (issues.Count == 0) return city;
+                Debug.LogWarning($"Город {city.Map.Name} (seed {city.Seed}) отбракован проверкой воды:\n" + string.Join("\n", issues));
+            }
+            throw new InvalidOperationException("Не удалось сгенерировать город без ошибок на воде.");
+        }
+
         public void StartMagnate(GameSetup setup)
         {
             setup.Save();
@@ -232,7 +249,7 @@ namespace CityHighways.Presentation
             MagnateView view = null;
             var steps = new List<(string, Action)>
             {
-                ("Прокладываем реки и намечаем кварталы…", () => city = CityGenerator.Generate(seed)),
+                ("Прокладываем реки и намечаем кварталы…", () => city = GenerateCheckedCity(seed)),
                 ("Расставляем аэропорты, вокзалы и порты…", () => game = new LogisticsGame(city, names, bots, seed,
                     MagnateConfig.For((MagnateDifficulty)Mathf.Clamp(setup.magnateDifficulty, 0, 3)))),
                 ("Рисуем карту и дороги…", () =>
