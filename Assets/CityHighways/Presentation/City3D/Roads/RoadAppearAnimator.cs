@@ -46,6 +46,30 @@ namespace CityHighways.Presentation
 #endif
         }
 
+        /// <summary>
+        /// Постепенное появление «по фронту»: всё, что до distance (метры от начала дороги), уже лежит, кусок под
+        /// фронтом вытянут ровно до него (масштаб по Z), дальше — пусто; опора поднимается, когда фронт над ней.
+        /// Так дорогу проявляет стройка (RoadConstructionPlayer) кадр за кадром.
+        /// </summary>
+        public static void Reveal(BuiltRoad road, float distance)
+        {
+            if (road?.Root == null) return;
+            foreach (var item in road.Growing)
+            {
+                if (item.transform == null) continue;
+                if (item.rise)
+                {
+                    float k = Mathf.Clamp01((distance - item.at) / 0.06f);
+                    item.transform.localScale = new Vector3(item.scale.x, Mathf.Max(Tiny, item.scale.y * k), item.scale.z);
+                }
+                else
+                {
+                    float k = Mathf.Clamp01((distance - item.at) / Mathf.Max(Tiny, item.scale.z));
+                    item.transform.localScale = new Vector3(item.scale.x, item.scale.y, Mathf.Max(Tiny, item.scale.z * k));
+                }
+            }
+        }
+
         /// <summary>Остановить анимацию и поставить куски в конечный размер.</summary>
         public static void Kill(BuiltRoad road)
         {

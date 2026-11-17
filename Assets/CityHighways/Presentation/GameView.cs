@@ -972,6 +972,9 @@ namespace CityHighways.Presentation
                 _city3D = City3DScene.TryCreate(_game.Map, display != null ? Mathf.Clamp(display.city3DQuality, 0, 2) : 2);
             bool on = _city3D != null;
             _map.Use3D = on;
+            var city = _city3D;
+            _map.RoadHidden = null;
+            if (on) _map.RoadHidden = id => city.IsUnderConstruction(id);
             Root.style.backgroundColor = on ? Color.clear : Theme.Background;
             _app.SetSceneBehind(on);
         }
@@ -982,6 +985,7 @@ namespace CityHighways.Presentation
             if (_city3D == null) return;
             _city3D.Dispose();
             _city3D = null;
+            _map.RoadHidden = null;
             _map.Use3D = false;
             Root.style.backgroundColor = Theme.Background;
             _app.SetSceneBehind(false);

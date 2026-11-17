@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a5c2e3d4b6f47c8b0d1e2f3a4b5c6d7, type: 3}
+  m_Name: RoadConstruction
+  m_EditorClassIdentifier: 
+  workerPrefab: {fileID: 0}
+  excavatorPrefab: {fileID: 0}
+  rollerPrefab: {fileID: 0}
+  dustPrefab: {fileID: 0}
+  prewarmWorkers: 6
+  prewarmMachines: 2
+  prewarmDust: 12
+  minWorkers: 2
+  maxWorkers: 3
+  workerLegTime: 0.42
+  workerRange: 0.09
+  workerShoulder: 0.018
+  workerHopHeight: 0.004
+  workerHopTime: 0.11
+  excavatorLead: 0.075
+  excavatorSide: 0.03
+  digCycle: 1.3
+  rollerLag: 0.055
+  rollerShake: 0.0007
+  popIn: 0.25
+  linger: 0.15
+  popOut: 0.25
+  dustLife: 0.6

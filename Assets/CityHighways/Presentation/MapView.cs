@@ -97,6 +97,14 @@ namespace CityHighways.Presentation
             }
         }
         bool _use3D;
+        /// <summary>
+        /// Дороги, которые интерфейс сейчас не рисует: в 3D пока идёт стройка (рабочие, экскаватор, каток),
+        /// дорогу показывает сама 3D-сцена, а нарисованная поверх дорога закрыла бы технику.
+        /// </summary>
+        public Func<string, bool> RoadHidden;
+
+        bool RoadVisible(Road road) => _game.IsRoadOpen(road.Id) && (RoadHidden == null || !RoadHidden(road.Id));
+
         /// <summary>Пересчитать раскладку поля (например, после смены угла камеры).</summary>
         public void RefreshLayout() => Relayout();
         /// <summary>Наклон камеры 3D-города от вертикали, градусы (30–45).</summary>
@@ -780,7 +788,7 @@ namespace CityHighways.Presentation
 
             DrawAtmosphere(p, area);
             foreach (var road in _game.Map.Roads)
-                if (_game.IsRoadOpen(road.Id)) DrawRoadOver(p, road);
+                if (RoadVisible(road)) DrawRoadOver(p, road);
             DrawCars(p);
             DrawStreetLights(p);
             foreach (var location in _game.Map.Locations)
@@ -1037,7 +1045,7 @@ namespace CityHighways.Presentation
             }
 
             foreach (var road in _game.Map.Roads)
-                if (PathRoads.ContainsKey(road.Id))
+                if (PathRoads.ContainsKey(road.Id) && RoadVisible(road))
                 {
                     DrawRoadFlat(p, road);
                     DrawRoadOver(p, road);
@@ -1155,7 +1163,7 @@ namespace CityHighways.Presentation
             p.lineJoin = LineJoin.Round;
             p.lineCap = LineCap.Round;
             foreach (var road in _game.Map.Roads)
-                if (_game.IsRoadOpen(road.Id)) DrawRoadUnder(p, road);
+                if (RoadVisible(road)) DrawRoadUnder(p, road);
         }
 
         /// <summary>Высота дороги над городом (в единицах мира): обычная 0.1, магистраль 0.2, контракт/активная 0.3.</summary>
@@ -1339,7 +1347,7 @@ namespace CityHighways.Presentation
             _quads.Clear();
             foreach (var road in _game.Map.Roads)
             {
-                if (!_game.IsRoadOpen(road.Id)) continue;
+                if (!RoadVisible(road)) continue;
                 var texture = RoadTextures.For(road);
                 s_roadWidthScale = RoadWidthScale(road);
                 var segments = _layout.GetSegments(road);
@@ -1864,7 +1872,7 @@ namespace CityHighways.Presentation
             foreach (var road in _game.Map.Roads)
             {
                 var owner = _game.GetRoadOwner(road.Id);
-                if (!owner.HasValue || BuildProgress.ContainsKey(road.Id)) continue;
+                if (!owner.HasValue || BuildProgress.ContainsKey(road.Id) || !RoadVisible(road)) continue;
                 var segments = _layout.GetSegments(road);
                 if (segments.Count == 0) continue;
                 float rad = segments[0].Angle * Mathf.Deg2Rad;

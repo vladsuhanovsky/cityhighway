@@ -96,6 +96,8 @@ namespace CityHighways.Presentation
         readonly List<List<Vector3>> _riverLines = new List<List<Vector3>>();
         readonly Dictionary<string, BuiltRoad> _builtRoads = new Dictionary<string, BuiltRoad>();
         bool _roadsSynced;
+        RoadConstructionPlayer _construction;
+        readonly HashSet<string> _constructing = new HashSet<string>();
 
         public int BuildingCount { get; private set; }
         public int TreeCount { get; private set; }
@@ -775,7 +777,35 @@ namespace CityHighways.Presentation
             if (mask == 0) mask = 1 << WaterLayer;
             // Луч по слою Water (у воды MeshCollider) и, для надёжности, расстояние до линии реки.
             _roads.Detector = new RiverCrossingDetector(RiverDetection.Both, mask, 1f, _riverLines, RiverWidth / 2f);
+
+            // Стройка: рабочие, экскаватор и каток из пулов. Свои префабы — в Resources/…/RoadConstruction.asset,
+            // пустые поля заполняются моделями, собранными кодом.
+            var crewSource = Resources.Load<RoadConstructionSet>(ResourceFolder + "RoadConstruction");
+            var crew = crewSource != null ? UnityEngine.Object.Instantiate(crewSource) : ScriptableObject.CreateInstance<RoadConstructionSet>();
+            crew.hideFlags = HideFlags.DontSave;
+            _owned.Add(crew);
+            if (crew.workerPrefab == null || crew.excavatorPrefab == null || crew.rollerPrefab == null || crew.dustPrefab == null)
+            {
+                var crewMaterial = LoadMaterial("CityBuildings", Color.white);
+                crewMaterial.SetTexture("_BaseMap", ConstructionArt.Palette);
+                crewMaterial.SetColor("_EmissionColor", Color.black);
+                crewMaterial.DisableKeyword("_EMISSION");
+                NoSpecular(crewMaterial);
+                var art = ConstructionArt.Build(templates.transform, crewMaterial, _owned);
+                if (crew.workerPrefab == null) crew.workerPrefab = art.Worker;
+                if (crew.excavatorPrefab == null) crew.excavatorPrefab = art.Excavator;
+                if (crew.rollerPrefab == null) crew.rollerPrefab = art.Roller;
+                if (crew.dustPrefab == null) crew.dustPrefab = art.Dust;
+            }
+            _construction = _root.AddComponent<RoadConstructionPlayer>();
+            _construction.Init(_roads, crew);
         }
+
+        /// <summary>Идёт ли сейчас стройка этой дороги (интерфейс не рисует её поверх, пока видна техника).</summary>
+        public bool IsUnderConstruction(string roadId) => _constructing.Contains(roadId);
+
+        /// <summary>Стройка 2–3 секунды: чем длиннее дорога, тем дольше.</summary>
+        static float ConstructionSeconds(Vector3 a, Vector3 b) => Mathf.Clamp(1.9f + 0.45f * Vector3.Distance(a, b), 2f, 3f);
 
         GameObject Template(GameObject parent, string name, Action<MeshBuilder> build)
         {
@@ -863,13 +893,23 @@ namespace CityHighways.Presentation
                     var la = game.Map.GetLocation(road.A);
                     var lb = game.Map.GetLocation(road.B);
                     if (la == null || lb == null) continue;
-                    built = _roads.BuildRoad(BoardLayout.World(la.X, la.Y), BoardLayout.World(lb.X, lb.Y), animated);
+                    var start = BoardLayout.World(la.X, la.Y);
+                    var end = BoardLayout.World(lb.X, lb.Y);
+                    if (animated && _construction != null)
+                    {
+                        // Стройка: дорога проявляется по фронту, вокруг — рабочие, экскаватор и каток.
+                        string id = road.Id;
+                        built = _construction.PlayConstruction(start, end, ConstructionSeconds(start, end), done => _constructing.Remove(id));
+                        if (built != null) _constructing.Add(id);
+                    }
+                    else built = _roads.BuildRoad(start, end, false);
                     if (built != null) _builtRoads[road.Id] = built;
                 }
                 else if (!owned && has)
                 {
                     _roads.Remove(built);
                     _builtRoads.Remove(road.Id);
+                    _constructing.Remove(road.Id);
                 }
             }
         }
@@ -1015,7 +1055,9 @@ namespace CityHighways.Presentation
             Shader.SetGlobalFloat("_CityReflectionOn", 0f);
             _treeChunks.Clear();
             _builtRoads.Clear();
+            _constructing.Clear();
             _roads = null;
+            _construction = null;
             if (_root != null) Destroy(_root);
             foreach (var item in _owned) if (item != null) Destroy(item);
             _owned.Clear();
