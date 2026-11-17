@@ -422,17 +422,56 @@ namespace CityHighways.Presentation
             groundMesh.RecalculateTangents(); // карте неровностей нужны касательные, иначе освещение ломается
             AddMesh("Ground", groundMesh, _ground, _root.transform, false);
 
-            // Торцы плиты.
-            var sides = new MeshBuilder();
-            var edge = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Asphalt);
-            var nw = BoardLayout.World(-m, -m); var ne = BoardLayout.World(1f + m, -m);
-            var sw = BoardLayout.World(-m, 1f + m); var se = BoardLayout.World(1f + m, 1f + m);
-            var down = Vector3.down * 0.35f;
-            sides.Quad(sw + down, sw, se, se + down, edge);
-            sides.Quad(se + down, se, ne, ne + down, edge);
-            sides.Quad(ne + down, ne, nw, nw + down, edge);
-            sides.Quad(nw + down, nw, sw, sw + down, edge);
-            AddMesh("Board edge", sides.ToMesh("City3D Board Edge"), _buildings, _root.transform, false);
+            BuildOutskirtsGround();
+        }
+
+        /// <summary>
+        /// Земля вокруг доски до горизонта: квадрат 60 × 60 м с текстурой окрестностей (поля, лесная подстилка,
+        /// деревни; у края доски — тот же цвет шва, что у доски) и за ним ровная равнина 400 × 400 м, которую
+        /// растворяет туман. Обе чуть ниже доски — доска лежит поверх без мерцания.
+        /// </summary>
+        void BuildOutskirtsGround()
+        {
+            const float extent = CityTextures.OutskirtsExtent, y = -0.003f;
+            var near = new MeshBuilder();
+            const int cells = 16;
+            for (int iz = 0; iz < cells; iz++)
+            for (int ix = 0; ix < cells; ix++)
+            {
+                float x0 = -extent + 2f * extent * ix / cells, x1 = -extent + 2f * extent * (ix + 1) / cells;
+                float z0 = -extent + 2f * extent * iz / cells, z1 = -extent + 2f * extent * (iz + 1) / cells;
+                var uv = new Rect((x0 + extent) / (2f * extent), (z0 + extent) / (2f * extent), (x1 - x0) / (2f * extent), (z1 - z0) / (2f * extent));
+                // Юго-запад, северо-запад, северо-восток, юго-восток — грань смотрит вверх.
+                near.Quad(new Vector3(x0, y, z0), new Vector3(x0, y, z1), new Vector3(x1, y, z1), new Vector3(x1, y, z0), uv);
+            }
+            var outskirts = LoadMaterial("CityGround", Color.white);
+            outskirts.SetTexture("_BaseMap", CityTextures.Outskirts(_map));
+            outskirts.SetFloat("_Smoothness", 0.04f);
+            NoSpecular(outskirts);
+            // Та же мелкая деталь, что у доски, с тем же шагом на метр.
+            outskirts.EnableKeyword("_NORMALMAP");
+            outskirts.SetTexture("_DetailAlbedoMap", CityTextures.DetailAlbedo);
+            outskirts.SetTexture("_DetailNormalMap", CityTextures.DetailNormal);
+            outskirts.SetFloat("_DetailAlbedoMapScale", 1f);
+            outskirts.SetFloat("_DetailNormalMapScale", 0.6f);
+            float tiles = 40f / (BoardLayout.WorldWidth * (1f + 2f * TerrainTexture.Margin)) * 2f * extent;
+            outskirts.SetTextureScale("_DetailAlbedoMap", new Vector2(tiles, tiles));
+            outskirts.EnableKeyword("_DETAIL_MULX2");
+            var nearMesh = near.ToMesh("City3D Outskirts");
+            nearMesh.RecalculateTangents();
+            AddMesh("Outskirts", nearMesh, outskirts, _root.transform, false);
+
+            // Равнина до горизонта: ровный цвет шва, вырез под квадрат окрестностей.
+            var plain = new MeshBuilder();
+            var flat = new Rect(0.5f, 0.5f, 0f, 0f);
+            const float far = 200f, low = y - 0.002f;
+            plain.Quad(new Vector3(-far, low, -far), new Vector3(-far, low, -extent), new Vector3(far, low, -extent), new Vector3(far, low, -far), flat);
+            plain.Quad(new Vector3(-far, low, extent), new Vector3(-far, low, far), new Vector3(far, low, far), new Vector3(far, low, extent), flat);
+            plain.Quad(new Vector3(-far, low, -extent), new Vector3(-far, low, extent), new Vector3(-extent, low, extent), new Vector3(-extent, low, -extent), flat);
+            plain.Quad(new Vector3(extent, low, -extent), new Vector3(extent, low, extent), new Vector3(far, low, extent), new Vector3(far, low, -extent), flat);
+            var plainMaterial = LoadMaterial("CityGround", TerrainTexture.SeamColor);
+            NoSpecular(plainMaterial);
+            AddMesh("Plain", plain.ToMesh("City3D Plain"), plainMaterial, _root.transform, false);
         }
 
         /// <summary>Реки: вода (текстура течёт вдоль русла) и гранитные набережные с двух сторон.</summary>
@@ -446,8 +485,11 @@ namespace CityHighways.Presentation
                 if (line.Count < 2) continue;
                 var raw = line.Select(p => BoardLayout.World(p.X, p.Y)).ToList();
                 // Продлеваем концы за край карты, чтобы вода не обрывалась на кромке поля.
-                raw.Insert(0, raw[0] + (raw[0] - raw[1]).normalized * 1.6f);
-                raw.Add(raw[raw.Count - 1] + (raw[raw.Count - 1] - raw[raw.Count - 2]).normalized * 1.6f);
+                // Река уходит за край доски до горизонта (окрестности тянутся на 30 м).
+                raw.Insert(0, raw[0] + (raw[0] - raw[1]).normalized * 0.6f);
+                raw.Insert(0, raw[0] + (raw[0] - raw[1]).normalized * 30f);
+                raw.Add(raw[raw.Count - 1] + (raw[raw.Count - 1] - raw[raw.Count - 2]).normalized * 0.6f);
+                raw.Add(raw[raw.Count - 1] + (raw[raw.Count - 1] - raw[raw.Count - 2]).normalized * 30f);
                 var points = Smooth(raw, 5);
                 _riverLines.Add(points);
                 float along = 0f;
@@ -588,14 +630,14 @@ namespace CityHighways.Presentation
                 var at = CityPlanner.ToWorld(tree.At);
                 int cx = Mathf.FloorToInt(at.x / TreeChunkSize), cz = Mathf.FloorToInt(at.z / TreeChunkSize);
                 string district = tree.District ?? "_";
-                string key = district + "#" + cx + "," + cz;
+                string key = district + "#" + cx + "," + cz + (tree.CardOnly ? "#far" : "");
                 if (!chunks.TryGetValue(key, out var chunk))
                 {
                     chunk = new TreeChunk { District = district, Center = new Vector3((cx + 0.5f) * TreeChunkSize, 0f, (cz + 0.5f) * TreeChunkSize) };
                     chunks[key] = chunk;
                     builders[key] = new MeshBuilder();
                 }
-                CityShapes.BuildTree(builders[key], tree.Kind, at, tree.Size, new System.Random(tree.Seed), false);
+                if (!tree.CardOnly) CityShapes.BuildTree(builders[key], tree.Kind, at, tree.Size, new System.Random(tree.Seed), false);
                 chunk.Spots.Add(new CardSpot { At = at, Size = tree.Size, Tile = CardTile(tree) });
             }
             foreach (var pair in chunks)
@@ -603,10 +645,13 @@ namespace CityHighways.Presentation
                 var chunk = pair.Value;
                 chunk.Root = new GameObject("Trees " + pair.Key);
                 chunk.Root.transform.SetParent(_root.transform, false);
-                chunk.Full = AddMesh("Trees 3D", builders[pair.Key].ToMesh("City3D Trees " + pair.Key), _buildings, chunk.Root.transform, true);
+                // Дальние окрестности — только карточки: туда камера близко не подлетает.
+                if (builders[pair.Key].VertexCount > 0)
+                    chunk.Full = AddMesh("Trees 3D", builders[pair.Key].ToMesh("City3D Trees " + pair.Key), _buildings, chunk.Root.transform, true);
                 chunk.CardMesh = new Mesh { name = "City3D Tree Cards " + pair.Key, hideFlags = HideFlags.DontSave };
                 chunk.Cards = AddMesh("Tree cards", chunk.CardMesh, _cards, chunk.Root.transform, true);
-                chunk.Cards.SetActive(false);
+                chunk.Cards.SetActive(chunk.Full == null);
+                chunk.ShowCards = chunk.Full == null;
                 _treeChunks.Add(chunk);
             }
             RebuildCards(0f);
@@ -1081,7 +1126,7 @@ namespace CityHighways.Presentation
             {
                 bool open = chunk.District == "_" || districtOpen == null || districtOpen(chunk.District);
                 if (chunk.Root.activeSelf != open) chunk.Root.SetActive(open);
-                if (!open) continue;
+                if (!open || chunk.Full == null) continue;
                 var left = layout.WorldToScreen(chunk.Center - Vector3.right * 0.5f);
                 var right = layout.WorldToScreen(chunk.Center + Vector3.right * 0.5f);
                 float perUnit = (right - left).magnitude;
@@ -1129,6 +1174,8 @@ namespace CityHighways.Presentation
                 new Color(0.04f, 0.05f, 0.10f), l.Night);
             if (_reflective) Shader.SetGlobalColor("_CitySkyColor", _skyColor);
             RenderSettings.fogStartDistance = cameraDistance * 0.95f;
+            // Небо за горизонтом — цвета дымки: окрестности растворяются в тумане без резкой границы.
+            _camera.backgroundColor = RenderSettings.fogColor;
             RenderSettings.fogEndDistance = cameraDistance * 2.6f;
 
             // Окна загораются вместе с фонарями.

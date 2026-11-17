@@ -35,6 +35,8 @@ namespace CityHighways.Presentation
             public CityShapes.Tree Kind;
             public string District;
             public int Seed;
+            /// <summary>Дальние окрестности: дерево видно только карточкой (объёмный меш не строится).</summary>
+            public bool CardOnly;
         }
 
         /// <summary>Декали на земле — порядок совпадает с плитками атласа CityTextures.Decals.</summary>
@@ -63,7 +65,7 @@ namespace CityHighways.Presentation
         public static Vector3 ToWorld(Vector2 field, float y = 0f) =>
             new Vector3(field.x / PixelsPerUnit - BoardLayout.WorldWidth / 2f, y, BoardLayout.WorldDepth / 2f - field.y / PixelsPerUnit);
 
-        static float Hash(int x, int y, int salt)
+        public static float Hash(int x, int y, int salt)
         {
             unchecked
             {
@@ -75,7 +77,7 @@ namespace CityHighways.Presentation
             }
         }
 
-        static float Noise(float x, float y, float cell, int salt)
+        public static float Noise(float x, float y, float cell, int salt)
         {
             float gx = x / cell, gy = y / cell;
             int ix = Mathf.FloorToInt(gx), iy = Mathf.FloorToInt(gy);
@@ -379,7 +381,94 @@ namespace CityHighways.Presentation
                 bool bank = Nearest(p, river) < 30f && Hash(ix, iy, 56) < 0.35f * density;
                 if (forest || yard || bank) AddTree(p, forest ? 0.07f + Hash(ix, iy, 54) * 0.04f : 0.05f + Hash(ix, iy, 54) * 0.03f, 57, forest);
             }
+            AddOutskirts(map, plan, density, river);
+            plan.Decals.Sort((a, b) => Layer(a.Kind).CompareTo(Layer(b.Kind)));
             return plan;
+        }
+
+        // ================================================================== Окрестности
+
+        /// <summary>Сколько окрестностей за краем поля (пиксели поля): видно в перспективе до тумана.</summary>
+        public const float OutskirtsLeft = -800f, OutskirtsRight = 2200f, OutskirtsTop = -1150f, OutskirtsBottom = 1050f;
+        /// <summary>Лес в окрестностях (тот же шум рисует тёмную подстилку на текстуре окрестностей).</summary>
+        public static float ForestNoise(float x, float y) => Noise(x, y, 150f, 301);
+        public static float VillageNoise(float x, float y) => Noise(x, y, 230f, 302);
+        public const float ForestLevel = 0.56f, VillageLevel = 0.72f;
+
+        /// <summary>
+        /// Земля за краем поля — продолжение карты до горизонта: леса (вблизи — объёмные деревья, дальше —
+        /// карточки), деревни из домиков с двускатными и вальмовыми крышами и лоскуты полей. Реки продолжены
+        /// за край — у воды ничего не строится. Всё детерминировано.
+        /// </summary>
+        static void AddOutskirts(CityMap map, Plan plan, float density, List<Seg> river)
+        {
+            // Реки за краем: продолжаем крайние отрезки далеко наружу.
+            var rivers = new List<Seg>(river);
+            foreach (var line in map.Rivers)
+            {
+                if (line.Count < 2) continue;
+                Vector2 F(int i) => new Vector2(line[i].X * FieldW, line[i].Y * FieldH);
+                var a = F(0); var a2 = F(1); var b = F(line.Count - 1); var b2 = F(line.Count - 2);
+                rivers.Add(new Seg { A = a, B = a + (a - a2).normalized * 4000f });
+                rivers.Add(new Seg { A = b, B = b + (b - b2).normalized * 4000f });
+            }
+            bool Outside(Vector2 p, float pad) => p.x < -pad || p.x > FieldW + pad || p.y < -pad || p.y > FieldH + pad;
+            float BeyondField(Vector2 p) => Mathf.Max(Mathf.Max(-p.x, p.x - FieldW), Mathf.Max(-p.y, p.y - FieldH));
+
+            // Леса.
+            const float treeCell = 17f;
+            for (float y = OutskirtsTop; y < OutskirtsBottom; y += treeCell)
+            for (float x = OutskirtsLeft; x < OutskirtsRight; x += treeCell)
+            {
+                int ix = Mathf.RoundToInt(x / treeCell), iy = Mathf.RoundToInt(y / treeCell);
+                var p = new Vector2(x + (Hash(ix, iy, 310) - 0.5f) * treeCell * 0.8f, y + (Hash(ix, iy, 311) - 0.5f) * treeCell * 0.8f);
+                if (!Outside(p, 6f) || ForestNoise(p.x, p.y) < ForestLevel || Hash(ix, iy, 312) > 0.78f * density) continue;
+                if (Nearest(p, rivers) < 24f) continue;
+                float size = 0.07f + Hash(ix, iy, 313) * 0.045f;
+                plan.Trees.Add(new TreeSpot
+                {
+                    At = p, Size = size, Kind = Hash(ix, iy, 314) < 0.5f ? CityShapes.Tree.Spruce : CityShapes.Tree.Round,
+                    District = null, Seed = ix * 92821 + iy * 68917, CardOnly = BeyondField(p) > 240f
+                });
+            }
+
+            // Деревни: домики по сетке там, где шум деревни высок, а леса нет.
+            const float houseCell = 19f;
+            for (float y = OutskirtsTop; y < OutskirtsBottom; y += houseCell)
+            for (float x = OutskirtsLeft; x < OutskirtsRight; x += houseCell)
+            {
+                int ix = Mathf.RoundToInt(x / houseCell), iy = Mathf.RoundToInt(y / houseCell);
+                var p = new Vector2(x + (Hash(ix, iy, 320) - 0.5f) * 5f, y + (Hash(ix, iy, 321) - 0.5f) * 5f);
+                if (!Outside(p, 10f) || VillageNoise(p.x, p.y) < VillageLevel || ForestNoise(p.x, p.y) > ForestLevel - 0.04f) continue;
+                if (Hash(ix, iy, 322) > 0.62f * density || Nearest(p, rivers) < 30f) continue;
+                float w = 9f + Hash(ix, iy, 323) * 4f, d = 7f + Hash(ix, iy, 324) * 3f;
+                plan.Buildings.Add(new Building
+                {
+                    Center = p, Width = w, Depth = d, Height = 0.032f + Hash(ix, iy, 325) * 0.022f,
+                    Angle = (Hash(ix, iy, 326) < 0.5f ? 0f : 90f) + (Hash(ix, iy, 327) - 0.5f) * 14f,
+                    Kind = Hash(ix, iy, 328) < 0.55f ? CityShapes.Kind.Gable : CityShapes.Kind.Hip,
+                    District = null, Seed = 500000 + ix * 7919 + iy * 104729
+                });
+            }
+
+            // Поля: лоскуты пшеницы, всходов и пашни; в районе — общий наклон рядов, как у настоящих полей.
+            const float fieldCell = 78f;
+            for (float y = OutskirtsTop; y < OutskirtsBottom; y += fieldCell)
+            for (float x = OutskirtsLeft; x < OutskirtsRight; x += fieldCell)
+            {
+                int ix = Mathf.RoundToInt(x / fieldCell), iy = Mathf.RoundToInt(y / fieldCell);
+                var p = new Vector2(x + (Hash(ix, iy, 330) - 0.5f) * 20f, y + (Hash(ix, iy, 331) - 0.5f) * 20f);
+                if (!Outside(p, 30f) || ForestNoise(p.x, p.y) > ForestLevel - 0.06f || VillageNoise(p.x, p.y) > VillageLevel - 0.08f) continue;
+                if (Hash(ix, iy, 332) > 0.68f || Nearest(p, rivers) < 70f) continue;
+                float pick = Hash(ix, iy, 333);
+                var kind = pick < 0.4f ? DecalKind.FieldWheat : pick < 0.72f ? DecalKind.FieldGreen : DecalKind.FieldSoil;
+                float tilt = (Noise(p.x, p.y, 600f, 334) - 0.5f) * 50f;
+                plan.Decals.Add(new Decal
+                {
+                    Center = p, Width = 56f + Hash(ix, iy, 335) * 26f, Depth = 40f + Hash(ix, iy, 336) * 20f,
+                    Angle = tilt + (Hash(ix, iy, 337) < 0.5f ? 0f : 90f), Kind = kind, District = null
+                });
+            }
         }
     }
 }

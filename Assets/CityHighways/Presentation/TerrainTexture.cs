@@ -16,8 +16,13 @@ namespace CityHighways.Presentation
         /// <summary>Текстура покрывает координаты карты [-Margin, 1 + Margin] — с запасом под отступы поля.</summary>
         public const float Margin = 0.12f;
         public static readonly Color GrassDark = new Color(0.29f, 0.40f, 0.17f);
-        static readonly Color GrassLight = new Color(0.45f, 0.55f, 0.25f);
-        static readonly Color Field = new Color(0.62f, 0.60f, 0.34f);
+        public static readonly Color GrassLight = new Color(0.45f, 0.55f, 0.25f);
+        public static readonly Color Field = new Color(0.62f, 0.60f, 0.34f);
+        /// <summary>
+        /// Цвет шва 3D-доски и окрестностей: у края доски земля плавно переходит в этот цвет, и окрестности
+        /// (CityTextures.Outskirts) у края — тоже, поэтому граница доски не видна.
+        /// </summary>
+        public static Color SeamColor => Color.Lerp(GrassDark, GrassLight, 0.5f);
         static readonly Color Pavement = new Color(0.50f, 0.50f, 0.46f);
         static readonly Color[] Roofs =
         {
@@ -203,6 +208,12 @@ namespace CityHighways.Presentation
                 float grey = Mathf.Clamp01(u * 0.85f + (ValueNoise(x, y, 40f, 31) - 0.5f) * 0.5f) * 0.75f;
                 c = Color.Lerp(c, Pavement, grey);
                 float grain = (Hash(x, y, 5) - 0.5f) * 0.04f;
+                if (city3D)
+                {
+                    // У края 3D-доски земля сходит в цвет шва — дальше её продолжают окрестности.
+                    float edge = Mathf.Min(Mathf.Min(x, w - 1 - x), Mathf.Min(y, h - 1 - y)) / Mathf.Max(1f, 70f * k);
+                    c = Color.Lerp(SeamColor, c, Mathf.Clamp01(edge));
+                }
                 canvas.Pixels[(h - 1 - y) * w + x] = new Color(c.r + grain, c.g + grain, c.b + grain, 1f);
             }
 
