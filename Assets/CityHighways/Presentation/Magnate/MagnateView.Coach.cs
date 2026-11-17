@@ -120,10 +120,27 @@ namespace CityHighways.Presentation
             UpdateCoachVisibility();
         }
 
+        /// <summary>
+        /// Сохранить настройки магната (обучение пройдено, слои). У тренировочной партии свой GameSetup — тогда
+        /// переносим только эти два поля в сохранённые настройки игрока, ничего больше не трогая.
+        /// </summary>
+        void SaveSetup()
+        {
+            if (!_setup.practice)
+            {
+                _setup.Save();
+                return;
+            }
+            var stored = GameSetup.Load();
+            stored.magnateTutorialDone = _setup.magnateTutorialDone;
+            stored.magnateLayers = _setup.magnateLayers;
+            stored.Save();
+        }
+
         void FinishCoach()
         {
             _setup.magnateTutorialDone = true;
-            _setup.Save();
+            SaveSetup();
             SetCoachStep(-1);
         }
 

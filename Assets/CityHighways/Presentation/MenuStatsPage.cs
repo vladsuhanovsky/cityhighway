@@ -23,9 +23,13 @@ namespace CityHighways.Presentation
         enum HistoryFilter { All, Wins, Online, Week }
 
         readonly Action _rebuild;
-        readonly List<GameStat> _games;
-        readonly VisualElement _body;
-        readonly List<string> _humans;
+        /// <summary>Все партии журнала и партии выбранного режима (по ним строится весь дашборд).</summary>
+        readonly List<GameStat> _all;
+        List<GameStat> _games;
+        readonly VisualElement _body, _tabs;
+        List<string> _humans;
+        /// <summary>Выбранная вкладка режима — запоминается, пока игра открыта.</summary>
+        static GameMode s_mode = GameMode.Magnate;
         string _player;
         HistoryFilter _filter = HistoryFilter.All;
         bool _pieByCharacter;
@@ -37,7 +41,7 @@ namespace CityHighways.Presentation
         public StatsView(Action back, Action rebuild)
         {
             _rebuild = rebuild;
-            _games = StatsLog.LoadAll();
+            _all = StatsLog.LoadAll();
             Root = Ui.Column();
 
             var header = Ui.Row();
@@ -49,41 +53,80 @@ namespace CityHighways.Presentation
             var title = Ui.Text("Счётчик партий", 34f, Theme.Gold, true);
             title.style.flexGrow = 1f;
             header.Add(title);
-            if (_games.Count > 0) header.Add(ResetButton());
+            if (_all.Count > 0) header.Add(ResetButton());
             Root.Add(header);
 
-            if (_games.Count == 0)
-            {
-                var empty = Ui.Card(30f);
-                empty.style.backgroundColor = Theme.Panel;
-                empty.style.alignItems = Align.Center;
-                empty.Add(new MenuIcon(MenuIcon.Glyph.Chart, 48f, Theme.Gold));
-                empty.Add(Ui.Text("Пока ни одной сыгранной партии", 22f, Theme.Text, true));
-                var hint = Ui.Text("Доиграйте партию до конца — здесь появятся графики, серии побед, рекорды и любимые персонажи.", 14f, Theme.TextDim);
-                hint.style.marginTop = 8f;
-                empty.Add(hint);
-                Root.Add(empty);
-                return;
-            }
-
-            // Чью статистику показываем: люди из журнала; по умолчанию — активный профиль.
-            _humans = _games.SelectMany(g => g.results).Where(r => r.kind == "human").Select(r => r.name)
-                .GroupBy(n => n, StringComparer.OrdinalIgnoreCase).OrderByDescending(g => g.Count()).Select(g => g.First()).ToList();
-            string active = Profiles.Active?.name;
-            _player = _humans.FirstOrDefault(n => string.Equals(n, active, StringComparison.OrdinalIgnoreCase)) ?? _humans.FirstOrDefault();
+            // Вкладки режимов: у каждого режима — своя статистика.
+            _tabs = Ui.Column();
+            Root.Add(_tabs);
 
             var scroll = new ScrollView(ScrollViewMode.Vertical);
-            scroll.style.height = 680f;
+            scroll.style.height = 600f;
             Ui.StyleScroller(scroll);
             Root.Add(scroll);
             _body = Ui.Column();
             scroll.Add(_body);
+            ApplyMode();
             Rebuild();
+        }
+
+        /// <summary>Партии и игроки выбранного режима; игрок по умолчанию — активный профиль.</summary>
+        void ApplyMode()
+        {
+            _games = _all.Where(g => ModeTabs.Of(g) == s_mode).ToList();
+            _humans = _games.SelectMany(g => g.results).Where(r => r.kind == "human").Select(r => r.name)
+                .GroupBy(n => n, StringComparer.OrdinalIgnoreCase).OrderByDescending(g => g.Count()).Select(g => g.First()).ToList();
+            string keep = _player ?? Profiles.Active?.name;
+            _player = _humans.FirstOrDefault(n => string.Equals(n, keep, StringComparison.OrdinalIgnoreCase))
+                      ?? _humans.FirstOrDefault(n => string.Equals(n, Profiles.Active?.name, StringComparison.OrdinalIgnoreCase))
+                      ?? _humans.FirstOrDefault();
+        }
+
+        string ModeNote(GameMode mode)
+        {
+            int count = _all.Count(g => ModeTabs.Of(g) == mode);
+            return count == 0 ? "партий пока нет" : $"{count} {Plural(count, "партия", "партии", "партий")}";
+        }
+
+        VisualElement EmptyCard()
+        {
+            var empty = Ui.Card(30f);
+            empty.style.backgroundColor = Theme.Panel;
+            empty.style.alignItems = Align.Center;
+            empty.Add(new MenuIcon(ModeTabs.Glyph(s_mode), 48f, Theme.Gold));
+            empty.Add(Ui.Text($"В режиме «{ModeTabs.Title(s_mode)}» ещё ни одной партии", 22f, Theme.Text, true));
+            string hint = s_mode == GameMode.Magnate
+                ? "Доиграйте партию магната до конца — здесь появятся очки, доставки, заказы мэрии, пробки и репутация."
+                : s_mode == GameMode.Coop
+                ? "Доиграйте кооператив до конца — здесь появятся победы команды, очки и вклад каждого."
+                : "Доиграйте партию до конца — здесь появятся графики, серии побед, рекорды и любимые персонажи.";
+            var label = Ui.Text(hint, 14f, Theme.TextDim);
+            label.style.marginTop = 8f;
+            label.style.whiteSpace = WhiteSpace.Normal;
+            label.style.unityTextAlign = TextAnchor.MiddleCenter;
+            empty.Add(label);
+            return empty;
         }
 
         void Rebuild()
         {
+            _tabs.Clear();
+            _tabs.Add(ModeTabs.Build(s_mode, mode =>
+            {
+                s_mode = mode;
+                _filter = HistoryFilter.All;
+                _pieByCharacter = false;
+                ApplyMode();
+                Rebuild();
+            }, ModeNote));
             _body.Clear();
+            if (_games.Count == 0)
+            {
+                _body.Add(EmptyCard());
+                Ui.Appear(_body);
+                return;
+            }
+            bool magnate = s_mode == GameMode.Magnate;
             if (_humans.Count > 1)
             {
                 var chooser = Ui.Row();
@@ -115,7 +158,8 @@ namespace CityHighways.Presentation
             var middle = Ui.Row();
             middle.style.alignItems = Align.Stretch;
             middle.style.marginBottom = 12f;
-            middle.Add(HeatCard(mine));
+            // У магната город каждый раз новый — вместо тепловой карты дорог итоги доставок.
+            middle.Add(magnate ? MagnateCard(mine) : HeatCard(mine));
             middle.Add(CompareCard(mine));
             _body.Add(middle);
 
@@ -127,11 +171,14 @@ namespace CityHighways.Presentation
             bottom.style.marginTop = 12f;
             var players = Players();
             players.style.flexGrow = 1f;
-            players.style.marginRight = 12f;
             bottom.Add(players);
-            var characters = CharactersBlock();
-            characters.style.width = 400f;
-            bottom.Add(characters);
+            if (!magnate)
+            {
+                players.style.marginRight = 12f;
+                var characters = CharactersBlock();
+                characters.style.width = 400f;
+                bottom.Add(characters);
+            }
             _body.Add(bottom);
             Ui.Appear(_body);
         }
@@ -243,11 +290,15 @@ namespace CityHighways.Presentation
         {
             var card = Widget(_pieByCharacter ? "Победы по персонажам" : "Победы и поражения", 300f);
             card.style.alignItems = Align.Center;
-            var toggle = Ui.Row();
-            toggle.style.marginBottom = 8f;
-            toggle.Add(Chip("Итог", !_pieByCharacter, () => { _pieByCharacter = false; Rebuild(); }));
-            toggle.Add(Chip("Персонажи", _pieByCharacter, () => { _pieByCharacter = true; Rebuild(); }));
-            card.Add(toggle);
+            if (s_mode != GameMode.Magnate)
+            {
+                var toggle = Ui.Row();
+                toggle.style.marginBottom = 8f;
+                toggle.Add(Chip("Итог", !_pieByCharacter, () => { _pieByCharacter = false; Rebuild(); }));
+                toggle.Add(Chip("Персонажи", _pieByCharacter, () => { _pieByCharacter = true; Rebuild(); }));
+                card.Add(toggle);
+            }
+            else _pieByCharacter = false;
             var donut = new DonutChart(150f);
             card.Add(donut);
             var legend = Ui.Column();
@@ -296,6 +347,71 @@ namespace CityHighways.Presentation
             row.Add(label);
             row.Add(Ui.Number(value, 13f, Theme.Text, true));
             return row;
+        }
+
+        static readonly string[] ReputationOrder = { "Новичок", "Любитель", "Профи", "Мастер", "Легенда" };
+        static readonly string[] DifficultyOrder = { "Лёгкая", "Обычная", "Сложная", "Эксперт" };
+
+        /// <summary>Магнат: средние за партию (доставки, заказы мэрии, пробки, проезд, хабы, потери), лучшая репутация, победы по сложности.</summary>
+        VisualElement MagnateCard(List<(GameStat game, PlayerStat me)> mine)
+        {
+            var card = Widget("Доставки и репутация", 520f);
+            card.style.marginRight = 12f;
+            if (mine.Count == 0)
+            {
+                card.Add(Caption("Нет партий выбранного игрока.", 13f, Theme.TextDim, 4f));
+                return card;
+            }
+            var grid = Ui.Row();
+            grid.style.flexWrap = Wrap.Wrap;
+            grid.style.marginTop = 4f;
+            void Stat(string caption, string value, string note, Color color)
+            {
+                var tile = Ui.Column();
+                tile.style.width = 154f;
+                tile.style.marginRight = 6f;
+                tile.style.marginBottom = 6f;
+                tile.style.backgroundColor = Theme.PanelLight;
+                Ui.Radius(tile, 10f);
+                Ui.Padding(tile, 8f, 10f);
+                tile.Add(Ui.Text(caption, 11f, Theme.TextDim));
+                tile.Add(Ui.Number(value, 20f, color, true));
+                if (note != null) tile.Add(Ui.Text(note, 10f, Theme.TextDim));
+                grid.Add(tile);
+            }
+            float Avg(Func<PlayerStat, int> f) => (float)mine.Average(x => f(x.me));
+            Stat("Доставок за партию", $"{Avg(r => r.delivered):0.#}", $"всего {mine.Sum(x => x.me.delivered)}", Theme.Text);
+            Stat("Заказов мэрии", $"{Avg(r => r.mayorOrders):0.#}", $"всего {mine.Sum(x => x.me.mayorOrders)}", Theme.Gold);
+            Stat("Пробок за партию", $"{Avg(r => r.jams):0.#}", null, Avg(r => r.jams) > 3f ? GameColors.Danger : Theme.Text);
+            Stat("Проезд за партию", $"{Avg(r => r.tollsEarned - r.tollsPaid):+0.#;−0.#;0}", $"+{mine.Sum(x => x.me.tollsEarned)} / −{mine.Sum(x => x.me.tollsPaid)}", Theme.Text);
+            Stat("Плата с хабов", $"{Avg(r => r.hubFees):0.#}", "за партию", Theme.Text);
+            Stat("Скоропорт вовремя", $"{mine.Sum(x => x.me.perishableOnTime)}", $"потерь грузов: {mine.Sum(x => x.me.losses)}", GameColors.Success);
+            card.Add(grid);
+
+            int bestRank = mine.Select(x => Array.IndexOf(ReputationOrder, x.me.reputation ?? "")).DefaultIfEmpty(-1).Max();
+            if (bestRank >= 0)
+                card.Add(Caption($"Лучшая репутация: {ReputationOrder[bestRank]} {new string('★', bestRank + 1)}", 14f, Theme.Gold, 6f));
+
+            var byDifficulty = Ui.Column();
+            byDifficulty.style.marginTop = 8f;
+            byDifficulty.Add(Ui.Text("Победы по сложности", 12f, Theme.TextDim, true));
+            foreach (var level in DifficultyOrder)
+            {
+                var games = mine.Where(x => x.game.difficulty == level).ToList();
+                if (games.Count == 0) continue;
+                int wins = games.Count(x => x.me.winner);
+                int percent = Mathf.RoundToInt(100f * wins / games.Count);
+                var row = Ui.Row();
+                row.style.alignItems = Align.Center;
+                row.style.marginTop = 4f;
+                var name = Ui.Text(level, 13f, Theme.Text);
+                name.style.width = 90f;
+                row.Add(name);
+                row.Add(WinBar(percent, $"{wins} из {games.Count} ({percent}%)"));
+                byDifficulty.Add(row);
+            }
+            card.Add(byDifficulty);
+            return card;
         }
 
         VisualElement HeatCard(List<(GameStat game, PlayerStat me)> mine)
@@ -537,7 +653,7 @@ namespace CityHighways.Presentation
             when.Add(Ui.Number(ShortDate(game.date), 13f, Theme.Text, true));
             var tags = new List<string>();
             if (game.online) tags.Add("сеть");
-            if (game.coop) tags.Add("кооператив");
+            if (!string.IsNullOrEmpty(game.difficulty)) tags.Add(game.difficulty);
             if (!string.IsNullOrEmpty(game.scenario) && game.scenario != Scenarios.Title(ScenarioKind.Standard)) tags.Add(game.scenario);
             when.Add(Ui.Text(tags.Count > 0 ? string.Join(" · ", tags) : Duration(game.seconds), 11f, Theme.TextDim));
             row.Add(when);
@@ -630,7 +746,9 @@ namespace CityHighways.Presentation
             var facts = new List<string>();
             if (!string.IsNullOrEmpty(game.map)) facts.Add(game.map);
             if (!string.IsNullOrEmpty(game.scenario)) facts.Add(game.scenario);
-            if (game.turns > 0) facts.Add($"{game.turns} ходов");
+            bool magnateGame = ModeTabs.Of(game) == GameMode.Magnate;
+            if (!string.IsNullOrEmpty(game.difficulty)) facts.Add($"сложность «{game.difficulty}»");
+            if (game.turns > 0) facts.Add(magnateGame ? $"{game.turns} раундов" : $"{game.turns} ходов");
             if (game.seconds > 0) facts.Add(Duration(game.seconds));
             if (game.online) facts.Add("сетевая");
             if (game.coop) facts.Add("кооператив");
@@ -658,7 +776,15 @@ namespace CityHighways.Presentation
             window.Add(hero);
 
             // Итог по категориям: у каждого игрока строка цветных столбиков.
-            var categories = new (string title, Func<PlayerStat, int> value, Color color)[]
+            var categories = magnateGame ? new (string title, Func<PlayerStat, int> value, Color color)[]
+            {
+                ("Доставки", r => r.delivered, new Color(0.45f, 0.70f, 1f)),
+                ("Заказы мэрии", r => r.mayorOrders, Theme.Gold),
+                ("Проезд", r => r.tollsEarned - r.tollsPaid, new Color(0.75f, 0.60f, 0.98f)),
+                ("Хабы", r => r.hubFees, GameColors.Success),
+                ("Пробки", r => -r.jams, new Color(0.95f, 0.75f, 0.30f)),
+                ("Потери", r => -r.losses, new Color(0.55f, 0.80f, 0.85f))
+            } : new (string title, Func<PlayerStat, int> value, Color color)[]
             {
                 ("Дороги", r => r.roadPoints, new Color(0.45f, 0.70f, 1f)),
                 ("Контракты", r => r.contractPoints, Theme.Gold),
@@ -718,6 +844,17 @@ namespace CityHighways.Presentation
 
             // Ключевые моменты — из записанных чисел партии.
             var moments = new List<string>();
+            if (magnateGame)
+            {
+                var courier = game.results.OrderByDescending(r => r.delivered).First();
+                if (courier.delivered > 0) moments.Add($"Больше всех доставок у {courier.name}: {courier.delivered}.");
+                var mayor = game.results.OrderByDescending(r => r.mayorOrders).First();
+                if (mayor.mayorOrders > 0) moments.Add($"Заказы мэрии первым выполнял {mayor.name}: {mayor.mayorOrders}.");
+                var famous = game.results.OrderByDescending(r => Array.IndexOf(ReputationOrder, r.reputation ?? "")).First();
+                if (!string.IsNullOrEmpty(famous.reputation)) moments.Add($"Лучшая репутация — у {famous.name}: {famous.reputation}.");
+                var stuck = game.results.Where(r => r.jams > 0).OrderByDescending(r => r.jams).FirstOrDefault();
+                if (stuck != null) moments.Add($"Чаще всех стоял в пробках {stuck.name}: {stuck.jams} {Plural(stuck.jams, "раз", "раза", "раз")}.");
+            }
             var tollKing = game.results.OrderByDescending(r => r.tollsEarned).First();
             if (tollKing.tollsEarned > 0) moments.Add($"Больше всех за проезд получил {tollKing.name}: +{tollKing.tollsEarned}.");
             var network = game.results.OrderByDescending(r => r.networkDistricts).First();
@@ -775,15 +912,19 @@ namespace CityHighways.Presentation
                     Average = group.Average(r => r.total),
                     Best = group.Max(r => r.total),
                     Contracts = group.Sum(r => r.completedContracts),
-                    Failed = group.Sum(r => r.failedContracts)
+                    Failed = group.Sum(r => r.failedContracts),
+                    Delivered = group.Sum(r => r.delivered),
+                    Orders = group.Sum(r => r.mayorOrders)
                 })
                 .OrderByDescending(x => x.Human).ThenByDescending(x => x.Games).ToList();
-            float[] widths = { 170f, 60f, 130f, 70f, 70f, 100f };
-            card.Add(TableRow(new[] { "Игрок", "Партий", "Побед", "Ср. очки", "Лучший", "Контракты" }, widths, Theme.TextDim, true));
+            bool magnate = s_mode == GameMode.Magnate;
+            float[] widths = { 170f, 60f, 130f, 70f, 70f, 120f };
+            card.Add(TableRow(new[] { "Игрок", "Партий", "Побед", "Ср. очки", "Лучший", magnate ? "Доставки / заказы" : "Контракты" }, widths, Theme.TextDim, true));
             foreach (var r in rows)
             {
                 int percent = Mathf.RoundToInt(100f * r.Wins / Math.Max(1, r.Games));
-                var row = TableRow(new[] { r.Name, r.Games.ToString(), "", Mathf.RoundToInt((float)r.Average).ToString(), r.Best.ToString(), $"{r.Contracts} / −{r.Failed}" },
+                string last = magnate ? $"{r.Delivered} / {r.Orders}" : $"{r.Contracts} / −{r.Failed}";
+                var row = TableRow(new[] { r.Name, r.Games.ToString(), "", Mathf.RoundToInt((float)r.Average).ToString(), r.Best.ToString(), last },
                     widths, r.Human ? Theme.Text : Theme.TextDim, false);
                 // Колонка «Побед» — с полоской процента.
                 var winCell = row[2];

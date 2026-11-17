@@ -191,7 +191,7 @@ namespace CityHighways.Presentation
                 StartMagnate(setup);
                 return;
             }
-            setup.Save();
+            if (!setup.practice) setup.Save();
             Sound.Enabled = setup.sound;
             CloseNet();
             Tweener.Clear();
@@ -228,7 +228,7 @@ namespace CityHighways.Presentation
 
         public void StartMagnate(GameSetup setup)
         {
-            setup.Save();
+            if (!setup.practice) setup.Save();
             Sound.Enabled = setup.sound;
             CloseNet();
             Tweener.Clear();

@@ -19,9 +19,15 @@ namespace CityHighways.Presentation
     public static class MenuRulesPage
     {
         public static VisualElement Build(GameConfig config, Action back) => new RulesView(config, back).Root;
+        /// <summary>Страница с доступом к переключению режима (из «Обучения» открываем правила нужного режима).</summary>
+        internal static RulesView Create(GameConfig config, Action back) => new RulesView(config, back);
     }
 
-    sealed class RulesView
+    /// <summary>
+    /// Правила делятся на три режима — вкладки сверху: «Логистический магнат» (MenuRulesMagnate.cs),
+    /// «Соревнование» и «Кооператив». У каждого режима своё дерево разделов, поиск ищет внутри режима.
+    /// </summary>
+    sealed partial class RulesView
     {
         sealed class SectionInfo
         {
@@ -61,6 +67,8 @@ namespace CityHighways.Presentation
         List<(int section, string text)> _index;
         VisualElement _overlay;
         int _current = -1;
+        readonly VisualElement _modeTabs;
+        GameMode _mode = GameMode.Magnate;
 
         static readonly Color Own = Palette.PlayerColor(0);
         static readonly Color Rival = Palette.PlayerColor(1);
@@ -108,6 +116,9 @@ namespace CityHighways.Presentation
             header.Add(searchBox);
             Root.Add(header);
 
+            _modeTabs = Ui.Column();
+            Root.Add(_modeTabs);
+
             var body = Ui.Row();
             body.style.alignItems = Align.FlexStart;
             Root.Add(body);
@@ -132,7 +143,7 @@ namespace CityHighways.Presentation
 
             _content = new ScrollView(ScrollViewMode.Vertical);
             _content.style.flexGrow = 1f;
-            _content.style.height = 650f;
+            _content.style.height = 570f;
             Ui.StyleScroller(_content);
             _content.style.backgroundColor = Theme.Panel;
             Ui.Radius(_content, 12f);
@@ -172,24 +183,67 @@ namespace CityHighways.Presentation
             Ui.Show(_popup, false);
             Root.Add(_popup);
 
-            AddGroup("Основы", MenuIcon.Glyph.Book);
-            AddSection("Основы", "Цель и ход", MenuIcon.Glyph.Play, Basics);
-            AddSection("Основы", "Ресурсы", MenuIcon.Glyph.Coins, ResourcesSection);
-            AddSection("Основы", "Конец партии и очки", MenuIcon.Glyph.Flag, Ending);
-            AddSection("Основы", "Кооператив", MenuIcon.Glyph.Skyline, Cooperative);
-            AddSection("Основы", "Глоссарий", MenuIcon.Glyph.Document, Glossary);
-            AddGroup("Дороги и город", MenuIcon.Glyph.Road);
-            AddSection("Дороги и город", "Контракты и проезд", MenuIcon.Glyph.Document, Contracts);
-            AddSection("Дороги и город", "Сделки и магистрали", MenuIcon.Glyph.Swap, Deals);
-            AddSection("Дороги и город", "События", MenuIcon.Glyph.Bell, Events);
-            AddGroup("Мэрия", MenuIcon.Glyph.Skyline);
-            AddSection("Мэрия", "Цели мэрии и удача", MenuIcon.Glyph.Star, GoalsAndLuck);
-            AddSection("Мэрия", "Влияние", MenuIcon.Glyph.Coins, InfluenceSection);
-            AddGroup("Компании", MenuIcon.Glyph.Person);
-            AddSection("Компании", "Персонажи", MenuIcon.Glyph.Person, CharactersSection);
-            AddSection("Компании", "Сценарии", MenuIcon.Glyph.Globe, ScenariosSection);
-            _nav.Add(_indicator);
             _nav.RegisterCallback<GeometryChangedEvent>(_ => MoveIndicator());
+            BuildNav();
+        }
+
+        /// <summary>Открыть правила нужного режима (вкладка сверху).</summary>
+        public void SetMode(GameMode mode)
+        {
+            if (_mode == mode && _sections.Count > 0) return;
+            _mode = mode;
+            BuildNav();
+        }
+
+        /// <summary>Дерево разделов текущего режима.</summary>
+        void BuildNav()
+        {
+            _modeTabs.Clear();
+            _modeTabs.Add(ModeTabs.Build(_mode, SetMode));
+            _search.SetValueWithoutNotify("");
+            CloseSandbox();
+            HideTerm();
+            _nav.Clear();
+            _sections.Clear();
+            _groups.Clear();
+            _index = null;
+            _current = -1;
+            switch (_mode)
+            {
+                case GameMode.Magnate:
+                    AddMagnateSections();
+                    break;
+                case GameMode.Coop:
+                    AddGroup("Командная игра", MenuIcon.Glyph.Skyline);
+                    AddSection("Командная игра", "Кооператив", MenuIcon.Glyph.Skyline, Cooperative);
+                    AddSection("Командная игра", "Конец партии и очки", MenuIcon.Glyph.Flag, Ending);
+                    AddGroup("Общие правила", MenuIcon.Glyph.Book);
+                    AddSection("Общие правила", "Цель и ход", MenuIcon.Glyph.Play, Basics);
+                    AddSection("Общие правила", "Ресурсы", MenuIcon.Glyph.Coins, ResourcesSection);
+                    AddSection("Общие правила", "Контракты и проезд", MenuIcon.Glyph.Document, Contracts);
+                    AddSection("Общие правила", "Сделки и магистрали", MenuIcon.Glyph.Swap, Deals);
+                    AddSection("Общие правила", "События", MenuIcon.Glyph.Bell, Events);
+                    AddSection("Общие правила", "Глоссарий", MenuIcon.Glyph.Document, Glossary);
+                    break;
+                default:
+                    AddGroup("Основы", MenuIcon.Glyph.Book);
+                    AddSection("Основы", "Цель и ход", MenuIcon.Glyph.Play, Basics);
+                    AddSection("Основы", "Ресурсы", MenuIcon.Glyph.Coins, ResourcesSection);
+                    AddSection("Основы", "Конец партии и очки", MenuIcon.Glyph.Flag, Ending);
+                    AddSection("Основы", "Глоссарий", MenuIcon.Glyph.Document, Glossary);
+                    AddGroup("Дороги и город", MenuIcon.Glyph.Road);
+                    AddSection("Дороги и город", "Контракты и проезд", MenuIcon.Glyph.Document, Contracts);
+                    AddSection("Дороги и город", "Сделки и магистрали", MenuIcon.Glyph.Swap, Deals);
+                    AddSection("Дороги и город", "События", MenuIcon.Glyph.Bell, Events);
+                    AddGroup("Мэрия", MenuIcon.Glyph.Skyline);
+                    AddSection("Мэрия", "Цели мэрии и удача", MenuIcon.Glyph.Star, GoalsAndLuck);
+                    AddSection("Мэрия", "Влияние", MenuIcon.Glyph.Coins, InfluenceSection);
+                    AddGroup("Компании", MenuIcon.Glyph.Person);
+                    AddSection("Компании", "Персонажи", MenuIcon.Glyph.Person, CharactersSection);
+                    AddSection("Компании", "Сценарии", MenuIcon.Glyph.Globe, ScenariosSection);
+                    break;
+            }
+            _nav.Add(_indicator);
             Select(0);
         }
 

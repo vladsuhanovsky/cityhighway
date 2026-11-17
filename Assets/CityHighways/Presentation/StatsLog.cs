@@ -33,6 +33,15 @@ namespace CityHighways.Presentation
         public string[] roads;
         /// <summary>Достижения профиля, открытые этой партией (названия). В старых записях пусто.</summary>
         public string[] achievements;
+
+        // Магнат: доставки, заказы мэрии, пробки, плата с хабов, потери (конфискации и кражи), репутация к концу.
+        public int delivered;
+        public int mayorOrders;
+        public int jams;
+        public int hubFees;
+        public int losses;
+        public int perishableOnTime;
+        public string reputation;
     }
 
     [Serializable]
@@ -50,6 +59,10 @@ namespace CityHighways.Presentation
         /// <summary>Сценарий партии (название) и путь карты в Resources — для обзора партии и тепловой карты.</summary>
         public string scenario;
         public string mapPath;
+        /// <summary>Режим: magnate, classic или coop (в старых записях пусто — тогда по отметке coop).</summary>
+        public string mode;
+        /// <summary>Сложность магната (название).</summary>
+        public string difficulty;
     }
 
     /// <summary>Итоги каждой партии — по строке JSON в cityhighways_stats.jsonl (удобно смотреть баланс).</summary>
@@ -73,6 +86,7 @@ namespace CityHighways.Presentation
                     seconds = Mathf.RoundToInt(seconds),
                     online = online,
                     coop = game.IsCooperative,
+                    mode = game.IsCooperative ? "coop" : "classic",
                     scenario = setup != null ? Scenarios.Title((ScenarioKind)Mathf.Clamp(setup.scenario, 0, Scenarios.All.Count - 1)) : "",
                     mapPath = setup?.mapResourcePath ?? "",
                     results = game.Result.Ranking.Select(s => new PlayerStat
@@ -104,6 +118,51 @@ namespace CityHighways.Presentation
             catch (Exception e)
             {
                 Debug.LogWarning("Не удалось записать статистику: " + e.Message);
+            }
+        }
+
+        /// <summary>Итог партии «Логистического магната».</summary>
+        public static void AppendMagnate(LogisticsGame game, GameSetup setup, float seconds, Dictionary<string, List<string>> achievementsByName = null)
+        {
+            if (game == null || game.Phase != MagnatePhase.GameOver) return;
+            try
+            {
+                int best = game.Players.Max(p => p.Score);
+                var stat = new GameStat
+                {
+                    date = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                    map = game.Map.Name,
+                    turns = game.Config.Rounds,
+                    seconds = Mathf.RoundToInt(seconds),
+                    mode = "magnate",
+                    difficulty = MagnateConfig.Title(game.Config.Difficulty),
+                    scenario = "",
+                    mapPath = "",
+                    results = game.Players.OrderByDescending(p => p.Score).Select(p => new PlayerStat
+                    {
+                        name = p.Name,
+                        kind = Kind(setup, p.Index),
+                        total = p.Score,
+                        tollsPaid = p.TollOut,
+                        tollsEarned = p.TollIn,
+                        winner = p.Score == best,
+                        character = "",
+                        roads = new string[0],
+                        delivered = p.Delivered,
+                        mayorOrders = p.ContractsWon,
+                        jams = p.Jams,
+                        hubFees = p.HubFees,
+                        losses = p.Confiscated + p.Thefts,
+                        perishableOnTime = p.PerishableOnTime,
+                        reputation = LogisticsGame.LevelTitle(p.Level),
+                        achievements = achievementsByName != null && achievementsByName.TryGetValue(p.Name, out var list) ? list.ToArray() : new string[0]
+                    }).ToArray()
+                };
+                File.AppendAllText(FilePath, JsonUtility.ToJson(stat) + "\n");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Не удалось записать статистику магната: " + e.Message);
             }
         }
 

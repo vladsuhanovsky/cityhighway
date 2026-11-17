@@ -67,6 +67,11 @@ namespace CityHighways.Presentation
         /// <summary>Слои карты магната (битовая маска MagnateView.Layer): названия станций, грузы, фуры, свободные дороги, фокус.</summary>
         public int magnateLayers = 109;
 
+        /// <summary>Тренировочная партия из раздела «Обучение»: её настройки не сохраняются поверх настроек игрока.</summary>
+        [NonSerialized] public bool practice;
+        /// <summary>Показать обучение магната в этой партии, даже если оно уже пройдено.</summary>
+        [NonSerialized] public bool forceMagnateTutorial;
+
         /// <summary>Карта для меню: путь в Resources, название и одна строка описания.</summary>
         public sealed class MapChoice
         {
@@ -137,6 +142,34 @@ namespace CityHighways.Presentation
         }
 
         public static readonly string[] DefaultNames = { "Аня", "Борис", "Вера", "Глеб", "Даша" };
+
+        /// <summary>Обучение магната: вы и два бота, лёгкая сложность, наставник с первого раунда.</summary>
+        public static GameSetup CreateMagnatePractice(GameSetup stored, string playerName)
+        {
+            var setup = new GameSetup
+            {
+                magnate = true, practice = true, forceMagnateTutorial = true, magnateDifficulty = 0,
+                sound = stored?.sound ?? true, magnateLayers = stored?.magnateLayers ?? 109, magnateTutorialDone = stored?.magnateTutorialDone ?? false
+            };
+            setup.players.Add(new PlayerSlot(string.IsNullOrWhiteSpace(playerName) ? "Вы" : playerName, false) { character = 0 });
+            setup.players.Add(new PlayerSlot("Борис", true));
+            setup.players.Add(new PlayerSlot("Даша", true));
+            return setup;
+        }
+
+        /// <summary>Тренировочный кооператив: вы и два умных бота-союзника на карте Москвы, обычные правила, без персонажей.</summary>
+        public static GameSetup CreateCoopPractice(GameSetup stored, string playerName)
+        {
+            var setup = new GameSetup
+            {
+                magnate = false, cooperative = true, practice = true, scenario = 0, roadPieces = 0, turnSeconds = 0,
+                hideCardsBetweenTurns = false, sound = stored?.sound ?? true, mapResourcePath = "CityHighways/Maps/moscow"
+            };
+            setup.players.Add(new PlayerSlot(string.IsNullOrWhiteSpace(playerName) ? "Вы" : playerName, false) { character = 0 });
+            setup.players.Add(new PlayerSlot("Борис", true) { character = 0 });
+            setup.players.Add(new PlayerSlot("Даша", true) { character = 0 });
+            return setup;
+        }
 
         public static GameSetup CreateDefault()
         {

@@ -4081,7 +4081,14 @@ namespace CityHighways.Presentation
             {
                 _app.Sound.Enabled = on;
                 _setup.sound = on;
-                _setup.Save();
+                if (_setup.practice || _setup.tutorial)
+                {
+                    // Тренировка и обучение — свой набор настроек: переносим в сохранённые только звук.
+                    var stored = GameSetup.Load();
+                    stored.sound = on;
+                    stored.Save();
+                }
+                else _setup.Save();
             });
 
             if (display != null)

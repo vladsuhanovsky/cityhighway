@@ -10,9 +10,10 @@ namespace CityHighways.Presentation
 {
     /// <summary>
     /// Главное меню из страниц: главная (кнопки), «Новая игра» (игроки и параметры партии),
-    /// «Правила» (вкладки с картинками), «Счётчик партий» и «Настройки» (экран и звук).
+    /// «Обучение», «Правила» и «Счётчик партий» (каждая — по трём режимам: магнат, соревнование, кооператив)
+    /// и «Настройки» (экран и звук).
     /// </summary>
-    public sealed class MainMenuView
+    public sealed partial class MainMenuView
     {
         const int MinPlayers = 2;
         const int MaxPlayers = 5;
@@ -38,11 +39,14 @@ namespace CityHighways.Presentation
         readonly Label _hint;
         readonly VisualElement _overlay;
 
-        enum Page { Home, NewGame, Online, Profile, Rules, Stats, Settings }
+        enum Page { Home, NewGame, Online, Profile, Rules, Stats, Settings, Tutorial }
         readonly Dictionary<Page, VisualElement> _pages = new Dictionary<Page, VisualElement>();
         readonly VisualElement _pageHost;
         readonly MenuOnlinePage _online;
         readonly MenuProfilePage _profile;
+        readonly RulesView _rules;
+        /// <summary>Куда ведёт «Назад» со страницы правил: на главную или в «Обучение» (если открыли оттуда).</summary>
+        Page _rulesReturn = Page.Home;
 
         public VisualElement Root { get; }
 
@@ -88,7 +92,9 @@ namespace CityHighways.Presentation
             _pages[Page.Online] = _online.Root;
             _profile = new MenuProfilePage(setup, () => ShowPage(Page.Home), Refresh);
             _pages[Page.Profile] = _profile.Root;
-            _pages[Page.Rules] = MenuRulesPage.Build(new GameConfig(), () => ShowPage(Page.Home));
+            _rules = MenuRulesPage.Create(new GameConfig(), () => ShowPage(_rulesReturn));
+            _pages[Page.Rules] = _rules.Root;
+            _pages[Page.Tutorial] = BuildTutorial();
             _pages[Page.Stats] = MenuStatsPage.Build(() => ShowPage(Page.Home), () => ShowPage(Page.Stats), RebuildStats);
             _settings = new MenuSettingsPage(app, _setup, _display, () => ShowPage(Page.Home), ApplyBackgroundSettings);
             _pages[Page.Settings] = _settings.Root;
@@ -127,6 +133,7 @@ namespace CityHighways.Presentation
             // Единый переход: страница проявляется и чуть поднимается.
             if (page != Page.Home && _pages.TryGetValue(page, out var shown)) Ui.Appear(shown);
             if (page == Page.Settings) _settings.Rebuild();
+            if (page == Page.Tutorial) RefreshTutorial();
             // На страницах с текстом фон приглушается, верхние значки и уведомления — только на главной.
             _background.Dim = page == Page.Home ? 0f : 1f;
             if (_topBar != null) Ui.Show(_topBar, page == Page.Home);
@@ -271,12 +278,12 @@ namespace CityHighways.Presentation
             Ui.Padding(quick, 4f, 12f);
             quick.style.backgroundColor = new Color(1f, 1f, 1f, 0.16f);
             newGame.Badge.Add(quick);
-            Add(MenuIcon.Glyph.Cap, TutorialCoach.IsDone ? "Обучение" : "Обучение — начните отсюда", _app.StartTutorial, false);
+            Add(MenuIcon.Glyph.Cap, AnyTutorialDone ? "Обучение" : "Обучение — начните отсюда", () => ShowPage(Page.Tutorial), false);
             _onlineButton = Add(MenuIcon.Glyph.Globe, "Сетевая игра", () => ShowPage(Page.Online), false);
             _onlineBadge = Pill("");
             Ui.Show(_onlineBadge, false);
             _onlineButton.Badge.Add(_onlineBadge);
-            Add(MenuIcon.Glyph.Book, "Правила", () => ShowPage(Page.Rules), false);
+            Add(MenuIcon.Glyph.Book, "Правила", () => OpenRules(null, Page.Home), false);
             Add(MenuIcon.Glyph.Chart, "Счётчик партий", () => ShowPage(Page.Stats), false);
             Add(MenuIcon.Glyph.Gear, "Настройки", () => ShowPage(Page.Settings), false);
 
@@ -556,7 +563,7 @@ namespace CityHighways.Presentation
                     PlayerPrefs.Save();
                     RefreshNotifications();
                 }));
-            if (!TutorialCoach.IsDone) list.Add((MenuIcon.Glyph.Cap, "Обучение ещё не пройдено — 10 минут с наставником", _app.StartTutorial));
+            if (!AnyTutorialDone) list.Add((MenuIcon.Glyph.Cap, "Обучение ещё не пройдено — выберите режим и начните с наставником", () => ShowPage(Page.Tutorial)));
             return list;
         }
 

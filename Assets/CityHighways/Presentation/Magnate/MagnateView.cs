@@ -216,7 +216,8 @@ namespace CityHighways.Presentation
                      $"Хабы: {string.Join(", ", _game.Hubs.Select(h => _game.Map.LocationName(h.LocationId)))}.");
             ApplyLayers();
             StartTurn();
-            if (!_setup.magnateTutorialDone && _game.Players.Any(p => !p.IsBot)) StartCoach();
+            if (_setup.forceMagnateTutorial || (!_setup.magnateTutorialDone && _game.Players.Any(p => !p.IsBot))) StartCoach();
+            _setup.forceMagnateTutorial = false;
             _dirty = true;
         }
 
@@ -298,7 +299,7 @@ namespace CityHighways.Presentation
                 row.RegisterCallback<ClickEvent>(_ =>
                 {
                     _setup.magnateLayers ^= (int)layer;
-                    _setup.Save();
+                    SaveSetup();
                     ApplyLayers();
                     BuildLayersList();
                 });
@@ -837,6 +838,10 @@ namespace CityHighways.Presentation
             if (_resultsShown) return;
             _resultsShown = true;
             var credits = Profiles.CreditAfterMagnate(_game, _setup);
+            // Журнал партий (Счётчик партий → вкладка «Логистический магнат»).
+            var unlocked = credits.Where(c => c.Unlocked != null && c.Unlocked.Count > 0)
+                .GroupBy(c => c.Profile).ToDictionary(g => g.Key, g => g.SelectMany(c => c.Unlocked).Select(a => a.Title).ToList());
+            StatsLog.AppendMagnate(_game, _setup, _time, unlocked);
             _results.Clear();
             var card = Ui.Card(26f);
             card.style.backgroundColor = Theme.Panel;
