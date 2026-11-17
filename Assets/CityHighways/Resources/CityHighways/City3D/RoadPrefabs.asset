@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e4b1c2d3f5a46b7a9c0d1e2f3a4b5c6, type: 3}
+  m_Name: RoadPrefabs
+  m_EditorClassIdentifier: 
+  width: 0.11
+  roadPrefab: {fileID: 0}
+  bridgeDeckPrefab: {fileID: 0}
+  rampPrefab: {fileID: 0}
+  pierPrefab: {fileID: 0}
+  railingPrefab: {fileID: 0}
+  roadTop: 0.006
+  roadThickness: 0.006
+  deckTop: 0.05
+  deckThickness: 0.03
+  waterLevel: 0.004
+  riverbedDepth: 0.02
+  bankMargin: 0.045
+  rampLength: 0.16
+  pierSpacing: 0.4
+  pierDiameter: 0.056
+  railingHeight: 0.02
+  railingThickness: 0.008
+  railingInset: 0.004
+  jointOverlap: 0.004
+  detection: 2
+  waterMask:
+    serializedVersion: 2
+    m_Bits: 16
+  sampleStep: 0.02
+  rayHeight: 2
+  buildDuration: 0.8
+  pierRiseDuration: 0.35
+  growCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 2.2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

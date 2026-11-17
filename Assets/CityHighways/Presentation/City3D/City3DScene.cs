@@ -85,6 +85,18 @@ namespace CityHighways.Presentation
         Color _fogColor;
         float _fogStart, _fogEnd;
 
+        /// <summary>
+        /// Ширина дороги в метрах сцены — общая для дороги интерфейса (11 px поля), 3D-дорог, подъездов и мостов.
+        /// MapView рисует дорогу на экране ровно такой ширины при любом зуме.
+        /// </summary>
+        public const float RoadWidth = BoardLayout.RoadThickness / CityPlanner.PixelsPerUnit;
+
+        RoadBuilder _roads;
+        RoadPrefabSet _roadSet;
+        readonly List<List<Vector3>> _riverLines = new List<List<Vector3>>();
+        readonly Dictionary<string, BuiltRoad> _builtRoads = new Dictionary<string, BuiltRoad>();
+        bool _roadsSynced;
+
         public int BuildingCount { get; private set; }
         public int TreeCount { get; private set; }
 
@@ -136,6 +148,7 @@ namespace CityHighways.Presentation
             BuildRivers();
             BuildDistricts(plan);
             BuildTrees(plan);
+            SetupRoads();
             BuildBridges();
             SetupReflections(quality);
         }
@@ -433,6 +446,7 @@ namespace CityHighways.Presentation
                 raw.Insert(0, raw[0] + (raw[0] - raw[1]).normalized * 1.6f);
                 raw.Add(raw[raw.Count - 1] + (raw[raw.Count - 1] - raw[raw.Count - 2]).normalized * 1.6f);
                 var points = Smooth(raw, 5);
+                _riverLines.Add(points);
                 float along = 0f;
                 for (int i = 0; i + 1 < points.Count; i++)
                 {
@@ -469,8 +483,11 @@ namespace CityHighways.Presentation
                     }
                 }
             }
-            var waterObject = AddMesh("Water", water.ToMesh("City3D Water"), _water, _root.transform, false);
+            var waterMesh = water.ToMesh("City3D Water");
+            var waterObject = AddMesh("Water", waterMesh, _water, _root.transform, false);
             waterObject.layer = WaterLayer;
+            // Коллайдер на слое Water — по нему RoadBuilder находит реку лучом (LayerMask «Water»).
+            if (waterMesh.vertexCount > 0) waterObject.AddComponent<MeshCollider>().sharedMesh = waterMesh;
             AddMesh("Embankments", banks.ToMesh("City3D Embankments"), _buildings, _root.transform, true);
         }
 
@@ -715,73 +732,145 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>
-        /// Мосты: полотно, перила и опоры в воде; у длинных мостов — две арки с подвесками.
-        /// Дорога интерфейса ложится прямо на полотно.
+        /// Дороги и мосты 3D-города строит RoadBuilder: ширина у дороги, подъездов и моста одна (RoadWidth —
+        /// та же, что у дороги интерфейса), мост встаёт сам там, где отрезок проходит над водой, и заходит
+        /// на набережные, а подъезды плавно поднимают дорогу к полотну. Если в Resources есть свой
+        /// RoadPrefabs.asset с префабами — берутся они, иначе куски собираются кодом.
         /// </summary>
+        void SetupRoads()
+        {
+            var source = Resources.Load<RoadPrefabSet>(ResourceFolder + "RoadPrefabs");
+            _roadSet = source != null ? UnityEngine.Object.Instantiate(source) : ScriptableObject.CreateInstance<RoadPrefabSet>();
+            _roadSet.hideFlags = HideFlags.DontSave;
+            _owned.Add(_roadSet);
+            // Размеры, которые обязаны совпадать со сценой: ширина дороги интерфейса, высота воды и полотна.
+            _roadSet.width = RoadWidth;
+            _roadSet.deckTop = DeckTop;
+            _roadSet.waterLevel = WaterLevel;
+            _roadSet.bankMargin = Mathf.Max(_roadSet.bankMargin, BankWidth + 0.02f);
+
+            var templates = new GameObject("Road templates");
+            templates.transform.SetParent(_root.transform, false);
+            templates.SetActive(false); // шаблоны не рисуются, их копии — активны
+            var asphalt = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Asphalt);
+            var concrete = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeConcrete);
+            var rail = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
+            float road = _roadSet.roadThickness, deck = _roadSet.deckThickness;
+            if (_roadSet.roadPrefab == null)
+                _roadSet.roadPrefab = Template(templates, "Road", b => b.Beam(new Vector3(0f, -road / 2f, 0f), new Vector3(0f, -road / 2f, 1f), 1f, road, asphalt, asphalt));
+            if (_roadSet.bridgeDeckPrefab == null)
+                _roadSet.bridgeDeckPrefab = Template(templates, "Deck", b => b.Beam(new Vector3(0f, -deck / 2f, 0f), new Vector3(0f, -deck / 2f, 1f), 1f, deck, concrete, asphalt));
+            if (_roadSet.pierPrefab == null)
+                _roadSet.pierPrefab = Template(templates, "Pier", b => b.Prism(0f, 0f, 0.5f, 0f, 1f, 6, concrete, concrete));
+            if (_roadSet.railingPrefab == null)
+                _roadSet.railingPrefab = Template(templates, "Railing", b => b.Beam(new Vector3(0f, 0.5f, 0f), new Vector3(0f, 0.5f, 1f), 1f, 1f, rail, rail));
+
+            var container = new GameObject("Roads");
+            container.transform.SetParent(_root.transform, false);
+            _roads = _root.AddComponent<RoadBuilder>();
+            _roads.Prefabs = _roadSet;
+            _roads.Container = container.transform;
+            _roads.Animate = true;
+            int mask = LayerMask.GetMask("Water");
+            if (mask == 0) mask = 1 << WaterLayer;
+            // Луч по слою Water (у воды MeshCollider) и, для надёжности, расстояние до линии реки.
+            _roads.Detector = new RiverCrossingDetector(RiverDetection.Both, mask, 1f, _riverLines, RiverWidth / 2f);
+        }
+
+        GameObject Template(GameObject parent, string name, Action<MeshBuilder> build)
+        {
+            var builder = new MeshBuilder();
+            build(builder);
+            return AddMesh("Template " + name, builder.ToMesh("City3D Road " + name), _buildings, parent.transform, true);
+        }
+
+        /// <summary>Мосты карты стоят всегда (как и раньше); мосты к районам-расширениям прячутся вместе с ними.</summary>
         void BuildBridges()
         {
-            var deckSide = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeConcrete);
-            var deckTop = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Asphalt);
-            var steel = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeSteel);
-            var rail = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
-            var builders = new Dictionary<string, MeshBuilder>();
             foreach (var road in _map.Roads.Where(r => r.IsBridge))
             {
                 var la = _map.GetLocation(road.A);
                 var lb = _map.GetLocation(road.B);
                 if (la == null || lb == null) continue;
-                // Мост к району-расширению прячется вместе с ним.
+                var start = BoardLayout.World(la.X, la.Y);
+                var end = BoardLayout.World(lb.X, lb.Y);
+                var built = _roads.BuildRoad(start, end, false);
+                if (built == null) continue;
+                if (!built.HasBridge)
+                {
+                    // Река не нашлась (узел у самой воды) — мост по правилам карты всё равно нужен: средняя часть.
+                    float length = built.Length;
+                    _roads.Remove(built);
+                    built = _roads.BuildRoad(start, end, false, new WaterSpan(length * 0.3f, length * 0.7f));
+                }
+                AddArches(built);
+                _builtRoads[road.Id] = built;
                 string district = _map.GetDistrict(la.DistrictId)?.IsExpansion == true ? la.DistrictId
-                    : _map.GetDistrict(lb.DistrictId)?.IsExpansion == true ? lb.DistrictId : "_bridges";
-                if (!builders.TryGetValue(district, out var b)) builders[district] = b = new MeshBuilder();
+                    : _map.GetDistrict(lb.DistrictId)?.IsExpansion == true ? lb.DistrictId : null;
+                if (district != null) _districts[district + "#bridge:" + road.Id] = built.Root;
+            }
+        }
 
-                var a = BoardLayout.World(la.X, la.Y);
-                var e = BoardLayout.World(lb.X, lb.Y);
-                var dir = (e - a).normalized;
-                a += dir * 0.13f;
-                e -= dir * 0.13f;
-                float length = Vector3.Distance(a, e);
-                var side = new Vector3(dir.z, 0f, -dir.x);
-                const float width = 0.17f, thickness = 0.03f;
-                var deckCenter = Vector3.up * (DeckTop - thickness / 2f);
-                b.Beam(a + deckCenter, e + deckCenter, width, thickness, deckSide, deckTop);
+        /// <summary>У длинных пролётов — две стальные арки с подвесками по краям полотна (внутри его ширины).</summary>
+        void AddArches(BuiltRoad built)
+        {
+            var steel = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeSteel);
+            var builder = new MeshBuilder();
+            var flat = built.End - built.Start;
+            flat.y = 0f;
+            var side = new Vector3(flat.z, 0f, -flat.x).normalized;
+            const int segments = 10;
+            foreach (var piece in built.Pieces)
+            {
+                float length = piece.To - piece.From;
+                if (piece.Kind != RoadPieceKind.Bridge || length <= 1.0f) continue;
+                float rise = Mathf.Min(0.16f, length * 0.12f);
                 for (int s = -1; s <= 1; s += 2)
                 {
-                    var off = side * (width / 2f - 0.006f) * s + Vector3.up * (DeckTop + 0.01f);
-                    b.Beam(a + off, e + off, 0.008f, 0.02f, rail, rail);
-                }
-                // Опоры: через ~0.4 м, от воды до полотна.
-                int piers = Mathf.Max(1, Mathf.FloorToInt(length / 0.4f));
-                for (int i = 1; i <= piers; i++)
-                {
-                    var at = Vector3.Lerp(a, e, i / (float)(piers + 1));
-                    b.Prism(at.x, at.z, 0.028f, 0f, DeckTop - thickness, 6, deckSide, deckSide);
-                }
-                // Арки у длинных мостов.
-                if (length > 1.0f)
-                {
-                    const int segments = 10;
-                    float rise = Mathf.Min(0.16f, length * 0.12f);
-                    for (int s = -1; s <= 1; s += 2)
+                    var off = side * (_roadSet.width / 2f - 0.007f) * s;
+                    float from = piece.From, to = piece.To;
+                    Vector3 Arc(float t) => built.PointAt(Mathf.Lerp(from, to, t)) + off + Vector3.up * (_roadSet.deckTop + Mathf.Sin(t * Mathf.PI) * rise);
+                    for (int i = 0; i < segments; i++)
                     {
-                        var off = side * (width / 2f) * s;
-                        Vector3 Arc(float t) => Vector3.Lerp(a, e, t) + off + Vector3.up * (DeckTop + Mathf.Sin(t * Mathf.PI) * rise);
-                        for (int i = 0; i < segments; i++)
+                        builder.Beam(Arc(i / (float)segments), Arc((i + 1) / (float)segments), 0.014f, 0.014f, steel, steel);
+                        if (i > 0)
                         {
-                            b.Beam(Arc(i / (float)segments), Arc((i + 1) / (float)segments), 0.014f, 0.014f, steel, steel);
-                            if (i > 0)
-                            {
-                                var hangerTop = Arc(i / (float)segments);
-                                b.Beam(new Vector3(hangerTop.x, DeckTop, hangerTop.z), hangerTop, 0.004f, 0.004f, steel, steel);
-                            }
+                            var top = Arc(i / (float)segments);
+                            builder.Beam(new Vector3(top.x, _roadSet.deckTop, top.z), top, 0.004f, 0.004f, steel, steel);
                         }
                     }
                 }
             }
-            foreach (var pair in builders)
+            if (builder.VertexCount > 0) AddMesh("Arches", builder.ToMesh("City3D Arches"), _buildings, built.Root.transform, true);
+        }
+
+        /// <summary>
+        /// Построенные игроками дороги появляются в 3D (DOTween): плита под дорогой интерфейса с настоящей тенью,
+        /// а если дорога идёт над водой — мост. При первом вызове (загрузка партии) — сразу, без анимации.
+        /// </summary>
+        public void SyncRoads(Game game)
+        {
+            if (_roads == null || game == null) return;
+            bool animated = _roadsSynced;
+            _roadsSynced = true;
+            foreach (var road in game.Map.Roads)
             {
-                var go = AddMesh("Bridges " + pair.Key, pair.Value.ToMesh("City3D Bridges " + pair.Key), _buildings, _root.transform, true);
-                if (pair.Key != "_bridges") _districts[pair.Key + "#bridges"] = go;
+                if (road.IsBridge) continue;
+                bool owned = game.GetRoadOwner(road.Id).HasValue;
+                bool has = _builtRoads.TryGetValue(road.Id, out var built);
+                if (owned && !has)
+                {
+                    var la = game.Map.GetLocation(road.A);
+                    var lb = game.Map.GetLocation(road.B);
+                    if (la == null || lb == null) continue;
+                    built = _roads.BuildRoad(BoardLayout.World(la.X, la.Y), BoardLayout.World(lb.X, lb.Y), animated);
+                    if (built != null) _builtRoads[road.Id] = built;
+                }
+                else if (!owned && has)
+                {
+                    _roads.Remove(built);
+                    _builtRoads.Remove(road.Id);
+                }
             }
         }
 
@@ -925,6 +1014,8 @@ namespace CityHighways.Presentation
             }
             Shader.SetGlobalFloat("_CityReflectionOn", 0f);
             _treeChunks.Clear();
+            _builtRoads.Clear();
+            _roads = null;
             if (_root != null) Destroy(_root);
             foreach (var item in _owned) if (item != null) Destroy(item);
             _owned.Clear();

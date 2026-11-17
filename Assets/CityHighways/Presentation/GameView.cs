@@ -994,6 +994,7 @@ namespace CityHighways.Presentation
             if (float.IsNaN(panelSize.x) || panelSize.x < 10f) return;
             var game = _game;
             _city3D.Sync(_map.Layout, panelSize, _map.worldBound.position, _map.Light, id => game.IsDistrictOpen(id), deltaTime);
+            _city3D.SyncRoads(game);
         }
 
         bool TimerEnabled => _setup.turnSeconds > 0;

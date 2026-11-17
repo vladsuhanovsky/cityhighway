@@ -956,6 +956,7 @@ namespace CityHighways.Presentation
             {
                 if (_game.GetRoadOwner(road.Id).HasValue || !_game.IsRoadOpen(road.Id)) continue;
                 if (!_game.IsUnderRepair(road.Id) && !_game.IsParadeClosed(road.Id)) continue;
+                s_roadWidthScale = RoadWidthScale(road);
                 var segments = _layout.GetSegments(road);
                 if (segments.Count == 0) continue;
                 // Конусы по краям первого и последнего участка — «въезд закрыт».
@@ -964,7 +965,7 @@ namespace CityHighways.Presentation
                     float rad = segment.Angle * Mathf.Deg2Rad;
                     var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
                     var normal = new Vector2(-dir.y, dir.x);
-                    float side = BoardLayout.RoadThickness * 0.9f;
+                    float side = BoardLayout.RoadThickness * s_roadWidthScale * 0.9f;
                     DrawCone(p, segment.Center + normal * side, shadow, shadowAlpha);
                     DrawCone(p, segment.Center - normal * side, shadow, shadowAlpha);
                 }
@@ -1165,8 +1166,34 @@ namespace CityHighways.Presentation
             return 0.1f;
         }
 
+        /// <summary>
+        /// Множитель ширины дороги на экране для текущей рисуемой дороги. В 3D дорога на экране ровно такой же
+        /// ширины, как 3D-дорога и мост под ней (City3DScene.RoadWidth метров), при любом зуме и наклоне;
+        /// без 3D — 1 (прежние 11 px).
+        /// </summary>
+        static float s_roadWidthScale = 1f;
+
+        float RoadWidthScale(Road road)
+        {
+            if (!_use3D) return 1f;
+            var la = _game.Map.GetLocation(road.A);
+            var lb = _game.Map.GetLocation(road.B);
+            if (la == null || lb == null) return 1f;
+            var a = BoardLayout.World(la.X, la.Y);
+            var b = BoardLayout.World(lb.X, lb.Y);
+            var along = b - a;
+            along.y = 0f;
+            if (along.sqrMagnitude < 1e-6f) return 1f;
+            along.Normalize();
+            var across = new Vector3(-along.z, 0f, along.x);
+            var mid = (a + b) * 0.5f;
+            float perMeter = (_layout.WorldToScreen(mid + across * 0.5f) - _layout.WorldToScreen(mid - across * 0.5f)).magnitude;
+            return Mathf.Clamp(perMeter * City3DScene.RoadWidth / BoardLayout.RoadThickness, 0.4f, 3.5f);
+        }
+
         void DrawRoadUnder(Painter2D p, Road road)
         {
+            s_roadWidthScale = RoadWidthScale(road);
             int? owner = _game.GetRoadOwner(road.Id);
             var segments = _layout.GetSegments(road);
             int built = BuiltSegments(road, segments.Count);
@@ -1314,6 +1341,7 @@ namespace CityHighways.Presentation
             {
                 if (!_game.IsRoadOpen(road.Id)) continue;
                 var texture = RoadTextures.For(road);
+                s_roadWidthScale = RoadWidthScale(road);
                 var segments = _layout.GetSegments(road);
                 int built = BuiltSegments(road, segments.Count);
                 var look = LookOf(road, _game.GetRoadOwner(road.Id));
@@ -1332,7 +1360,7 @@ namespace CityHighways.Presentation
         void AddSegmentTexture(Texture2D texture, BoardLayout.Segment segment, Color tint)
         {
             var dir = Dir(segment);
-            float thickness = BoardLayout.RoadThickness;
+            float thickness = BoardLayout.RoadThickness * s_roadWidthScale;
             int tiles = Mathf.Max(1, Mathf.RoundToInt(segment.Length / thickness));
             float tileLength = segment.Length / tiles;
             var start = segment.Center - dir * segment.Length / 2f;
@@ -1347,13 +1375,16 @@ namespace CityHighways.Presentation
 
         void DrawRoadOver(Painter2D p, Road road)
         {
+            s_roadWidthScale = RoadWidthScale(road);
             int? owner = _game.GetRoadOwner(road.Id);
             var segments = _layout.GetSegments(road);
             int built = BuiltSegments(road, segments.Count);
             var baseColor = NightRoadColor(road);
             var ownerColor = owner.HasValue ? Palette.PlayerColor(owner.Value) : baseColor;
             bool isBridge = road.IsBridge;
-            float half = BoardLayout.RoadThickness / 2f;
+            // В 3D мост той же ширины, что дорога: рамки и перила не выходят за полотно.
+            bool wideBridge = isBridge && !_use3D;
+            float half = BoardLayout.RoadThickness * s_roadWidthScale / 2f;
             var look = LookOf(road, owner);
             bool selected = IsSelected(road);
 
@@ -1407,19 +1438,20 @@ namespace CityHighways.Presentation
                 // Мост — перила со столбиками.
                 if (isBridge)
                 {
+                    float railOffset = _use3D ? half - 1.2f : half + 2.5f;
                     var rail = new Color(0.66f, 0.82f, 1f, isBuilt ? 0.95f : look == RoadLook.Blocked ? 0.3f : 0.6f);
                     p.strokeColor = rail;
                     p.lineWidth = 1.8f;
-                    Line(p, a + normal * (half + 2.5f), b + normal * (half + 2.5f));
-                    Line(p, a - normal * (half + 2.5f), b - normal * (half + 2.5f));
+                    Line(p, a + normal * railOffset, b + normal * railOffset);
+                    Line(p, a - normal * railOffset, b - normal * railOffset);
                     int posts = Mathf.Max(2, Mathf.RoundToInt(segment.Length / 6f));
                     for (int k = 0; k <= posts; k++)
                     {
                         var point = Vector2.Lerp(a, b, k / (float)posts);
                         p.fillColor = rail;
-                        CirclePath(p, point + normal * (half + 2.5f), 1.2f);
+                        CirclePath(p, point + normal * railOffset, 1.2f);
                         p.Fill();
-                        CirclePath(p, point - normal * (half + 2.5f), 1.2f);
+                        CirclePath(p, point - normal * railOffset, 1.2f);
                         p.Fill();
                     }
                 }
@@ -1429,7 +1461,7 @@ namespace CityHighways.Presentation
                 {
                     p.strokeColor = new Color(1f, 0.60f, 0.20f, 0.95f);
                     p.lineWidth = 2.2f;
-                    SegmentPath(p, segment, isBridge ? 5f : 3.5f, Vector2.zero);
+                    SegmentPath(p, segment, wideBridge ? 5f : 3.5f, Vector2.zero);
                     p.Stroke();
                 }
 
@@ -1439,7 +1471,7 @@ namespace CityHighways.Presentation
                     float pulse = 0.5f + 0.45f * Mathf.Sin(PulseTime * 4f);
                     p.strokeColor = new Color(0.35f, 0.85f, 1f, pulse);
                     p.lineWidth = 3.4f;
-                    SegmentPath(p, segment, isBridge ? 7f : 5.5f, Vector2.zero);
+                    SegmentPath(p, segment, wideBridge ? 7f : 5.5f, Vector2.zero);
                     p.Stroke();
                 }
 
@@ -1449,7 +1481,7 @@ namespace CityHighways.Presentation
                     float glow = 0.55f + 0.4f * Mathf.Sin(PulseTime * 2.4f);
                     p.strokeColor = new Color(1f, 0.80f, 0.25f, glow);
                     p.lineWidth = 3f;
-                    SegmentPath(p, segment, isBridge ? 6f : 4.5f, Vector2.zero);
+                    SegmentPath(p, segment, wideBridge ? 6f : 4.5f, Vector2.zero);
                     p.Stroke();
                 }
 
@@ -1459,7 +1491,7 @@ namespace CityHighways.Presentation
                     float jam = 0.55f + 0.35f * Mathf.Sin(PulseTime * 3f);
                     p.strokeColor = new Color(0.95f, 0.22f, 0.18f, jam);
                     p.lineWidth = 2.4f;
-                    SegmentPath(p, segment, isBridge ? 5f : 3.5f, Vector2.zero);
+                    SegmentPath(p, segment, wideBridge ? 5f : 3.5f, Vector2.zero);
                     p.Stroke();
                 }
 
@@ -1470,7 +1502,7 @@ namespace CityHighways.Presentation
                 {
                     p.strokeColor = new Color(1f, 0.55f, 0.15f, 0.75f);
                     p.lineWidth = 1.6f;
-                    SegmentPath(p, segment, isBridge ? 5f : 3.5f, Vector2.zero);
+                    SegmentPath(p, segment, wideBridge ? 5f : 3.5f, Vector2.zero);
                     p.Stroke();
                 }
 
@@ -1480,11 +1512,11 @@ namespace CityHighways.Presentation
                 {
                     p.strokeColor = new Color(1f, 1f, 1f, 0.95f * _hoverFade);
                     p.lineWidth = 2.2f;
-                    SegmentPath(p, segment, isBridge ? 6f : 4f, Vector2.zero);
+                    SegmentPath(p, segment, wideBridge ? 6f : 4f, Vector2.zero);
                     p.Stroke();
                     p.strokeColor = new Color(Glow.r, Glow.g, Glow.b, 0.6f * _hoverFade);
                     p.lineWidth = 1.4f;
-                    SegmentPath(p, segment, isBridge ? 8.5f : 6.5f, Vector2.zero);
+                    SegmentPath(p, segment, wideBridge ? 8.5f : 6.5f, Vector2.zero);
                     p.Stroke();
                 }
             }
@@ -1493,6 +1525,7 @@ namespace CityHighways.Presentation
         /// <summary>Плоская заливка — для пути контракта поверх затемнения (текстуры остаются под ним).</summary>
         void DrawRoadFlat(Painter2D p, Road road)
         {
+            s_roadWidthScale = RoadWidthScale(road);
             int? owner = _game.GetRoadOwner(road.Id);
             var segments = _layout.GetSegments(road);
             int built = BuiltSegments(road, segments.Count);
@@ -1596,7 +1629,7 @@ namespace CityHighways.Presentation
             float rad = segment.Angle * Mathf.Deg2Rad;
             var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
             var normal = new Vector2(-dir.y, dir.x);
-            float half = BoardLayout.RoadThickness / 2f;
+            float half = BoardLayout.RoadThickness * s_roadWidthScale / 2f;
             const int stripes = 4;
             var previousCap = p.lineCap;
             float step = segment.Length / stripes;
@@ -1975,7 +2008,7 @@ namespace CityHighways.Presentation
             var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
             var normal = new Vector2(-dir.y, dir.x);
             float halfLength = segment.Length / 2f + inflate;
-            float halfThickness = BoardLayout.RoadThickness / 2f + inflate;
+            float halfThickness = BoardLayout.RoadThickness * s_roadWidthScale / 2f + inflate;
             var center = segment.Center + offset;
 
             p.BeginPath();
