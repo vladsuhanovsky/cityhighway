@@ -73,7 +73,7 @@ namespace CityHighways.Presentation
         float _reflectionScale = 0.5f;
         Vector4 _waveOffset;
         Color _skyColor = new Color(0.62f, 0.72f, 0.86f);
-        RenderPipelineAsset _previousPipeline;
+        RenderPipelineAsset _previousPipeline = null;
         bool _swappedPipeline;
         float _waterOffset;
 
@@ -252,9 +252,15 @@ namespace CityHighways.Presentation
             return -1;
         }
 
-        /// <summary>Запасной путь: ассет URP с рендерером Universal, созданный кодом, — только на время партии.</summary>
+        /// <summary>
+        /// Запасной путь, только в редакторе: ассет URP с рендерером Universal, созданный кодом, — на время партии.
+        /// UniversalRenderPipelineAsset.Create есть только в редакторе (в сборке его нет — была ошибка CS0117),
+        /// а созданному кодом рендереру в сборке всё равно не хватило бы шейдеров пост-обработки. В сборке рендерер
+        /// CityRenderer3D уже лежит в UniversalRP.asset, поэтому FindUniversalRenderer его находит и сюда не доходит.
+        /// </summary>
         void SwapToRuntimePipeline()
         {
+#if UNITY_EDITOR
             var rendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
             rendererData.hideFlags = HideFlags.DontSave;
             var asset = UniversalRenderPipelineAsset.Create(rendererData);
@@ -266,6 +272,10 @@ namespace CityHighways.Presentation
             QualitySettings.renderPipeline = asset;
             _swappedPipeline = true;
             Debug.Log("3D-город: рендерер Universal не найден в ассете URP — создан на время партии.");
+#else
+            Debug.LogWarning("3D-город: в ассете URP нет рендерера Universal (CityRenderer3D). Добавьте его в список Renderer List " +
+                             "у Assets/Settings/UniversalRP.asset — пока 3D рисуется рендерером по умолчанию.");
+#endif
         }
 
         Material LoadMaterial(string name, Color fallbackColor)
