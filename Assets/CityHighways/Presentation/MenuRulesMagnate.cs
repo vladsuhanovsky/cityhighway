@@ -64,17 +64,7 @@ namespace CityHighways.Presentation
             return row;
         }
 
-        static Label KindChip(CargoKind kind, float size)
-        {
-            var chip = Ui.Text(MagnateView.KindLetter(kind), size * 0.55f, new Color(0.08f, 0.08f, 0.1f), true);
-            chip.style.width = size;
-            chip.style.height = size;
-            chip.style.unityTextAlign = TextAnchor.MiddleCenter;
-            chip.style.backgroundColor = MagnateView.KindColor(kind);
-            Ui.Radius(chip, 6f);
-            chip.style.flexShrink = 0f;
-            return chip;
-        }
+        static Label KindChip(CargoKind kind, float size) => CargoIcons.Chip(kind, size, 0.55f, 6f);
 
         // ================================================================== Разделы
 

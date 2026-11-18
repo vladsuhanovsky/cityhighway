@@ -164,12 +164,16 @@ namespace CityHighways.Presentation
             kinds.style.marginTop = 4f;
             foreach (var group in waiting.GroupBy(c => c.Kind).OrderBy(g => g.Key))
             {
-                var chip = Chip(group.Key, 18f);
-                chip.text = group.Count() > 1 ? $"{group.Count()}" : KindLetter(group.Key);
+                var chip = Chip(group.Key, 20f);
                 chip.tooltip = $"{LogisticsGame.KindTitle(group.Key)}: {group.Count()}";
-                chip.style.marginRight = 4f;
+                chip.style.marginRight = 2f;
                 chip.style.marginBottom = 2f;
                 kinds.Add(chip);
+                // Сколько грузов этого вида — рядом с иконкой (на самой иконке число не читается).
+                var count = Ui.Text(group.Count() > 1 ? $"×{group.Count()}" : "", 11f, Theme.TextDim, true);
+                count.style.marginRight = 6f;
+                count.style.alignSelf = Align.Center;
+                kinds.Add(count);
             }
             cargo.Add(kinds);
             int urgent = waiting.Count(Urgent);
@@ -765,14 +769,8 @@ namespace CityHighways.Presentation
 
         static Label Chip(CargoKind kind, float size)
         {
-            var chip = Ui.Text(KindLetter(kind), size * 0.6f, new Color(0.08f, 0.08f, 0.1f), true);
-            chip.style.width = size;
-            chip.style.height = size;
-            chip.style.unityTextAlign = TextAnchor.MiddleCenter;
-            chip.style.backgroundColor = KindColor(kind);
-            Ui.Radius(chip, 4f);
+            var chip = CargoIcons.Chip(kind, size);
             chip.style.marginRight = 8f;
-            chip.style.flexShrink = 0f;
             return chip;
         }
 
