@@ -103,6 +103,8 @@ namespace CityHighways.Presentation
                 for (int x = 0; x < Tile; x++) Set(albedo, Row.Misc, ChimneyStripe, x, y, stripe);
             }
 
+            ApplyGeneratedTextures(albedo, roofs, misc);
+
             _albedo = Make("CityHighways_CityAtlas", albedo);
             _emission = Make("CityHighways_CityAtlasEmission", emission);
         }
@@ -120,6 +122,57 @@ namespace CityHighways.Presentation
             texture.SetPixels(pixels);
             texture.Apply(true, true);
             return texture;
+        }
+
+        /// <summary>
+        /// Текстуры из Scenario (Resources/CityHighways/City3D/Textures), если они есть: черепица — на скатные крыши
+        /// (красную, коричневую, медную, светлую), асфальт — на плитку асфальта, брусчатка — на гранит набережных.
+        /// Берётся рисунок (яркость относительно средней), а цвет — прежний цвет плитки, поэтому город не меняет
+        /// палитру, а получает фактуру. Плитка 64 px, поэтому текстура ужимается до 4 повторов рисунка на плитку.
+        /// </summary>
+        static void ApplyGeneratedTextures(Color[] albedo, Color[] roofs, Color[] misc)
+        {
+            var roof = Pattern(GeneratedArt.RoofTexture, 2);
+            if (roof != null)
+                foreach (int column in new[] { RoofLight, RoofRed, RoofBrown, RoofCopper })
+                    Imprint(albedo, Row.Roof, column, roof, roofs[column], 0.9f);
+            var asphalt = Pattern(GeneratedArt.AsphaltTexture, 1);
+            if (asphalt != null) Imprint(albedo, Row.Misc, Asphalt, asphalt, misc[Asphalt], 0.7f);
+            var paving = Pattern(GeneratedArt.PavingTexture, 2);
+            if (paving != null) Imprint(albedo, Row.Misc, Granite, paving, misc[Granite], 0.8f);
+        }
+
+        /// <summary>Рисунок текстуры в плитку Tile × Tile: repeats × repeats повторов; яркость, нормированная к 1.</summary>
+        static float[] Pattern(string path, int repeats)
+        {
+            var texture = GeneratedArt.Load(path);
+            if (texture == null) return null;
+            int side = Tile / repeats;
+            var pixels = GeneratedArt.ReadPixels(texture, side, side);
+            if (pixels == null) return null;
+            float mean = 0f;
+            var luminance = new float[side * side];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                luminance[i] = pixels[i].r * 0.3f + pixels[i].g * 0.59f + pixels[i].b * 0.11f;
+                mean += luminance[i];
+            }
+            mean = Mathf.Max(0.01f, mean / pixels.Length);
+            var pattern = new float[Tile * Tile];
+            for (int y = 0; y < Tile; y++)
+            for (int x = 0; x < Tile; x++)
+                pattern[y * Tile + x] = luminance[(y % side) * side + x % side] / mean;
+            return pattern;
+        }
+
+        static void Imprint(Color[] albedo, Row row, int column, float[] pattern, Color color, float strength)
+        {
+            for (int y = 0; y < Tile; y++)
+            for (int x = 0; x < Tile; x++)
+            {
+                float k = Mathf.Lerp(1f, pattern[y * Tile + x], strength);
+                Set(albedo, row, column, x, y, new Color(Mathf.Clamp01(color.r * k), Mathf.Clamp01(color.g * k), Mathf.Clamp01(color.b * k), 1f));
+            }
         }
 
         static void Set(Color[] pixels, Row row, int column, int x, int y, Color color)

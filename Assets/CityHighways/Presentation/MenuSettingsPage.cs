@@ -284,6 +284,15 @@ namespace CityHighways.Presentation
                     _backgroundChanged?.Invoke();
                     UpdatePreview($"Палитра «{MenuBackground.PaletteNames[i]}».");
                 })));
+            if (GeneratedArt.Load(GeneratedArt.KeyArt) != null)
+                s.Add(Row("Картина города", "Иллюстрация города вместо живого фона. Свет и палитра тогда не видны.",
+                    new SwitchToggle(_display.menuKeyArt, on =>
+                    {
+                        _display.menuKeyArt = on;
+                        Save();
+                        _backgroundChanged?.Invoke();
+                        UpdatePreview(on ? "На фоне меню — картина города." : "На фоне меню — живой город.");
+                    })));
             if (Application.isEditor)
                 s.Add(Note("В редакторе режим и разрешение задаёт окно Game — они применятся в собранной игре."));
         }

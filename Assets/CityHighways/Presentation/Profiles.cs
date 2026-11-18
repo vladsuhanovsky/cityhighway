@@ -44,6 +44,8 @@ namespace CityHighways.Presentation
         }
         /// <summary>Наряд персонажа строкой Outfit («body=…;hat=…»); пусто — наряд по умолчанию.</summary>
         public string outfit = "";
+        /// <summary>Готовый 3D-аватар (id из Avatar3DCatalog); пусто — свой 2D-персонаж из гардероба.</summary>
+        public string avatar3d = "";
 
         public Outfit Outfit => Outfit.Parse(outfit);
 
@@ -432,6 +434,15 @@ namespace CityHighways.Presentation
             profile.owned.Add(item.id);
             Wear(profile, item.slot, item.id);
             return null;
+        }
+
+        /// <summary>Выбрать готового 3D-аватара (пустой id — вернуться к 2D-персонажу из гардероба).</summary>
+        public static void ChooseAvatar3D(PlayerProfile profile, string id)
+        {
+            if (profile == null) return;
+            if (!string.IsNullOrEmpty(id) && Avatar3DCatalog.Get(id) == null) return;
+            profile.avatar3d = id ?? "";
+            Save();
         }
 
         /// <summary>Надеть вещь (или снять: id пустой — только для необязательных слотов).</summary>

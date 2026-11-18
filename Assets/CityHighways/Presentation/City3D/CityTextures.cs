@@ -503,11 +503,45 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Пятна земли: серый около 0,5 (множитель ×2 в шейдере Lit) с лёгкими тёплыми и холодными оттенками.</summary>
+        /// <summary>
+        /// Детальная текстура земли из Scenario (Resources/CityHighways/City3D/Textures/ground), если есть.
+        /// Режим _DETAIL_MULX2 умножает цвет земли на 2 × деталь, поэтому картинка переводится в серый вокруг 0,5:
+        /// остаётся фактура травы, а цвет земли задаёт карта города.
+        /// </summary>
+        static Texture2D GeneratedGroundDetail()
+        {
+            var source = GeneratedArt.Load(GeneratedArt.GroundTexture);
+            if (source == null) return null;
+            const int size = 512;
+            var pixels = GeneratedArt.ReadPixels(source, size, size);
+            if (pixels == null) return null;
+            float mean = 0f;
+            var luminance = new float[pixels.Length];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                luminance[i] = pixels[i].r * 0.3f + pixels[i].g * 0.59f + pixels[i].b * 0.11f;
+                mean += luminance[i];
+            }
+            mean /= pixels.Length;
+            var result = new Color32[pixels.Length];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                float value = Mathf.Clamp01(0.5f + (luminance[i] - mean) * 0.9f);
+                result[i] = ToColor32(new Color(value, value, value, 1f));
+            }
+            var texture = New("City3D Ground Detail (Scenario)", size, size, false, TextureWrapMode.Repeat);
+            texture.SetPixels32(result);
+            texture.Apply(true, false);
+            return texture;
+        }
+
         public static Texture2D DetailAlbedo
         {
             get
             {
                 if (_detailAlbedo != null) return _detailAlbedo;
+                var generated = GeneratedGroundDetail();
+                if (generated != null) return _detailAlbedo = generated;
                 const int size = 256;
                 var pixels = new Color32[size * size];
                 for (int y = 0; y < size; y++)

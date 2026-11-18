@@ -70,12 +70,17 @@ namespace CityHighways.Presentation
                 PaletteIndex = Mathf.Clamp(_display.menuPalette, 0, MenuBackground.PaletteNames.Length - 1)
             };
             Root.Add(_background);
+            BuildKeyArt();
             Root.RegisterCallback<PointerMoveEvent>(e =>
             {
                 var size = Root.layout.size;
                 if (size.x < 1f || size.y < 1f) return;
                 var local = Root.WorldToLocal(e.position);
-                _background.SetPointer(new Vector2(local.x / size.x, local.y / size.y));
+                var pointer = new Vector2(local.x / size.x, local.y / size.y);
+                _background.SetPointer(pointer);
+                // Картина города слегка сдвигается за мышью — тот же параллакс, что у живого фона.
+                if (_keyArtImage != null)
+                    _keyArtImage.style.translate = new Translate(new Length((0.5f - pointer.x) * 18f), new Length((0.5f - pointer.y) * 10f));
             });
             MenuButton.Hovered = () => { if (_display.uiSounds) _app.Sound.Play(Sfx.Tick, 0.35f); };
             Profiles.SyncSteam();
@@ -310,6 +315,8 @@ namespace CityHighways.Presentation
         /// <summary>Что нового в игре — короткие строки для ленты на главной.</summary>
         static readonly string[] News =
         {
+            "Шесть готовых 3D-героев в профиле: дальнобойщик, диспетчер, инженер и другие",
+            "Новые иконки грузов, хабов и событий, картина города в меню и иллюстрации карточек",
             "Новый интерфейс партии: карта на весь экран, мини-карта и карточки контрактов",
             "Поле с наклоном 2.5D: утро, день, закат и ночь в одной партии",
             "Сценарии: Зима, Большой город, Год ремонта и Выборы мэра",
@@ -321,7 +328,7 @@ namespace CityHighways.Presentation
         };
 
         /// <summary>Номер выпуска новостей: если больше прочитанного — в уведомлениях «Что нового».</summary>
-        const int NewsVersion = 29;
+        const int NewsVersion = 30;
         const string NewsSeenKey = "CityHighways.NewsSeen";
 
         int _newsIndex;
@@ -445,7 +452,50 @@ namespace CityHighways.Presentation
         {
             _background.Mode = (MenuBackground.LightMode)Mathf.Clamp(_display.menuLight, 0, 2);
             _background.PaletteIndex = Mathf.Clamp(_display.menuPalette, 0, MenuBackground.PaletteNames.Length - 1);
+            ApplyKeyArt();
             RefreshLightButtons();
+        }
+
+        VisualElement _keyArt, _keyArtImage;
+
+        /// <summary>
+        /// Картина города из Scenario (Resources/CityHighways/UI/key_art) поверх живого фона: на весь экран,
+        /// с лёгким затемнением, чтобы читались кнопки. Нет картинки или выключена в настройках — живой фон.
+        /// </summary>
+        void BuildKeyArt()
+        {
+            var texture = GeneratedArt.Load(GeneratedArt.KeyArt);
+            if (texture == null) return;
+            _keyArt = new VisualElement();
+            Ui.Fill(_keyArt);
+            _keyArt.style.overflow = Overflow.Hidden;
+            _keyArt.pickingMode = PickingMode.Ignore;
+            _keyArtImage = new VisualElement();
+            _keyArtImage.style.position = Position.Absolute;
+            _keyArtImage.style.left = -24f;
+            _keyArtImage.style.right = -24f;
+            _keyArtImage.style.top = -16f;
+            _keyArtImage.style.bottom = -16f;
+            _keyArtImage.style.backgroundImage = texture;
+            _keyArtImage.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
+            _keyArtImage.pickingMode = PickingMode.Ignore;
+            Ui.Transitions(_keyArtImage, "translate");
+            _keyArt.Add(_keyArtImage);
+            var shade = new VisualElement();
+            Ui.Fill(shade);
+            shade.style.backgroundColor = new Color(0.03f, 0.04f, 0.08f, 0.38f);
+            shade.pickingMode = PickingMode.Ignore;
+            _keyArt.Add(shade);
+            Root.Insert(Root.IndexOf(_background) + 1, _keyArt);
+            ApplyKeyArt();
+        }
+
+        void ApplyKeyArt()
+        {
+            if (_keyArt == null) return;
+            bool on = _display.menuKeyArt;
+            Ui.Show(_keyArt, on);
+            Ui.Show(_background, !on);
         }
 
         void SetLight(MenuBackground.LightMode mode)

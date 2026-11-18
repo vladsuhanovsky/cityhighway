@@ -33,6 +33,8 @@ namespace CityHighways.Presentation
         public int menuLight;
         /// <summary>Палитра фона главного меню (MenuBackground.PaletteNames).</summary>
         public int menuPalette;
+        /// <summary>Картина города (Resources/CityHighways/UI/key_art) вместо живого фона, если картинка есть.</summary>
+        public bool menuKeyArt = true;
         /// <summary>Звуки интерфейса: щелчки кнопок и тихие звуки наведения.</summary>
         public bool uiSounds = true;
         /// <summary>Доступность: меньше анимаций (переходы почти мгновенные).</summary>

@@ -35,6 +35,22 @@ namespace CityHighways.Presentation
             Root.style.alignItems = Align.Center;
             Root.style.justifyContent = Justify.Center;
             Root.pickingMode = PickingMode.Position;
+            // Картина города из Scenario (если есть) — фоном, под затемнением.
+            var art = GeneratedArt.Load(GeneratedArt.KeyArt);
+            if (art != null)
+            {
+                var image = new VisualElement();
+                Ui.Fill(image);
+                image.style.backgroundImage = art;
+                image.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
+                image.pickingMode = PickingMode.Ignore;
+                Root.Add(image);
+                var shade = new VisualElement();
+                Ui.Fill(shade);
+                shade.style.backgroundColor = new Color(0.04f, 0.05f, 0.08f, 0.62f);
+                shade.pickingMode = PickingMode.Ignore;
+                Root.Add(shade);
+            }
 
             var box = Ui.Column();
             box.style.alignItems = Align.Center;

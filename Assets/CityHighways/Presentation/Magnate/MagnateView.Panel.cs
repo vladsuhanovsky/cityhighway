@@ -138,7 +138,10 @@ namespace CityHighways.Presentation
         {
             var events = _game.Events;
             Ui.Show(_eventChip, events.Count > 0);
+            _eventIcon.Clear();
             if (events.Count == 0) return;
+            var icon = HubEventIcons.Event(events[0].Kind, 26f);
+            if (icon != null) _eventIcon.Add(icon);
             _eventChip.text = events.Count == 1 ? $"Событие: {events[0].Title}" : $"События: {events.Count}";
             _eventChip.tooltip = string.Join("\n", events.Select(e => $"{e.Title}: {e.Description}" + (e.EndRound > _game.Round ? $" (до раунда {e.EndRound})" : "")));
         }
@@ -458,8 +461,16 @@ namespace CityHighways.Presentation
                 if (waiting.Count == 0) continue;
                 any = true;
                 string kindName = hub.Kind == HubKind.Airport ? "аэропорт" : hub.Kind == HubKind.Port ? "порт" : "вокзал";
-                var title = Ui.Text($"{_game.Map.LocationName(hub.LocationId)} · {kindName}, ур. {hub.Level}", 13f, Theme.TextDim, true);
+                var title = Ui.Row();
+                title.style.alignItems = Align.Center;
                 title.style.marginTop = 6f;
+                var hubIcon = HubEventIcons.Hub(hub.Kind, 22f);
+                if (hubIcon != null)
+                {
+                    hubIcon.style.marginRight = 6f;
+                    title.Add(hubIcon);
+                }
+                title.Add(Ui.Text($"{_game.Map.LocationName(hub.LocationId)} · {kindName}, ур. {hub.Level}", 13f, Theme.TextDim, true));
                 _popupBody.Add(Pad(title));
                 foreach (var cargo in waiting) _popupBody.Add(Pad(CargoRow(cargo, true)));
             }

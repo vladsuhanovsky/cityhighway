@@ -11,39 +11,12 @@ namespace CityHighways.Presentation
     /// </summary>
     public static class CargoIcons
     {
-        public const string ResourcePath = "CityHighways/UI/cargo_icons";
-        const int Count = 7;
+        public const string ResourcePath = GeneratedArt.CargoIcons;
+        static readonly IconSheet Sheet = new IconSheet(ResourcePath, 7);
 
-        static Sprite[] s_sprites;
-        static bool s_loaded;
+        public static bool Available => Sheet.Available;
 
-        public static bool Available => Sprites() != null;
-
-        public static Sprite Get(CargoKind kind)
-        {
-            var sprites = Sprites();
-            int index = (int)kind;
-            return sprites != null && index >= 0 && index < sprites.Length ? sprites[index] : null;
-        }
-
-        static Sprite[] Sprites()
-        {
-            if (s_loaded) return s_sprites;
-            s_loaded = true;
-            var texture = Resources.Load<Texture2D>(ResourcePath);
-            if (texture == null) return null;
-            float cell = texture.width / (float)Count;
-            float side = Mathf.Min(cell, texture.height);
-            s_sprites = new Sprite[Count];
-            for (int i = 0; i < Count; i++)
-            {
-                // Квадрат по центру ячейки: лист может быть чуть выше или ниже ряда иконок.
-                var rect = new Rect(i * cell + (cell - side) * 0.5f, (texture.height - side) * 0.5f, side, side);
-                s_sprites[i] = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
-                s_sprites[i].name = "Cargo " + (CargoKind)i;
-            }
-            return s_sprites;
-        }
+        public static Sprite Get(CargoKind kind) => Sheet.Get((int)kind);
 
         /// <summary>
         /// Чип вида груза: иконка из листа или (если листа нет) буква на цветном квадрате. size — сторона в пикселях.

@@ -27,6 +27,7 @@ namespace CityHighways.Presentation
         public VisualElement Root { get; }
         readonly VisualElement _mapArea, _players, _handoff, _results;
         readonly Label _roundLabel, _eventChip, _tooltip, _banner;
+        readonly VisualElement _eventIcon;
         readonly MapView _map;
         readonly MiniMapView _minimap;
         readonly List<string> _log = new List<string>();
@@ -165,6 +166,9 @@ namespace CityHighways.Presentation
             _eventChip.style.marginRight = 14f;
             _eventChip.pickingMode = PickingMode.Position;
             Ui.Show(_eventChip, false);
+            _eventIcon = new VisualElement();
+            _eventIcon.style.marginRight = 6f;
+            top.Add(_eventIcon);
             top.Add(_eventChip);
             _players = Ui.Row();
             _players.style.flexGrow = 1f;

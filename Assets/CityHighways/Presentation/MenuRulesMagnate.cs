@@ -64,6 +64,9 @@ namespace CityHighways.Presentation
             return row;
         }
 
+        /// <summary>Иконка события из листа Scenario (если есть), иначе запасной значок.</summary>
+        static VisualElement EventIcon(LogisticsEventKind kind, VisualElement fallback) => HubEventIcons.Event(kind, 34f) ?? fallback;
+
         static Label KindChip(CargoKind kind, float size) => CargoIcons.Chip(kind, size, 0.55f, 6f);
 
         // ================================================================== Разделы
@@ -151,6 +154,26 @@ namespace CityHighways.Presentation
         {
             var s = Section("Хабы");
             Para(s, "Хабы — аэропорты, вокзалы и порты. Только на них появляются грузы. В фазе стройки хаб можно развить: кликните по нему на карте.");
+            if (HubEventIcons.Hub(HubKind.Airport, 40f) != null)
+            {
+                var kinds = Ui.Row();
+                kinds.style.marginTop = 8f;
+                foreach (var (kind, name) in new[] { (HubKind.Airport, "Аэропорт: скоропорт, ценные, хрупкие"), (HubKind.Station, "Вокзал: обычные и тяжеловесы"), (HubKind.Port, "Порт: тяжеловесы, негабарит, опасные") })
+                {
+                    var item = Ui.Row();
+                    item.style.alignItems = Align.Center;
+                    item.style.marginRight = 18f;
+                    var icon = HubEventIcons.Hub(kind, 40f);
+                    icon.style.marginRight = 8f;
+                    item.Add(icon);
+                    var label = Ui.Text(name, 13f, Theme.Text);
+                    label.style.whiteSpace = WhiteSpace.Normal;
+                    label.style.maxWidth = 170f;
+                    item.Add(label);
+                    kinds.Add(item);
+                }
+                s.Add(kinds);
+            }
             var levels = Ui.Row();
             levels.style.marginTop = 10f;
             for (int level = 1; level <= 5; level++)
@@ -219,17 +242,17 @@ namespace CityHighways.Presentation
                      "Оно видно баннером и плашкой в верхней строке. Фуры, чей маршрут шёл через закрытую дорогу, сами ищут объезд.");
             var red = GameColors.Danger;
             s.Add(PlainTile("ДТП", "Фура сломалась на одной из самых загруженных дорог: дорога закрыта на раунд. На карте — шлагбаум и гаечный ключ.", red,
-                new MenuIcon(MenuIcon.Glyph.Flame, 24f, red)));
+                EventIcon(LogisticsEventKind.Accident, new MenuIcon(MenuIcon.Glyph.Flame, 24f, red))));
             s.Add(PlainTile("Ремонт дороги", "Одна из построенных дорог закрыта на 2 раунда.", new Color(1f, 0.6f, 0.2f),
-                new MenuIcon(MenuIcon.Glyph.Road, 24f, new Color(1f, 0.6f, 0.2f))));
+                EventIcon(LogisticsEventKind.RoadRepair, new MenuIcon(MenuIcon.Glyph.Road, 24f, new Color(1f, 0.6f, 0.2f)))));
             s.Add(PlainTile("Нехватка топлива", "Все фуры проезжают на 2 участка меньше.", new Color(0.95f, 0.75f, 0.3f),
-                new MenuIcon(MenuIcon.Glyph.Clock, 24f, new Color(0.95f, 0.75f, 0.3f))));
+                EventIcon(LogisticsEventKind.FuelShortage, new MenuIcon(MenuIcon.Glyph.Clock, 24f, new Color(0.95f, 0.75f, 0.3f)))));
             s.Add(PlainTile("Таможенная проверка", $"Опасные и ценные грузы в пути платят {Magnate.CustomsBribe} влияния — иначе стоят раунд.", new Color(0.75f, 0.60f, 0.98f),
-                new MenuIcon(MenuIcon.Glyph.Document, 24f, new Color(0.75f, 0.60f, 0.98f))));
+                EventIcon(LogisticsEventKind.CustomsCheck, new MenuIcon(MenuIcon.Glyph.Document, 24f, new Color(0.75f, 0.60f, 0.98f)))));
             s.Add(PlainTile("Штормовое предупреждение", "Мосты пропускают на одну фуру меньше, тяжеловесы и негабарит по мостам не едут.", new Color(0.45f, 0.70f, 1f),
-                new MenuIcon(MenuIcon.Glyph.Snow, 24f, new Color(0.45f, 0.70f, 1f))));
+                EventIcon(LogisticsEventKind.Storm, new MenuIcon(MenuIcon.Glyph.Snow, 24f, new Color(0.45f, 0.70f, 1f)))));
             s.Add(PlainTile("Фестиваль", "Улицы Центра перекрыты на раунд.", GameColors.Success,
-                new MenuIcon(MenuIcon.Glyph.Star, 24f, GameColors.Success)));
+                EventIcon(LogisticsEventKind.Festival, new MenuIcon(MenuIcon.Glyph.Star, 24f, GameColors.Success))));
             return s;
         }
 

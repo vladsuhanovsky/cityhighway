@@ -138,7 +138,12 @@ namespace CityHighways.Presentation
                 style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
                 style.backgroundColor = new Color(0.12f, 0.13f, 0.17f);
                 Ui.Border(this, 2f, new Color(0f, 0f, 0f, 0.45f));
-                _name.text = "";
+                // Новые картинки из Scenario — без надписи: название пишем сами, белым с тёмной обводкой.
+                bool title = CardArt.NeedsTitle(resource.Value);
+                _name.text = title ? Palette.CardTitle(resource.Value) : "";
+                _name.style.color = Color.white;
+                _name.style.unityTextOutlineWidth = title ? 0.6f : 0f;
+                _name.style.unityTextOutlineColor = new Color(0f, 0f, 0f, 0.85f);
                 _count.text = "";
                 _badge.text = count.HasValue ? count.Value.ToString() : "";
                 Ui.Show(_badge, count.HasValue);
@@ -149,6 +154,7 @@ namespace CityHighways.Presentation
             }
             style.backgroundImage = StyleKeyword.None;
             Ui.Show(_badge, false);
+            _name.style.unityTextOutlineWidth = 0f;
 
             var fill = Palette.Card(resource.Value);
             var text = Palette.TextOn(fill);

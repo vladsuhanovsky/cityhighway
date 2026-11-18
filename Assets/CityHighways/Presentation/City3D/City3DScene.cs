@@ -238,7 +238,7 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Индекс рендерера Universal в текущем ассете URP или −1.</summary>
-        static int FindUniversalRenderer()
+        internal static int FindUniversalRenderer()
         {
             var asset = UniversalRenderPipeline.asset;
             if (asset == null) return -1;
