@@ -134,7 +134,7 @@ namespace CityHighways.Presentation
             _outfit = outfit ?? Outfit.Default;
             foreach (var pair in _layers)
             {
-                var texture = CharacterCatalog.Texture(CharacterCatalog.Item(_outfit.Get(pair.Key)));
+                var texture = _outfit.TextureFor(pair.Key);
                 pair.Value.style.backgroundImage = texture != null ? new StyleBackground(texture) : new StyleBackground(StyleKeyword.None);
             }
             if (animateSlot != null && _layers.TryGetValue(animateSlot, out var changed))

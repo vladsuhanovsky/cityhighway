@@ -14,6 +14,12 @@ namespace CityHighways.Presentation
         public int price;
         /// <summary>Путь картинки внутри Resources/CityHighways/Character без расширения, например «hat/hat_cap».</summary>
         public string file;
+        /// <summary>Чья вещь: «m» — мужская, «f» — женская, пусто — для всех.</summary>
+        public string gender;
+        /// <summary>Только у внешности: тон кожи «light», «tan» или «dark» — по нему выбираются варианты слоёв других вещей.</summary>
+        public string tone;
+
+        public bool Fits(string g) => string.IsNullOrEmpty(gender) || gender == g;
     }
 
     [Serializable]
@@ -28,13 +34,16 @@ namespace CityHighways.Presentation
         public int[] canvas;
         public string[] order;
         public CharacterDefaults defaults;
+        public CharacterDefaults defaultsFemale;
         public CharacterItem[] items;
     }
 
     /// <summary>
     /// Каталог одежды персонажа: Resources/CityHighways/Character/catalog.json и PNG-слои 512×768 с прозрачным
     /// фоном. Новую вещь добавляют без кода: картинку в папку слота и строчку в catalog.json.
-    /// Заглушки и шаблон для художника — Tools~/character_placeholders.py, Tools~/character_template.png.
+    /// Два пола: мужской («m») и женский («f») — у каждого своя фигура и свой гардероб; пол наряда задаёт внешность.
+    /// У вещей, где видна кожа (причёска, футболка), рядом лежат варианты под тон кожи: «…_tan.png», «…_dark.png».
+    /// Картинки нарезаны из Scenario скриптом Tools~/wardrobe_extract.py.
     /// </summary>
     public static class CharacterCatalog
     {
@@ -89,14 +98,24 @@ namespace CityHighways.Presentation
         /// <summary>Порядок слоёв при рисовании: снизу вверх.</summary>
         public static IReadOnlyList<string> DrawOrder => Data.order;
 
+        public const string Male = "m", Female = "f";
+
         public static IEnumerable<CharacterItem> ItemsIn(string slot) => Data.items.Where(i => i.slot == slot);
+
+        /// <summary>Вещи слота для пола (мужские, женские или общие).</summary>
+        public static IEnumerable<CharacterItem> ItemsIn(string slot, string gender) =>
+            Data.items.Where(i => i.slot == slot && i.Fits(gender));
+
+        public static string GenderTitle(string gender) => gender == Female ? "Женщина" : "Мужчина";
 
         public static CharacterItem Item(string id) =>
             string.IsNullOrEmpty(id) ? null : Data.items.FirstOrDefault(i => i.id == id);
 
-        public static string DefaultFor(string slot)
+        public static string DefaultFor(string slot) => DefaultFor(slot, Male);
+
+        public static string DefaultFor(string slot, string gender)
         {
-            var d = Data.defaults;
+            var d = gender == Female && Data.defaultsFemale != null ? Data.defaultsFemale : Data.defaults;
             switch (slot)
             {
                 case "body": return d.body;
@@ -110,12 +129,25 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Картинка вещи (кэш); нет файла — null, слой просто не рисуется.</summary>
-        public static Texture2D Texture(CharacterItem item)
+        public static Texture2D Texture(CharacterItem item) => Texture(item, null);
+
+        /// <summary>Картинка вещи под тон кожи: сначала «файл_тон», иначе обычный файл.</summary>
+        public static Texture2D Texture(CharacterItem item, string tone)
         {
             if (item == null || string.IsNullOrEmpty(item.file)) return null;
-            if (Textures.TryGetValue(item.file, out var cached)) return cached;
-            var texture = Resources.Load<Texture2D>(Root + item.file);
-            Textures[item.file] = texture;
+            if (!string.IsNullOrEmpty(tone) && tone != "light" && item.slot != "body")
+            {
+                var toned = Load(item.file + "_" + tone);
+                if (toned != null) return toned;
+            }
+            return Load(item.file);
+        }
+
+        static Texture2D Load(string file)
+        {
+            if (Textures.TryGetValue(file, out var cached)) return cached;
+            var texture = Resources.Load<Texture2D>(Root + file);
+            Textures[file] = texture;
             return texture;
         }
     }
@@ -127,6 +159,21 @@ namespace CityHighways.Presentation
 
         public string Get(string slot) => _items.TryGetValue(slot, out var id) ? id : "";
 
+        /// <summary>Пол наряда — по внешности («m» или «f»).</summary>
+        public string Gender
+        {
+            get
+            {
+                var body = CharacterCatalog.Item(Get("body"));
+                return body != null && body.gender == CharacterCatalog.Female ? CharacterCatalog.Female : CharacterCatalog.Male;
+            }
+        }
+
+        /// <summary>Тон кожи — по внешности: под него берутся варианты слоёв.</summary>
+        public string Tone => CharacterCatalog.Item(Get("body"))?.tone ?? "light";
+
+        public Texture2D TextureFor(string slot) => CharacterCatalog.Texture(CharacterCatalog.Item(Get(slot)), Tone);
+
         public Outfit With(string slot, string id)
         {
             var copy = Parse(Serialize());
@@ -137,7 +184,10 @@ namespace CityHighways.Presentation
         public string Serialize() =>
             string.Join(";", CharacterCatalog.Slots.Where(s => !string.IsNullOrEmpty(Get(s))).Select(s => s + "=" + Get(s)));
 
-        /// <summary>Разобрать строку; неизвестные вещи и пустые обязательные слоты заменяются вещами по умолчанию.</summary>
+        /// <summary>
+        /// Разобрать строку; неизвестные вещи, вещи другого пола и пустые обязательные слоты заменяются вещами
+        /// по умолчанию для пола наряда (пол задаёт внешность; нет её — мужской).
+        /// </summary>
         public static Outfit Parse(string text)
         {
             var outfit = new Outfit();
@@ -149,22 +199,32 @@ namespace CityHighways.Presentation
                 var item = CharacterCatalog.Item(id);
                 if (item != null && item.slot == slot) outfit._items[slot] = id;
             }
+            string gender = outfit.Gender;
+            if (!outfit._items.ContainsKey("body")) outfit._items["body"] = CharacterCatalog.DefaultFor("body", gender) ?? "";
             foreach (var slot in CharacterCatalog.Slots)
+            {
+                var item = CharacterCatalog.Item(outfit.Get(slot));
+                if (item != null && !item.Fits(gender)) outfit._items.Remove(slot);
                 if (!outfit._items.ContainsKey(slot) && CharacterCatalog.IsRequired(slot))
-                    outfit._items[slot] = CharacterCatalog.DefaultFor(slot) ?? "";
+                    outfit._items[slot] = CharacterCatalog.DefaultFor(slot, gender) ?? "";
+            }
             return outfit;
         }
 
         public static Outfit Default => Parse("");
+
+        /// <summary>Наряд по умолчанию для пола.</summary>
+        public static Outfit DefaultFor(string gender) => Parse("body=" + (CharacterCatalog.DefaultFor("body", gender) ?? ""));
 
         /// <summary>Наряд бота: случайный, но постоянный для имени — чтобы боты за столом различались.</summary>
         public static Outfit ForBot(string name)
         {
             var random = new System.Random((name ?? "").Aggregate(17, (h, c) => h * 31 + c));
             var outfit = new Outfit();
+            string gender = random.NextDouble() < 0.5 ? CharacterCatalog.Female : CharacterCatalog.Male;
             foreach (var slot in CharacterCatalog.Slots)
             {
-                var items = CharacterCatalog.ItemsIn(slot).ToList();
+                var items = CharacterCatalog.ItemsIn(slot, gender).ToList();
                 bool skip = !CharacterCatalog.IsRequired(slot) && random.NextDouble() < 0.4;
                 outfit._items[slot] = items.Count == 0 || skip ? "" : items[random.Next(items.Count)].id;
             }

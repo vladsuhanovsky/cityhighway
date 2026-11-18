@@ -315,6 +315,7 @@ namespace CityHighways.Presentation
         /// <summary>Что нового в игре — короткие строки для ленты на главной.</summary>
         static readonly string[] News =
         {
+            "Профиль: мужской и женский персонаж, новый гардероб из 58 вещей в стиле 3D-героев",
             "Персонажи получили лица: 3D-герои Везунчика, Прораба, Мостовика и остальных",
             "Магнат: цены дорог прямо на карте, жребий первого хода, правила и журнал вверху",
             "Новые иконки грузов, хабов и событий, картина города в меню и иллюстрации карточек",
@@ -329,7 +330,7 @@ namespace CityHighways.Presentation
         };
 
         /// <summary>Номер выпуска новостей: если больше прочитанного — в уведомлениях «Что нового».</summary>
-        const int NewsVersion = 31;
+        const int NewsVersion = 32;
         const string NewsSeenKey = "CityHighways.NewsSeen";
 
         int _newsIndex;

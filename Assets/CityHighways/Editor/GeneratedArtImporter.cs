@@ -4,7 +4,7 @@ using UnityEditor;
 /// Настройки импорта арта из Scenario, чтобы файлы достаточно было просто положить в Resources:
 /// листы иконок (cargo_icons, hub_event_icons) — до 4096 px, без сжатия, с прозрачностью; ключевой арт меню и
 /// арт карточек — без ужатия до 2048 и с качественным сжатием; текстуры 3D-города — повторяющиеся (Repeat);
-/// портреты 3D-аватаров — с прозрачностью; модели 3D-аватаров (FBX) — без анимаций и риг-настроек.
+/// слои гардероба (Character/) — с прозрачностью, без мип-карт; портреты 3D-аватаров — с прозрачностью; модели 3D-аватаров (FBX) — без анимаций и риг-настроек.
 /// </summary>
 sealed class GeneratedArtImporter : AssetPostprocessor
 {
@@ -51,6 +51,18 @@ sealed class GeneratedArtImporter : AssetPostprocessor
             importer.mipmapEnabled = true;
             importer.maxTextureSize = 2048;
             importer.wrapMode = UnityEngine.TextureWrapMode.Repeat;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+        }
+        else if (path.StartsWith("Character/"))
+        {
+            // Слои гардероба 512×768: прозрачность без каймы, без мип-карт (показываются в интерфейсе один к одному).
+            importer.textureType = TextureImporterType.Default;
+            importer.alphaSource = TextureImporterAlphaSource.FromInput;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.maxTextureSize = 1024;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.wrapMode = UnityEngine.TextureWrapMode.Clamp;
             importer.textureCompression = TextureImporterCompression.CompressedHQ;
         }
         else if (path.StartsWith("Avatars3D/") && path.EndsWith("_portrait.png"))

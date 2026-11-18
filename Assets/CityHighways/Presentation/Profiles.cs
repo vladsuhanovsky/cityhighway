@@ -44,6 +44,8 @@ namespace CityHighways.Presentation
         }
         /// <summary>Наряд персонажа строкой Outfit («body=…;hat=…»); пусто — наряд по умолчанию.</summary>
         public string outfit = "";
+        /// <summary>Наряд другого пола: запоминается при переключении «Мужчина / Женщина» и возвращается обратно.</summary>
+        public string outfitAlt = "";
 
         public Outfit Outfit => Outfit.Parse(outfit);
 
@@ -432,6 +434,16 @@ namespace CityHighways.Presentation
             profile.owned.Add(item.id);
             Wear(profile, item.slot, item.id);
             return null;
+        }
+
+        /// <summary>Сменить пол персонажа: наряд текущего пола откладывается, надевается отложенный (или наряд по умолчанию).</summary>
+        public static void SetGender(PlayerProfile profile, string gender)
+        {
+            if (profile == null || profile.Outfit.Gender == gender) return;
+            var alt = Outfit.Parse(profile.outfitAlt);
+            profile.outfitAlt = profile.Outfit.Serialize();
+            profile.outfit = (alt.Gender == gender ? alt : Outfit.DefaultFor(gender)).Serialize();
+            Save();
         }
 
         /// <summary>Надеть вещь (или снять: id пустой — только для необязательных слотов).</summary>

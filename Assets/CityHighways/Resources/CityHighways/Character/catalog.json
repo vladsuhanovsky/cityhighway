@@ -3,7 +3,7 @@
   512,
   768
  ],
- "note": "Все PNG — 512×768, прозрачный фон, фигура как в template.png. Слои рисуются по порядку order. price 0 — есть у всех.",
+ "note": "Все PNG — 512×768, прозрачный фон, фигура как у базы своего пола. Слои рисуются по порядку order. price 0 — есть у всех. gender: m — мужское, f — женское. У внешности tone — тон кожи; у вещей рядом лежат варианты <файл>_tan.png и <файл>_dark.png. Нарезка — Tools~/wardrobe_extract.py.",
  "order": [
   "body",
   "bottom",
@@ -22,209 +22,485 @@
   "hat": "",
   "accessory": ""
  },
+ "defaultsFemale": {
+  "body": "body_f_light",
+  "hair": "hair_f_bob",
+  "top": "top_f_tshirt",
+  "bottom": "bottom_f_trousers",
+  "shoes": "shoes_f_boots",
+  "hat": "",
+  "accessory": ""
+ },
  "items": [
   {
    "id": "body_light",
    "slot": "body",
    "name": "Светлая кожа",
    "price": 0,
-   "file": "body/body_light"
+   "file": "body/body_light",
+   "gender": "m",
+   "tone": "light"
   },
   {
    "id": "body_tan",
    "slot": "body",
    "name": "Смуглая кожа",
    "price": 0,
-   "file": "body/body_tan"
+   "file": "body/body_tan",
+   "gender": "m",
+   "tone": "tan"
   },
   {
    "id": "body_dark",
    "slot": "body",
    "name": "Тёмная кожа",
    "price": 0,
-   "file": "body/body_dark"
+   "file": "body/body_dark",
+   "gender": "m",
+   "tone": "dark"
   },
   {
    "id": "hair_short",
    "slot": "hair",
    "name": "Короткая стрижка",
    "price": 0,
-   "file": "hair/hair_short"
+   "file": "hair/hair_short",
+   "gender": "m"
   },
   {
    "id": "hair_long",
    "slot": "hair",
    "name": "Длинные волосы",
    "price": 0,
-   "file": "hair/hair_long"
+   "file": "hair/hair_long",
+   "gender": "m"
   },
   {
    "id": "hair_bun",
    "slot": "hair",
    "name": "Пучок",
    "price": 10,
-   "file": "hair/hair_bun"
+   "file": "hair/hair_bun",
+   "gender": "m"
   },
   {
    "id": "hair_beard",
    "slot": "hair",
    "name": "Борода прораба",
    "price": 15,
-   "file": "hair/hair_beard"
+   "file": "hair/hair_beard",
+   "gender": "m"
   },
   {
    "id": "top_tshirt",
    "slot": "top",
    "name": "Футболка",
    "price": 0,
-   "file": "top/top_tshirt"
+   "file": "top/top_tshirt",
+   "gender": "m"
   },
   {
    "id": "top_vest",
    "slot": "top",
    "name": "Сигнальный жилет",
    "price": 10,
-   "file": "top/top_vest"
+   "file": "top/top_vest",
+   "gender": "m"
   },
   {
    "id": "top_shirt",
    "slot": "top",
    "name": "Рубашка",
    "price": 15,
-   "file": "top/top_shirt"
+   "file": "top/top_shirt",
+   "gender": "m"
   },
   {
    "id": "top_sweater",
    "slot": "top",
    "name": "Свитер",
    "price": 15,
-   "file": "top/top_sweater"
+   "file": "top/top_sweater",
+   "gender": "m"
   },
   {
    "id": "top_jacket",
    "slot": "top",
    "name": "Пиджак",
    "price": 30,
-   "file": "top/top_jacket"
+   "file": "top/top_jacket",
+   "gender": "m"
   },
   {
    "id": "bottom_trousers",
    "slot": "bottom",
    "name": "Рабочие брюки",
    "price": 0,
-   "file": "bottom/bottom_trousers"
+   "file": "bottom/bottom_trousers",
+   "gender": "m"
   },
   {
    "id": "bottom_jeans",
    "slot": "bottom",
    "name": "Джинсы",
    "price": 10,
-   "file": "bottom/bottom_jeans"
-  },
-  {
-   "id": "bottom_overalls",
-   "slot": "bottom",
-   "name": "Комбинезон",
-   "price": 20,
-   "file": "bottom/bottom_overalls"
+   "file": "bottom/bottom_jeans",
+   "gender": "m"
   },
   {
    "id": "bottom_classic",
    "slot": "bottom",
    "name": "Классические брюки",
    "price": 15,
-   "file": "bottom/bottom_classic"
+   "file": "bottom/bottom_classic",
+   "gender": "m"
+  },
+  {
+   "id": "bottom_overalls",
+   "slot": "bottom",
+   "name": "Комбинезон",
+   "price": 20,
+   "file": "bottom/bottom_overalls",
+   "gender": "m"
   },
   {
    "id": "shoes_boots",
    "slot": "shoes",
    "name": "Рабочие ботинки",
    "price": 0,
-   "file": "shoes/shoes_boots"
+   "file": "shoes/shoes_boots",
+   "gender": "m"
   },
   {
    "id": "shoes_sneakers",
    "slot": "shoes",
    "name": "Кроссовки",
    "price": 10,
-   "file": "shoes/shoes_sneakers"
+   "file": "shoes/shoes_sneakers",
+   "gender": "m"
   },
   {
    "id": "shoes_rubber",
    "slot": "shoes",
    "name": "Резиновые сапоги",
    "price": 15,
-   "file": "shoes/shoes_rubber"
+   "file": "shoes/shoes_rubber",
+   "gender": "m"
   },
   {
    "id": "shoes_oxford",
    "slot": "shoes",
    "name": "Туфли",
    "price": 20,
-   "file": "shoes/shoes_oxford"
+   "file": "shoes/shoes_oxford",
+   "gender": "m"
   },
   {
    "id": "hat_hardhat",
    "slot": "hat",
    "name": "Строительная каска",
    "price": 10,
-   "file": "hat/hat_hardhat"
+   "file": "hat/hat_hardhat",
+   "gender": "m"
   },
   {
    "id": "hat_cap",
    "slot": "hat",
    "name": "Кепка",
    "price": 10,
-   "file": "hat/hat_cap"
+   "file": "hat/hat_cap",
+   "gender": "m"
   },
   {
    "id": "hat_fedora",
    "slot": "hat",
    "name": "Шляпа",
    "price": 20,
-   "file": "hat/hat_fedora"
+   "file": "hat/hat_fedora",
+   "gender": "m"
   },
   {
    "id": "hat_tophat",
    "slot": "hat",
    "name": "Цилиндр",
    "price": 35,
-   "file": "hat/hat_tophat"
+   "file": "hat/hat_tophat",
+   "gender": "m"
   },
   {
    "id": "acc_glasses",
    "slot": "accessory",
    "name": "Очки",
    "price": 10,
-   "file": "accessory/acc_glasses"
+   "file": "accessory/acc_glasses",
+   "gender": "m"
   },
   {
    "id": "acc_tie",
    "slot": "accessory",
    "name": "Галстук",
    "price": 15,
-   "file": "accessory/acc_tie"
+   "file": "accessory/acc_tie",
+   "gender": "m"
   },
   {
    "id": "acc_radio",
    "slot": "accessory",
    "name": "Рация",
    "price": 20,
-   "file": "accessory/acc_radio"
+   "file": "accessory/acc_radio",
+   "gender": "m"
   },
   {
    "id": "acc_blueprint",
    "slot": "accessory",
    "name": "Свиток чертежей",
    "price": 20,
-   "file": "accessory/acc_blueprint"
+   "file": "accessory/acc_blueprint",
+   "gender": "m"
   },
   {
    "id": "acc_chain",
    "slot": "accessory",
    "name": "Золотая цепь",
    "price": 40,
-   "file": "accessory/acc_chain"
+   "file": "accessory/acc_chain",
+   "gender": "m"
+  },
+  {
+   "id": "body_f_light",
+   "slot": "body",
+   "name": "Светлая кожа",
+   "price": 0,
+   "file": "body/body_f_light",
+   "gender": "f",
+   "tone": "light"
+  },
+  {
+   "id": "body_f_tan",
+   "slot": "body",
+   "name": "Смуглая кожа",
+   "price": 0,
+   "file": "body/body_f_tan",
+   "gender": "f",
+   "tone": "tan"
+  },
+  {
+   "id": "body_f_dark",
+   "slot": "body",
+   "name": "Тёмная кожа",
+   "price": 0,
+   "file": "body/body_f_dark",
+   "gender": "f",
+   "tone": "dark"
+  },
+  {
+   "id": "hair_f_bob",
+   "slot": "hair",
+   "name": "Каре",
+   "price": 0,
+   "file": "hair/hair_f_bob",
+   "gender": "f"
+  },
+  {
+   "id": "hair_f_long",
+   "slot": "hair",
+   "name": "Длинные волосы",
+   "price": 0,
+   "file": "hair/hair_f_long",
+   "gender": "f"
+  },
+  {
+   "id": "hair_f_ponytail",
+   "slot": "hair",
+   "name": "Высокий хвост",
+   "price": 10,
+   "file": "hair/hair_f_ponytail",
+   "gender": "f"
+  },
+  {
+   "id": "hair_f_curly",
+   "slot": "hair",
+   "name": "Кудри",
+   "price": 15,
+   "file": "hair/hair_f_curly",
+   "gender": "f"
+  },
+  {
+   "id": "top_f_tshirt",
+   "slot": "top",
+   "name": "Футболка",
+   "price": 0,
+   "file": "top/top_f_tshirt",
+   "gender": "f"
+  },
+  {
+   "id": "top_f_vest",
+   "slot": "top",
+   "name": "Сигнальный жилет",
+   "price": 10,
+   "file": "top/top_f_vest",
+   "gender": "f"
+  },
+  {
+   "id": "top_f_blouse",
+   "slot": "top",
+   "name": "Блузка",
+   "price": 15,
+   "file": "top/top_f_blouse",
+   "gender": "f"
+  },
+  {
+   "id": "top_f_cardigan",
+   "slot": "top",
+   "name": "Кардиган",
+   "price": 15,
+   "file": "top/top_f_cardigan",
+   "gender": "f"
+  },
+  {
+   "id": "top_f_blazer",
+   "slot": "top",
+   "name": "Жакет",
+   "price": 30,
+   "file": "top/top_f_blazer",
+   "gender": "f"
+  },
+  {
+   "id": "bottom_f_trousers",
+   "slot": "bottom",
+   "name": "Рабочие брюки",
+   "price": 0,
+   "file": "bottom/bottom_f_trousers",
+   "gender": "f"
+  },
+  {
+   "id": "bottom_f_jeans",
+   "slot": "bottom",
+   "name": "Джинсы",
+   "price": 10,
+   "file": "bottom/bottom_f_jeans",
+   "gender": "f"
+  },
+  {
+   "id": "bottom_f_skirt",
+   "slot": "bottom",
+   "name": "Юбка",
+   "price": 15,
+   "file": "bottom/bottom_f_skirt",
+   "gender": "f"
+  },
+  {
+   "id": "bottom_f_overalls",
+   "slot": "bottom",
+   "name": "Комбинезон",
+   "price": 20,
+   "file": "bottom/bottom_f_overalls",
+   "gender": "f"
+  },
+  {
+   "id": "shoes_f_boots",
+   "slot": "shoes",
+   "name": "Рабочие ботинки",
+   "price": 0,
+   "file": "shoes/shoes_f_boots",
+   "gender": "f"
+  },
+  {
+   "id": "shoes_f_sneakers",
+   "slot": "shoes",
+   "name": "Кроссовки",
+   "price": 10,
+   "file": "shoes/shoes_f_sneakers",
+   "gender": "f"
+  },
+  {
+   "id": "shoes_f_rubber",
+   "slot": "shoes",
+   "name": "Резиновые сапоги",
+   "price": 15,
+   "file": "shoes/shoes_f_rubber",
+   "gender": "f"
+  },
+  {
+   "id": "shoes_f_heels",
+   "slot": "shoes",
+   "name": "Туфли на каблуке",
+   "price": 20,
+   "file": "shoes/shoes_f_heels",
+   "gender": "f"
+  },
+  {
+   "id": "hat_f_hardhat",
+   "slot": "hat",
+   "name": "Строительная каска",
+   "price": 10,
+   "file": "hat/hat_f_hardhat",
+   "gender": "f"
+  },
+  {
+   "id": "hat_f_cap",
+   "slot": "hat",
+   "name": "Кепка",
+   "price": 10,
+   "file": "hat/hat_f_cap",
+   "gender": "f"
+  },
+  {
+   "id": "hat_f_beret",
+   "slot": "hat",
+   "name": "Берет",
+   "price": 20,
+   "file": "hat/hat_f_beret",
+   "gender": "f"
+  },
+  {
+   "id": "hat_f_sunhat",
+   "slot": "hat",
+   "name": "Шляпка",
+   "price": 35,
+   "file": "hat/hat_f_sunhat",
+   "gender": "f"
+  },
+  {
+   "id": "acc_f_glasses",
+   "slot": "accessory",
+   "name": "Очки",
+   "price": 10,
+   "file": "accessory/acc_f_glasses",
+   "gender": "f"
+  },
+  {
+   "id": "acc_f_scarf",
+   "slot": "accessory",
+   "name": "Шейный платок",
+   "price": 15,
+   "file": "accessory/acc_f_scarf",
+   "gender": "f"
+  },
+  {
+   "id": "acc_f_radio",
+   "slot": "accessory",
+   "name": "Рация",
+   "price": 20,
+   "file": "accessory/acc_f_radio",
+   "gender": "f"
+  },
+  {
+   "id": "acc_f_tablet",
+   "slot": "accessory",
+   "name": "Планшет",
+   "price": 20,
+   "file": "accessory/acc_f_tablet",
+   "gender": "f"
+  },
+  {
+   "id": "acc_f_pearls",
+   "slot": "accessory",
+   "name": "Жемчужное ожерелье",
+   "price": 40,
+   "file": "accessory/acc_f_pearls",
+   "gender": "f"
   }
  ]
 }

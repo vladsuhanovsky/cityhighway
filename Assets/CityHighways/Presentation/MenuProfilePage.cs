@@ -270,6 +270,8 @@ namespace CityHighways.Presentation
             var right = Card(14f);
             right.style.flexGrow = 1f;
             right.style.flexShrink = 1f;
+            string gender = shown.Gender;
+            right.Add(GenderSwitch(profile, gender));
             var slots = Ui.Row();
             slots.style.flexWrap = Wrap.Wrap;
             foreach (var slot in CharacterCatalog.Slots)
@@ -288,7 +290,7 @@ namespace CityHighways.Presentation
             grid.style.alignItems = Align.FlexStart;
             grid.style.marginTop = 6f;
             if (!CharacterCatalog.IsRequired(_slot)) grid.Add(ClothingTile(profile, null, worn));
-            foreach (var item in CharacterCatalog.ItemsIn(_slot).OrderBy(i => i.price)) grid.Add(ClothingTile(profile, item, worn));
+            foreach (var item in CharacterCatalog.ItemsIn(_slot, gender).OrderBy(i => i.price)) grid.Add(ClothingTile(profile, item, worn));
             right.Add(grid);
             var legend = Ui.Row();
             legend.style.marginTop = 8f;
@@ -308,6 +310,38 @@ namespace CityHighways.Presentation
             }
             right.Add(legend);
             row.Add(right);
+        }
+
+        /// <summary>
+        /// Переключатель «Мужчина / Женщина»: у каждого пола своя фигура и свой гардероб. Наряд другого пола
+        /// запоминается и возвращается при обратном переключении; купленные вещи остаются за профилем.
+        /// </summary>
+        VisualElement GenderSwitch(PlayerProfile profile, string gender)
+        {
+            var row = Ui.Row();
+            row.style.alignItems = Align.Center;
+            row.style.marginBottom = 10f;
+            var caption = Ui.Text("Персонаж:", 14f, Theme.TextDim, true);
+            caption.style.marginRight = 10f;
+            row.Add(caption);
+            foreach (var g in new[] { CharacterCatalog.Male, CharacterCatalog.Female })
+            {
+                string chosen = g;
+                bool active = g == gender;
+                var button = Btn((g == CharacterCatalog.Male ? "♂ " : "♀ ") + CharacterCatalog.GenderTitle(g), () =>
+                {
+                    if (active) return;
+                    Profiles.SetGender(profile, chosen);
+                    _tryOn = null;
+                    _animateSlot = "body";
+                    _status = chosen == CharacterCatalog.Female ? "Женский персонаж и женский гардероб." : "Мужской персонаж и мужской гардероб.";
+                    Rebuild();
+                }, active ? ButtonKind.Primary : ButtonKind.Secondary, 14f);
+                button.style.marginRight = 6f;
+                button.style.minWidth = 130f;
+                row.Add(button);
+            }
+            return row;
         }
 
         /// <summary>
@@ -434,7 +468,7 @@ namespace CityHighways.Presentation
             _ghost.style.opacity = 0.85f;
             _ghost.style.backgroundColor = new Color(0f, 0f, 0f, 0.25f);
             Ui.Radius(_ghost, 10f);
-            var texture = CharacterCatalog.Texture(item);
+            var texture = CharacterCatalog.Texture(item, (_tryOn ?? Profiles.Active.Outfit).Tone);
             if (texture != null)
             {
                 _ghost.style.backgroundImage = new StyleBackground(texture);
