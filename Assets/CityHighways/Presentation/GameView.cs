@@ -16,9 +16,11 @@ namespace CityHighways.Presentation
     public sealed class GameView
     {
         const float TopBarHeight = 60f;
-        const float BottomBarHeight = 58f;
+        const float BottomBarHeight = 72f;
         const float DrawerWidth = 380f;
-        const float ContractCardWidth = 220f;
+        const float ContractCardWidth = 200f;
+        const float ContractsSheetWidth = 760f;
+        const float PlayersPanelWidth = 420f;
         const float BotDelay = 0.55f;
         /// <summary>Сколько последних записей хранит и показывает журнал (старые уходят).</summary>
         const int LogHistory = 200;
@@ -45,7 +47,6 @@ namespace CityHighways.Presentation
             public VisualElement Root;
             public Label Name;
             public Label Stats;
-            public CharacterIcon Icon;
             public Label Ability;
             public ProfileBadge Badge;
             public Label Title;
@@ -222,11 +223,13 @@ namespace CityHighways.Presentation
         readonly Label _drawerInfo;
         int _seenGoalOwners;   // сколько целей было взято, когда меню открывали последний раз
 
-        // Окна: игроки, настройки, правила
-        enum Modal { None, Players, Settings, Rules }
+        // Окна: настройки, правила. «Игроки» — не окно, а панель справа на игровом поле.
+        enum Modal { None, Settings, Rules }
         Modal _modal = Modal.None;
         readonly VisualElement _modalLayer;
-        readonly VisualElement _playersModal, _settingsModal, _rulesModal;
+        readonly VisualElement _settingsModal, _rulesModal;
+        readonly VisualElement _playersPanel;
+        bool _playersOpen;
         readonly VisualElement _settingsBody, _rulesBody;
         readonly VisualElement _playersBox;
         PlayerRow[] _playerRows = new PlayerRow[0];
@@ -287,7 +290,7 @@ namespace CityHighways.Presentation
             Root.style.flexGrow = 1f;
             Root.style.backgroundColor = Theme.Background;
 
-            // Макет: карта на весь экран; сверху — панель с ресурсами и меню, снизу — вкладки.
+            // Макет: карта на весь экран; сверху — ход, событие, журнал и меню, снизу — вкладки, игроки и ресурсы.
             // Всё остальное — выезжающие панели (действия, контракты, журнал), боковое меню и окна.
 
             // ---------- Игровое поле
@@ -450,17 +453,37 @@ namespace CityHighways.Presentation
             actionButtons.Add(_luckOdds);
 
             // Контракты: карточки с swipe-навигацией (и выбор новых контрактов).
-            _contractsSheet = Sheet("Контракты", 1000f, CloseSheet, out var contractsBody);
+            _contractsSheet = Sheet("Контракты", ContractsSheetWidth, CloseSheet, out var contractsBody);
+            // Не выше поля: если выбор персонажа и контрактов не помещается — прокрутка.
+            _contractsSheet.style.maxHeight = Length.Percent(100f);
+            var contractsScroll = new ScrollView(ScrollViewMode.Vertical);
+            contractsScroll.style.flexShrink = 1f;
+            contractsScroll.style.minHeight = 0f;
+            Ui.StyleScroller(contractsScroll);
+            contractsBody.Add(contractsScroll);
             _contractsBox = Ui.Column();
-            contractsBody.Add(_contractsBox);
+            contractsScroll.Add(_contractsBox);
             _contractCarousel = new CardCarousel(ContractCardWidth, 12f);
             _contractCarousel.Snapped += () => _app.Sound.Play(Sfx.Tick, 0.5f);
             _choiceCarousel = new CardCarousel(ContractCardWidth, 12f);
             _choiceCarousel.Snapped += () => _app.Sound.Play(Sfx.Tick, 0.5f);
 
             // Журнал.
+            // Кнопка журнала наверху, поэтому и панель выезжает сверху справа, под верхней полосой.
             _logSheet = Sheet("Журнал", 640f, CloseSheet, out var logBody);
             _logSheet.style.height = 360f;
+            _logSheet.style.bottom = StyleKeyword.Auto;
+            _logSheet.style.top = 0f;
+            _logSheet.style.left = StyleKeyword.Auto;
+            _logSheet.style.right = 12f;
+            _logSheet.style.marginLeft = 0f;
+            _logSheet.style.borderTopLeftRadius = 0f;
+            _logSheet.style.borderTopRightRadius = 0f;
+            _logSheet.style.borderBottomLeftRadius = 14f;
+            _logSheet.style.borderBottomRightRadius = 14f;
+            _logSheet.style.borderTopWidth = 0f;
+            _logSheet.style.borderBottomWidth = 1f;
+            _logSheet.style.borderBottomColor = Theme.Line;
             var logHost = Ui.Column();
             logHost.style.flexGrow = 1f;
             logHost.style.flexShrink = 1f;
@@ -551,42 +574,18 @@ namespace CityHighways.Presentation
             spaceLeft.style.flexGrow = 1f;
             _topBar.Add(spaceLeft);
 
-            // Ресурсы: карты в руке (деления + число) и оставшиеся участки дороги.
-            _resourcesCaption = Ui.Text("РЕСУРСЫ", 11f, Theme.TextDim, true);
-            _resourcesCaption.style.letterSpacing = 1.5f;
-            _resourcesCaption.style.marginRight = 10f;
-            _topBar.Add(_resourcesCaption);
-            _handRow = Ui.Row();
-            _topBar.Add(_handRow);
-            foreach (var color in ResourceInfo.Building.Concat(new[] { Resource.Machinery }))
-            {
-                var chip = new ResourceChip(color);
-                var resource = color;
-                AttachTooltip(chip, () => ResourceTooltip(resource));
-                _hand[color] = chip;
-                _handRow.Add(chip);
-            }
-            var pieces = Ui.Column();
-            pieces.pickingMode = PickingMode.Position;
-            pieces.style.marginLeft = 6f;
-            var piecesTop = Ui.Row();
-            piecesTop.Add(Ui.Text("Участки", 11f, Theme.TextDim, true));
-            _piecesLabel = Ui.Number("", 14f, Theme.Text, true);
-            _piecesLabel.style.marginLeft = 6f;
-            piecesTop.Add(_piecesLabel);
-            pieces.Add(piecesTop);
-            _piecesBar = new ProgressBar(86f, 6f, Theme.Success);
-            _piecesBar.style.marginTop = 4f;
-            pieces.Add(_piecesBar);
-            AttachTooltip(pieces, () => _game == null ? "" : PiecesTooltip());
-            _topBar.Add(pieces);
-            _handTitle = Ui.Text("", 12f, Theme.TextDim, true);
-            _handTitle.style.marginLeft = 10f;
-            _topBar.Add(_handTitle);
-
             var spaceRight = Ui.Box();
             spaceRight.style.flexGrow = 1f;
             _topBar.Add(spaceRight);
+
+            // Журнал — наверху, рядом с меню; панель журнала выезжает сверху справа.
+            _logTab = Ui.Button("Журнал", () => ToggleSheet(SheetKind.Log), ButtonKind.Ghost, 14f);
+            _logTab.style.marginRight = 8f;
+            _logTab.style.minHeight = 40f;
+            Ui.Border(_logTab, 0f, Color.clear);
+            _logTab.style.borderBottomWidth = 3f;
+            Ui.Transitions(_logTab, "background-color", "color", "border-bottom-color");
+            _topBar.Add(_logTab);
 
             _menuButton = new IconButton(IconButton.Glyph.Menu, "Меню", ToggleDrawer);
             _menuButton.style.marginRight = 8f;
@@ -618,35 +617,89 @@ namespace CityHighways.Presentation
             Ui.Shadow(bottomBar, 0f, 12f, 0.5f);
             Root.Add(bottomBar);
 
-            UnityEngine.UIElements.Button Tab(string text, Action onClick)
+            // Три части: слева вкладки, по центру «Игроки», справа от них — ресурсы.
+            // Левая и правая части одинаково тянутся (основа 0), поэтому «Игроки» стоят ровно по центру.
+            var bottomLeft = Ui.Row();
+            bottomLeft.style.flexGrow = 1f;
+            bottomLeft.style.flexBasis = 0f;
+            bottomLeft.style.minWidth = 0f;
+            bottomLeft.style.height = Length.Percent(100f);
+            bottomBar.Add(bottomLeft);
+            var bottomCenter = Ui.Row();
+            bottomCenter.style.flexShrink = 0f;
+            bottomCenter.style.height = Length.Percent(100f);
+            bottomBar.Add(bottomCenter);
+            var resourcesRow = Ui.Row();
+            resourcesRow.style.flexGrow = 1f;
+            resourcesRow.style.flexBasis = 0f;
+            resourcesRow.style.minWidth = 0f;
+            resourcesRow.style.height = Length.Percent(100f);
+            resourcesRow.style.paddingLeft = 10f;
+            bottomBar.Add(resourcesRow);
+
+            UnityEngine.UIElements.Button Tab(VisualElement parent, string text, Action onClick)
             {
-                var button = Ui.Button(text, onClick, ButtonKind.Ghost, 14f);
+                var button = Ui.Button(text, onClick, ButtonKind.Ghost, 15f);
                 button.style.marginRight = 8f;
-                button.style.minHeight = 40f;
+                button.style.minHeight = 52f;
                 Ui.Border(button, 0f, Color.clear);
                 button.style.borderBottomWidth = 3f;
                 Ui.Transitions(button, "background-color", "color", "border-bottom-color", "translate");
-                bottomBar.Add(button);
+                parent.Add(button);
                 return button;
             }
-            _actionsTab = Tab("Действия", () => ToggleSheet(SheetKind.Actions));
-            _contractsTab = Tab("Контракты", () => ToggleSheet(SheetKind.Contracts));
-            // У кнопки «Игроки» внутри — подпись и кружки игроков (текст кнопки пустой, иначе наложится).
-            _playersTab = Tab("", () => ToggleModal(Modal.Players));
+            _actionsTab = Tab(bottomLeft, "Действия", () => ToggleSheet(SheetKind.Actions));
+            _contractsTab = Tab(bottomLeft, "Контракты", () => ToggleSheet(SheetKind.Contracts));
+            _viewHint = Ui.Text("Колесо мыши — приближение · перетаскивание — сдвиг карты", 12f, Theme.TextDim);
+            _viewHint.style.whiteSpace = WhiteSpace.NoWrap;
+            _viewHint.style.marginLeft = 10f;
+            _viewHint.style.flexShrink = 1f;
+            _viewHint.style.overflow = Overflow.Hidden;
+            bottomLeft.Add(_viewHint);
+            // У кнопки «Игроки» внутри — подпись и портреты игроков из профилей (текст кнопки пустой, иначе наложится).
+            _playersTab = Tab(bottomCenter, "", TogglePlayers);
+            _playersTab.style.marginRight = 0f;
             _playersTab.style.flexDirection = FlexDirection.Row;
             _playersTab.style.alignItems = Align.Center;
-            var playersCaption = Ui.Text("Игроки", 14f, null, true);
+            var playersCaption = Ui.Text("Игроки", 15f, null, true);
             _playersTab.Add(playersCaption);
             _playerChipsRow = Ui.Row();
             _playerChipsRow.style.marginLeft = 6f;
             _playersTab.Add(_playerChipsRow);
-            _logTab = Tab("Журнал", () => ToggleSheet(SheetKind.Log));
-            var bottomSpace = Ui.Box();
-            bottomSpace.style.flexGrow = 1f;
-            bottomBar.Add(bottomSpace);
-            _viewHint = Ui.Text("Колесо мыши — приближение · перетаскивание — сдвиг карты", 12f, Theme.TextDim);
-            _viewHint.style.whiteSpace = WhiteSpace.NoWrap;
-            bottomBar.Add(_viewHint);
+
+            // Ресурсы: карты в руке (деления + число) и оставшиеся участки дороги.
+            _resourcesCaption = Ui.Text("РЕСУРСЫ", 11f, Theme.TextDim, true);
+            _resourcesCaption.style.letterSpacing = 1.5f;
+            _resourcesCaption.style.marginRight = 10f;
+            resourcesRow.Add(_resourcesCaption);
+            _handRow = Ui.Row();
+            resourcesRow.Add(_handRow);
+            foreach (var color in ResourceInfo.Building.Concat(new[] { Resource.Machinery }))
+            {
+                var chip = new ResourceChip(color);
+                var resource = color;
+                AttachTooltip(chip, () => ResourceTooltip(resource));
+                _hand[color] = chip;
+                _handRow.Add(chip);
+            }
+            var pieces = Ui.Column();
+            pieces.pickingMode = PickingMode.Position;
+            pieces.style.marginLeft = 6f;
+            var piecesTop = Ui.Row();
+            piecesTop.Add(Ui.Text("Участки", 11f, Theme.TextDim, true));
+            _piecesLabel = Ui.Number("", 14f, Theme.Text, true);
+            _piecesLabel.style.marginLeft = 6f;
+            piecesTop.Add(_piecesLabel);
+            pieces.Add(piecesTop);
+            _piecesBar = new ProgressBar(86f, 6f, Theme.Success);
+            _piecesBar.style.marginTop = 4f;
+            pieces.Add(_piecesBar);
+            AttachTooltip(pieces, () => _game == null ? "" : PiecesTooltip());
+            resourcesRow.Add(pieces);
+            _handTitle = Ui.Text("", 12f, Theme.TextDim, true);
+            _handTitle.style.marginLeft = 10f;
+            resourcesRow.Add(_handTitle);
+
 
             // ---------- Боковое меню (☰): событие, цели мэрии, правила, выход
             _drawer = Ui.Column();
@@ -737,9 +790,41 @@ namespace CityHighways.Presentation
             });
             Root.Add(_modalLayer);
 
-            _playersModal = ModalCard("Игроки", 660f, out var playersBody);
+            // ---------- Панель «Игроки»: справа на игровом поле, поле за ней не затемняется.
+            var playersDock = Ui.Column();
+            playersDock.style.position = Position.Absolute;
+            playersDock.style.top = 12f;
+            playersDock.style.bottom = 12f;
+            playersDock.style.right = 12f;
+            playersDock.style.width = PlayersPanelWidth;
+            _sheetHost.Add(playersDock);
+            _playersPanel = Ui.Column();
+            _playersPanel.pickingMode = PickingMode.Position;
+            _playersPanel.style.flexShrink = 1f;
+            _playersPanel.style.minHeight = 0f;
+            _playersPanel.style.backgroundColor = Theme.PanelGlass;
+            Ui.Radius(_playersPanel, 14f);
+            Ui.Border(_playersPanel, 1f, Theme.Line);
+            Ui.Padding(_playersPanel, 12f, 14f);
+            Ui.Shadow(_playersPanel, 14f);
+            var playersHeader = Ui.Row();
+            playersHeader.style.marginBottom = 8f;
+            playersHeader.Add(Ui.Text("Игроки", 20f, Theme.Text, true));
+            var playersHeaderSpace = Ui.Box();
+            playersHeaderSpace.style.flexGrow = 1f;
+            playersHeader.Add(playersHeaderSpace);
+            playersHeader.Add(new IconButton(IconButton.Glyph.Close, "", ClosePlayers, 12f));
+            _playersPanel.Add(playersHeader);
+            var playersScroll = new ScrollView(ScrollViewMode.Vertical);
+            playersScroll.style.flexShrink = 1f;
+            playersScroll.style.minHeight = 0f;
+            Ui.StyleScroller(playersScroll);
             _playersBox = Ui.Column();
-            playersBody.Add(_playersBox);
+            playersScroll.Add(_playersBox);
+            _playersPanel.Add(playersScroll);
+            _playersPanel.style.display = DisplayStyle.None;
+            _playersPanel.style.opacity = 0f;
+            playersDock.Add(_playersPanel);
             _settingsModal = ModalCard("Настройки", 480f, out _settingsBody);
             _rulesModal = ModalCard("Правила", 1200f, out _rulesBody);
 
@@ -904,6 +989,7 @@ namespace CityHighways.Presentation
             if (_sheet != SheetKind.None) CloseSheet();
             CloseDrawer();
             CloseModal();
+            ClosePlayers();
             _autoSheetKey = null;
             _autoChoiceOpen = false;
             _logSeenTotal = 0;
@@ -2234,8 +2320,8 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>
-        /// Игроки: подробные строки — в окне «Игроки» (портрет, персонаж, способность, очки и участки полосками),
-        /// компактные кружки — во вкладке внизу, всегда на виду (туда же летят карты и монетки).
+        /// Игроки: подробные строки — в панели «Игроки» справа на поле (портрет из профиля, способность, очки и участки полосками),
+        /// компактные портреты — во вкладке внизу по центру, всегда на виду (туда же летят карты и монетки).
         /// </summary>
         void BuildPlayerRows()
         {
@@ -2255,16 +2341,14 @@ namespace CityHighways.Presentation
 
                 var line = Ui.Row();
                 line.style.alignItems = Align.Center;
-                var portrait = new CharacterView(48f, true);
+                // Только картинка из профиля — без кружка персонажа (персонаж назван в строке имени).
+                var portrait = new CharacterView(56f, true);
                 portrait.Set(OutfitOf(player.Index));
                 portrait.style.marginRight = 10f;
                 portrait.style.backgroundColor = Theme.Panel;
-                Ui.Radius(portrait, 10f);
+                Ui.Radius(portrait, 12f);
                 Ui.Border(portrait, 2f, color);
                 line.Add(portrait);
-                var icon = new CharacterIcon(28f, player.Character, color);
-                icon.style.marginRight = 8f;
-                line.Add(icon);
                 var badge = new ProfileBadge(16f);
                 badge.style.marginRight = 6f;
                 line.Add(badge);
@@ -2292,7 +2376,7 @@ namespace CityHighways.Presentation
                 var piecesCaption = Ui.Text("Участки", 12f, Theme.TextDim);
                 piecesCaption.style.width = 70f;
                 piecesLine.Add(piecesCaption);
-                var pieces = new ProgressBar(220f, 6f, color);
+                var pieces = new ProgressBar(PlayersPanelWidth - 140f, 6f, color);
                 piecesLine.Add(pieces);
                 row.Add(piecesLine);
 
@@ -2304,29 +2388,31 @@ namespace CityHighways.Presentation
                 _playersBox.Add(row);
                 _playerRows[player.Index] = new PlayerRow
                 {
-                    Root = row, Name = name, Stats = stats, Icon = icon, Ability = ability, Badge = badge, Title = title,
+                    Root = row, Name = name, Stats = stats, Ability = ability, Badge = badge, Title = title,
                     Pieces = pieces, Score = score
                 };
 
-                // Кружок во вкладке «Игроки».
+                // Портрет во вкладке «Игроки»: персонаж из профиля в кольце цвета игрока.
                 var chip = Ui.Row();
                 chip.pickingMode = PickingMode.Position;
-                chip.style.marginLeft = 6f;
+                chip.style.marginLeft = 8f;
                 var dot = Ui.Box();
-                dot.style.width = 22f;
-                dot.style.height = 22f;
+                dot.style.width = 40f;
+                dot.style.height = 40f;
                 dot.style.backgroundColor = color;
                 dot.style.alignItems = Align.Center;
                 dot.style.justifyContent = Justify.Center;
-                Ui.Radius(dot, 11f);
+                Ui.Radius(dot, 20f);
                 Ui.Border(dot, 2f, new Color(0f, 0f, 0f, 0f));
                 Ui.Transitions(dot, "scale", "border-top-color", "border-bottom-color", "border-left-color", "border-right-color");
-                var initial = Ui.Text(player.Name.Length > 0 ? player.Name.Substring(0, 1).ToUpperInvariant() : "?", 11f, new Color(0.08f, 0.08f, 0.10f), true);
-                initial.style.unityTextAlign = TextAnchor.MiddleCenter;
-                dot.Add(initial);
+                var face = new CharacterView(32f, true);
+                face.Set(OutfitOf(player.Index));
+                face.style.backgroundColor = Theme.Panel;
+                Ui.Radius(face, 16f);
+                dot.Add(face);
                 chip.Add(dot);
-                var chipScore = Ui.Number("0", 13f, Theme.Text, true);
-                chipScore.style.marginLeft = 4f;
+                var chipScore = Ui.Number("0", 15f, Theme.Text, true);
+                chipScore.style.marginLeft = 5f;
                 chip.Add(chipScore);
                 int index = player.Index;
                 AttachTooltip(chip, () => PlayerTooltip(index));
@@ -2341,7 +2427,7 @@ namespace CityHighways.Presentation
             string character = player.Character != CharacterKind.None ? " · " + Characters.Title(player.Character) : "";
             return $"{player.Name}{character}{BotTag(index)}\n{_game.VisibleScore(player)} очков · {player.RoadPieces} участков · {player.HandSize} карт"
                    + (_game.Config.InfluenceEnabled ? $" · {player.Influence} влияния" : "")
-                   + "\nПодробнее — в окне «Игроки».";
+                   + "\nПодробнее — в панели «Игроки».";
         }
 
         void RefreshPlayers()
@@ -3731,7 +3817,7 @@ namespace CityHighways.Presentation
             {
                 Target = () => _handRow,
                 Title = "Ваши карты",
-                Text = "Ваши карты — вверху: одно деление — одна карта. Чтобы построить дорогу длиной 3, нужно 3 карты её ресурса. Белые дороги строятся любым одним ресурсом. Мостов мало и стали мало — за них будет борьба."
+                Text = "Ваши карты — внизу, справа от «Игроков»: одно деление — одна карта. Чтобы построить дорогу длиной 3, нужно 3 карты её ресурса. Белые дороги строятся любым одним ресурсом. Мостов мало и стали мало — за них будет борьба."
             },
             new TutorialStep
             {
@@ -3749,7 +3835,7 @@ namespace CityHighways.Presentation
             {
                 Target = () => _playersTab,
                 Title = "Персонажи",
-                Text = "У каждой компании свой персонаж со способностью — она видна в окне «Игроки» (вкладка внизу). Везунчик выбирает из двух карт удачи, Прораб раз за партию строит бесплатно, Сборщик пошлин берёт за проезд больше. Играйте от своей способности."
+                Text = "У каждой компании свой персонаж со способностью — она видна в панели «Игроки» (кнопка внизу по центру). Везунчик выбирает из двух карт удачи, Прораб раз за партию строит бесплатно, Сборщик пошлин берёт за проезд больше. Играйте от своей способности."
             },
             new TutorialStep
             {
@@ -3914,9 +4000,10 @@ namespace CityHighways.Presentation
         {
             if (kind == SheetKind.None || _sheet == kind) return;
             var previous = SheetElement(_sheet);
-            if (previous != null) Ui.Slide(previous, false, 0f, 110f);
+            if (previous != null) Ui.Slide(previous, false, 0f, SheetHiddenY(_sheet));
+            if (kind == SheetKind.Log) ClosePlayers();
             _sheet = kind;
-            Ui.Slide(SheetElement(kind), true, 0f, 110f);
+            Ui.Slide(SheetElement(kind), true, 0f, SheetHiddenY(kind));
             _app.Sound.Play(Sfx.Open, 0.5f);
             if (kind == SheetKind.Log)
             {
@@ -3927,11 +4014,14 @@ namespace CityHighways.Presentation
             if (_game != null) RefreshTabs();
         }
 
+        /// <summary>Журнал прячется вверх (его кнопка наверху), остальные панели — вниз.</summary>
+        static float SheetHiddenY(SheetKind kind) => kind == SheetKind.Log ? -110f : 110f;
+
         void CloseSheet()
         {
             var current = SheetElement(_sheet);
             if (current == null) return;
-            Ui.Slide(current, false, 0f, 110f);
+            Ui.Slide(current, false, 0f, SheetHiddenY(_sheet));
             _sheet = SheetKind.None;
             _app.Sound.Play(Sfx.Close, 0.45f);
             if (_game != null) RefreshTabs();
@@ -3987,6 +4077,7 @@ namespace CityHighways.Presentation
         void OpenDrawer()
         {
             if (_drawerOpen) return;
+            ClosePlayers();
             _drawerOpen = true;
             Ui.Slide(_drawer, true, 105f, 0f);
             _app.Sound.Play(Sfx.Open, 0.5f);
@@ -4006,7 +4097,7 @@ namespace CityHighways.Presentation
         }
 
         VisualElement ModalElement(Modal modal) =>
-            modal == Modal.Players ? _playersModal : modal == Modal.Settings ? _settingsModal : modal == Modal.Rules ? _rulesModal : null;
+            modal == Modal.Settings ? _settingsModal : modal == Modal.Rules ? _rulesModal : null;
 
         /// <summary>Карточка окна: заголовок с крестиком (или без, если title == null) и тело.</summary>
         VisualElement ModalCard(string title, float width, out VisualElement body)
@@ -4040,6 +4131,34 @@ namespace CityHighways.Presentation
             return card;
         }
 
+        void TogglePlayers()
+        {
+            if (_playersOpen) ClosePlayers();
+            else OpenPlayers();
+        }
+
+        /// <summary>Панель «Игроки» выезжает справа на поле. Справа же меню и журнал — их убираем, чтобы не наслаивались.</summary>
+        void OpenPlayers()
+        {
+            if (_playersOpen) return;
+            CloseDrawer();
+            if (_sheet == SheetKind.Log) CloseSheet();
+            _playersOpen = true;
+            if (_game != null) RefreshPlayers();
+            Ui.Slide(_playersPanel, true, 110f, 0f);
+            _app.Sound.Play(Sfx.Open, 0.5f);
+            if (_game != null) RefreshTabs();
+        }
+
+        void ClosePlayers()
+        {
+            if (!_playersOpen) return;
+            _playersOpen = false;
+            Ui.Slide(_playersPanel, false, 110f, 0f);
+            _app.Sound.Play(Sfx.Close, 0.45f);
+            if (_game != null) RefreshTabs();
+        }
+
         void ToggleModal(Modal modal)
         {
             if (_modal == modal) CloseModal();
@@ -4058,7 +4177,6 @@ namespace CityHighways.Presentation
                 _rulesBody.Clear();
                 _rulesBody.Add(MenuRulesPage.Build(_game?.Config ?? new GameConfig(), CloseModal));
             }
-            if (modal == Modal.Players && _game != null) RefreshPlayers();
             Ui.Slide(_modalLayer, true, 0f, 0f);
             Ui.Slide(ModalElement(modal), true, 0f, 4f);
             _app.Sound.Play(Sfx.Open, 0.5f);
@@ -4202,7 +4320,7 @@ namespace CityHighways.Presentation
             StyleTab(_actionsTab, _sheet == SheetKind.Actions);
             StyleTab(_contractsTab, _sheet == SheetKind.Contracts);
             StyleTab(_logTab, _sheet == SheetKind.Log);
-            StyleTab(_playersTab, _modal == Modal.Players);
+            StyleTab(_playersTab, _playersOpen);
             // Красная точка на «Меню» — кто-то выполнил цель мэрии, а вы ещё не смотрели.
             int taken = _game.ActiveGoals.Count(g => _game.GoalOwner(g.Id).HasValue);
             Ui.Show(_menuDot, taken > _seenGoalOwners && !_drawerOpen);
@@ -4214,10 +4332,10 @@ namespace CityHighways.Presentation
             tab.style.borderBottomColor = active ? Theme.Accent : new Color(0f, 0f, 0f, 0f);
         }
 
-        /// <summary>Куда летят карты и монетки игрока: строка в окне «Игроки», если оно открыто, иначе его кружок внизу.</summary>
+        /// <summary>Куда летят карты и монетки игрока: строка в панели «Игроки», если она открыта, иначе его портрет внизу.</summary>
         VisualElement PlayerAnchor(int index)
         {
-            if (_modal == Modal.Players && index >= 0 && index < _playerRows.Length) return _playerRows[index].Root;
+            if (_playersOpen && index >= 0 && index < _playerRows.Length) return _playerRows[index].Root;
             return index >= 0 && index < _playerChips.Length ? _playerChips[index].Root : _playersTab;
         }
 
@@ -4271,8 +4389,8 @@ namespace CityHighways.Presentation
             if (float.IsNaN(width) || width < 100f) return;
             Ui.Show(_logo, width >= 1280f);
             Ui.Show(_resourcesCaption, width >= 1500f);
-            Ui.Show(_handTitle, width >= 1650f);
-            Ui.Show(_viewHint, width >= 1550f);
+            Ui.Show(_handTitle, width >= 1700f);
+            Ui.Show(_viewHint, width >= 1800f);
             void Fit(VisualElement sheet, float preferred)
             {
                 float w = Mathf.Min(preferred, width - 24f);
@@ -4280,8 +4398,8 @@ namespace CityHighways.Presentation
                 sheet.style.marginLeft = -w / 2f;
             }
             Fit(_actionsSheet, 860f);
-            Fit(_contractsSheet, 1000f);
-            Fit(_logSheet, 640f);
+            Fit(_contractsSheet, ContractsSheetWidth);
+            _logSheet.style.width = Mathf.Min(640f, width - 24f);
             _drawer.style.width = Mathf.Min(DrawerWidth, width * 0.9f);
         }
 
