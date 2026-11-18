@@ -1,24 +1,26 @@
 using System.Collections.Generic;
+using CityHighways.Core;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
 
 namespace CityHighways.Presentation
 {
-    /// <summary>Готовый 3D-персонаж профиля (модель из Scenario, Rodin Gen-2.5).</summary>
+    /// <summary>3D-герой персонажа партии (модель и картинка из Scenario, Rodin Gen-2.5).</summary>
     public sealed class Avatar3D
     {
+        public CharacterKind kind;
+        /// <summary>Имя файлов в Resources/CityHighways/Avatars3D: &lt;id&gt;.glb и &lt;id&gt;_portrait.png.</summary>
         public string id;
-        public string name;
-        public string role;
-        public string blurb;
         public Color accent;
+        public string Name => Characters.Title(kind);
     }
 
     /// <summary>
-    /// Шесть готовых 3D-аватаров. Модели лежат в Resources/CityHighways/Avatars3D/&lt;id&gt; (GLB через glTFast или FBX, импортируется
-    /// как префаб), картинка для выбора и запасной показ — &lt;id&gt;_portrait.png. Нет модели — показывается картинка,
-    /// нет и картинки — буква на цветном круге. Пустой id — обычный 2D-персонаж из гардероба.
+    /// Шесть 3D-героев — лица персонажей «Персонажи» во всех режимах: Чиновник (ceo), Мостовик (crane),
+    /// Везунчик (courier), Прораб (engineer), Страховщик (trucker), Сборщик пошлин (dispatcher).
+    /// Модели лежат в Resources/CityHighways/Avatars3D/&lt;id&gt; (GLB через glTFast или FBX, импортируется как префаб),
+    /// картинка — &lt;id&gt;_portrait.png. Нет модели — показывается картинка, нет и картинки — нарисованный значок.
     /// </summary>
     public static class Avatar3DCatalog
     {
@@ -26,24 +28,23 @@ namespace CityHighways.Presentation
 
         public static readonly IReadOnlyList<Avatar3D> All = new[]
         {
-            new Avatar3D { id = "trucker", name = "Михалыч", role = "Дальнобойщик", blurb = "Тридцать лет за рулём, знает каждую развязку.", accent = new Color(0.86f, 0.25f, 0.22f) },
-            new Avatar3D { id = "dispatcher", name = "Алина", role = "Диспетчер", blurb = "Держит в голове все маршруты города.", accent = new Color(0.16f, 0.62f, 0.62f) },
-            new Avatar3D { id = "engineer", name = "Сергей", role = "Инженер дорог", blurb = "Строит мосты быстрее, чем их успевают назвать.", accent = new Color(0.95f, 0.52f, 0.12f) },
-            new Avatar3D { id = "crane", name = "Марина", role = "Крановщица порта", blurb = "Разгружает контейнеровоз за одну смену.", accent = new Color(0.24f, 0.36f, 0.72f) },
-            new Avatar3D { id = "ceo", name = "Вера Павловна", role = "Директор компании", blurb = "Считает влияние до последней монеты.", accent = new Color(0.55f, 0.32f, 0.72f) },
-            new Avatar3D { id = "courier", name = "Тёма", role = "Курьер", blurb = "Срежет через дворы — и уже на месте.", accent = new Color(0.27f, 0.62f, 0.32f) },
+            new Avatar3D { kind = CharacterKind.Official, id = "ceo", accent = new Color(0.55f, 0.32f, 0.72f) },
+            new Avatar3D { kind = CharacterKind.Bridger, id = "crane", accent = new Color(0.24f, 0.36f, 0.72f) },
+            new Avatar3D { kind = CharacterKind.Lucky, id = "courier", accent = new Color(0.27f, 0.62f, 0.32f) },
+            new Avatar3D { kind = CharacterKind.Foreman, id = "engineer", accent = new Color(0.95f, 0.52f, 0.12f) },
+            new Avatar3D { kind = CharacterKind.Insurer, id = "trucker", accent = new Color(0.86f, 0.25f, 0.22f) },
+            new Avatar3D { kind = CharacterKind.Tollman, id = "dispatcher", accent = new Color(0.16f, 0.62f, 0.62f) },
         };
 
-        public static Avatar3D Get(string id)
+        public static Avatar3D For(CharacterKind kind)
         {
-            if (string.IsNullOrEmpty(id)) return null;
-            foreach (var avatar in All) if (avatar.id == id) return avatar;
+            foreach (var avatar in All) if (avatar.kind == kind) return avatar;
             return null;
         }
 
         static readonly Dictionary<string, GameObject> Models = new Dictionary<string, GameObject>();
 
-        /// <summary>Модель аватара (кэш, включая отсутствие); null — файла нет.</summary>
+        /// <summary>Модель героя (кэш, включая отсутствие); null — файла нет.</summary>
         public static GameObject Model(Avatar3D avatar)
         {
             if (avatar == null) return null;
@@ -57,34 +58,13 @@ namespace CityHighways.Presentation
 
         public static Texture2D Portrait(Avatar3D avatar) => avatar == null ? null : GeneratedArt.Load(Folder + avatar.id + "_portrait");
 
-        /// <summary>Плитка-миниатюра: картинка персонажа или буква на круге цвета персонажа.</summary>
-        public static VisualElement Thumbnail(Avatar3D avatar, float width, float height)
+        public static Texture2D Portrait(CharacterKind kind) => Portrait(For(kind));
+
+        /// <summary>У персонажа есть что показать крупно: модель или картинка.</summary>
+        public static bool HasArt(CharacterKind kind)
         {
-            var box = new VisualElement { pickingMode = PickingMode.Ignore };
-            box.style.width = width;
-            box.style.height = height;
-            box.style.alignItems = Align.Center;
-            box.style.justifyContent = Justify.Center;
-            var portrait = Portrait(avatar);
-            if (portrait != null)
-            {
-                box.style.backgroundImage = new StyleBackground(portrait);
-                box.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
-                return box;
-            }
-            float size = Mathf.Min(width, height) * 0.7f;
-            var circle = new VisualElement { pickingMode = PickingMode.Ignore };
-            circle.style.width = size;
-            circle.style.height = size;
-            circle.style.alignItems = Align.Center;
-            circle.style.justifyContent = Justify.Center;
-            circle.style.backgroundColor = avatar.accent;
-            Ui.Radius(circle, size * 0.5f);
-            var letter = Ui.Text(avatar.name.Substring(0, 1), size * 0.5f, Color.white, true);
-            letter.pickingMode = PickingMode.Ignore;
-            circle.Add(letter);
-            box.Add(circle);
-            return box;
+            var avatar = For(kind);
+            return Model(avatar) != null || Portrait(avatar) != null;
         }
     }
 
@@ -96,11 +76,15 @@ namespace CityHighways.Presentation
     public sealed class Avatar3DStage : VisualElement
     {
         const int Layer = 31;
-        static readonly Vector3 Origin = new Vector3(5000f, -5000f, 5000f);
+        static readonly Vector3 BaseOrigin = new Vector3(5000f, -5000f, 5000f);
+        static int _stages;
         const float ModelHeight = 1.8f;
         const float AutoSpin = 22f;
 
         readonly float _width, _height;
+        /// <summary>Своя точка в пустоте: каждая площадка — в 60 м от соседней, чтобы камеры не видели чужих героев.</summary>
+        readonly Vector3 Origin;
+        float _lastTick = -1f;
         readonly VisualElement _fallback;
         readonly VisualElement _shadow;
         GameObject _root, _pivot, _model;
@@ -118,6 +102,7 @@ namespace CityHighways.Presentation
         {
             _width = width;
             _height = height;
+            Origin = BaseOrigin + new Vector3(60f * (_stages++ % 200), 0f, 0f);
             pickingMode = PickingMode.Position;
             style.width = width;
             style.height = height;
@@ -143,8 +128,17 @@ namespace CityHighways.Presentation
             RegisterCallback<AttachToPanelEvent>(_ =>
             {
                 _attached = true;
+                _lastTick = -1f;
                 Refresh();
             });
+            // Сама себя анимирует, пока на экране (планировщик элемента работает только в панели).
+            schedule.Execute(() =>
+            {
+                float now = Time.realtimeSinceStartup;
+                float dt = _lastTick < 0f ? 0f : Mathf.Min(0.1f, now - _lastTick);
+                _lastTick = now;
+                Tick(dt);
+            }).Every(16);
             RegisterCallback<DetachFromPanelEvent>(_ =>
             {
                 _attached = false;
@@ -203,7 +197,18 @@ namespace CityHighways.Presentation
             style.backgroundImage = StyleKeyword.None;
             _fallback.Clear();
             _fallback.style.display = DisplayStyle.Flex;
-            if (_avatar != null) _fallback.Add(Avatar3DCatalog.Thumbnail(_avatar, _width, _height - 10f));
+            if (_avatar == null) return;
+            var portrait = Avatar3DCatalog.Portrait(_avatar);
+            if (portrait != null)
+            {
+                var picture = new VisualElement { pickingMode = PickingMode.Ignore };
+                picture.style.width = _width;
+                picture.style.height = _height - 6f;
+                picture.style.backgroundImage = new StyleBackground(portrait);
+                picture.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
+                _fallback.Add(picture);
+            }
+            else _fallback.Add(new CharacterIcon(Mathf.Min(_width, _height) * 0.7f, _avatar.kind, _avatar.accent));
         }
 
         void EnsureRig()
@@ -293,7 +298,7 @@ namespace CityHighways.Presentation
             _model.transform.position += new Vector3(pivot.x - bounds.center.x, pivot.y - bounds.min.y, pivot.z - bounds.center.z);
         }
 
-        public void Tick(float dt)
+        void Tick(float dt)
         {
             _time += dt;
             if (_model == null || _pivot == null)

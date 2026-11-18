@@ -982,6 +982,8 @@ namespace CityHighways.Presentation
         /// <summary>Убрать 3D-город (выход в меню, новая партия, выключили в настройках).</summary>
         public void Release3D()
         {
+            foreach (var stage in _heroStages.Values) stage.Release();
+            _heroStages.Clear();
             if (_city3D == null) return;
             _city3D.Dispose();
             _city3D = null;
@@ -2401,6 +2403,31 @@ namespace CityHighways.Presentation
             return true;
         }
 
+        /// <summary>3D-герои в выборе персонажа (по одному на персонажа, переиспользуются при перестройке окна).</summary>
+        readonly Dictionary<CharacterKind, Avatar3DStage> _heroStages = new Dictionary<CharacterKind, Avatar3DStage>();
+
+        /// <summary>Крупный герой персонажа: вращающаяся 3D-модель или картинка; нет арта — нарисованный значок.</summary>
+        VisualElement HeroOf(CharacterKind kind, Color color)
+        {
+            if (!Avatar3DCatalog.HasArt(kind))
+            {
+                var icon = new CharacterIcon(34f, kind, color);
+                icon.style.marginRight = 10f;
+                return icon;
+            }
+            if (!_heroStages.TryGetValue(kind, out var stage))
+            {
+                stage = new Avatar3DStage(84f, 122f);
+                stage.Show(Avatar3DCatalog.For(kind));
+                _heroStages[kind] = stage;
+            }
+            stage.RemoveFromHierarchy();
+            stage.style.marginRight = 10f;
+            stage.style.backgroundColor = new Color(color.r, color.g, color.b, 0.12f);
+            Ui.Radius(stage, 10f);
+            return stage;
+        }
+
         /// <summary>Выбор компании в начале партии: предложенные персонажи с их способностями.</summary>
         VisualElement CharacterChoiceCard(PlayerState player)
         {
@@ -2422,9 +2449,7 @@ namespace CityHighways.Presentation
                 row.style.backgroundColor = Theme.Panel;
                 Ui.Radius(row, 8f);
                 Ui.Padding(row, 8f, 10f);
-                var icon = new CharacterIcon(34f, kind, Palette.PlayerColor(player.Index));
-                icon.style.marginRight = 10f;
-                row.Add(icon);
+                row.Add(HeroOf(kind, Palette.PlayerColor(player.Index)));
                 var texts = Ui.Column();
                 texts.style.flexGrow = 1f;
                 texts.style.flexShrink = 1f;

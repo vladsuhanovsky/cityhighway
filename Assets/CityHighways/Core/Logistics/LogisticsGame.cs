@@ -151,6 +151,8 @@ namespace CityHighways.Core
         public double EventChance = 0.25;
         public int ActiveContracts = 2;
         public string BribeDistrict = "center";
+        /// <summary>Кто ходит первым в первом раунде — жребий (в партии против ботов). Иначе — первый в списке.</summary>
+        public bool RandomFirstPlayer;
 
         public static MagnateConfig For(MagnateDifficulty difficulty)
         {
@@ -251,8 +253,15 @@ namespace CityHighways.Core
                 }
             for (int i = 0; i < 2; i++) SpawnCargo();
             RefillContracts();
+            // Жребий первого хода: дальше очередь, как и раньше, сдвигается на одного каждый раунд.
+            if (Config.RandomFirstPlayer && _players.Count > 1)
+            {
+                _startPlayer = _rng.Next(_players.Count);
+                CurrentPlayerIndex = _startPlayer;
+            }
             UpdateClock();
             Emit($"Город {Map.Name}: {Map.Locations.Count} мест, {Hubs.Count} хабов. Сложность: {MagnateConfig.Title(Config.Difficulty)}. Раунд 1.");
+            if (Config.RandomFirstPlayer && _players.Count > 1) Emit($"Жребий: первым ходит {_players[_startPlayer].Name}.");
         }
 
         // ================================================================== Дороги и хабы

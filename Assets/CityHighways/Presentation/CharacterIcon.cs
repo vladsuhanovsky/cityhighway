@@ -8,11 +8,17 @@ namespace CityHighways.Presentation
     /// Значок персонажа, нарисованный кодом (Painter2D): круг цвета игрока и эмблема.
     /// Везунчик — клевер, Прораб — каска, Страховщик — щит, Сборщик пошлин — шлагбаум,
     /// Чиновник — здание с колоннами, Мостовик — арочный мост.
+    /// Если у персонажа есть картинка 3D-героя (Avatar3DCatalog), вместо эмблемы в круге — его лицо.
     /// </summary>
     public sealed class CharacterIcon : VisualElement
     {
+        // Доля картинки героя (1024×1536, голова вверху по центру), которая видна в круге: квадрат ~480 px сверху.
+        const float FaceScaleX = 1024f / 480f, FaceScaleY = 1536f / 480f;
+
         CharacterKind _kind;
         Color _color;
+        readonly VisualElement _face, _faceImage;
+        bool _hasFace;
 
         public CharacterIcon(float size, CharacterKind kind = CharacterKind.None, Color? color = null)
         {
@@ -23,13 +29,43 @@ namespace CityHighways.Presentation
             _kind = kind;
             _color = color ?? Theme.Gold;
             generateVisualContent += Draw;
+
+            // Лицо героя: круг внутри цветного кольца, картинка увеличена так, чтобы в круг попала голова.
+            float inner = size * 0.84f;
+            _face = new VisualElement { pickingMode = PickingMode.Ignore };
+            _face.style.position = Position.Absolute;
+            _face.style.left = (size - inner) / 2f;
+            _face.style.top = (size - inner) / 2f;
+            _face.style.width = inner;
+            _face.style.height = inner;
+            _face.style.overflow = Overflow.Hidden;
+            Ui.Radius(_face, inner / 2f);
+            _faceImage = new VisualElement { pickingMode = PickingMode.Ignore };
+            _faceImage.style.position = Position.Absolute;
+            _faceImage.style.width = inner * FaceScaleX;
+            _faceImage.style.height = inner * FaceScaleY;
+            _faceImage.style.left = (inner - inner * FaceScaleX) / 2f;
+            _faceImage.style.top = -inner * 0.02f;
+            _face.Add(_faceImage);
+            Add(_face);
+            UpdateFace();
         }
 
         public void Set(CharacterKind kind, Color color)
         {
             _kind = kind;
             _color = color;
+            UpdateFace();
             MarkDirtyRepaint();
+        }
+
+        void UpdateFace()
+        {
+            var portrait = _kind == CharacterKind.None ? null : Avatar3DCatalog.Portrait(_kind);
+            _hasFace = portrait != null;
+            Ui.Show(_face, _hasFace);
+            _faceImage.style.backgroundImage = _hasFace ? new StyleBackground(portrait) : new StyleBackground(StyleKeyword.None);
+            _face.style.backgroundColor = new Color(0.62f, 0.66f, 0.72f);
         }
 
         void Draw(MeshGenerationContext context)
@@ -56,6 +92,7 @@ namespace CityHighways.Presentation
             p.lineCap = LineCap.Round;
             p.lineJoin = LineJoin.Round;
             float u = r * 0.84f; // радиус внутренней части — от него считаем эмблему
+            if (_hasFace) return; // вместо эмблемы — лицо героя (дочерний элемент)
 
             switch (_kind)
             {

@@ -13,8 +13,8 @@ namespace CityHighways.Presentation
     /// - контекстный — меняется по ходу: «Стройка» (очки, «Дальше»), «Маршруты» (фуры и «Готово»), ход бота,
     ///   фуры в пути, итог;
     /// - «Грузы [N]» — сколько грузов ждёт на хабах, срочные, по видам;
-    /// - «Заказы [N]» — действующие заказы мэрии и ваш прогресс;
-    /// - «Действия» — правила и журнал.
+    /// - «Заказы [N]» — действующие заказы мэрии и ваш прогресс.
+    /// «Правила» и «Журнал» — кнопки в верхней строке (слева от «Обучения»), их окна открываются под ней.
     /// Клик по разделу открывает окно над панелью (одно за раз): список грузов с кнопкой «Выбрать», карточку
     /// груза (правило, маршрут, время, плата, сколько очков принесёт, путь подсвечен на карте), заказы с
     /// прогрессом компаний, правила, журнал, карточку выбранной фуры.
@@ -22,6 +22,8 @@ namespace CityHighways.Presentation
     public sealed partial class MagnateView
     {
         const float BottomHeight = 132f, PopupWidth = 460f;
+        /// <summary>«Раздел» окон правил и журнала: они открываются под верхней строкой, у её кнопок.</summary>
+        const int TopSection = 9;
 
         VisualElement _bottom, _popup, _popupHead, _popupBody;
         Label _popupTitle;
@@ -84,7 +86,7 @@ namespace CityHighways.Presentation
             var card = new VisualElement();
             card.style.flexGrow = grow;
             card.style.flexBasis = 0f;
-            card.style.marginRight = index < 3 ? 10f : 0f;
+            card.style.marginRight = index < 2 ? 10f : 0f;
             card.style.backgroundColor = Theme.PanelLight;
             card.style.justifyContent = Justify.SpaceBetween;
             Ui.Padding(card, 8f, 12f);
@@ -201,18 +203,6 @@ namespace CityHighways.Presentation
             orders.Add(Ui.Text(active.Count == 0 ? "заказов нет" : "Открыть →", 12f, Theme.TextDim));
             _sections.Add(orders);
             _bottom.Add(orders);
-
-            // 4. Действия.
-            var actions = Section(3, 0.9f, null);
-            actions.Add(Header("Действия", Theme.Text));
-            var rules = Ui.Button("Правила", () => TogglePopup("rules", 3), ButtonKind.Secondary, 12f);
-            rules.style.marginTop = 4f;
-            actions.Add(rules);
-            var log = Ui.Button("Журнал", () => TogglePopup("log", 3), ButtonKind.Secondary, 12f);
-            log.style.marginTop = 4f;
-            actions.Add(log);
-            _sections.Add(actions);
-            _bottom.Add(actions);
         }
 
         /// <summary>Контекстный раздел: что делать прямо сейчас.</summary>
@@ -245,8 +235,8 @@ namespace CityHighways.Presentation
 
             if (_game.Phase == MagnatePhase.Build)
             {
-                card.Add(Header($"{player.Name} · Стройка · {player.BuildPoints} очков", color));
-                card.Add(Hint($"Клик по светлой дороге — купить (цена = длина, мост +{_game.Config.BridgeExtraCost}), по своей — магистраль, по хабу — развить. " +
+                card.Add(Header($"{player.Name} · Стройка · {player.BuildPoints} очков стройки", color));
+                card.Add(Hint($"Клик по светлой дороге — купить: цифра на ней — цена в очках стройки (длина, мост +{_game.Config.BridgeExtraCost}; серая — не хватает). По своей — магистраль, по хабу — развить. " +
                               $"Каждый раунд +{_game.Config.BuildPointsPerRound} очков."));
                 var next = Ui.Button("Дальше: маршруты фур →", () => { _game.FinishBuild(); _app.Sound.Play(Sfx.Click, 0.6f); }, ButtonKind.Primary, 14f);
                 next.style.alignSelf = Align.FlexStart;
@@ -412,11 +402,28 @@ namespace CityHighways.Presentation
                 case "log": FillLog(); break;
                 case "truck": FillTruck(_game.GetTruck(_selectedTruck)); break;
             }
+            float width = Root.layout.width;
+            if (_popupSection == TopSection)
+            {
+                // Правила и журнал — под верхней строкой, правым краем у кнопок «Правила»/«Журнал».
+                _popup.style.top = TopBarHeight + 8f;
+                _popup.style.bottom = StyleKeyword.Auto;
+                _popup.style.maxHeight = new Length(Mathf.Max(240f, (float.IsNaN(Root.layout.height) ? 800f : Root.layout.height) - TopBarHeight - BottomHeight - 24f));
+                float right = 12f;
+                if (_topActions != null && !float.IsNaN(_topActions.worldBound.xMax) && !float.IsNaN(width))
+                    right = Mathf.Max(12f, Root.worldBound.xMax - _topActions.worldBound.xMax);
+                float left = float.IsNaN(width) ? 12f : Mathf.Max(12f, width - right - PopupWidth);
+                _popup.style.left = left;
+                Ui.Show(_popup, true);
+                return;
+            }
             // Окно — над своим разделом, не вылезая за край экрана.
+            _popup.style.top = StyleKeyword.Auto;
+            _popup.style.bottom = BottomHeight + 8f;
+            _popup.style.maxHeight = 560f;
             float x = 12f;
             if (_popupSection < _sections.Count && !float.IsNaN(_sections[_popupSection].layout.x))
                 x = _sections[_popupSection].layout.x + 12f;
-            float width = Root.layout.width;
             if (!float.IsNaN(width) && width > PopupWidth + 24f) x = Mathf.Min(x, width - PopupWidth - 12f);
             _popup.style.left = x;
             Ui.Show(_popup, true);

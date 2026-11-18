@@ -315,7 +315,8 @@ namespace CityHighways.Presentation
         /// <summary>Что нового в игре — короткие строки для ленты на главной.</summary>
         static readonly string[] News =
         {
-            "Шесть готовых 3D-героев в профиле: дальнобойщик, диспетчер, инженер и другие",
+            "Персонажи получили лица: 3D-герои Везунчика, Прораба, Мостовика и остальных",
+            "Магнат: цены дорог прямо на карте, жребий первого хода, правила и журнал вверху",
             "Новые иконки грузов, хабов и событий, картина города в меню и иллюстрации карточек",
             "Новый интерфейс партии: карта на весь экран, мини-карта и карточки контрактов",
             "Поле с наклоном 2.5D: утро, день, закат и ночь в одной партии",
@@ -328,7 +329,7 @@ namespace CityHighways.Presentation
         };
 
         /// <summary>Номер выпуска новостей: если больше прочитанного — в уведомлениях «Что нового».</summary>
-        const int NewsVersion = 30;
+        const int NewsVersion = 31;
         const string NewsSeenKey = "CityHighways.NewsSeen";
 
         int _newsIndex;
@@ -1030,7 +1031,7 @@ namespace CityHighways.Presentation
             character.style.width = 190f;
             character.style.marginRight = 8f;
             // Значок рядом с кнопкой (у кнопки-текста свои дети накладывались бы на подпись).
-            var icon = new CharacterIcon(26f, slot.character > 0 ? (CharacterKind)slot.character : CharacterKind.None,
+            var icon = new CharacterIcon(30f, slot.character > 0 ? (CharacterKind)slot.character : CharacterKind.None,
                 Palette.PlayerColor(index));
             icon.style.marginRight = 6f;
             icon.style.opacity = slot.character > 0 ? 1f : 0.35f;

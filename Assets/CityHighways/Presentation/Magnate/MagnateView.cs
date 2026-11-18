@@ -31,6 +31,8 @@ namespace CityHighways.Presentation
         readonly MapView _map;
         readonly MiniMapView _minimap;
         readonly List<string> _log = new List<string>();
+        /// <summary>Кнопки «Правила» и «Журнал» в верхней строке (к их правому краю прижимаются их окна).</summary>
+        VisualElement _topActions;
         readonly HashSet<CargoKind> _hiddenKinds = new HashSet<CargoKind>();
         VisualElement _layersPanel;
         readonly VisualElement _layersList;
@@ -174,6 +176,18 @@ namespace CityHighways.Presentation
             _players.style.flexGrow = 1f;
             _players.style.overflow = Overflow.Hidden;
             top.Add(_players);
+            // Правила и журнал — в верхней строке, слева от «Обучения»; окна открываются под строкой.
+            _topActions = Ui.Row();
+            _topActions.style.alignItems = Align.Center;
+            var rules = Ui.Button("Правила", () => TogglePopup("rules", TopSection), ButtonKind.Secondary, 13f);
+            rules.style.width = 96f;
+            rules.style.marginRight = 8f;
+            _topActions.Add(rules);
+            var journal = Ui.Button("Журнал", () => TogglePopup("log", TopSection), ButtonKind.Secondary, 13f);
+            journal.style.width = 96f;
+            journal.style.marginRight = 8f;
+            _topActions.Add(journal);
+            top.Add(_topActions);
             var help = Ui.Button("? Обучение", () => StartCoach(), ButtonKind.Ghost, 13f);
             help.style.width = 110f;
             help.style.marginRight = 8f;
@@ -213,12 +227,22 @@ namespace CityHighways.Presentation
             _map.LocationScale = 1.3f;
             _map.HubIcons = true;
             _map.FocusExempt = id => _game.HubAt(id) != null;
+            // Цена свободной улицы в очках стройки — плашкой на дороге, только в свою стройку.
+            _map.RoadBadge = road => Has(Layer.RoadCost) && _game.Phase == MagnatePhase.Build && HumanTurn && !_game.IsBuilt(road.Id)
+                ? _game.BuildCost(road).ToString() : null;
+            _map.RoadBadgeMuted = road => _game.BuildCost(road) > _game.CurrentPlayer.BuildPoints;
             _map.SetGame(_game.Board);
             _minimap.SetGame(_game.Board);
             Ui.Show(_minimap, _app.Display == null || _app.Display.showMinimap);
             _log.Add($"Город {_game.Map.Name}, сложность «{MagnateConfig.Title(_game.Config.Difficulty)}». " +
                      $"Хабы: {string.Join(", ", _game.Hubs.Select(h => _game.Map.LocationName(h.LocationId)))}.");
             ApplyLayers();
+            if (_game.Config.RandomFirstPlayer)
+            {
+                var first = _game.CurrentPlayer;
+                _log.Add($"Жребий: первым ходит {first.Name}.");
+                Toast(first.IsBot ? $"Жребий: первым ходит {first.Name}." : $"Жребий: вы ходите первым, {first.Name}!", 3.5f);
+            }
             StartTurn();
             if (_setup.forceMagnateTutorial || (!_setup.magnateTutorialDone && _game.Players.Any(p => !p.IsBot))) StartCoach();
             _setup.forceMagnateTutorial = false;
@@ -260,7 +284,9 @@ namespace CityHighways.Presentation
         [Flags]
         public enum Layer
         {
-            StationNames = 1, DistrictNames = 2, Cargo = 4, Trucks = 8, Traffic = 16, FreeRoads = 32, Focus = 64
+            StationNames = 1, DistrictNames = 2, Cargo = 4, Trucks = 8, Traffic = 16, FreeRoads = 32, Focus = 64,
+            /// <summary>Цены свободных дорог. Бит хранится наоборот (1 — выключено), чтобы у старых настроек слой был включён.</summary>
+            RoadCost = 128
         }
 
         static readonly (Layer layer, string title, string hint)[] LayerItems =
@@ -272,9 +298,14 @@ namespace CityHighways.Presentation
             (Layer.Traffic, "Загрузка дорог", "Цвет по прошлому раунду: зелёный — свободно, жёлтый — почти полно, красный — пробка"),
             (Layer.FreeRoads, "Свободные дороги", "Ничьи дороги. В фазе маршрутов они бледные: фуры по ним не ездят"),
             (Layer.Focus, "Фокус под курсором", "Вдали от курсора карта тускнеет"),
+            (Layer.RoadCost, "Цены дорог", "В свою стройку: сколько очков стройки стоит свободная улица (серая — пока не хватает очков)"),
         };
 
-        bool Has(Layer layer) => ((Layer)_setup.magnateLayers & layer) != 0;
+        bool Has(Layer layer)
+        {
+            bool bit = ((Layer)_setup.magnateLayers & layer) != 0;
+            return layer == Layer.RoadCost ? !bit : bit;
+        }
 
         void BuildLayersList()
         {

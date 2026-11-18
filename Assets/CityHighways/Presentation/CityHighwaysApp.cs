@@ -250,8 +250,14 @@ namespace CityHighways.Presentation
             var steps = new List<(string, Action)>
             {
                 ("Прокладываем реки и намечаем кварталы…", () => city = GenerateCheckedCity(seed)),
-                ("Расставляем аэропорты, вокзалы и порты…", () => game = new LogisticsGame(city, names, bots, seed,
-                    MagnateConfig.For((MagnateDifficulty)Mathf.Clamp(setup.magnateDifficulty, 0, 3)))),
+                ("Расставляем аэропорты, вокзалы и порты…", () =>
+                {
+                    var config = MagnateConfig.For((MagnateDifficulty)Mathf.Clamp(setup.magnateDifficulty, 0, 3));
+                    // Против ботов первый ход — по жребию. Кроме партии с обучением: наставник ведёт с хода игрока.
+                    bool coach = setup.forceMagnateTutorial || (!setup.magnateTutorialDone && bots.Any(b => !b));
+                    config.RandomFirstPlayer = bots.Any(b => b) && !coach;
+                    game = new LogisticsGame(city, names, bots, seed, config);
+                }),
                 ("Рисуем карту и дороги…", () =>
                 {
                     view = new MagnateView(this, setup, game);

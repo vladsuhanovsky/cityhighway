@@ -33,7 +33,6 @@ namespace CityHighways.Presentation
         string _slot = "hat";
         Outfit _tryOn;
         TurntableCharacter _turntable;
-        Avatar3DStage _stage;
         string _animateSlot;
         VisualElement _ghost;
         CharacterItem _dragItem;
@@ -103,7 +102,6 @@ namespace CityHighways.Presentation
             _scroll.Add(_content);
 
             _turntable = new TurntableCharacter(230f);
-            _stage = new Avatar3DStage(250f, 363f);
             Rebuild();
         }
 
@@ -181,11 +179,7 @@ namespace CityHighways.Presentation
         public void Tick(float dt)
         {
             _time += dt;
-            if (_tab == Tab.Character)
-            {
-                _turntable.Tick(dt);
-                _stage.Tick(dt);
-            }
+            if (_tab == Tab.Character) _turntable.Tick(dt);
             foreach (var frame in _frames) frame.Tick(dt);
             float pulse = 1f + 0.03f * Mathf.Sin(_time * 5f);
             foreach (var element in _pulsing) element.style.scale = new Scale(new Vector3(pulse, pulse, 1f));
@@ -193,53 +187,28 @@ namespace CityHighways.Presentation
 
         // ================================================================== Персонаж
 
-        /// <summary>Выбран готовый 3D-аватар и сейчас нет примерки — слева показывается он, а не 2D-персонаж.</summary>
-        bool Shows3D(PlayerProfile profile) => _tryOn == null && Avatar3DCatalog.Get(profile.avatar3d) != null;
-
-        /// <summary>Куда бросать вещь из гардероба: на тот персонаж, что сейчас показан.</summary>
-        VisualElement DropTarget => Shows3D(Profiles.Active) ? (VisualElement)_stage : _turntable;
-
         void CharacterTab(PlayerProfile profile)
         {
-            _content.Add(AvatarPicker(profile));
-
             var row = Ui.Row();
             row.style.alignItems = Align.FlexStart;
             _content.Add(row);
 
             var worn = profile.Outfit;
             var shown = _tryOn ?? worn;
-            var avatar3d = Shows3D(profile) ? Avatar3DCatalog.Get(profile.avatar3d) : null;
 
             var left = Card(14f);
             left.style.alignItems = Align.Center;
             left.style.marginRight = 14f;
             left.style.width = 280f;
-            left.Add(Ui.Text(avatar3d != null ? $"{avatar3d.name} · {avatar3d.role}" : "Персонаж", 18f, Theme.Text, true));
-            var hint = Ui.Text(avatar3d != null
-                    ? "Тяните мышью — повернуть. Вещь из гардероба вернёт 2D-персонажа."
-                    : "Тяните мышью — повернуть. Перетащите вещь на персонажа — надеть или примерить.", 12f, Theme.TextDim);
+            left.Add(Ui.Text("Персонаж", 18f, Theme.Text, true));
+            var hint = Ui.Text("Тяните мышью — повернуть. Перетащите вещь на персонажа — надеть или примерить.", 12f, Theme.TextDim);
             hint.style.unityTextAlign = TextAnchor.MiddleCenter;
             hint.style.marginBottom = 8f;
             left.Add(hint);
             _turntable.RemoveFromHierarchy();
-            _stage.RemoveFromHierarchy();
-            if (avatar3d != null)
-            {
-                _stage.Show(avatar3d);
-                left.Add(_stage);
-                var blurb = Ui.Text(avatar3d.blurb, 13f, Theme.TextDim);
-                blurb.style.unityTextAlign = TextAnchor.MiddleCenter;
-                blurb.style.whiteSpace = WhiteSpace.Normal;
-                blurb.style.marginTop = 6f;
-                left.Add(blurb);
-            }
-            else
-            {
-                _turntable.Set(shown, _animateSlot);
-                left.Add(_turntable);
-            }
+            _turntable.Set(shown, _animateSlot);
             _animateSlot = null;
+            left.Add(_turntable);
 
             if (_tryOn != null)
             {
@@ -447,14 +416,8 @@ namespace CityHighways.Presentation
                 if (tile.HasPointerCapture(e.pointerId)) tile.ReleasePointer(e.pointerId);
                 _ghost?.RemoveFromHierarchy();
                 _ghost = null;
-                var target = DropTarget;
-                Ui.Border(target, 0f, Color.clear);
-                if (target.worldBound.Contains(e.position))
-                {
-                    // Вещь на 3D-аватара: возвращаемся к 2D-персонажу, чтобы её было видно.
-                    if (target == _stage) Profiles.ChooseAvatar3D(profile, "");
-                    Apply(profile, _dragItem, slot, true);
-                }
+                Ui.Border(_turntable, 0f, Color.clear);
+                if (_turntable.worldBound.Contains(e.position)) Apply(profile, _dragItem, slot, true);
             });
             return tile;
         }
@@ -479,92 +442,9 @@ namespace CityHighways.Presentation
             }
             Root.Add(_ghost);
             // Подсказка, куда бросать.
-            var target = DropTarget;
-            Ui.Border(target, 2f, new Color(GameColors.Accent.r, GameColors.Accent.g, GameColors.Accent.b, 0.8f));
-            Ui.Radius(target, 12f);
-        }
-
-        /// <summary>
-        /// Выбор, кем показываться в профиле: 2D-персонаж из гардероба или один из шести готовых 3D-аватаров.
-        /// Бесплатно и сразу сохраняется.
-        /// </summary>
-        VisualElement AvatarPicker(PlayerProfile profile)
-        {
-            var card = Card(12f);
-            card.style.marginBottom = 12f;
-            var head = Ui.Row();
-            head.style.alignItems = Align.Center;
-            head.style.marginBottom = 8f;
-            var title = Ui.Text("Кем вы играете", 18f, Theme.Text, true);
-            title.style.flexGrow = 1f;
-            head.Add(title);
-            head.Add(Ui.Text("Свой 2D-персонаж из гардероба или готовый 3D-герой", 12f, Theme.TextDim));
-            card.Add(head);
-
-            var row = Ui.Row();
-            row.style.flexWrap = Wrap.Wrap;
-            string current = Avatar3DCatalog.Get(profile.avatar3d) != null ? profile.avatar3d : "";
-
-            var mine = new CharacterView(56f, true);
-            mine.Set(profile.Outfit);
-            row.Add(AvatarTile(mine, "Мой персонаж", "Гардероб", current == "", () => Profiles.ChooseAvatar3D(profile, "")));
-            foreach (var avatar in Avatar3DCatalog.All)
-            {
-                var a = avatar;
-                row.Add(AvatarTile(Avatar3DCatalog.Thumbnail(avatar, 64f, 84f), avatar.name, avatar.role, current == avatar.id,
-                    () => Profiles.ChooseAvatar3D(profile, a.id), avatar.accent));
-            }
-            card.Add(row);
-            return card;
-        }
-
-        VisualElement AvatarTile(VisualElement picture, string name, string caption, bool selected, Action choose, Color? accent = null)
-        {
-            var tile = Ui.Column();
-            tile.pickingMode = PickingMode.Position;
-            tile.style.width = 104f;
-            tile.style.alignItems = Align.Center;
-            tile.style.marginRight = 8f;
-            tile.style.marginBottom = 6f;
-            Ui.Padding(tile, 6f, 4f);
-            Ui.Radius(tile, 12f);
-            tile.style.backgroundColor = selected ? GameColors.ButtonHover : GameColors.Button;
-            var ring = selected ? GameColors.Accent : (accent ?? Theme.TextDim);
-            Ui.Border(tile, selected ? 2f : 1f, selected ? ring : new Color(ring.r, ring.g, ring.b, 0.35f));
-            Ui.Transitions(tile, "translate", "background-color");
-
-            var frame = new VisualElement { pickingMode = PickingMode.Ignore };
-            frame.style.height = 88f;
-            frame.style.alignItems = Align.Center;
-            frame.style.justifyContent = Justify.FlexEnd;
-            picture.pickingMode = PickingMode.Ignore;
-            frame.Add(picture);
-            tile.Add(frame);
-            var nameLabel = Ui.Text(name, 13f, selected ? GameColors.Accent : Theme.Text, true);
-            nameLabel.pickingMode = PickingMode.Ignore;
-            nameLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
-            tile.Add(nameLabel);
-            var captionLabel = Ui.Text(caption, 11f, Theme.TextDim);
-            captionLabel.pickingMode = PickingMode.Ignore;
-            captionLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
-            tile.Add(captionLabel);
-
-            tile.RegisterCallback<PointerEnterEvent>(_ =>
-            {
-                tile.style.translate = new Translate(new Length(0f), new Length(-2f));
-                MenuButton.Hovered?.Invoke();
-            });
-            tile.RegisterCallback<PointerLeaveEvent>(_ => tile.style.translate = new Translate(new Length(0f), new Length(0f)));
-            tile.RegisterCallback<ClickEvent>(_ =>
-            {
-                if (selected) return;
-                Ui.ButtonClicked?.Invoke();
-                choose();
-                _tryOn = null;
-                _status = "";
-                Rebuild();
-            });
-            return tile;
+            _turntable.style.borderTopWidth = 0f;
+            Ui.Border(_turntable, 2f, new Color(GameColors.Accent.r, GameColors.Accent.g, GameColors.Accent.b, 0.8f));
+            Ui.Radius(_turntable, 12f);
         }
 
         void MoveGhost(Vector2 position)

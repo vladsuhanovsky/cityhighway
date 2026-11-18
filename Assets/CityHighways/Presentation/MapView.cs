@@ -133,6 +133,17 @@ namespace CityHighways.Presentation
         public float LocationScale = 1f;
         /// <summary>Порты (район «port») — с якорем внутри, как аэропорты и вокзалы со своими значками.</summary>
         public bool HubIcons;
+        /// <summary>
+        /// Плашка на середине дороги (магнат: цена в очках стройки); null — без плашки. Опрашивается каждый кадр,
+        /// подпись меняется, только когда изменился текст. RoadBadgeMuted — плашка серая (например, не хватает очков).
+        /// </summary>
+        public Func<Road, string> RoadBadge;
+        public Func<Road, bool> RoadBadgeMuted;
+        readonly Dictionary<string, Label> _roadBadges = new Dictionary<string, Label>();
+        readonly Dictionary<string, string> _roadBadgeState = new Dictionary<string, string>();
+        VisualElement _badgeLayer;
+        static readonly Color BadgeBack = new Color(0.98f, 0.80f, 0.30f, 0.95f);
+        static readonly Color BadgeMutedBack = new Color(0.20f, 0.22f, 0.27f, 0.88f);
 
         Vector2 _pointer;
         bool _pointerInside;
@@ -442,6 +453,12 @@ namespace CityHighways.Presentation
             _labels.Clear();
             _locationLabels.Clear();
             _districtLabels.Clear();
+            _roadBadges.Clear();
+            _roadBadgeState.Clear();
+            // Плашки дорог — под подписями мест (слой добавлен первым).
+            _badgeLayer = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Fill(_badgeLayer);
+            _labels.Add(_badgeLayer);
 
             foreach (var district in game.Map.Districts)
             {
@@ -604,6 +621,7 @@ namespace CityHighways.Presentation
         void Animate(float dt)
         {
             UpdateAtmosphere(dt);
+            UpdateRoadBadges();
             _focusLevel = Mathf.MoveTowards(_focusLevel, FocusRadius > 0f && _pointerInside && !_panning ? 1f : 0f, dt / 0.25f);
             if (FocusRadius > 0f || _labelFade.Count > 0)
             {
@@ -757,6 +775,8 @@ namespace CityHighways.Presentation
                 pair.Value.style.top = c.y - 48f;
             }
 
+            PositionRoadBadges();
+
             if (_ringLabel != null && _game.Map.Ring != null)
             {
                 var top = RingPoint(-Mathf.PI / 2f);
@@ -766,6 +786,76 @@ namespace CityHighways.Presentation
             _terrainLayer.MarkDirtyRepaint();
             _staticLayer.MarkDirtyRepaint();
             Repaint();
+        }
+
+        /// <summary>Плашки дорог: создать, показать или спрятать по RoadBadge; прозрачность — как у дороги (фокус).</summary>
+        void UpdateRoadBadges()
+        {
+            if (_badgeLayer == null) return;
+            if (RoadBadge == null && _roadBadges.Count == 0) return;
+            foreach (var road in _game.Map.Roads)
+            {
+                string text = RoadBadge != null && RoadVisible(road) ? RoadBadge(road) : null;
+                bool muted = text != null && RoadBadgeMuted != null && RoadBadgeMuted(road);
+                string state = text == null ? null : (muted ? "m" : "s") + text;
+                _roadBadgeState.TryGetValue(road.Id, out var shown);
+                _roadBadges.TryGetValue(road.Id, out var badge);
+                if (state != shown)
+                {
+                    _roadBadgeState[road.Id] = state;
+                    if (state == null)
+                    {
+                        if (badge != null) Ui.Show(badge, false);
+                    }
+                    else
+                    {
+                        if (badge == null)
+                        {
+                            badge = Ui.Text("", 11f, Color.black, true);
+                            badge.pickingMode = PickingMode.Ignore;
+                            badge.style.position = Position.Absolute;
+                            badge.style.minWidth = 18f;
+                            badge.style.height = 16f;
+                            badge.style.unityTextAlign = TextAnchor.MiddleCenter;
+                            Ui.Padding(badge, 0f, 4f);
+                            Ui.Radius(badge, 8f);
+                            _roadBadges[road.Id] = badge;
+                            _badgeLayer.Add(badge);
+                            PositionRoadBadge(road, badge);
+                        }
+                        badge.text = text;
+                        badge.style.backgroundColor = muted ? BadgeMutedBack : BadgeBack;
+                        badge.style.color = muted ? new Color(0.75f, 0.77f, 0.8f) : new Color(0.12f, 0.10f, 0.06f);
+                        Ui.Border(badge, 1f, muted ? new Color(1f, 1f, 1f, 0.15f) : new Color(0f, 0f, 0f, 0.45f));
+                        Ui.Show(badge, true);
+                    }
+                }
+                if (badge != null && state != null)
+                {
+                    float fade = RoadFade(road);
+                    if (Mathf.Abs(badge.resolvedStyle.opacity - fade) > 0.03f) badge.style.opacity = fade;
+                }
+            }
+        }
+
+        void PositionRoadBadges()
+        {
+            if (_game == null) return;
+            foreach (var pair in _roadBadges)
+            {
+                var road = _game.Map.GetRoad(pair.Key);
+                if (road != null) PositionRoadBadge(road, pair.Value);
+            }
+        }
+
+        void PositionRoadBadge(Road road, Label badge)
+        {
+            _layout.GetTrack(road, out var start, out var end);
+            var mid = (start + end) * 0.5f;
+            // Центр плашки — на середине дороги, какой бы ширины ни была подпись.
+            badge.style.left = mid.x;
+            badge.style.top = mid.y;
+            badge.style.translate = new Translate(Length.Percent(-50f), Length.Percent(-50f));
         }
 
         Vector2 DistrictCenter(string districtId)
