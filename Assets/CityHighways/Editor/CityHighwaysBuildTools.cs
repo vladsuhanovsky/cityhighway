@@ -111,10 +111,7 @@ public static class CityHighwaysBuildTools
             new GameObject("Game").AddComponent<CityHighwaysApp>();
 
         // Event System нужен UI Toolkit, если в проекте включена только новая система ввода.
-        // Пункт меню сам выберет правильный модуль ввода.
-        // Ищем по имени, чтобы скрипт не зависел от пакета uGUI.
-        if (GameObject.Find("EventSystem") == null)
-            EditorApplication.ExecuteMenuItem("GameObject/UI/Event System");
+        if (GameObject.Find("EventSystem") == null) CreateEventSystem();
 
         Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));
         var scene = EditorSceneManager.GetActiveScene();
@@ -122,6 +119,27 @@ public static class CityHighwaysBuildTools
         EditorSceneManager.SaveScene(scene, ScenePath);
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         return true;
+    }
+
+    /// <summary>
+    /// Event System с модулем ввода. Раньше создавался пунктом меню «GameObject/UI/Event System», но в Unity 6.x
+    /// меню UI переименовано, и ExecuteMenuItem падал с ошибкой. Теперь — напрямую, а типы ищутся по имени,
+    /// чтобы скрипт не зависел от пакетов uGUI и Input System: модуль новой системы ввода, если она есть, иначе старый.
+    /// </summary>
+    static void CreateEventSystem()
+    {
+        var eventSystemType = System.Type.GetType("UnityEngine.EventSystems.EventSystem, UnityEngine.UI");
+        if (eventSystemType == null)
+        {
+            Debug.Log("City Highways: пакета uGUI нет — Event System не создан (UI Toolkit обходится без него).");
+            return;
+        }
+        var moduleType = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem")
+                         ?? System.Type.GetType("UnityEngine.EventSystems.StandaloneInputModule, UnityEngine.UI");
+        var go = new GameObject("EventSystem");
+        go.AddComponent(eventSystemType);
+        if (moduleType != null) go.AddComponent(moduleType);
+        Undo.RegisterCreatedObjectUndo(go, "Create EventSystem");
     }
 
     /// <summary>Рисует иконку кодом: зелёный дорожный указатель с белой рамкой и дорогой в перспективе.</summary>
