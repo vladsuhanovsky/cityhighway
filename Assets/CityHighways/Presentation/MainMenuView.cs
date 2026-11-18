@@ -315,6 +315,7 @@ namespace CityHighways.Presentation
         /// <summary>Что нового в игре — короткие строки для ленты на главной.</summary>
         static readonly string[] News =
         {
+            "Новая игра: карточка выбора персонажа — герой, сложность, способность и ваша статистика побед",
             "Профиль: мужской и женский персонаж, новый гардероб из 58 вещей в стиле 3D-героев",
             "Персонажи получили лица: 3D-герои Везунчика, Прораба, Мостовика и остальных",
             "Магнат: цены дорог прямо на карте, жребий первого хода, правила и журнал вверху",
@@ -330,7 +331,7 @@ namespace CityHighways.Presentation
         };
 
         /// <summary>Номер выпуска новостей: если больше прочитанного — в уведомлениях «Что нового».</summary>
-        const int NewsVersion = 32;
+        const int NewsVersion = 33;
         const string NewsSeenKey = "CityHighways.NewsSeen";
 
         int _newsIndex;
@@ -916,7 +917,7 @@ namespace CityHighways.Presentation
                 var kind = (CharacterKind)_setup.players[_lastCharacterSlot].character;
                 _characterHint.text = $"{Characters.Title(kind)}: {Characters.Ability(kind, config)}";
             }
-            else _characterHint.text = "Персонаж: нажмите на кнопку персонажа, чтобы выбрать. «Выбор из двух» — в начале партии игрок видит двух случайных персонажей и стартовые контракты и выбирает одного; «случайный» раздаёт сразу.";
+            else _characterHint.text = "Персонаж: нажмите на кнопку персонажа — откроется карточка с героями, их способностями и статистикой. «Выбор из двух» — в начале партии игрок видит двух случайных персонажей и стартовые контракты и выбирает одного; «случайный» раздаёт сразу.";
             if (_mapButton != null)
             {
                 var map = GameSetup.MapOf(_setup.mapResourcePath);
@@ -1017,18 +1018,8 @@ namespace CityHighways.Presentation
             kind.style.marginRight = 8f;
             row.Add(kind);
 
-            // Персонаж: Случайный → Везунчик → … → Мостовик → Без персонажа → Случайный.
-            var character = Ui.Button(CharacterLabel(slot), () =>
-            {
-                // Выбор из двух → случайный → персонажи по порядку → без персонажа → выбор из двух.
-                slot.character = slot.character == PlayerSlot.DraftCharacter ? PlayerSlot.RandomCharacter
-                    : slot.character == PlayerSlot.RandomCharacter ? 1
-                    : slot.character == 0 ? PlayerSlot.DraftCharacter
-                    : slot.character >= (int)CharacterKind.Bridger ? 0
-                    : slot.character + 1;
-                _lastCharacterSlot = index;
-                Refresh();
-            }, ButtonKind.Secondary, 14f);
+            // Персонаж: кнопка открывает окно выбора с карточкой персонажа (MainMenuView.CharacterPicker).
+            var character = Ui.Button(CharacterLabel(slot), () => OpenCharacterPicker(index), ButtonKind.Secondary, 14f);
             character.style.width = 190f;
             character.style.marginRight = 8f;
             // Значок рядом с кнопкой (у кнопки-текста свои дети накладывались бы на подпись).
@@ -1036,6 +1027,8 @@ namespace CityHighways.Presentation
                 Palette.PlayerColor(index));
             icon.style.marginRight = 6f;
             icon.style.opacity = slot.character > 0 ? 1f : 0.35f;
+            icon.pickingMode = PickingMode.Position;
+            icon.RegisterCallback<ClickEvent>(_ => OpenCharacterPicker(index));
             // В магнате персонажей нет — кнопку не показываем.
             if (!_setup.magnate)
             {

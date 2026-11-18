@@ -73,6 +73,49 @@ namespace CityHighways.Core
             }
         }
 
+        /// <summary>Девиз персонажа — для карточки выбора.</summary>
+        public static string Quote(CharacterKind kind)
+        {
+            switch (kind)
+            {
+                case CharacterKind.Lucky: return "Удача любит смелых — а смелее меня нет";
+                case CharacterKind.Foreman: return "Сначала дорогу проложим, карты потом";
+                case CharacterKind.Insurer: return "Риск — моя работа, а не ваша беда";
+                case CharacterKind.Tollman: return "Проезд платный. Касса справа";
+                case CharacterKind.Official: return "Есть подпись — есть контракт";
+                case CharacterKind.Bridger: return "Строю там, где другие боятся";
+                default: return "";
+            }
+        }
+
+        /// <summary>Сложность игры персонажем, 1–5: сколько нужно планировать, чтобы способность окупилась.</summary>
+        public static int Difficulty(CharacterKind kind)
+        {
+            switch (kind)
+            {
+                case CharacterKind.Lucky: return 1;
+                case CharacterKind.Insurer: return 2;
+                case CharacterKind.Official: return 2;
+                case CharacterKind.Foreman: return 3;
+                case CharacterKind.Bridger: return 4;
+                case CharacterKind.Tollman: return 4;
+                default: return 0;
+            }
+        }
+
+        public static string DifficultyTitle(int level)
+        {
+            switch (level)
+            {
+                case 1: return "Новичку";
+                case 2: return "Просто";
+                case 3: return "Средне";
+                case 4: return "Опытному";
+                case 5: return "Эксперту";
+                default: return "";
+            }
+        }
+
         /// <summary>Короткая подсказка, как играть персонажем.</summary>
         public static string Hint(CharacterKind kind)
         {
