@@ -1579,7 +1579,11 @@ namespace CityHighways.Presentation
                 glow = new Color(1f, 1f, 1f, 0.30f * _hoverFade);
                 glowWidth = 12f;
             }
-            else if (look == RoadLook.Active && CalmRoads && !DashedFreeRoads)
+            else if (DashedFreeRoads && !owner.HasValue)
+            {
+                // Пунктирные (ещё не построенные) дороги — без ореола: ни белого, ни жёлтого.
+            }
+            else if (look == RoadLook.Active && CalmRoads)
             {
                 glow = new Color(1f, 1f, 1f, 0.10f);
                 glowWidth = 5f;
@@ -1774,9 +1778,10 @@ namespace CityHighways.Presentation
                     {
                         // Магнат: дорогу ещё нужно построить — пунктир по оси (тёмная подложка — чтобы читался
                         // и на светлых полях). Заблокированная — бледнее.
-                        float strength = look == RoadLook.Blocked ? 0.45f : 1f;
-                        DrawDashes(p, a, b, 4.2f, Fade(new Color(0.05f, 0.06f, 0.08f, 0.45f * strength)));
-                        DrawDashes(p, a, b, 2.2f, Fade(new Color(0.93f, 0.95f, 1f, 0.92f * strength)));
+                        // Белый полупрозрачный тонкий пунктир; доступная к покупке — чуть ярче, заблокированная — бледнее.
+                        float strength = look == RoadLook.Blocked ? 0.5f : look == RoadLook.Active ? 1f : 0.85f;
+                        DrawDashes(p, a, b, 2.6f, Fade(new Color(0.05f, 0.06f, 0.08f, 0.18f * strength)));
+                        DrawDashes(p, a, b, 1.4f, Fade(new Color(1f, 1f, 1f, 0.6f * strength)));
                     }
                     else
                     {

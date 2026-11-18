@@ -24,6 +24,8 @@ namespace CityHighways.Presentation
         const float BottomHeight = 132f, PopupWidth = 460f;
         /// <summary>«Раздел» окон правил и журнала: они открываются под верхней строкой, у её кнопок.</summary>
         const int TopSection = 9;
+        /// <summary>Разделы нижней панели слева направо.</summary>
+        const int PlayersSection = 0, ContextSection = 1, CargoSection = 2, OrdersSection = 3, LastSection = OrdersSection;
 
         VisualElement _bottom, _popup, _popupHead, _popupBody;
         Label _popupTitle;
@@ -45,6 +47,8 @@ namespace CityHighways.Presentation
             _bottom.style.right = 0f;
             _bottom.style.bottom = 0f;
             _bottom.style.height = BottomHeight;
+            // Все разделы одной высоты — по высоте панели, а не по содержимому.
+            _bottom.style.alignItems = Align.Stretch;
             _bottom.style.backgroundColor = Theme.Panel;
             Ui.Padding(_bottom, 10f, 12f);
             Root.Add(_bottom);
@@ -86,7 +90,7 @@ namespace CityHighways.Presentation
             var card = new VisualElement();
             card.style.flexGrow = grow;
             card.style.flexBasis = 0f;
-            card.style.marginRight = index < 2 ? 10f : 0f;
+            card.style.marginRight = index < LastSection ? 10f : 0f;
             card.style.backgroundColor = Theme.PanelLight;
             card.style.justifyContent = Justify.SpaceBetween;
             Ui.Padding(card, 8f, 12f);
@@ -154,28 +158,57 @@ namespace CityHighways.Presentation
             _sections.Clear();
             var player = _game.CurrentPlayer;
 
+            // 0. Игроки: все компании — цвет, имя и очки; клик — панель «Игроки» справа на поле.
+            var players = Section(PlayersSection, 1f, () => TogglePopup("players", PlayersSection));
+            players.Add(Header("Игроки", Theme.Text, _game.Players.Count.ToString()));
+            var list = Ui.Row();
+            list.style.flexWrap = UnityEngine.UIElements.Wrap.Wrap;
+            list.style.marginTop = 4f;
+            foreach (var p in _game.Players)
+            {
+                bool current = p.Index == _game.CurrentPlayerIndex && _game.Phase != MagnatePhase.GameOver;
+                var chip = Ui.Row();
+                chip.style.alignItems = Align.Center;
+                chip.style.marginRight = 8f;
+                chip.style.marginBottom = 3f;
+                var dot = new VisualElement();
+                dot.style.width = 10f;
+                dot.style.height = 10f;
+                dot.style.backgroundColor = Palette.PlayerColor(p.Index);
+                Ui.Radius(dot, 3f);
+                if (current) Ui.Border(dot, 1.5f, Color.white);
+                dot.style.marginRight = 4f;
+                chip.Add(dot);
+                chip.Add(Ui.Text($"{p.Name} {p.Score}", 12f, current ? Theme.Text : Theme.TextDim, current));
+                list.Add(chip);
+            }
+            players.Add(list);
+            players.Add(Ui.Text("Открыть →", 12f, Theme.TextDim));
+            _sections.Add(players);
+            _bottom.Add(players);
+
             // 1. Контекстный раздел.
-            var context = Section(0, 2.3f, null);
+            var context = Section(ContextSection, 2.3f, null);
             BuildContext(context, player);
             _sections.Add(context);
             _bottom.Add(context);
 
             // 2. Грузы.
             var waiting = _game.AllCargo.Where(c => c.Truck < 0 && !_hiddenKinds.Contains(c.Kind) && _game.HubAt(c.From) != null).ToList();
-            var cargo = Section(1, 1f, () => TogglePopup("cargo", 1));
+            var cargo = Section(CargoSection, 1f, () => TogglePopup("cargo", CargoSection));
             cargo.Add(Header("Грузы", Theme.Text, waiting.Count.ToString()));
             var kinds = Ui.Row();
             kinds.style.flexWrap = UnityEngine.UIElements.Wrap.Wrap;
             kinds.style.marginTop = 4f;
             foreach (var group in waiting.GroupBy(c => c.Kind).OrderBy(g => g.Key))
             {
-                var chip = Chip(group.Key, 20f);
+                var chip = Chip(group.Key, 27f);
                 chip.tooltip = $"{LogisticsGame.KindTitle(group.Key)}: {group.Count()}";
-                chip.style.marginRight = 2f;
+                chip.style.marginRight = 3f;
                 chip.style.marginBottom = 2f;
                 kinds.Add(chip);
                 // Сколько грузов этого вида — рядом с иконкой (на самой иконке число не читается).
-                var count = Ui.Text(group.Count() > 1 ? $"×{group.Count()}" : "", 11f, Theme.TextDim, true);
+                var count = Ui.Text(group.Count() > 1 ? $"×{group.Count()}" : "", 13f, Theme.TextDim, true);
                 count.style.marginRight = 6f;
                 count.style.alignSelf = Align.Center;
                 kinds.Add(count);
@@ -189,7 +222,7 @@ namespace CityHighways.Presentation
 
             // 3. Заказы мэрии.
             var active = _game.Contracts.Where(c => c.Winner < 0).ToList();
-            var orders = Section(2, 1f, () => TogglePopup("contracts", 2));
+            var orders = Section(OrdersSection, 1f, () => TogglePopup("contracts", OrdersSection));
             orders.Add(Header("Заказы мэрии", Theme.Text, active.Count.ToString()));
             if (active.Count > 0)
             {
@@ -320,7 +353,7 @@ namespace CityHighways.Presentation
                 else
                 {
                     _selectedTruck = truck.Id;
-                    OpenPopup("truck", 0);
+                    OpenPopup("truck", ContextSection);
                 }
                 _preview = null;
                 _app.Sound.Play(Sfx.Click, 0.4f);
@@ -384,6 +417,9 @@ namespace CityHighways.Presentation
             _dirty = true;
         }
 
+        /// <summary>Окна, которые открываются панелью справа на игровом поле, а не над своим разделом.</summary>
+        static bool RightPanel(string kind) => kind == "cargo" || kind == "cargoDetail" || kind == "contracts" || kind == "players";
+
         /// <summary>Подсказка обучения в правом нижнем углу поля; открыта панель грузов справа — подсказка левее неё.</summary>
         void PlaceCoach(bool besideCargo)
         {
@@ -405,15 +441,17 @@ namespace CityHighways.Presentation
                 case "cargo": FillCargoList(); break;
                 case "cargoDetail": FillCargoDetail(_game.GetCargo(_popupCargo)); break;
                 case "contracts": FillContracts(); break;
+                case "players": FillPlayers(); break;
                 case "rules": FillRules(); break;
                 case "log": FillLog(); break;
                 case "truck": FillTruck(_game.GetTruck(_selectedTruck)); break;
             }
             float width = Root.layout.width;
             float height = float.IsNaN(Root.layout.height) ? 800f : Root.layout.height;
-            if (_popupKind == "cargo" || _popupKind == "cargoDetail")
+            if (RightPanel(_popupKind))
             {
-                // Грузы — панелью справа на игровом поле, под кнопкой «Слои карты» (её список прячем, чтобы не наслаивался).
+                // Грузы, заказы мэрии и игроки — панелью справа на игровом поле, под кнопкой «Слои карты»
+                // (её список прячем, чтобы не наслаивался).
                 Ui.Show(_layersList, false);
                 PlaceCoach(true);
                 const float underLayers = 54f;
@@ -591,7 +629,7 @@ namespace CityHighways.Presentation
             _app.Sound.Play(Sfx.Card, 0.6f);
             _selectedTruck = truck.Id;
             _popupKind = "truck";
-            _popupSection = 0;
+            _popupSection = ContextSection;
             _dirty = true;
         }
 
@@ -730,6 +768,49 @@ namespace CityHighways.Presentation
 
         // ---------------------------------------------------------------- Заказы, правила, журнал
 
+        /// <summary>Панель «Игроки»: все компании — очки, репутация, влияние, стройка, фуры, дороги и хабы; чей ход — в рамке.</summary>
+        void FillPlayers()
+        {
+            _popupTitle.text = "Игроки";
+            foreach (var p in _game.Players.OrderByDescending(x => x.Score).ThenBy(x => x.Index))
+            {
+                var color = Palette.PlayerColor(p.Index);
+                bool current = p.Index == _game.CurrentPlayerIndex && _game.Phase != MagnatePhase.GameOver;
+                var card = Ui.Card(10f);
+                card.style.marginLeft = 14f;
+                card.style.marginRight = 14f;
+                card.style.marginBottom = 8f;
+                card.style.backgroundColor = current ? Theme.PanelHover : Theme.PanelLight;
+                Ui.Border(card, current ? 2f : 1f, current ? color : Theme.Line);
+                card.style.borderLeftWidth = 5f;
+                card.style.borderLeftColor = color;
+
+                var head = Ui.Row();
+                head.style.alignItems = Align.Center;
+                var name = Ui.Text(p.Name + (p.IsBot ? " · бот" : "") + (current ? " · ходит" : ""), 15f, color, true);
+                name.style.flexGrow = 1f;
+                name.style.flexShrink = 1f;
+                head.Add(name);
+                head.Add(Ui.Number(p.Score.ToString(), 22f, Theme.Text, true));
+                card.Add(head);
+
+                var stars = Ui.Text($"{new string('★', (int)p.Level + 1)} {LogisticsGame.LevelTitle(p.Level)} · репутация {p.Reputation} · очки за доставку ×{LogisticsGame.LevelMultiplier(p.Level):0.##}",
+                    12f, Theme.Gold);
+                stars.style.whiteSpace = WhiteSpace.Normal;
+                stars.style.marginTop = 2f;
+                card.Add(stars);
+
+                int trucks = _game.Trucks.Count(t => t.Owner == p.Index);
+                int roads = _game.Map.Roads.Count(r => _game.Board.GetRoadOwner(r.Id) == p.Index);
+                int hubs = _game.Hubs.Count(h => h.Owner == p.Index);
+                var stats = Ui.Text($"Влияние {p.Influence} · стройка {p.BuildPoints} · фур {trucks} · дорог {roads} · хабов {hubs}", 12f, Theme.TextDim);
+                stats.style.whiteSpace = WhiteSpace.Normal;
+                stats.style.marginTop = 4f;
+                card.Add(stats);
+                _popupBody.Add(card);
+            }
+        }
+
         void FillContracts()
         {
             _popupTitle.text = "Заказы мэрии";
@@ -816,34 +897,10 @@ namespace CityHighways.Presentation
 
         static void Highlight(VisualElement e) => Ui.Border(e, 2f, Theme.Gold);
 
+        /// <summary>Игроки теперь в нижней панели (раздел «Игроки») и в панели справа; верхняя строка — только пустое место.</summary>
         void RefreshPlayers()
         {
             _players.Clear();
-            foreach (var p in _game.Players)
-            {
-                var chip = Ui.Row();
-                chip.style.alignItems = Align.Center;
-                chip.style.marginRight = 10f;
-                Ui.Padding(chip, 4f, 8f);
-                Ui.Radius(chip, 8f);
-                bool current = p.Index == _game.CurrentPlayerIndex && _game.Phase != MagnatePhase.GameOver;
-                chip.style.backgroundColor = current ? new Color(1f, 1f, 1f, 0.10f) : Color.clear;
-                var dot = new VisualElement();
-                dot.style.width = 12f;
-                dot.style.height = 12f;
-                dot.style.backgroundColor = Palette.PlayerColor(p.Index);
-                Ui.Radius(dot, 3f);
-                dot.style.marginRight = 6f;
-                chip.Add(dot);
-                chip.Add(Ui.Text($"{p.Name}  {p.Score}", 14f, Theme.Text, current));
-                // Значок репутации: звёзды по уровню (Новичок — одна, Легенда — пять).
-                var stars = Ui.Text(" " + new string('★', (int)p.Level + 1), 12f, Theme.Gold);
-                stars.tooltip = $"Репутация {p.Reputation}: {LogisticsGame.LevelTitle(p.Level)} (очки за доставку ×{LogisticsGame.LevelMultiplier(p.Level):0.##})";
-                stars.pickingMode = PickingMode.Position;
-                chip.Add(stars);
-                chip.Add(Ui.Text($"  влияние {p.Influence}" + (current ? $" · стройка {p.BuildPoints}" : ""), 12f, Theme.TextDim));
-                _players.Add(chip);
-            }
         }
 
         /// <summary>

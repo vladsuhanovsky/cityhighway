@@ -961,10 +961,13 @@ namespace CityHighways.Presentation
             builder.Quad(P(-pad, 0.0035f, -pad), P(-pad, 0.0035f, pad), P(pad, 0.0035f, pad), P(pad, 0.0035f, -pad), asphalt);
             // 1: у вокзала — здание вокзала с путями и платформами, у аэропорта — аэровокзал, вышка, перрон
             // с самолётами и взлётная полоса, у порта — терминал-склад.
+            // Если скачаны модели из Scenario — главное здание модельное, а пути, перрон и полоса остаются свои.
+            string terminalModel = kind == 0 ? Models3D.AirportTerminal : kind == 1 ? Models3D.StationTerminal : Models3D.PortTerminal;
+            bool modelTerminal = Models3D.Has(terminalModel);
             var site = new MeshBuilder();
-            if (kind == 1) BuildRailwayStation(site, random);
-            else if (kind == 0) BuildAirport(site, random);
-            else Put(CityShapes.Kind.Warehouse, 0f, -0.02f, 0.05f, 0.035f, 0.04f);
+            if (kind == 1) BuildRailwayStation(site, random, !modelTerminal);
+            else if (kind == 0) BuildAirport(site, random, !modelTerminal);
+            else if (!modelTerminal) Put(CityShapes.Kind.Warehouse, 0f, -0.02f, 0.05f, 0.035f, 0.04f);
             if (site.VertexCount > 0) builder.Append(site, Matrix4x4.TRS(origin, rotation, Vector3.one));
             // Склады: у вокзала и аэропорта — по бокам от главного здания, у порта — за терминалом.
             float storeX = kind == 2 ? 0.055f : 0.1f, storeZ = kind == 2 ? 0.035f : -0.035f;
@@ -987,6 +990,7 @@ namespace CityHighways.Presentation
                     builder.Beam(P(-0.03f, 0.075f, -0.09f), P(-0.03f, 0.075f, 0.09f), 0.007f, 0.007f, yellow, yellow);
                     builder.Beam(P(0.03f, 0.075f, -0.09f), P(0.03f, 0.075f, 0.09f), 0.007f, 0.007f, yellow, yellow);
                 }
+                else if (Models3D.Has(Models3D.TowerCrane)) { /* модельный кран ставится после сборки меша */ }
                 else
                 {
                     // У аэропорта справа вышка — кран ставим слева.
@@ -1026,6 +1030,7 @@ namespace CityHighways.Presentation
                 }
             }
             var go = AddMesh("Hub " + locationId, builder.ToMesh("City3D Hub " + locationId), _buildings, _root.transform, true);
+            PlaceHubModels(go.transform, kind, level, origin, rotation, yaw, random, modelTerminal ? terminalModel : null);
             _hubs[locationId] = (go, level);
         }
 
@@ -1033,11 +1038,14 @@ namespace CityHighways.Presentation
         /// Вокзал у станции в локальных координатах комплекса (−Z — к станции): здание вокзала фасадом к дороге,
         /// за ним три пути на щебёнке, две платформы с навесами на столбиках.
         /// </summary>
-        static void BuildRailwayStation(MeshBuilder b, System.Random random)
+        static void BuildRailwayStation(MeshBuilder b, System.Random random, bool building = true)
         {
             var local = new MeshBuilder();
-            CityShapes.Build(local, CityShapes.Kind.Station, 0.11f, 0.042f, 0.034f, random);
-            b.Append(local, Matrix4x4.Translate(new Vector3(0f, 0f, -0.035f)));
+            if (building)
+            {
+                CityShapes.Build(local, CityShapes.Kind.Station, 0.11f, 0.042f, 0.034f, random);
+                b.Append(local, Matrix4x4.Translate(new Vector3(0f, 0f, -0.035f)));
+            }
             var ballast = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Granite);
             var rail = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeSteel);
             var concrete = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeConcrete);
@@ -1062,14 +1070,17 @@ namespace CityHighways.Presentation
         /// Аэропорт в локальных координатах комплекса (−Z — к станции): аэровокзал фасадом к дороге, диспетчерская
         /// вышка, перрон с двумя самолётами и взлётно-посадочная полоса с разметкой.
         /// </summary>
-        static void BuildAirport(MeshBuilder b, System.Random random)
+        static void BuildAirport(MeshBuilder b, System.Random random, bool buildings = true)
         {
             var local = new MeshBuilder();
-            CityShapes.Build(local, CityShapes.Kind.Terminal, 0.12f, 0.03f, 0.022f, random);
-            b.Append(local, Matrix4x4.Translate(new Vector3(0f, 0f, -0.04f)));
-            local.Clear();
-            CityShapes.Build(local, CityShapes.Kind.ControlTower, 0.018f, 0.018f, 0.1f, random);
-            b.Append(local, Matrix4x4.Translate(new Vector3(0.085f, 0f, -0.03f)));
+            if (buildings)
+            {
+                CityShapes.Build(local, CityShapes.Kind.Terminal, 0.12f, 0.03f, 0.022f, random);
+                b.Append(local, Matrix4x4.Translate(new Vector3(0f, 0f, -0.04f)));
+                local.Clear();
+                CityShapes.Build(local, CityShapes.Kind.ControlTower, 0.018f, 0.018f, 0.1f, random);
+                b.Append(local, Matrix4x4.Translate(new Vector3(0.085f, 0f, -0.03f)));
+            }
 
             var asphalt = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Asphalt);
             var white = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
@@ -1104,6 +1115,37 @@ namespace CityHighways.Presentation
             }
             Plane(-0.05f, 0.03f, (float)(random.NextDouble() * 10.0 - 5.0));
             Plane(0.035f, 0.034f, 180f + (float)(random.NextDouble() * 10.0 - 5.0));
+        }
+
+        /// <summary>
+        /// Модели из Scenario у хаба (если скачаны): терминал вида хаба фасадом к станции, башенный кран с уровня 3
+        /// (не у порта — там свой портальный) и две фуры у складов. Всё — дочерние объекты меша хаба: при смене
+        /// уровня удаляются вместе с ним.
+        /// </summary>
+        static void PlaceHubModels(Transform hub, int kind, int level, Vector3 origin, Quaternion rotation, float yaw,
+            System.Random random, string terminalModel)
+        {
+            Vector3 P(float x, float y, float z) => origin + rotation * new Vector3(x, y, z);
+            const float ground = 0.0045f;
+            // Модели смотрят фасадом на +Z (как в glTF), а к станции у комплекса −Z: разворот на 180°.
+            if (terminalModel != null)
+            {
+                if (kind == 1) Models3D.Instantiate(terminalModel, hub, P(0f, ground, -0.05f), yaw + 180f, 0.125f);
+                else if (kind == 0) Models3D.Instantiate(terminalModel, hub, P(0f, ground, -0.045f), yaw + 180f, 0.14f);
+                else Models3D.Instantiate(terminalModel, hub, P(0f, ground, -0.005f), yaw + 180f, 0.13f);
+            }
+            if (level >= 3 && kind != 2 && Models3D.Has(Models3D.TowerCrane))
+            {
+                float m = kind == 0 ? -1f : 1f;
+                Models3D.Instantiate(Models3D.TowerCrane, hub, P(0.075f * m, ground, -0.05f), yaw + (float)(random.NextDouble() * 360.0), 0.12f, true);
+            }
+            if (Models3D.Has(Models3D.Truck))
+            {
+                // Фуры у складов, вдоль оси «к станции» — на погрузке.
+                float along = Models3D.LongAlongX(Models3D.Truck) ? 90f : 0f;
+                Models3D.Instantiate(Models3D.Truck, hub, P(-0.11f, ground, -0.066f), yaw + along, 0.045f);
+                if (level >= 2) Models3D.Instantiate(Models3D.Truck, hub, P(0.11f, ground, -0.07f), yaw + along + 180f, 0.045f);
+            }
         }
 
         /// <summary>Идёт ли сейчас стройка этой дороги (интерфейс не рисует её поверх, пока видна техника).</summary>
