@@ -410,7 +410,7 @@ namespace CityHighways.Presentation
                 bool bank = Nearest(p, river) < 30f && Hash(ix, iy, 56) < 0.35f * density;
                 if (forest || yard || bank) AddTree(p, forest ? 0.07f + Hash(ix, iy, 54) * 0.04f : 0.05f + Hash(ix, iy, 54) * 0.03f, 57, forest);
             }
-            AddProps(map, plan, density, roads, river, points, NearestPlace, p => OnPaved(p) || InPark(p, 0f), FreeOfBuildings, NearHub);
+            AddProps(map, plan, density, roads, river, points, NearestPlace, q => OnPaved(q) || InPark(q, 0f), FreeOfBuildings, NearHub);
             AddOutskirts(map, plan, density, river);
             plan.Decals.Sort((a, b) => Layer(a.Kind).CompareTo(Layer(b.Kind)));
             return plan;

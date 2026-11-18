@@ -225,13 +225,13 @@ namespace CityHighways.Presentation
                     // Дуга почти по кругу и стрелка на её конце — «повернуть карту».
                     bool left = _glyph == Glyph.RotateLeft;
                     var c = new Vector2(w / 2f, h / 2f);
-                    float r = w * 0.34f;
+                    float radius = w * 0.34f;
                     float start = left ? -60f : 240f, end = left ? 200f : -20f;
                     p.BeginPath();
-                    p.Arc(c, r, Angle.Degrees(Mathf.Min(start, end)), Angle.Degrees(Mathf.Max(start, end)));
+                    p.Arc(c, radius, Angle.Degrees(Mathf.Min(start, end)), Angle.Degrees(Mathf.Max(start, end)));
                     p.Stroke();
                     float tip = (left ? start : end) * Mathf.Deg2Rad;
-                    var at = c + new Vector2(Mathf.Cos(tip), Mathf.Sin(tip)) * r;
+                    var at = c + new Vector2(Mathf.Cos(tip), Mathf.Sin(tip)) * radius;
                     var tangent = new Vector2(-Mathf.Sin(tip), Mathf.Cos(tip)) * (left ? -1f : 1f);
                     var side = new Vector2(-tangent.y, tangent.x);
                     Line(p, at, at - tangent * w * 0.22f + side * w * 0.16f);
