@@ -113,7 +113,7 @@ namespace CityHighways.Presentation
     /// <summary>Кнопка-значок, нарисованная кодом: «бургер» (три полоски) или шестерёнка, с подписью.</summary>
     public sealed class IconButton : Button
     {
-        public new enum Glyph { Menu, Gear, Close, Plus, Minus, Fit, Left, Right }
+        public new enum Glyph { Menu, Gear, Close, Plus, Minus, Fit, Left, Right, RotateLeft, RotateRight, TiltUp, TiltDown }
 
         readonly Glyph _glyph;
         readonly VisualElement _icon;
@@ -218,6 +218,33 @@ namespace CityHighways.Presentation
                 case Glyph.Right:
                     Line(p, new Vector2(w * 0.35f, h * 0.15f), new Vector2(w * 0.7f, h * 0.5f));
                     Line(p, new Vector2(w * 0.7f, h * 0.5f), new Vector2(w * 0.35f, h * 0.85f));
+                    break;
+                case Glyph.RotateLeft:
+                case Glyph.RotateRight:
+                {
+                    // Дуга почти по кругу и стрелка на её конце — «повернуть карту».
+                    bool left = _glyph == Glyph.RotateLeft;
+                    var c = new Vector2(w / 2f, h / 2f);
+                    float r = w * 0.34f;
+                    float start = left ? -60f : 240f, end = left ? 200f : -20f;
+                    p.BeginPath();
+                    p.Arc(c, r, Angle.Degrees(Mathf.Min(start, end)), Angle.Degrees(Mathf.Max(start, end)));
+                    p.Stroke();
+                    float tip = (left ? start : end) * Mathf.Deg2Rad;
+                    var at = c + new Vector2(Mathf.Cos(tip), Mathf.Sin(tip)) * r;
+                    var tangent = new Vector2(-Mathf.Sin(tip), Mathf.Cos(tip)) * (left ? -1f : 1f);
+                    var side = new Vector2(-tangent.y, tangent.x);
+                    Line(p, at, at - tangent * w * 0.22f + side * w * 0.16f);
+                    Line(p, at, at - tangent * w * 0.22f - side * w * 0.16f);
+                    break;
+                }
+                case Glyph.TiltUp:
+                    Line(p, new Vector2(w * 0.15f, h * 0.65f), new Vector2(w * 0.5f, h * 0.3f));
+                    Line(p, new Vector2(w * 0.5f, h * 0.3f), new Vector2(w * 0.85f, h * 0.65f));
+                    break;
+                case Glyph.TiltDown:
+                    Line(p, new Vector2(w * 0.15f, h * 0.35f), new Vector2(w * 0.5f, h * 0.7f));
+                    Line(p, new Vector2(w * 0.5f, h * 0.7f), new Vector2(w * 0.85f, h * 0.35f));
                     break;
                 default: // Fit — рамка «показать всё»
                     Line(p, new Vector2(w * 0.15f, h * 0.38f), new Vector2(w * 0.15f, h * 0.15f));
@@ -505,6 +532,39 @@ namespace CityHighways.Presentation
             buttons.Add(fit);
             Add(buttons);
 
+            // Камера 3D-города: поворот, компас (клик — север сверху), наклон. Без 3D ряд скрыт.
+            _cameraRow = Ui.Row();
+            _cameraRow.style.marginTop = 6f;
+            _cameraRow.style.justifyContent = Justify.SpaceBetween;
+            var cameraCaption = Ui.Text("Камера", 12f, Theme.TextDim, true);
+            cameraCaption.style.flexGrow = 1f;
+            cameraCaption.tooltip = "Правая кнопка мыши — крутить и наклонять, колесо — приближать. Q/E — поворот, R/F — наклон, Home — север.";
+            cameraCaption.pickingMode = PickingMode.Position;
+            _cameraRow.Add(cameraCaption);
+            IconButton CameraButton(IconButton.Glyph glyph, string hint, Action click)
+            {
+                var button = new IconButton(glyph, "", click, 12f);
+                button.tooltip = hint;
+                button.style.marginLeft = 4f;
+                _cameraRow.Add(button);
+                return button;
+            }
+            CameraButton(IconButton.Glyph.RotateLeft, "Повернуть влево (Q)", () => _map.RotateBy(-45f));
+            _compass = new VisualElement();
+            _compass.style.width = 30f;
+            _compass.style.height = 30f;
+            _compass.style.marginLeft = 4f;
+            _compass.pickingMode = PickingMode.Position;
+            _compass.tooltip = "Север сверху (Home)";
+            _compass.generateVisualContent += DrawCompass;
+            _compass.RegisterCallback<ClickEvent>(_ => _map.ResetCamera());
+            _cameraRow.Add(_compass);
+            CameraButton(IconButton.Glyph.RotateRight, "Повернуть вправо (E)", () => _map.RotateBy(45f));
+            CameraButton(IconButton.Glyph.TiltDown, "Ближе к виду сверху (F)", () => _map.TiltBy(-10f));
+            CameraButton(IconButton.Glyph.TiltUp, "Ближе к горизонту (R)", () => _map.TiltBy(10f));
+            Add(_cameraRow);
+            Ui.Show(_cameraRow, false);
+
             _canvas.RegisterCallback<PointerDownEvent>(e =>
             {
                 if (e.button != 0) return;
@@ -521,7 +581,48 @@ namespace CityHighways.Presentation
                 _dragging = false;
                 if (_canvas.HasPointerCapture(e.pointerId)) _canvas.ReleasePointer(e.pointerId);
             });
-            map.ViewChanged += () => _canvas.MarkDirtyRepaint();
+            map.ViewChanged += () =>
+            {
+                _canvas.MarkDirtyRepaint();
+                _compass.MarkDirtyRepaint();
+                if ((_cameraRow.style.display == DisplayStyle.Flex) != _map.CanRotate) Ui.Show(_cameraRow, _map.CanRotate);
+            };
+        }
+
+        readonly VisualElement _cameraRow, _compass;
+
+        /// <summary>Компас: кольцо и стрелка — красный конец смотрит туда, где на экране север карты.</summary>
+        void DrawCompass(MeshGenerationContext context)
+        {
+            var r = _compass.contentRect;
+            if (float.IsNaN(r.width) || r.width < 4f) return;
+            var p = context.painter2D;
+            var c = r.center;
+            float radius = Mathf.Min(r.width, r.height) / 2f - 1f;
+            p.fillColor = new Color(1f, 1f, 1f, 0.08f);
+            p.BeginPath();
+            p.Arc(c, radius, Angle.Degrees(0f), Angle.Degrees(360f));
+            p.Fill();
+            p.strokeColor = new Color(1f, 1f, 1f, 0.35f);
+            p.lineWidth = 1.2f;
+            p.Stroke();
+            var north = _map.NorthDirection();
+            var side = new Vector2(-north.y, north.x);
+            float len = radius * 0.78f, half = radius * 0.26f;
+            p.fillColor = new Color(0.92f, 0.26f, 0.22f);
+            p.BeginPath();
+            p.MoveTo(c + north * len);
+            p.LineTo(c + side * half);
+            p.LineTo(c - side * half);
+            p.ClosePath();
+            p.Fill();
+            p.fillColor = new Color(0.85f, 0.87f, 0.9f);
+            p.BeginPath();
+            p.MoveTo(c - north * len);
+            p.LineTo(c + side * half);
+            p.LineTo(c - side * half);
+            p.ClosePath();
+            p.Fill();
         }
 
         public void SetGame(Game game)

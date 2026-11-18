@@ -36,12 +36,33 @@ namespace CityHighways.Presentation
         /// <summary>Приближение или сдвиг карты изменились (мини-карта перерисовывает рамку обзора).</summary>
         public event Action ViewChanged;
 
-        public const float MaxZoom = 2.6f;
+        public const float MaxZoom = 4f;
         float _zoom = 1f, _zoomTarget = 1f;
         Vector2 _pan, _panTarget;
         bool _panning;
         Vector2 _panStartPointer, _panStartOffset;
         int _panPointer = -1;
+
+        // ---------------------------------------------------------------- Свободная камера (3D)
+        // Поворот вокруг вертикали (yaw) и наклон от вертикали (pitch), только при 3D-городе. Правая кнопка мыши —
+        // крутить и наклонять, колесо — приближать, левая/средняя по пустому месту — тянуть. Клавиши Q/E — поворот,
+        // R/F — наклон, Home — север сверху. Карта крутится вокруг точки в центре экрана.
+        public const float MinPitch = 12f;
+        float _yaw, _yawTarget;
+        float _pitch = -1f, _pitchTarget = -1f;   // −1 — наклон из настроек (CameraTiltDegrees)
+        bool _rotating;
+        int _rotatePointer = -1;
+        Vector2 _rotateStartPointer;
+        float _rotateStartYaw, _rotateStartPitch;
+
+        /// <summary>Камеру можно вращать: под картой живёт 3D-город.</summary>
+        public bool CanRotate => _use3D;
+        /// <summary>Поворот камеры, градусы (0 — север сверху).</summary>
+        public float Yaw => _yaw;
+        /// <summary>Наклон камеры от вертикали, градусы.</summary>
+        public float Pitch => _pitch < 0f ? DefaultPitch : _pitch;
+        float DefaultPitch => Mathf.Clamp(CameraTiltDegrees, 20f, 50f);
+        float PitchTarget => _pitchTarget < 0f ? DefaultPitch : _pitchTarget;
         Location _hoverLocation;
 
         public Road HoverRoad { get; private set; }
@@ -91,9 +112,11 @@ namespace CityHighways.Presentation
             {
                 if (_use3D == value) return;
                 _use3D = value;
+                if (!value) { _yaw = _yawTarget = 0f; _rotating = false; }
                 Relayout();
                 _waterLayer?.MarkDirtyRepaint();
                 _roadUnderLayer?.MarkDirtyRepaint();
+                ViewChanged?.Invoke();   // мини-карта показывает или прячет кнопки камеры
             }
         }
         bool _use3D;
@@ -306,6 +329,13 @@ namespace CityHighways.Presentation
                 Vector2 position = e.localPosition;
                 _pointer = position;
                 _pointerInside = true;
+                if (_rotating && e.pointerId == _rotatePointer)
+                {
+                    // Вправо-влево — поворот, вверх-вниз — наклон. Без задержки, как перетаскивание карты.
+                    var delta = position - _rotateStartPointer;
+                    SetAngles(_rotateStartYaw - delta.x * 0.35f, _rotateStartPitch - delta.y * 0.22f, true);
+                    return;
+                }
                 if (_panning && e.pointerId == _panPointer)
                 {
                     // Перетаскивание карты: сдвиг идёт за курсором без задержки.
@@ -329,6 +359,19 @@ namespace CityHighways.Presentation
             {
                 if (_game == null) return;
                 Vector2 position = e.localPosition;
+                // Правая кнопка — крутить и наклонять камеру (3D).
+                if (e.button == 1 && CanRotate)
+                {
+                    _rotating = true;
+                    _rotatePointer = e.pointerId;
+                    _rotateStartPointer = position;
+                    _rotateStartYaw = _yawTarget;
+                    _rotateStartPitch = PitchTarget;
+                    this.CapturePointer(e.pointerId);
+                    SetHover(null, position);
+                    SetHoverLocation(null, position);
+                    return;
+                }
                 // Клик по станции (режим магната: «ехать сюда») — раньше дороги под ней.
                 if (e.button == 0 && Interactive && LocationClicked != null)
                 {
@@ -359,6 +402,12 @@ namespace CityHighways.Presentation
             });
             RegisterCallback<PointerUpEvent>(e =>
             {
+                if (_rotating && e.pointerId == _rotatePointer)
+                {
+                    _rotating = false;
+                    if (this.HasPointerCapture(e.pointerId)) this.ReleasePointer(e.pointerId);
+                    return;
+                }
                 if (!_panning || e.pointerId != _panPointer) return;
                 _panning = false;
                 if (this.HasPointerCapture(e.pointerId)) this.ReleasePointer(e.pointerId);
@@ -392,6 +441,76 @@ namespace CityHighways.Presentation
         public void ZoomBy(float factor)
         {
             if (_layout != null) ZoomAt(_layout.Area.center, factor);
+        }
+
+        /// <summary>Куда на экране смотрит север карты (единичный вектор, y вниз); без поворота — вверх.</summary>
+        public Vector2 NorthDirection()
+        {
+            if (_layout == null || !_use3D) return Vector2.down;
+            var a = _layout.ToScreen(0.5f, 0.5f);
+            var b = _layout.ToScreen(0.5f, 0.42f);
+            var d = b - a;
+            return d.sqrMagnitude < 1e-4f ? Vector2.down : d.normalized;
+        }
+
+        /// <summary>Повернуть камеру на degrees (плавно).</summary>
+        public void RotateBy(float degrees)
+        {
+            if (!CanRotate) return;
+            SetAngles(_yawTarget + degrees, PitchTarget, false);
+        }
+
+        /// <summary>Наклонить камеру: больше — ближе к горизонту, меньше — ближе к виду сверху (плавно).</summary>
+        public void TiltBy(float degrees)
+        {
+            if (!CanRotate) return;
+            SetAngles(_yawTarget, PitchTarget + degrees, false);
+        }
+
+        /// <summary>Север сверху и наклон из настроек.</summary>
+        public void ResetCamera()
+        {
+            // Ближайший «север»: из 350° — вперёд на 10°, а не назад на 350°.
+            SetAngles(_yaw + Mathf.DeltaAngle(_yaw, 0f), DefaultPitch, false);
+            _pitchTarget = -1f;
+        }
+
+        /// <summary>Новые углы камеры; immediate — сразу (мышь), иначе плавно догоняют (кнопки, клавиши).</summary>
+        void SetAngles(float yaw, float pitch, bool immediate)
+        {
+            _yawTarget = yaw;
+            _pitchTarget = Mathf.Clamp(pitch, MinPitch, BoardLayout.MaxPitch);
+            if (immediate) ApplyAngles(_yawTarget, _pitchTarget);
+            ViewChanged?.Invoke();
+        }
+
+        /// <summary>Поставить углы и пересчитать раскладку так, чтобы точка в центре экрана осталась в центре.</summary>
+        void ApplyAngles(float yaw, float pitch)
+        {
+            if (_layout == null) { _yaw = yaw; _pitch = pitch; return; }
+            var center = _layout.ScreenToMap(_layout.Area.center);
+            _yaw = yaw;
+            _pitch = pitch;
+            Relayout();
+            if (_zoom > 1.001f)
+            {
+                _pan = _panTarget = _layout.PanToCenter(center.x, center.y, _zoom);
+                Relayout();
+            }
+        }
+
+        /// <summary>Клавиши камеры: Q/E — поворот, R/F — наклон, Home — север сверху.</summary>
+        void CameraKeys(float dt)
+        {
+            if (!CanRotate || panel == null) return;
+            if (panel.focusController?.focusedElement is TextField) return;
+            var keyboard = UnityEngine.InputSystem.Keyboard.current;
+            if (keyboard == null) return;
+            float turn = (keyboard.eKey.isPressed ? 1f : 0f) - (keyboard.qKey.isPressed ? 1f : 0f);
+            float lean = (keyboard.rKey.isPressed ? 1f : 0f) - (keyboard.fKey.isPressed ? 1f : 0f);
+            if (Mathf.Abs(turn) > 0f || Mathf.Abs(lean) > 0f)
+                SetAngles(_yawTarget + turn * 90f * dt, PitchTarget + lean * 40f * dt, true);
+            if (keyboard.homeKey.wasPressedThisFrame) ResetCamera();
         }
 
         /// <summary>Показать всю карту.</summary>
@@ -464,6 +583,9 @@ namespace CityHighways.Presentation
             _zoom = _zoomTarget = 1f;
             _pan = _panTarget = Vector2.zero;
             _panning = false;
+            _rotating = false;
+            _yaw = _yawTarget = 0f;
+            _pitch = _pitchTarget = -1f;
             _dimLevel = 0f;
             _districtLit.Clear();
             _districtLitColor.Clear();
@@ -680,6 +802,19 @@ namespace CityHighways.Presentation
             _hoverFade = Mathf.MoveTowards(_hoverFade, 1f, dt / 0.15f);
             UpdateClock();
 
+            // Углы камеры догоняют цель плавно (кнопки, «север сверху»).
+            CameraKeys(dt);
+            float pitchTarget = PitchTarget;
+            if (_use3D && (Mathf.Abs(Mathf.DeltaAngle(_yaw, _yawTarget)) > 0.05f || Mathf.Abs(Pitch - pitchTarget) > 0.05f))
+            {
+                float k = 1f - Mathf.Exp(-dt * 10f);
+                float yaw = Mathf.Abs(_yawTarget - _yaw) < 0.06f ? _yawTarget : Mathf.Lerp(_yaw, _yawTarget, k);
+                float pitch = Mathf.Abs(pitchTarget - Pitch) < 0.06f ? pitchTarget : Mathf.Lerp(Pitch, pitchTarget, k);
+                ApplyAngles(yaw, pitch);
+                if (_pitchTarget < 0f && Mathf.Abs(pitch - pitchTarget) < 0.06f) _pitch = -1f;
+                ViewChanged?.Invoke();
+            }
+
             // Приближение и сдвиг догоняют цель плавно (колесо, кнопки, клик по мини-карте).
             if (Mathf.Abs(_zoom - _zoomTarget) > 0.0005f || (_pan - _panTarget).sqrMagnitude > 0.05f)
             {
@@ -779,7 +914,7 @@ namespace CityHighways.Presentation
             var rect = contentRect;
             if (float.IsNaN(rect.width) || rect.width < 50f || rect.height < 50f) return;
             float tilt = Smooth01(_tiltProgress);
-            _layout.SetPerspective(_use3D, Mathf.Clamp(CameraTiltDegrees, 20f, 50f));
+            _layout.SetPerspective(_use3D, _use3D ? Mathf.Clamp(Pitch, MinPitch, BoardLayout.MaxPitch) : DefaultPitch, _use3D ? _yaw : 0f);
             _layout.Fit(new Rect(0f, 0f, rect.width, rect.height), tilt, _zoom, _pan);
             _pan = _layout.Pan;
             _terrainLayer.style.backgroundColor = _use3D ? Color.clear : Color.Lerp(Land, Table, tilt);

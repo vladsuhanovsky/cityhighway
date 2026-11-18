@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using CityHighways.Core;
@@ -53,9 +54,23 @@ namespace CityHighways.Presentation
             public string District;
         }
 
+        /// <summary>Мелкие предметы города: фонари вдоль дорог, кусты во дворах, лодки на реке.</summary>
+        public enum PropKind { Lamp, Bush, Boat }
+
+        public struct Prop
+        {
+            public Vector2 At;         // пиксели поля
+            public float Angle;        // градусы вокруг вертикали (у фонаря — куда смотрит плечо, у лодки — нос)
+            public float Size;         // метры сцены (куст)
+            public PropKind Kind;
+            public string District;
+            public int Seed;
+        }
+
         public sealed class Plan
         {
             public readonly List<Building> Buildings = new List<Building>();
+            public readonly List<Prop> Props = new List<Prop>();
             public readonly List<TreeSpot> Trees = new List<TreeSpot>();
             public readonly List<Decal> Decals = new List<Decal>();
             /// <summary>Основания для затемнения на земле: центр и полуразмеры в координатах карты.</summary>
@@ -395,15 +410,96 @@ namespace CityHighways.Presentation
                 bool bank = Nearest(p, river) < 30f && Hash(ix, iy, 56) < 0.35f * density;
                 if (forest || yard || bank) AddTree(p, forest ? 0.07f + Hash(ix, iy, 54) * 0.04f : 0.05f + Hash(ix, iy, 54) * 0.03f, 57, forest);
             }
+            AddProps(map, plan, density, roads, river, points, NearestPlace, p => OnPaved(p) || InPark(p, 0f), FreeOfBuildings, NearHub);
             AddOutskirts(map, plan, density, river);
             plan.Decals.Sort((a, b) => Layer(a.Kind).CompareTo(Layer(b.Kind)));
             return plan;
         }
 
+        // ================================================================== Мелочи города
+
+        /// <summary>
+        /// Фонари по обеим сторонам каждой дороги (через шаг, в шахматном порядке; у станций, на мостах и у воды —
+        /// нет), кусты во дворах у домов и лодки на реке — по руслу, носом по течению.
+        /// </summary>
+        static void AddProps(CityMap map, Plan plan, float density, List<Seg> roads, List<Seg> river,
+            Dictionary<string, Vector2> points, Func<Vector2, float> nearestPlace, Func<Vector2, bool> paved,
+            Func<Vector2, float, bool> freeOfBuildings, Func<Vector2, bool> nearHub)
+        {
+            string DistrictAt(Vector2 p)
+            {
+                string best = null;
+                float distance = float.MaxValue;
+                foreach (var l in map.Locations)
+                {
+                    float d = (points[l.Id] - p).sqrMagnitude;
+                    if (d < distance) { distance = d; best = map.DistrictOf(l.Id); }
+                }
+                return best;
+            }
+
+            // Фонари: шаг ~34 px, плечо над дорогой (дорога 11 px, фонарь в 9 px от оси).
+            int seed = 0;
+            foreach (var road in roads)
+            {
+                var d = road.B - road.A;
+                float length = d.magnitude;
+                if (length < 40f) continue;
+                var dir = d / length;
+                var normal = new Vector2(-dir.y, dir.x);
+                int count = Mathf.FloorToInt(length / 34f);
+                for (int i = 1; i < count; i++)
+                {
+                    seed++;
+                    if (Hash(seed, i, 401) > 0.85f * density + 0.1f) continue;
+                    float side = i % 2 == 0 ? 1f : -1f;
+                    var at = road.A + dir * (length * i / count) + normal * side * 9f;
+                    if (nearestPlace(at) < 22f || Nearest(at, river) < 22f || nearHub(at)) continue;
+                    // Плечо — к оси дороги. Угол — как у зданий: поворот Euler(0, угол) переводит локальную +X
+                    // в направление (x, y) поля (y поля вниз = −Z мира), то есть угол = atan2(y, x).
+                    var toAxis = -normal * side;
+                    float angle = Mathf.Atan2(toAxis.y, toAxis.x) * Mathf.Rad2Deg;
+                    plan.Props.Add(new Prop { At = at, Angle = angle, Kind = PropKind.Lamp, District = DistrictAt(at), Seed = seed });
+                }
+            }
+
+            // Кусты: у домов во дворах (не на дорогах, площадках и в воде).
+            const float bushCell = 12f;
+            for (int iy = 0; iy <= Mathf.CeilToInt(FieldH / bushCell); iy++)
+            for (int ix = 0; ix <= Mathf.CeilToInt(FieldW / bushCell); ix++)
+            {
+                if (Hash(ix, iy, 410) > 0.16f * density) continue;
+                var p = new Vector2((ix + Hash(ix, iy, 411)) * bushCell, (iy + Hash(ix, iy, 412)) * bushCell);
+                if (Nearest(p, roads) < 10f || nearestPlace(p) < 16f || Nearest(p, river) < 18f || nearHub(p) || paved(p)) continue;
+                if (!freeOfBuildings(p, 9f) || freeOfBuildings(p, 22f)) continue;   // рядом с домом, но не в нём
+                plan.Props.Add(new Prop { At = p, Size = 0.012f + Hash(ix, iy, 413) * 0.01f, Kind = PropKind.Bush, District = DistrictAt(p), Seed = ix * 131 + iy * 977 });
+            }
+
+            // Лодки: вдоль русла, в стороне от оси, носом по течению (иногда против).
+            foreach (var line in map.Rivers)
+            {
+                for (int i = 0; i + 1 < line.Count; i++)
+                {
+                    var a = new Vector2(line[i].X * FieldW, line[i].Y * FieldH);
+                    var b = new Vector2(line[i + 1].X * FieldW, line[i + 1].Y * FieldH);
+                    var d = b - a;
+                    if (d.sqrMagnitude < 1f || Hash(i, line.Count, 420) > 0.22f * density) continue;
+                    var dir = d.normalized;
+                    var at = a + d * 0.5f + new Vector2(-dir.y, dir.x) * (Hash(i, line.Count, 421) < 0.5f ? 6f : -6f);
+                    if (Nearest(at, roads) < 14f) continue;   // не под мостом
+                    float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + (Hash(i, line.Count, 422) < 0.3f ? 180f : 0f);
+                    plan.Props.Add(new Prop { At = at, Angle = angle, Kind = PropKind.Boat, District = null, Seed = i * 7 + line.Count });
+                }
+            }
+        }
+
         // ================================================================== Окрестности
 
-        /// <summary>Сколько окрестностей за краем поля (пиксели поля): видно в перспективе до тумана.</summary>
-        public const float OutskirtsLeft = -800f, OutskirtsRight = 2200f, OutskirtsTop = -1150f, OutskirtsBottom = 1050f;
+        /// <summary>
+        /// Сколько окрестностей за краем поля (пиксели поля): видно в перспективе до тумана. Со всех сторон одинаково
+        /// далеко — камеру можно развернуть, и дальним краем станет любой.
+        /// </summary>
+        public const float OutskirtsLeft = -800f, OutskirtsRight = 2200f, OutskirtsTop = -1150f, OutskirtsBottom = 1930f;
         /// <summary>Лес в окрестностях (тот же шум рисует тёмную подстилку на текстуре окрестностей).</summary>
         public static float ForestNoise(float x, float y) => Noise(x, y, 150f, 301);
         static bool EdgePoint(float x, float y) => x < 0.03f || x > 0.97f || y < 0.03f || y > 0.97f;

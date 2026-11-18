@@ -303,6 +303,8 @@ namespace CityHighways.Presentation
             Root.Add(_mapArea);
 
             _map = new MapView();
+            // Дороги лежат на земле 3D-города: камеру можно крутить, и они поворачиваются вместе с ней.
+            _map.GroundRoads = true;
             Ui.Fill(_map);
             _map.Hovered += OnMapHover;
             _map.LocationHovered += OnLocationHover;

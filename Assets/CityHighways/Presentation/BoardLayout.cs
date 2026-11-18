@@ -103,17 +103,27 @@ namespace CityHighways.Presentation
         public float MaxCameraTilt { get; private set; } = 38f;
         /// <summary>Текущий наклон камеры: MaxCameraTilt × Tilt.</summary>
         public float CameraTilt => MaxCameraTilt * Tilt;
+        /// <summary>
+        /// Поворот камеры вокруг вертикали, градусы (0 — север сверху, как раньше). Камера облетает центр поля;
+        /// всё, что интерфейс рисует поверх, считается через ту же матрицу и поворачивается вместе с 3D-городом.
+        /// </summary>
+        public float CameraYaw { get; private set; }
         public Vector3 CameraPosition { get; private set; }
         public Quaternion CameraRotation { get; private set; } = Quaternion.identity;
         public float CameraNear { get; private set; } = 0.1f;
         public float CameraFar { get; private set; } = 200f;
 
-        public void SetPerspective(bool on, float maxTiltDegrees)
+        /// <summary>Предел наклона камеры от вертикали: дальше горизонт подходит слишком близко.</summary>
+        public const float MaxPitch = 64f;
+
+        public void SetPerspective(bool on, float maxTiltDegrees, float yawDegrees = 0f)
         {
-            maxTiltDegrees = Mathf.Clamp(maxTiltDegrees, 0f, 60f);
-            if (on == Perspective && Mathf.Abs(maxTiltDegrees - MaxCameraTilt) < 0.01f) return;
+            maxTiltDegrees = Mathf.Clamp(maxTiltDegrees, 0f, MaxPitch);
+            yawDegrees = Mathf.Repeat(yawDegrees, 360f);
+            if (on == Perspective && Mathf.Abs(maxTiltDegrees - MaxCameraTilt) < 0.01f && Mathf.Abs(Mathf.DeltaAngle(yawDegrees, CameraYaw)) < 0.01f) return;
             Perspective = on;
             MaxCameraTilt = maxTiltDegrees;
+            CameraYaw = yawDegrees;
             _perspectiveDirty = true;
         }
 
@@ -124,8 +134,10 @@ namespace CityHighways.Presentation
         {
             float aspect = Mathf.Max(0.2f, _area.width / Mathf.Max(1f, _area.height));
             float alpha = CameraTilt * Mathf.Deg2Rad;
-            var toEye = new Vector3(0f, Mathf.Cos(alpha), -Mathf.Sin(alpha));
-            var up = new Vector3(0f, Mathf.Sin(alpha), Mathf.Cos(alpha));
+            // Без поворота камера стоит к югу от центра и смотрит на север; поворот облетает центр по кругу.
+            var yaw = Quaternion.Euler(0f, CameraYaw, 0f);
+            var toEye = yaw * new Vector3(0f, Mathf.Cos(alpha), -Mathf.Sin(alpha));
+            var up = yaw * new Vector3(0f, Mathf.Sin(alpha), Mathf.Cos(alpha));
             var rotation = Quaternion.LookRotation(-toEye, up);
             float padX = Mathf.Clamp(2f * Padding / Mathf.Max(1f, _area.width), 0f, 0.5f);
             float padY = Mathf.Clamp(2f * Padding / Mathf.Max(1f, _area.height), 0f, 0.5f);
@@ -325,8 +337,15 @@ namespace CityHighways.Presentation
             {
                 // Длина малого шага по земле здесь и у ближнего края по центру.
                 var here = ProjectedToMap(Unview(screen));
-                float Step(Vector2 m) => (ProjectWorld(World(m.x, m.y) + Vector3.right * 0.2f) - ProjectWorld(World(m.x, m.y))).magnitude;
-                float near = Step(new Vector2(0.5f, 1f));
+                // Шаг по земле вдоль той оси мира, что не сжата наклоном (при повороте это может быть и Z).
+                float Step(Vector2 m)
+                {
+                    var w = World(m.x, m.y);
+                    var o = ProjectWorld(w);
+                    return Mathf.Max((ProjectWorld(w + Vector3.right * 0.2f) - o).magnitude, (ProjectWorld(w + Vector3.forward * 0.2f) - o).magnitude);
+                }
+                // Ближний край — низ окна (при повороте камеры это уже не обязательно юг карты).
+                float near = Step(ProjectedToMap(new Vector2(_area.center.x, _area.yMax - 1f)));
                 return Mathf.Clamp(Step(here) / Mathf.Max(0.001f, near), 0.45f, 1.2f);
             }
             if (Flat) return 1f;
@@ -341,10 +360,17 @@ namespace CityHighways.Presentation
             {
                 if (!Perspective) return Mathf.Lerp(1f, FullSquash, Tilt);
                 // Отношение высоты к ширине у маленького круга в центре поля.
+                // Габариты на экране маленького круга на земле: при любом повороте камеры круг сжат по вертикали экрана.
                 var c = World(0.5f, 0.5f);
-                float dx = (ProjectWorld(c + Vector3.right * 0.2f) - ProjectWorld(c)).magnitude;
-                float dz = (ProjectWorld(c + Vector3.forward * 0.2f) - ProjectWorld(c)).magnitude;
-                return Mathf.Clamp(dz / Mathf.Max(0.001f, dx), 0.3f, 1f);
+                float x0 = float.MaxValue, x1 = float.MinValue, y0 = float.MaxValue, y1 = float.MinValue;
+                for (int i = 0; i < 16; i++)
+                {
+                    float a = i * Mathf.PI / 8f;
+                    var q = ProjectWorld(c + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 0.2f);
+                    x0 = Mathf.Min(x0, q.x); x1 = Mathf.Max(x1, q.x);
+                    y0 = Mathf.Min(y0, q.y); y1 = Mathf.Max(y1, q.y);
+                }
+                return Mathf.Clamp((y1 - y0) / Mathf.Max(0.001f, x1 - x0), 0.3f, 1f);
             }
         }
 

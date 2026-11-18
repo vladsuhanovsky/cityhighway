@@ -65,7 +65,7 @@ namespace CityHighways.Presentation
         Material _buildings, _ground, _water, _cards, _decals;
         int _quality, _rendererIndex = -1;
         readonly List<TreeChunk> _treeChunks = new List<TreeChunk>();
-        float _cardLean = -999f;
+        float _cardLean = -999f, _cardYaw;
         // Отражения в воде: своя камера рисует зеркальный город в текстуру, шейдер воды берёт из неё картинку.
         bool _reflective;
         Camera _reflectionCamera;
@@ -154,6 +154,7 @@ namespace CityHighways.Presentation
             BuildRivers();
             BuildDistricts(plan);
             BuildTrees(plan);
+            BuildProps(plan);
             SetupRoads();
             BuildJunctions();
             BuildBridges();
@@ -669,6 +670,68 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>
+        /// Мелочи города одним мешем на район: фонари (столб, плечо над дорогой, плафон), кусты-шары и лодки
+        /// (корпус, рубка) на воде. Закрытые районы прячут и их.
+        /// </summary>
+        void BuildProps(CityPlanner.Plan plan)
+        {
+            var builders = new Dictionary<string, MeshBuilder>();
+            var local = new MeshBuilder();
+            var metal = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeSteel);
+            var lampHead = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofLight);
+            var white = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
+            var red = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofRed);
+            var wood = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofBrown);
+            foreach (var prop in plan.Props)
+            {
+                local.Clear();
+                var random = new System.Random(prop.Seed);
+                float y = 0f;
+                switch (prop.Kind)
+                {
+                    case CityPlanner.PropKind.Lamp:
+                        // Столб 3 см, плечо 6 мм к дороге, плафон на конце.
+                        local.Prism(0f, 0f, 0.0011f, 0f, 0.03f, 5, metal, metal);
+                        local.Beam(new Vector3(0f, 0.029f, 0f), new Vector3(0.007f, 0.03f, 0f), 0.0012f, 0.0012f, metal, metal);
+                        local.Box(0.0075f, 0f, 0.004f, 0.0022f, 0.0285f, 0.0012f, lampHead, lampHead);
+                        break;
+                    case CityPlanner.PropKind.Bush:
+                    {
+                        var leaf = CityAtlas.Solid(CityAtlas.Row.Nature, random.Next(4));
+                        float r = prop.Size;
+                        local.Blob(new Vector3(0f, r * 0.7f, 0f), r, r * 0.75f, leaf);
+                        if (random.NextDouble() < 0.5)
+                            local.Blob(new Vector3(r * 0.9f, r * 0.55f, r * 0.2f), r * 0.7f, r * 0.55f, leaf);
+                        break;
+                    }
+                    case CityPlanner.PropKind.Boat:
+                    {
+                        // Корпус с заострённым носом (+X), рубка; цвет — белый или красный.
+                        y = WaterLevel - 0.001f;
+                        var hull = random.NextDouble() < 0.6 ? white : red;
+                        local.Box(-0.004f, 0f, 0.022f, 0.009f, 0f, 0.004f, hull, wood);
+                        local.Quad(new Vector3(0.007f, 0f, -0.0045f), new Vector3(0.007f, 0.004f, -0.0045f),
+                            new Vector3(0.015f, 0.004f, 0f), new Vector3(0.015f, 0f, 0f), hull);
+                        local.Quad(new Vector3(0.015f, 0f, 0f), new Vector3(0.015f, 0.004f, 0f),
+                            new Vector3(0.007f, 0.004f, 0.0045f), new Vector3(0.007f, 0f, 0.0045f), hull);
+                        local.Tri(new Vector3(0.007f, 0.004f, -0.0045f), new Vector3(0.007f, 0.004f, 0.0045f), new Vector3(0.015f, 0.004f, 0f), wood);
+                        local.Box(-0.006f, 0f, 0.008f, 0.006f, 0.004f, 0.004f, white, lampHead);
+                        break;
+                    }
+                }
+                string key = prop.District ?? "_";
+                if (!builders.TryGetValue(key, out var b)) builders[key] = b = new MeshBuilder();
+                b.Append(local, Matrix4x4.TRS(CityPlanner.ToWorld(prop.At, y), Quaternion.Euler(0f, prop.Angle, 0f), Vector3.one));
+            }
+            foreach (var pair in builders)
+            {
+                if (pair.Value.VertexCount == 0) continue;
+                var go = AddMesh("Props " + pair.Key, pair.Value.ToMesh("City3D Props " + pair.Key), _buildings, _root.transform, true);
+                if (pair.Key != "_") _districts[pair.Key + "#props"] = go;
+            }
+        }
+
+        /// <summary>
         /// Деревья по клеткам: в каждой — объёмные деревья и их карточки. Вблизи видны объёмные,
         /// вдали (мелко на экране) — карточки: одна плоскость на дерево, повёрнутая к камере.
         /// </summary>
@@ -705,7 +768,7 @@ namespace CityHighways.Presentation
                 chunk.ShowCards = chunk.Full == null;
                 _treeChunks.Add(chunk);
             }
-            RebuildCards(0f);
+            RebuildCards(0f, 0f);
         }
 
         /// <summary>Плитка карточки — того же вида и оттенка, что объёмное дерево (тот же порядок случайных чисел, что в BuildTree).</summary>
@@ -725,12 +788,16 @@ namespace CityHighways.Presentation
         /// Пересобрать карточки под наклон камеры: плоскость перпендикулярна взгляду (сверху — лежит, под углом —
         /// наклонена к зрителю), середина — на половине высоты дерева, низ никогда не уходит под землю.
         /// </summary>
-        void RebuildCards(float leanDegrees)
+        void RebuildCards(float leanDegrees, float yawDegrees)
         {
             _cardLean = leanDegrees;
+            _cardYaw = yawDegrees;
             float t = leanDegrees * Mathf.Deg2Rad;
-            var toCamera = new Vector3(0f, Mathf.Cos(t), -Mathf.Sin(t));
-            var cardUp = new Vector3(0f, Mathf.Sin(t), Mathf.Cos(t));
+            // Карточки повёрнуты к камере и по наклону, и по повороту вокруг вертикали.
+            var yaw = Quaternion.Euler(0f, yawDegrees, 0f);
+            var toCamera = yaw * new Vector3(0f, Mathf.Cos(t), -Mathf.Sin(t));
+            var cardUp = yaw * new Vector3(0f, Mathf.Sin(t), Mathf.Cos(t));
+            var cardRight = yaw * Vector3.right;
             // Нормаль почти вверх — карточка освещается как крона, а не как стена.
             var normal = (Vector3.up + toCamera * 0.4f).normalized;
             var builder = new MeshBuilder();
@@ -741,7 +808,7 @@ namespace CityHighways.Presentation
                 {
                     float size = spot.Size * 1.05f, half = size / 2f;
                     var center = spot.At + Vector3.up * half;
-                    var right = Vector3.right * half;
+                    var right = cardRight * half;
                     var up = cardUp * half;
                     builder.QuadWithNormal(center - right - up, center - right + up, center + right + up, center + right - up,
                         CityTextures.CardUv(spot.Tile), normal);
@@ -1421,15 +1488,17 @@ namespace CityHighways.Presentation
         void UpdateTrees(BoardLayout layout, Func<string, bool> districtOpen)
         {
             float lean = layout.CameraTilt;
-            if (Mathf.Abs(lean - _cardLean) > 3f) RebuildCards(lean);
+            if (Mathf.Abs(lean - _cardLean) > 3f || Mathf.Abs(Mathf.DeltaAngle(layout.CameraYaw, _cardYaw)) > 4f) RebuildCards(lean, layout.CameraYaw);
             float threshold = _quality == 0 ? 125f : _quality == 1 ? 100f : 80f;
             foreach (var chunk in _treeChunks)
             {
                 bool open = chunk.District == "_" || districtOpen == null || districtOpen(chunk.District);
                 if (chunk.Root.activeSelf != open) chunk.Root.SetActive(open);
                 if (!open || chunk.Full == null) continue;
-                var left = layout.WorldToScreen(chunk.Center - Vector3.right * 0.5f);
-                var right = layout.WorldToScreen(chunk.Center + Vector3.right * 0.5f);
+                // Метр поперёк взгляда камеры (при повороте ось X мира может смотреть прямо на камеру).
+                var across = Quaternion.Euler(0f, layout.CameraYaw, 0f) * Vector3.right;
+                var left = layout.WorldToScreen(chunk.Center - across * 0.5f);
+                var right = layout.WorldToScreen(chunk.Center + across * 0.5f);
                 float perUnit = (right - left).magnitude;
                 bool cards = perUnit < (chunk.ShowCards ? threshold + 10f : threshold);
                 if (cards != chunk.ShowCards || chunk.Full.activeSelf == cards)
