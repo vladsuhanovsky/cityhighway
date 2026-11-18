@@ -110,7 +110,10 @@ namespace CityHighways.Presentation
 
         /// <summary>Построить город; null — 3D недоступно (нет URP, ошибка) — тогда остаётся прежнее плоское поле.</summary>
         /// <param name="quality">0 — низкое (без теней, меньше зданий), 1 — среднее, 2 — высокое.</param>
-        public static City3DScene TryCreate(CityMap map, int quality)
+        List<string> _hubSites;
+
+        /// <param name="hubSites">Станции с комплексами хабов (магнат): вокруг них планировщик не ставит дома и деревья.</param>
+        public static City3DScene TryCreate(CityMap map, int quality, IEnumerable<string> hubSites = null)
         {
             City3DScene scene = null;
             try
@@ -122,6 +125,7 @@ namespace CityHighways.Presentation
                     return null;
                 }
                 scene = new City3DScene(map);
+                if (hubSites != null) scene._hubSites = hubSites.ToList();
                 scene.Build(Mathf.Clamp(quality, 0, 2));
                 return scene;
             }
@@ -138,7 +142,7 @@ namespace CityHighways.Presentation
         void Build(int quality)
         {
             float density = quality == 0 ? 0.55f : quality == 1 ? 0.8f : 1f;
-            var plan = CityPlanner.Build(_map, density);
+            var plan = CityPlanner.Build(_map, density, _hubSites);
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
 
@@ -955,13 +959,20 @@ namespace CityHighways.Presentation
             // Площадка: с уровнем растёт (уровень 4 — расширенная территория).
             float pad = level >= 4 ? 0.13f : level >= 2 ? 0.09f : 0.06f;
             builder.Quad(P(-pad, 0.0035f, -pad), P(-pad, 0.0035f, pad), P(pad, 0.0035f, pad), P(pad, 0.0035f, -pad), asphalt);
-            // 1: терминал.
-            Put(kind == 0 ? CityShapes.Kind.Hangar : kind == 2 ? CityShapes.Kind.Warehouse : CityShapes.Kind.Parapet, 0f, -0.02f, 0.05f, 0.035f, 0.04f);
+            // 1: у вокзала — здание вокзала с путями и платформами, у аэропорта — аэровокзал, вышка, перрон
+            // с самолётами и взлётная полоса, у порта — терминал-склад.
+            var site = new MeshBuilder();
+            if (kind == 1) BuildRailwayStation(site, random);
+            else if (kind == 0) BuildAirport(site, random);
+            else Put(CityShapes.Kind.Warehouse, 0f, -0.02f, 0.05f, 0.035f, 0.04f);
+            if (site.VertexCount > 0) builder.Append(site, Matrix4x4.TRS(origin, rotation, Vector3.one));
+            // Склады: у вокзала и аэропорта — по бокам от главного здания, у порта — за терминалом.
+            float storeX = kind == 2 ? 0.055f : 0.1f, storeZ = kind == 2 ? 0.035f : -0.035f;
             // 2: склады.
             if (level >= 2)
             {
-                Put(CityShapes.Kind.Warehouse, -0.055f, 0.035f, 0.045f, 0.025f, 0.028f);
-                Put(CityShapes.Kind.Warehouse, 0.055f, 0.035f, 0.045f, 0.025f, 0.028f);
+                Put(CityShapes.Kind.Warehouse, -storeX, storeZ, 0.045f, 0.025f, 0.028f);
+                Put(CityShapes.Kind.Warehouse, storeX, storeZ, 0.045f, 0.025f, 0.028f);
             }
             // 3: кран — портальный у порта, башенный у остальных.
             if (level >= 3)
@@ -978,9 +989,11 @@ namespace CityHighways.Presentation
                 }
                 else
                 {
-                    builder.Beam(P(0.07f, 0f, -0.05f), P(0.07f, 0.11f, -0.05f), 0.006f, 0.006f, yellow, yellow);
-                    builder.Beam(P(0.03f, 0.11f, -0.05f), P(0.13f, 0.11f, -0.05f), 0.005f, 0.005f, yellow, yellow);
-                    builder.Beam(P(0.12f, 0.11f, -0.05f), P(0.12f, 0.06f, -0.05f), 0.0015f, 0.0015f, white, white);
+                    // У аэропорта справа вышка — кран ставим слева.
+                    float m = kind == 0 ? -1f : 1f;
+                    builder.Beam(P(0.07f * m, 0f, -0.05f), P(0.07f * m, 0.11f, -0.05f), 0.006f, 0.006f, yellow, yellow);
+                    builder.Beam(P(0.03f * m, 0.11f, -0.05f), P(0.13f * m, 0.11f, -0.05f), 0.005f, 0.005f, yellow, yellow);
+                    builder.Beam(P(0.12f * m, 0.11f, -0.05f), P(0.12f * m, 0.06f, -0.05f), 0.0015f, 0.0015f, white, white);
                 }
             }
             // 4: ещё склады на расширенной площадке.
@@ -992,10 +1005,12 @@ namespace CityHighways.Presentation
             // 5: большой логистический комплекс; у аэропорта — вертолётная площадка на крыше рядом.
             if (level >= 5)
             {
-                Put(kind == 0 ? CityShapes.Kind.Stepped : CityShapes.Kind.Block, 0f, 0.09f, 0.07f, 0.04f, 0.08f);
+                // За путями и взлётной полосой места нет — комплекс встаёт сбоку.
+                if (kind == 2) Put(CityShapes.Kind.Block, 0f, 0.09f, 0.07f, 0.04f, 0.08f);
+                else Put(kind == 0 ? CityShapes.Kind.Stepped : CityShapes.Kind.Block, -0.17f, -0.02f, 0.05f, 0.04f, 0.08f);
                 if (kind == 0)
                 {
-                    var c = P(-0.095f, 0.0045f, 0.095f);
+                    var c = P(0.17f, 0.0045f, -0.02f);
                     const int sides = 16;
                     for (int i = 0; i < sides; i++)
                     {
@@ -1012,6 +1027,83 @@ namespace CityHighways.Presentation
             }
             var go = AddMesh("Hub " + locationId, builder.ToMesh("City3D Hub " + locationId), _buildings, _root.transform, true);
             _hubs[locationId] = (go, level);
+        }
+
+        /// <summary>
+        /// Вокзал у станции в локальных координатах комплекса (−Z — к станции): здание вокзала фасадом к дороге,
+        /// за ним три пути на щебёнке, две платформы с навесами на столбиках.
+        /// </summary>
+        static void BuildRailwayStation(MeshBuilder b, System.Random random)
+        {
+            var local = new MeshBuilder();
+            CityShapes.Build(local, CityShapes.Kind.Station, 0.11f, 0.042f, 0.034f, random);
+            b.Append(local, Matrix4x4.Translate(new Vector3(0f, 0f, -0.035f)));
+            var ballast = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Granite);
+            var rail = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeSteel);
+            var concrete = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeConcrete);
+            var canopy = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofMetal);
+            const float y = 0.004f, half = 0.13f;
+            b.Quad(new Vector3(-half, y, -0.006f), new Vector3(-half, y, 0.078f), new Vector3(half, y, 0.078f), new Vector3(half, y, -0.006f), ballast);
+            foreach (float z in new[] { 0.008f, 0.036f, 0.064f })
+            {
+                b.Beam(new Vector3(-half, y + 0.0008f, z - 0.0035f), new Vector3(half, y + 0.0008f, z - 0.0035f), 0.0012f, 0.0016f, rail, rail);
+                b.Beam(new Vector3(-half, y + 0.0008f, z + 0.0035f), new Vector3(half, y + 0.0008f, z + 0.0035f), 0.0012f, 0.0016f, rail, rail);
+            }
+            foreach (float z in new[] { 0.022f, 0.05f })
+            {
+                b.Box(0f, z, 0.2f, 0.011f, y, 0.004f, concrete, concrete);
+                b.Box(0f, z, 0.16f, 0.016f, 0.017f, 0.0025f, canopy, canopy);
+                for (int i = -3; i <= 3; i++)
+                    b.Box(i * 0.025f, z, 0.0018f, 0.0018f, y, 0.013f, concrete, concrete);
+            }
+        }
+
+        /// <summary>
+        /// Аэропорт в локальных координатах комплекса (−Z — к станции): аэровокзал фасадом к дороге, диспетчерская
+        /// вышка, перрон с двумя самолётами и взлётно-посадочная полоса с разметкой.
+        /// </summary>
+        static void BuildAirport(MeshBuilder b, System.Random random)
+        {
+            var local = new MeshBuilder();
+            CityShapes.Build(local, CityShapes.Kind.Terminal, 0.12f, 0.03f, 0.022f, random);
+            b.Append(local, Matrix4x4.Translate(new Vector3(0f, 0f, -0.04f)));
+            local.Clear();
+            CityShapes.Build(local, CityShapes.Kind.ControlTower, 0.018f, 0.018f, 0.1f, random);
+            b.Append(local, Matrix4x4.Translate(new Vector3(0.085f, 0f, -0.03f)));
+
+            var asphalt = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Asphalt);
+            var white = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
+            var tail = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.ChimneyStripe);
+            void Slab(float x0, float z0, float x1, float z1, float y, Rect uv) =>
+                b.Quad(new Vector3(x0, y, z0), new Vector3(x0, y, z1), new Vector3(x1, y, z1), new Vector3(x1, y, z0), uv);
+
+            // Перрон, рулёжка и полоса: тёмный асфальт, белая осевая пунктиром и «зебры» на торцах.
+            Slab(-0.1f, -0.012f, 0.1f, 0.062f, 0.0042f, asphalt);
+            Slab(-0.012f, 0.062f, 0.012f, 0.088f, 0.0042f, asphalt);
+            const float runwayZ = 0.1f, runwayHalf = 0.016f, runwayLength = 0.17f;
+            Slab(-runwayLength, runwayZ - runwayHalf, runwayLength, runwayZ + runwayHalf, 0.0044f, asphalt);
+            for (float x = -runwayLength + 0.03f; x < runwayLength - 0.03f; x += 0.022f)
+                Slab(x, runwayZ - 0.0012f, x + 0.012f, runwayZ + 0.0012f, 0.0047f, white);
+            for (int s = -1; s <= 1; s += 2)
+                for (int k = -2; k <= 2; k++)
+                {
+                    float x = s * (runwayLength - 0.012f), z = runwayZ + k * 0.0055f;
+                    Slab(x - 0.007f, z - 0.0016f, x + 0.007f, z + 0.0016f, 0.0047f, white);
+                }
+
+            // Самолёты на перроне: фюзеляж, крылья, стабилизатор и киль (носом к терминалу).
+            void Plane(float x, float z, float yaw)
+            {
+                var plane = new MeshBuilder();
+                const float y = 0.0075f;
+                plane.Beam(new Vector3(0f, y, -0.02f), new Vector3(0f, y, 0.02f), 0.0055f, 0.0055f, white, white);
+                plane.Box(0f, 0.002f, 0.044f, 0.009f, y - 0.0008f, 0.0014f, white, white);
+                plane.Box(0f, 0.017f, 0.016f, 0.004f, y + 0.0005f, 0.0011f, white, white);
+                plane.Box(0f, 0.018f, 0.0013f, 0.006f, y + 0.002f, 0.007f, tail, tail);
+                b.Append(plane, Matrix4x4.TRS(new Vector3(x, 0f, z), Quaternion.Euler(0f, yaw, 0f), Vector3.one));
+            }
+            Plane(-0.05f, 0.03f, (float)(random.NextDouble() * 10.0 - 5.0));
+            Plane(0.035f, 0.034f, 180f + (float)(random.NextDouble() * 10.0 - 5.0));
         }
 
         /// <summary>Идёт ли сейчас стройка этой дороги (интерфейс не рисует её поверх, пока видна техника).</summary>

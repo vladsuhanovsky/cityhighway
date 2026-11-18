@@ -236,7 +236,7 @@ namespace CityHighways.Presentation
             if (_game.Phase == MagnatePhase.Build)
             {
                 card.Add(Header($"{player.Name} · Стройка · {player.BuildPoints} очков стройки", color));
-                card.Add(Hint($"Клик по светлой дороге — купить: цифра на ней — цена в очках стройки (длина, мост +{_game.Config.BridgeExtraCost}; серая — не хватает). По своей — магистраль, по хабу — развить. " +
+                card.Add(Hint($"Клик по пунктирной дороге — купить: цифра на ней — цена в очках стройки (длина, мост +{_game.Config.BridgeExtraCost}; серая — не хватает). По своей — магистраль, по хабу — развить. " +
                               $"Каждый раунд +{_game.Config.BuildPointsPerRound} очков."));
                 var next = Ui.Button("Дальше: маршруты фур →", () => { _game.FinishBuild(); _app.Sound.Play(Sfx.Click, 0.6f); }, ButtonKind.Primary, 14f);
                 next.style.alignSelf = Align.FlexStart;
@@ -379,14 +379,21 @@ namespace CityHighways.Presentation
             _popupCargo = null;
             _popupPreview = null;
             Ui.Show(_popup, false);
+            PlaceCoach(false);
             if (sound) _app.Sound.Play(Sfx.Close, 0.35f);
             _dirty = true;
+        }
+
+        /// <summary>Подсказка обучения в правом нижнем углу поля; открыта панель грузов справа — подсказка левее неё.</summary>
+        void PlaceCoach(bool besideCargo)
+        {
+            if (_coach != null) _coach.style.right = besideCargo ? PopupWidth + 28f : 14f;
         }
 
         void RefreshPopup()
         {
             _popupPreview = null;
-            if (_popupKind == null) { Ui.Show(_popup, false); return; }
+            if (_popupKind == null) { Ui.Show(_popup, false); PlaceCoach(false); return; }
             if (_popupKind == "cargoDetail")
             {
                 var shown = _game.GetCargo(_popupCargo);
@@ -403,12 +410,27 @@ namespace CityHighways.Presentation
                 case "truck": FillTruck(_game.GetTruck(_selectedTruck)); break;
             }
             float width = Root.layout.width;
+            float height = float.IsNaN(Root.layout.height) ? 800f : Root.layout.height;
+            if (_popupKind == "cargo" || _popupKind == "cargoDetail")
+            {
+                // Грузы — панелью справа на игровом поле, под кнопкой «Слои карты» (её список прячем, чтобы не наслаивался).
+                Ui.Show(_layersList, false);
+                PlaceCoach(true);
+                const float underLayers = 54f;
+                _popup.style.top = TopBarHeight + underLayers;
+                _popup.style.bottom = StyleKeyword.Auto;
+                _popup.style.maxHeight = new Length(Mathf.Max(240f, height - TopBarHeight - underLayers - BottomHeight - 14f));
+                _popup.style.left = float.IsNaN(width) ? 12f : Mathf.Max(12f, width - PopupWidth - 14f);
+                Ui.Show(_popup, true);
+                return;
+            }
+            PlaceCoach(false);
             if (_popupSection == TopSection)
             {
                 // Правила и журнал — под верхней строкой, правым краем у кнопок «Правила»/«Журнал».
                 _popup.style.top = TopBarHeight + 8f;
                 _popup.style.bottom = StyleKeyword.Auto;
-                _popup.style.maxHeight = new Length(Mathf.Max(240f, (float.IsNaN(Root.layout.height) ? 800f : Root.layout.height) - TopBarHeight - BottomHeight - 24f));
+                _popup.style.maxHeight = new Length(Mathf.Max(240f, height - TopBarHeight - BottomHeight - 24f));
                 float right = 12f;
                 if (_topActions != null && !float.IsNaN(_topActions.worldBound.xMax) && !float.IsNaN(width))
                     right = Mathf.Max(12f, Root.worldBound.xMax - _topActions.worldBound.xMax);

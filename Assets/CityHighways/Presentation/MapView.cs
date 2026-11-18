@@ -119,6 +119,26 @@ namespace CityHighways.Presentation
         /// по ресурсам, доступные для покупки — тонкий светлый контур без пульсирующего золотого ореола.
         /// </summary>
         public bool CalmRoads;
+        /// <summary>
+        /// Дороги лежат на наклонённой земле 3D-города (магнат): участки — проекции прямоугольников мира,
+        /// дальний край уже ближнего. Без 3D ни на что не влияет.
+        /// </summary>
+        public bool GroundRoads
+        {
+            get => _groundRoads;
+            set
+            {
+                _groundRoads = value;
+                if (_layout != null) _layout.GroundQuads = value;
+            }
+        }
+        bool _groundRoads;
+        /// <summary>
+        /// Магнат: городские дороги, построенные с начала партии, — просто асфальт, без бордюров и свечения
+        /// (их цвет — PublicRoadColor), а ничьи участки — пунктир по оси: «здесь можно построить».
+        /// </summary>
+        public bool PlainPublicRoads;
+        public bool DashedFreeRoads;
         /// <summary>Прозрачность свободных (никому не принадлежащих) дорог: 1 — как обычно, 0 — не рисуются.</summary>
         public float FreeRoadAlpha = 1f;
         /// <summary>
@@ -199,6 +219,9 @@ namespace CityHighways.Presentation
         }
 
         static readonly Color CalmRoadColor = new Color(0.80f, 0.82f, 0.86f);
+
+        /// <summary>Городская (общая) дорога магната: владелец за пределами списка игроков.</summary>
+        bool IsPublicRoad(int? owner) => owner.HasValue && _game != null && owner.Value >= _game.Players.Count;
 
         Color OwnerColor(int owner) =>
             _game != null && owner >= _game.Players.Count ? PublicRoadColor : Palette.PlayerColor(owner);
@@ -428,7 +451,7 @@ namespace CityHighways.Presentation
         public void SetGame(Game game)
         {
             _game = game;
-            _layout = new BoardLayout(game.Map);
+            _layout = new BoardLayout(game.Map) { GroundQuads = _groundRoads };
             Affordable.Clear();
             HighlightFrom = null;
             HighlightTo = null;
@@ -1500,9 +1523,11 @@ namespace CityHighways.Presentation
                 var shadow = _shadowDir * lift * 0.55f + new Vector2(0f, lift * 0.35f * tilt);
                 float alpha = Mathf.Lerp(0.16f, 0.34f, _daylight) * (built > 0 ? 1f : 0.55f);
                 p.fillColor = Fade(new Color(0.02f, 0.03f, 0.06f, alpha));
-                foreach (var segment in segments)
+                // Пунктирные (ещё не построенные) участки тени не отбрасывают — на земле только линия.
+                int shadowed = DashedFreeRoads ? built : segments.Count;
+                for (int i = 0; i < shadowed; i++)
                 {
-                    SegmentPath(p, segment, 1.2f, shadow);
+                    SegmentPath(p, segments[i], 1.2f, shadow);
                     p.Fill();
                 }
                 // Торец: чем выше дорога, тем толще видна её боковина.
@@ -1554,7 +1579,7 @@ namespace CityHighways.Presentation
                 glow = new Color(1f, 1f, 1f, 0.30f * _hoverFade);
                 glowWidth = 12f;
             }
-            else if (look == RoadLook.Active && CalmRoads)
+            else if (look == RoadLook.Active && CalmRoads && !DashedFreeRoads)
             {
                 glow = new Color(1f, 1f, 1f, 0.10f);
                 glowWidth = 5f;
@@ -1615,7 +1640,8 @@ namespace CityHighways.Presentation
             }
 
             // Построенные участки слегка светятся цветом компании (ночью — сильнее: город в огнях).
-            if (owner.HasValue)
+            // Городские дороги магната — без свечения: это просто асфальт.
+            if (owner.HasValue && !(PlainPublicRoads && IsPublicRoad(owner)))
             {
                 var c = OwnerColor(owner.Value);
                 p.strokeColor = Fade(CalmRoads ? new Color(c.r, c.g, c.b, 0.16f + 0.14f * _night) : new Color(c.r, c.g, c.b, 0.30f + 0.22f * _night));
@@ -1651,9 +1677,14 @@ namespace CityHighways.Presentation
                     : look == RoadLook.Blocked ? new Color(0.70f, 0.70f, 0.74f, 0.25f)
                     : new Color(1f, 1f, 1f, 0.55f);
                 float fade = RoadFade(road);
-                var builtTint = new Color(1f, 1f, 1f, fade);
+                // Городская дорога магната — чуть темнее своих: фон, а не акцент.
+                var builtTint = PlainPublicRoads && IsPublicRoad(_game.GetRoadOwner(road.Id))
+                    ? new Color(0.86f, 0.86f, 0.88f, fade)
+                    : new Color(1f, 1f, 1f, fade);
                 free.a *= fade;
-                for (int i = 0; i < segments.Count; i++)
+                // Пунктирные участки покрытия не имеют: их рисует проход 3 линией по оси.
+                int count = DashedFreeRoads ? built : segments.Count;
+                for (int i = 0; i < count; i++)
                     AddSegmentTexture(texture, segments[i], i < built ? builtTint : free);
             }
             _quads.Flush(context);
@@ -1662,6 +1693,21 @@ namespace CityHighways.Presentation
         /// <summary>Участок — несколько квадратных «плиток» текстуры по длине (без растяжения).</summary>
         void AddSegmentTexture(Texture2D texture, BoardLayout.Segment segment, Color tint)
         {
+            if (segment.Quad)
+            {
+                // Участок на земле: плитки делят трапецию по длине, каждая — свой четырёхугольник с UV 0..1.
+                float width = ((segment.Q0 - segment.Q3).magnitude + (segment.Q1 - segment.Q2).magnitude) * 0.5f;
+                int count = Mathf.Max(1, Mathf.RoundToInt(segment.Length / Mathf.Max(2f, width)));
+                for (int k = 0; k < count; k++)
+                {
+                    float t0 = k / (float)count, t1 = (k + 1) / (float)count;
+                    _quads.Add(texture,
+                        Vector2.Lerp(segment.Q0, segment.Q1, t0), Vector2.Lerp(segment.Q0, segment.Q1, t1),
+                        Vector2.Lerp(segment.Q3, segment.Q2, t1), Vector2.Lerp(segment.Q3, segment.Q2, t0),
+                        new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f), new Vector2(0f, 0f), tint);
+                }
+                return;
+            }
             var dir = Dir(segment);
             float thickness = BoardLayout.RoadThickness * s_roadWidthScale;
             int tiles = Mathf.Max(1, Mathf.RoundToInt(segment.Length / thickness));
@@ -1704,14 +1750,18 @@ namespace CityHighways.Presentation
                 if (isBuilt)
                 {
                     // Бордюры цвета компании по обеим сторонам — так видно, чья дорога.
-                    p.strokeColor = Fade(ownerColor);
-                    p.lineWidth = 2.4f;
-                    Line(p, a + normal * half, b + normal * half);
-                    Line(p, a - normal * half, b - normal * half);
+                    // У городских дорог магната бордюров нет: они не подсвечиваются.
+                    if (!(PlainPublicRoads && IsPublicRoad(owner)))
+                    {
+                        p.strokeColor = Fade(ownerColor);
+                        p.lineWidth = 2.4f;
+                        Line(p, SidePoint(segment, 0f, 1f), SidePoint(segment, 1f, 1f));
+                        Line(p, SidePoint(segment, 0f, -1f), SidePoint(segment, 1f, -1f));
+                    }
                     // Магистраль: двойная разделительная полоса и бегущий пунктир по обеим полосам движения.
                     if (_game.IsRushHourRoad(road.Id)) DrawHighwayMarks(p, a, b, dir, normal, half, i);
                     // Спокойные дороги: одна неяркая белая разметка у всех.
-                    else if (CalmRoads) DrawLaneMark(p, segment, Fade(new Color(1f, 1f, 1f, 0.42f)));
+                    else if (CalmRoads) DrawLaneMark(p, segment, Fade(new Color(1f, 1f, 1f, PlainPublicRoads && IsPublicRoad(owner) ? 0.30f : 0.42f)));
                     // Разметка: асфальт — белый пунктир, бетон — жёлтая осевая.
                     else if (road.Resource == Resource.Asphalt) DrawLaneMark(p, segment, Fade(new Color(1f, 1f, 1f, 0.85f)));
                     else if (road.Resource == Resource.Concrete) DrawLaneMark(p, segment, Fade(new Color(1f, 0.82f, 0.25f, 0.85f)));
@@ -1720,49 +1770,61 @@ namespace CityHighways.Presentation
                 {
                     // Свободный участок — неоновая обводка цвета ресурса: у активной — яркая и толще,
                     // у заблокированной — серая и тонкая.
-                    if (CalmRoads)
+                    if (DashedFreeRoads)
                     {
-                        p.strokeColor = Fade(new Color(baseColor.r, baseColor.g, baseColor.b, look == RoadLook.Active ? 0.55f : look == RoadLook.Blocked ? 0.18f : 0.35f));
-                        p.lineWidth = look == RoadLook.Active ? 1.5f : 1.1f;
-                    }
-                    else if (look == RoadLook.Active)
-                    {
-                        var bright = Color.Lerp(baseColor, Color.white, 0.35f);
-                        p.strokeColor = Fade(new Color(bright.r, bright.g, bright.b, 1f));
-                        p.lineWidth = 2.2f;
-                    }
-                    else if (look == RoadLook.Blocked)
-                    {
-                        var muted = Color.Lerp(baseColor, new Color(0.5f, 0.5f, 0.52f), 0.6f);
-                        p.strokeColor = Fade(new Color(muted.r, muted.g, muted.b, 0.35f));
-                        p.lineWidth = 1.2f;
+                        // Магнат: дорогу ещё нужно построить — пунктир по оси (тёмная подложка — чтобы читался
+                        // и на светлых полях). Заблокированная — бледнее.
+                        float strength = look == RoadLook.Blocked ? 0.45f : 1f;
+                        DrawDashes(p, a, b, 4.2f, Fade(new Color(0.05f, 0.06f, 0.08f, 0.45f * strength)));
+                        DrawDashes(p, a, b, 2.2f, Fade(new Color(0.93f, 0.95f, 1f, 0.92f * strength)));
                     }
                     else
                     {
-                        p.strokeColor = Fade(new Color(baseColor.r, baseColor.g, baseColor.b, 0.85f));
-                        p.lineWidth = 1.6f;
+                        if (CalmRoads)
+                        {
+                            p.strokeColor = Fade(new Color(baseColor.r, baseColor.g, baseColor.b, look == RoadLook.Active ? 0.55f : look == RoadLook.Blocked ? 0.18f : 0.35f));
+                            p.lineWidth = look == RoadLook.Active ? 1.5f : 1.1f;
+                        }
+                        else if (look == RoadLook.Active)
+                        {
+                            var bright = Color.Lerp(baseColor, Color.white, 0.35f);
+                            p.strokeColor = Fade(new Color(bright.r, bright.g, bright.b, 1f));
+                            p.lineWidth = 2.2f;
+                        }
+                        else if (look == RoadLook.Blocked)
+                        {
+                            var muted = Color.Lerp(baseColor, new Color(0.5f, 0.5f, 0.52f), 0.6f);
+                            p.strokeColor = Fade(new Color(muted.r, muted.g, muted.b, 0.35f));
+                            p.lineWidth = 1.2f;
+                        }
+                        else
+                        {
+                            p.strokeColor = Fade(new Color(baseColor.r, baseColor.g, baseColor.b, 0.85f));
+                            p.lineWidth = 1.6f;
+                        }
+                        SegmentPath(p, segment, 0f, Vector2.zero);
+                        p.Stroke();
                     }
-                    SegmentPath(p, segment, 0f, Vector2.zero);
-                    p.Stroke();
                 }
 
-                // Мост — перила со столбиками.
-                if (isBridge)
+                // Мост — перила со столбиками (у пунктирного, ещё не построенного моста перил нет).
+                if (isBridge && (isBuilt || !DashedFreeRoads))
                 {
                     float railOffset = _use3D ? half - 1.2f : half + 2.5f;
+                    float railSide = half > 0.01f ? railOffset / half : 1f;
                     var rail = new Color(0.66f, 0.82f, 1f, isBuilt ? 0.95f : look == RoadLook.Blocked ? 0.3f : 0.6f);
                     p.strokeColor = Fade(rail);
                     p.lineWidth = 1.8f;
-                    Line(p, a + normal * railOffset, b + normal * railOffset);
-                    Line(p, a - normal * railOffset, b - normal * railOffset);
+                    Line(p, SidePoint(segment, 0f, railSide), SidePoint(segment, 1f, railSide));
+                    Line(p, SidePoint(segment, 0f, -railSide), SidePoint(segment, 1f, -railSide));
                     int posts = Mathf.Max(2, Mathf.RoundToInt(segment.Length / 6f));
                     for (int k = 0; k <= posts; k++)
                     {
-                        var point = Vector2.Lerp(a, b, k / (float)posts);
+                        float t = k / (float)posts;
                         p.fillColor = Fade(rail);
-                        CirclePath(p, point + normal * railOffset, 1.2f);
+                        CirclePath(p, SidePoint(segment, t, railSide), 1.2f);
                         p.Fill();
-                        CirclePath(p, point - normal * railOffset, 1.2f);
+                        CirclePath(p, SidePoint(segment, t, -railSide), 1.2f);
                         p.Fill();
                     }
                 }
@@ -2339,8 +2401,65 @@ namespace CityHighways.Presentation
 
         // ================================================================== Геометрия
 
+        /// <summary>
+        /// Точка участка: t — доля длины (0 — начало, 1 — конец), side — доля полуширины (+1 — край со стороны
+        /// +нормали, −1 — со стороны −нормали). У участка на земле — по его трапеции.
+        /// </summary>
+        static Vector2 SidePoint(BoardLayout.Segment segment, float t, float side)
+        {
+            float k = (side + 1f) * 0.5f;
+            if (segment.Quad)
+                return Vector2.LerpUnclamped(Vector2.Lerp(segment.Q0, segment.Q1, t), Vector2.Lerp(segment.Q3, segment.Q2, t), k);
+            float rad = segment.Angle * Mathf.Deg2Rad;
+            var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+            var normal = new Vector2(-dir.y, dir.x);
+            float half = BoardLayout.RoadThickness * s_roadWidthScale / 2f;
+            return segment.Center + dir * segment.Length * (t - 0.5f) + normal * half * side;
+        }
+
+        /// <summary>Пунктир от a до b: штрихи по 7 px через 5 px, концы скруглены.</summary>
+        static void DrawDashes(Painter2D p, Vector2 a, Vector2 b, float width, Color color)
+        {
+            var d = b - a;
+            float length = d.magnitude;
+            if (length < 0.5f) return;
+            var dir = d / length;
+            const float dash = 7f, gap = 5f;
+            p.strokeColor = color;
+            p.lineWidth = width;
+            p.BeginPath();
+            // Штрихи центрируются на участке, чтобы концы участка не обрезали их кое-как.
+            int count = Mathf.Max(1, Mathf.FloorToInt((length + gap) / (dash + gap)));
+            float used = count * dash + (count - 1) * gap;
+            float start = (length - used) * 0.5f;
+            if (used > length) { start = 0f; }
+            for (int i = 0; i < count; i++)
+            {
+                float from = start + i * (dash + gap);
+                float to = Mathf.Min(length, from + dash);
+                p.MoveTo(a + dir * from);
+                p.LineTo(a + dir * to);
+            }
+            p.Stroke();
+        }
+
         static void SegmentPath(Painter2D p, BoardLayout.Segment segment, float inflate, Vector2 offset)
         {
+            if (segment.Quad)
+            {
+                // Трапеция на земле, раздутая на inflate пикселей по длине и поперёк.
+                var alongL = (segment.Q1 - segment.Q0).normalized;
+                var alongR = (segment.Q2 - segment.Q3).normalized;
+                var acrossS = (segment.Q0 - segment.Q3).normalized;
+                var acrossE = (segment.Q1 - segment.Q2).normalized;
+                p.BeginPath();
+                p.MoveTo(segment.Q0 + offset + (-alongL + acrossS) * inflate);
+                p.LineTo(segment.Q1 + offset + (alongL + acrossE) * inflate);
+                p.LineTo(segment.Q2 + offset + (alongR - acrossE) * inflate);
+                p.LineTo(segment.Q3 + offset + (-alongR - acrossS) * inflate);
+                p.ClosePath();
+                return;
+            }
             float rad = segment.Angle * Mathf.Deg2Rad;
             var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
             var normal = new Vector2(-dir.y, dir.x);

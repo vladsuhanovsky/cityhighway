@@ -71,6 +71,8 @@ namespace CityHighways.Presentation
         [NonSerialized] public bool practice;
         /// <summary>Показать обучение магната в этой партии, даже если оно уже пройдено.</summary>
         [NonSerialized] public bool forceMagnateTutorial;
+        /// <summary>Обучение магната — на маленькой учебной карте (CityGenerator.GenerateTutorial), партия короче.</summary>
+        [NonSerialized] public bool magnateTutorialMap;
 
         /// <summary>Карта для меню: путь в Resources, название и одна строка описания.</summary>
         public sealed class MapChoice
@@ -143,19 +145,21 @@ namespace CityHighways.Presentation
 
         public static readonly string[] DefaultNames = { "Аня", "Борис", "Вера", "Глеб", "Даша" };
 
-        /// <summary>Обучение магната: вы и два бота, лёгкая сложность, наставник с первого раунда.</summary>
+        /// <summary>Обучение магната: учебная карта, вы и один бот, лёгкая сложность, наставник с первого раунда.</summary>
         public static GameSetup CreateMagnatePractice(GameSetup stored, string playerName)
         {
             var setup = new GameSetup
             {
-                magnate = true, practice = true, forceMagnateTutorial = true, magnateDifficulty = 0,
+                magnate = true, practice = true, forceMagnateTutorial = true, magnateTutorialMap = true, magnateDifficulty = 0,
                 sound = stored?.sound ?? true, magnateLayers = stored?.magnateLayers ?? 109, magnateTutorialDone = stored?.magnateTutorialDone ?? false
             };
             setup.players.Add(new PlayerSlot(string.IsNullOrWhiteSpace(playerName) ? "Вы" : playerName, false) { character = 0 });
             setup.players.Add(new PlayerSlot("Борис", true));
-            setup.players.Add(new PlayerSlot("Даша", true));
             return setup;
         }
+
+        /// <summary>Учебная партия магната: 8 раундов и по 2 фуры — короче и спокойнее обычной.</summary>
+        public const int TutorialMagnateRounds = 8, TutorialMagnateTrucks = 2;
 
         /// <summary>Тренировочный кооператив: вы и два умных бота-союзника на карте Москвы, обычные правила, без персонажей.</summary>
         public static GameSetup CreateCoopPractice(GameSetup stored, string playerName)

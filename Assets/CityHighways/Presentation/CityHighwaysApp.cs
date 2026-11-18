@@ -249,13 +249,18 @@ namespace CityHighways.Presentation
             MagnateView view = null;
             var steps = new List<(string, Action)>
             {
-                ("Прокладываем реки и намечаем кварталы…", () => city = GenerateCheckedCity(seed)),
+                ("Прокладываем реки и намечаем кварталы…", () => city = setup.magnateTutorialMap ? CityGenerator.GenerateTutorial() : GenerateCheckedCity(seed)),
                 ("Расставляем аэропорты, вокзалы и порты…", () =>
                 {
                     var config = MagnateConfig.For((MagnateDifficulty)Mathf.Clamp(setup.magnateDifficulty, 0, 3));
                     // Против ботов первый ход — по жребию. Кроме партии с обучением: наставник ведёт с хода игрока.
                     bool coach = setup.forceMagnateTutorial || (!setup.magnateTutorialDone && bots.Any(b => !b));
                     config.RandomFirstPlayer = bots.Any(b => b) && !coach;
+                    if (setup.magnateTutorialMap)
+                    {
+                        config.Rounds = GameSetup.TutorialMagnateRounds;
+                        config.TrucksPerPlayer = GameSetup.TutorialMagnateTrucks;
+                    }
                     game = new LogisticsGame(city, names, bots, seed, config);
                 }),
                 ("Рисуем карту и дороги…", () =>

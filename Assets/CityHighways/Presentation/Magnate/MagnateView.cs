@@ -99,7 +99,10 @@ namespace CityHighways.Presentation
             _layersPanel.style.alignItems = Align.FlexEnd;
             var layersButton = Ui.Button("Слои карты", () =>
             {
-                Ui.Show(_layersList, _layersList.style.display == DisplayStyle.None);
+                bool open = _layersList.style.display == DisplayStyle.None;
+                // Справа под кнопкой — и панель грузов: открываем слои — грузы закрываются.
+                if (open && (_popupKind == "cargo" || _popupKind == "cargoDetail")) ClosePopup(false);
+                Ui.Show(_layersList, open);
                 _app.Sound.Play(Sfx.Click, 0.4f);
             }, ButtonKind.Secondary, 13f);
             layersButton.style.width = 130f;
@@ -224,6 +227,10 @@ namespace CityHighways.Presentation
             _map.TiltEnabled = _app.Display == null || _app.Display.tiltedBoard;
             // Спокойная карта магната: одно покрытие дорог, крупные фишки, значки хабов, фокус под курсором.
             _map.CalmRoads = true;
+            // Дороги лежат на наклонённой земле, городские — без подсветки, ещё не построенные — пунктиром.
+            _map.GroundRoads = true;
+            _map.PlainPublicRoads = true;
+            _map.DashedFreeRoads = true;
             _map.LocationScale = 1.3f;
             _map.HubIcons = true;
             _map.FocusExempt = id => _game.HubAt(id) != null;
@@ -926,7 +933,8 @@ namespace CityHighways.Presentation
             var display = _app.Display;
             _map.CameraTiltDegrees = display != null ? display.tiltDegrees : 38f;
             if (display == null || display.city3D)
-                _city3D = City3DScene.TryCreate(_game.Map, display != null ? Mathf.Clamp(display.city3DQuality, 0, 2) : 2);
+                _city3D = City3DScene.TryCreate(_game.Map, display != null ? Mathf.Clamp(display.city3DQuality, 0, 2) : 2,
+                    _game.Hubs.Select(h => h.LocationId));
             bool on = _city3D != null;
             _map.Use3D = on;
             var city = _city3D;

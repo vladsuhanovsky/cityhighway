@@ -17,6 +17,23 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void TutorialCity_IsSmallWithAllHubKinds()
+        {
+            // Учебная карта обучения магната: маленькая, по одному хабу каждого вида, одинаковая при каждом запуске.
+            var city = CityGenerator.GenerateTutorial();
+            Assert.AreEqual("Учебный город", city.Map.Name);
+            Assert.That(city.Map.Locations.Count, Is.InRange(12, 16));
+            Assert.AreEqual(1, city.Hubs.Count(h => h.Kind == HubKind.Airport));
+            Assert.AreEqual(1, city.Hubs.Count(h => h.Kind == HubKind.Station));
+            Assert.AreEqual(1, city.Hubs.Count(h => h.Kind == HubKind.Port));
+            Assert.IsEmpty(CityGenerator.CheckWater(city.Map));
+            Assert.IsEmpty(city.Map.Validate(6));
+            var again = CityGenerator.GenerateTutorial();
+            Assert.AreEqual(city.Seed, again.Seed);
+            Assert.IsTrue(city.Map.Roads.Count > city.PublicRoads.Count, "есть дороги, которые можно построить");
+        }
+
+        [Test]
         public void GeneratedRivers_AreAlreadySmoothed()
         {
             // В карту уходят сглаженные русла (десятки точек), а не редкие опорные: тогда 3D-вода, берега

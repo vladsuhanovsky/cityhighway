@@ -29,7 +29,21 @@ namespace CityHighways.Presentation
             public Vector2 Center;
             public float Length;
             public float Angle;
+            /// <summary>
+            /// Участок лежит на земле 3D-города (GroundQuads): углы — проекции точек мира, поэтому дальний край
+            /// уже ближнего, как у местности. Q0→Q1 — край со стороны −нормали на экране, Q3→Q2 — со стороны +нормали.
+            /// </summary>
+            public bool Quad;
+            public Vector2 Q0, Q1, Q2, Q3;
         }
+
+        /// <summary>
+        /// Дороги лежат на наклонённой земле (магнат): в перспективе участки — проекции прямоугольников мира,
+        /// а не плоские полосы постоянной ширины на экране.
+        /// </summary>
+        public bool GroundQuads;
+        /// <summary>Промежуток между участками дороги на земле, метры сцены.</summary>
+        const float GroundGap = 0.035f;
 
         readonly CityMap _map;
         readonly Dictionary<string, Vector2> _positions = new Dictionary<string, Vector2>();
@@ -393,6 +407,11 @@ namespace CityHighways.Presentation
 
         public List<Segment> GetSegments(Road road)
         {
+            if (Perspective && GroundQuads)
+            {
+                var ground = GroundSegments(road);
+                if (ground != null) return ground;
+            }
             GetTrack(road, out var start, out var end);
             var delta = end - start;
             var direction = delta.normalized;
@@ -408,6 +427,48 @@ namespace CityHighways.Presentation
                     Center = start + direction * (length / 2f + i * (length + SegmentGap)),
                     Length = length,
                     Angle = angle
+                });
+            }
+            return segments;
+        }
+
+        /// <summary>Участки на земле: делим отрезок мира между рукавами перекрёстков и проецируем углы на экран.</summary>
+        List<Segment> GroundSegments(Road road)
+        {
+            var la = _map.GetLocation(road.A);
+            var lb = _map.GetLocation(road.B);
+            if (la == null || lb == null) return null;
+            var wa = World(la.X, la.Y);
+            var wb = World(lb.X, lb.Y);
+            var along = wb - wa;
+            float total = along.magnitude;
+            if (total < JunctionArm * 2.5f) return null;
+            along /= total;
+            wa += along * JunctionArm;
+            total -= JunctionArm * 2f;
+            var across = new Vector3(-along.z, 0f, along.x) * (City3DScene.RoadWidth / 2f);
+            int count = Mathf.Max(1, road.Length);
+            float gap = count > 1 ? Mathf.Min(GroundGap, total * 0.1f / (count - 1)) : 0f;
+            float length = (total - gap * (count - 1)) / count;
+            var segments = new List<Segment>(count);
+            for (int i = 0; i < count; i++)
+            {
+                var s = wa + along * (i * (length + gap));
+                var e = s + along * length;
+                var ps = WorldToScreen(s);
+                var pe = WorldToScreen(e);
+                var d = pe - ps;
+                segments.Add(new Segment
+                {
+                    Center = (ps + pe) * 0.5f,
+                    Length = Mathf.Max(1f, d.magnitude),
+                    Angle = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg,
+                    Quad = true,
+                    // Мировая «поперёк» (−z, x) на экране смотрит в сторону −нормали участка.
+                    Q0 = WorldToScreen(s + across),
+                    Q1 = WorldToScreen(e + across),
+                    Q2 = WorldToScreen(e - across),
+                    Q3 = WorldToScreen(s - across)
                 });
             }
             return segments;

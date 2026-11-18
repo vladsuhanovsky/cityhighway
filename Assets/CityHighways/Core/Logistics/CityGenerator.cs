@@ -80,14 +80,48 @@ namespace CityHighways.Core
             public HubKind? Hub;
         }
 
+        /// <summary>Параметры города: обычный (по умолчанию) или маленький учебный.</summary>
+        sealed class Layout
+        {
+            public int Airports = 2, Stations = 3, Ports = -1, Centers = 3, MinCenters = 2, Target = 40, TargetJitter = 6, MinSpots = 34;
+            /// <summary>Доля поля под город: 1 — во всё поле, меньше — компактный город посередине, вокруг поля и леса.</summary>
+            public float Spread = 1f;
+            public string Name;
+        }
+
+        static readonly Layout Standard = new Layout();
+
+        /// <summary>
+        /// Учебный город для обучения магната: 13–15 мест компактно посередине поля, по одному аэропорту, вокзалу
+        /// и порту, одна река. Зерно фиксированное — карта всегда одна и та же (если вдруг не сложилась — следующее).
+        /// </summary>
+        static readonly Layout Tutorial = new Layout
+        {
+            Airports = 1, Stations = 1, Ports = 1, Centers = 2, MinCenters = 2, Target = 13, TargetJitter = 3, MinSpots = 12,
+            Spread = 0.62f, Name = "Учебный город"
+        };
+
+        public const int TutorialSeed = 20261118;
+
         public static GeneratedCity Generate(int seed)
         {
             for (int attempt = 0; attempt < 60; attempt++)
             {
-                var city = TryGenerate(seed + attempt * 7919);
+                var city = TryGenerate(seed + attempt * 7919, Standard);
                 if (city != null) return city;
             }
             throw new InvalidOperationException("Не удалось сгенерировать город.");
+        }
+
+        /// <summary>Маленький учебный город (всегда один и тот же). Не сложился ни один вариант — обычный город.</summary>
+        public static GeneratedCity GenerateTutorial()
+        {
+            for (int attempt = 0; attempt < 400; attempt++)
+            {
+                var city = TryGenerate(TutorialSeed + attempt * 7919, Tutorial);
+                if (city != null && city.Hubs.Count >= 3) return city;
+            }
+            return Generate(TutorialSeed);
         }
 
         // ================================================================== Проверка воды
@@ -225,7 +259,7 @@ namespace CityHighways.Core
 
         // ================================================================== Генерация
 
-        static GeneratedCity TryGenerate(int seed)
+        static GeneratedCity TryGenerate(int seed, Layout layout)
         {
             var rng = new Random(seed);
             float R() => (float)rng.NextDouble();
@@ -287,6 +321,9 @@ namespace CityHighways.Core
                 }
                 return true;
             }
+            // Насколько место далеко от центра относительно границы города (1 — на границе).
+            float SpreadOf(P p) => (float)Math.Sqrt(Math.Pow((p.X - cx) / (0.42f * W * layout.Spread), 2) + Math.Pow((p.Y - cy) / (0.46f * H * layout.Spread), 2));
+            bool compact = layout.Spread < 0.999f;
             void Add(P p, string name, string district, HubKind? hub)
             {
                 spots.Add(new Spot { At = p, Name = name, District = district, Hub = hub });
@@ -295,13 +332,15 @@ namespace CityHighways.Core
 
             // Аэропорты — по разные стороны города, на окраине.
             float a0 = R() * 6.2832f;
-            for (int k = 0; k < 2; k++)
+            for (int k = 0; k < layout.Airports; k++)
             {
                 bool placed = false;
                 for (int attempt = 0; attempt < 60 && !placed; attempt++)
                 {
-                    float a = a0 + k * 3.1416f + (R() - 0.5f) * 0.9f, rad = 0.40f + 0.06f * R();
-                    var p = new P(W / 2f + (float)Math.Cos(a) * rad * W, H / 2f + (float)Math.Sin(a) * rad * H * 1.05f);
+                    float a = a0 + k * 3.1416f + (R() - 0.5f) * 0.9f, rad = (0.40f + 0.06f * R()) * layout.Spread;
+                    var p = compact
+                        ? new P(cx + (float)Math.Cos(a) * rad * W, cy + (float)Math.Sin(a) * rad * H * 1.05f)
+                        : new P(W / 2f + (float)Math.Cos(a) * rad * W, H / 2f + (float)Math.Sin(a) * rad * H * 1.05f);
                     p = new P(Math.Min(Math.Max(p.X, 60f), W - 60f), Math.Min(Math.Max(p.Y, 50f), H - 60f));
                     float dx = p.X - W / 2f, dy = p.Y - H / 2f;
                     string name = Math.Abs(dx) / W > Math.Abs(dy) / H ? (dx > 0 ? "Аэропорт-Восток" : "Аэропорт-Запад") : (dy > 0 ? "Аэропорт-Юг" : "Аэропорт-Север");
@@ -314,12 +353,12 @@ namespace CityHighways.Core
             // Вокзалы — кольцом вокруг центра.
             var stations = StationNames.OrderBy(_ => rng.Next()).ToList();
             float s0 = R() * 6.2832f;
-            for (int k = 0; k < 3; k++)
+            for (int k = 0; k < layout.Stations; k++)
             {
                 bool placed = false;
                 for (int attempt = 0; attempt < 60 && !placed; attempt++)
                 {
-                    float a = s0 + k * 6.2832f / 3f + (R() - 0.5f) * 0.8f, rad = 0.15f + 0.10f * R();
+                    float a = s0 + k * 6.2832f / layout.Stations + (R() - 0.5f) * 0.8f, rad = (0.15f + 0.10f * R()) * Math.Min(1f, layout.Spread * 1.25f);
                     var p = new P(cx + (float)Math.Cos(a) * rad * W, cy + (float)Math.Sin(a) * rad * H * 1.4f);
                     if (Free(p, stations[k], 80f)) { Add(p, stations[k], "vokzaly", HubKind.Station); placed = true; }
                 }
@@ -327,7 +366,7 @@ namespace CityHighways.Core
             }
 
             // Речные порты — у главной реки, не в самом центре.
-            int ports = R() < 0.5f ? 1 : 2;
+            int ports = layout.Ports > 0 ? layout.Ports : R() < 0.5f ? 1 : 2;
             var mainLine = lines[0];
             for (int k = 0; k < ports; k++)
             {
@@ -340,6 +379,7 @@ namespace CityHighways.Core
                     float s = R() < 0.5f ? 1f : -1f, offset = 48f + 12f * R();
                     var p = new P(a.X - dy / len * offset * s, a.Y + dx / len * offset * s);
                     if (Math.Sqrt(Math.Pow((p.X - cx) / W, 2) + Math.Pow((p.Y - cy) / H, 2)) < 0.12) continue;
+                    if (compact && SpreadOf(p) > 0.95f) continue;
                     if (Free(p, PortNames[k], 80f)) { Add(p, PortNames[k], "port", HubKind.Port); placed = true; }
                 }
                 if (!placed) return null;
@@ -348,27 +388,28 @@ namespace CityHighways.Core
             // Центр.
             var centers = CenterNames.OrderBy(_ => rng.Next()).ToList();
             int centerCount = 0;
-            for (int attempt = 0; attempt < 300 && centerCount < 3; attempt++)
+            for (int attempt = 0; attempt < 300 && centerCount < layout.Centers; attempt++)
             {
                 float a = R() * 6.2832f, rad = R() * 0.085f;
                 var p = new P(cx + (float)Math.Cos(a) * rad * W, cy + (float)Math.Sin(a) * rad * H * 1.5f);
                 if (Free(p, centers[centerCount], 78f)) { Add(p, centers[centerCount], "center", null); centerCount++; }
             }
-            if (centerCount < 2) return null;
+            if (centerCount < layout.MinCenters) return null;
 
             // Остальные — гуще к центру.
             var pool = Names.OrderBy(_ => rng.Next()).ToList();
-            int target = 40 + rng.Next(6);
+            int target = layout.Target + rng.Next(layout.TargetJitter);
             for (int attempt = 0; attempt < 6000 && spots.Count < target && pool.Count > 0; attempt++)
             {
                 var p = new P(45f + R() * (W - 90f), 40f + R() * (H - 90f));
-                float e = (float)Math.Sqrt(Math.Pow((p.X - cx) / (0.42f * W), 2) + Math.Pow((p.Y - cy) / (0.46f * H), 2));
+                float e = SpreadOf(p);
+                if (compact && e > 1f) continue;
                 float keep = e < 0.6f ? 1f : e < 1f ? 0.7f : 0.3f;
                 if (R() > keep) continue;
                 string name = pool[pool.Count - 1];
                 if (Free(p, name, e < 0.7f ? 84f : 96f)) { Add(p, name, null, null); pool.RemoveAt(pool.Count - 1); }
             }
-            if (spots.Count < 34) return null;
+            if (spots.Count < layout.MinSpots) return null;
 
             // ---- Районы: центр, хабы, шесть секторов по сторонам света.
             foreach (var spot in spots)
@@ -516,7 +557,7 @@ namespace CityHighways.Core
                 roads.Add(new Road("r" + (e + 1).ToString("000"), ids[i], ids[j], length, resource));
             }
 
-            var map = new CityMap(CityFirst[rng.Next(CityFirst.Length)] + CityLast[rng.Next(CityLast.Length)],
+            var map = new CityMap(layout.Name ?? CityFirst[rng.Next(CityFirst.Length)] + CityLast[rng.Next(CityLast.Length)],
                 districts, locations, roads, new Contract[0]);
             // В карту — уже сглаженные русла (по ним проверялись места и дороги): 3D-вода, берега на рельефе и
             // застройка берут точки как есть. Раньше сюда шли редкие опорные точки — 3D сглаживало их в дугу,

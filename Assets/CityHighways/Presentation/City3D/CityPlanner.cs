@@ -16,6 +16,8 @@ namespace CityHighways.Presentation
         public const float FieldW = 1400f, FieldH = 780f;
         /// <summary>Пикселей поля на метр сцены (1400 / 14 = 780 / 7.8 = 100).</summary>
         public const float PixelsPerUnit = 100f;
+        /// <summary>Радиус (пиксели поля) свободной земли вокруг хаба магната: там встаёт вокзал или аэропорт.</summary>
+        public const float HubClearance = 52f;
 
         public struct Building
         {
@@ -122,12 +124,21 @@ namespace CityHighways.Presentation
             : kind == DecalKind.Dirt || kind == DecalKind.Wear ? 1 : 2;
 
         /// <param name="density">0.4–1: сколько зданий оставить (качество графики).</param>
-        public static Plan Build(CityMap map, float density = 1f)
+        /// <param name="hubSites">Станции с комплексами хабов: в радиусе HubClearance вокруг них — ни домов, ни деревьев, ни площадок.</param>
+        public static Plan Build(CityMap map, float density = 1f, IEnumerable<string> hubSites = null)
         {
             var plan = new Plan();
             Vector2 Field(float x, float y) => new Vector2(x * FieldW, y * FieldH);
 
             var points = map.Locations.ToDictionary(l => l.Id, l => Field(l.X, l.Y));
+            var hubs = hubSites == null ? new List<Vector2>()
+                : hubSites.Where(points.ContainsKey).Select(id => points[id]).ToList();
+            bool NearHub(Vector2 p)
+            {
+                foreach (var h in hubs)
+                    if ((p - h).sqrMagnitude < HubClearance * HubClearance) return true;
+                return false;
+            }
             var roads = new List<Seg>();
             foreach (var r in map.Roads)
                 if (points.TryGetValue(r.A, out var a) && points.TryGetValue(r.B, out var b)) roads.Add(new Seg { A = a, B = b });
@@ -229,6 +240,7 @@ namespace CityHighways.Presentation
                 if (Nearest(p, roads) < clearance || Nearest(top, roads) < 10f + heightPx * 0.15f) continue;
                 if (NearestPlace(p) < 26f + heightPx * 0.2f || NearestPlace(top) < 22f) continue;
                 if (Nearest(p, river) < 24f + Mathf.Max(w, d) * 0.4f || InPark(p, 6f)) continue;
+                if (NearHub(p)) continue;
 
                 float angle = (Hash(ix, iy, 14) < 0.5f ? 0f : 90f) + (Hash(ix, iy, 15) - 0.5f) * 8f;
                 plan.Buildings.Add(new Building
@@ -330,6 +342,7 @@ namespace CityHighways.Presentation
                 if (Nearest(p, river) < radius + 16f || !FreeOfBuildings(p, radius * 0.7f + 10f)) continue;
                 if (field && InPark(p, radius)) continue;
                 if (ringRoad && e > 0.95f && e < 1.07f) continue;
+                if (NearHub(p)) continue;
 
                 var owner = NearestLocation(p);
                 float angle = (Hash(ix, iy, 76) < 0.5f ? 0f : 90f) + (Hash(ix, iy, 77) - 0.5f) * (field ? 16f : 8f);
@@ -353,6 +366,7 @@ namespace CityHighways.Presentation
             void AddTree(Vector2 p, float size, int salt, bool forest)
             {
                 if (Nearest(p, roads) < 11f || NearestPlace(p) < 17f || Nearest(p, river) < 17f || !FreeOfBuildings(p, 11f) || OnPaved(p)) return;
+                if (NearHub(p)) return;
                 var location = NearestLocation(p);
                 float pick = Hash((int)p.x, (int)p.y, salt);
                 var kind = forest ? (pick < 0.45f ? CityShapes.Tree.Spruce : CityShapes.Tree.Round)

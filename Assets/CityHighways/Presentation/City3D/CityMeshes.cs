@@ -265,7 +265,13 @@ namespace CityHighways.Presentation
     {
         public enum Kind
         {
-            Block, Parapet, Gable, Hip, Stepped, Spire, Round, Landmark, LBlock, Sawtooth, Factory, Hangar, Warehouse, Panel
+            Block, Parapet, Gable, Hip, Stepped, Spire, Round, Landmark, LBlock, Sawtooth, Factory, Hangar, Warehouse, Panel,
+            /// <summary>Вокзал: центральный зал под двускатной крышей, два крыла, часовая башня со шпилем, колонны у входа.</summary>
+            Station,
+            /// <summary>Аэровокзал: длинный стеклянный терминал, навес над подъездом, пирс к самолётам.</summary>
+            Terminal,
+            /// <summary>Диспетчерская вышка аэропорта: ствол и стеклянная кабина наверху.</summary>
+            ControlTower
         }
 
         /// <summary>
@@ -382,6 +388,63 @@ namespace CityHighways.Presentation
                 case Kind.Warehouse:
                     b.Box(0f, 0f, w, d, 0f, h, Facade(CityAtlas.Row.Industrial), Roof(CityAtlas.RoofLight));
                     break;
+                case Kind.Station:
+                {
+                    // Фасад смотрит на −Z (к станции и дороге). Тёплый камень — как у старых вокзалов.
+                    var stone = CityAtlas.Uv(CityAtlas.Row.Mid, random.NextDouble() < 0.5 ? 4 : 5);
+                    var copper = Roof(CityAtlas.RoofCopper);
+                    float hallW = w * 0.46f, wingW = w * 0.27f;
+                    b.Box(0f, 0f, hallW, d, 0f, h, stone, flatRoof);
+                    b.GableRoof(0f, 0f, hallW * 1.04f, d * 1.04f, h, d * 0.42f, copper, stone);
+                    for (int s = -1; s <= 1; s += 2)
+                    {
+                        b.Box(s * (hallW + wingW) / 2f, d * 0.06f, wingW, d * 0.82f, 0f, h * 0.72f, stone, flatRoof);
+                        b.HipRoof(s * (hallW + wingW) / 2f, d * 0.06f, wingW * 1.04f, d * 0.86f, h * 0.72f, d * 0.22f, Roof(CityAtlas.RoofBrown));
+                    }
+                    // Часовая башня над входом и золотой шпиль.
+                    float tower = Mathf.Min(w, d) * 0.3f;
+                    b.Box(0f, -d * 0.36f, tower, tower, 0f, h * 2.1f, stone, copper);
+                    b.Box(0f, -d * 0.36f, tower * 1.12f, tower * 1.12f, h * 2.1f, h * 0.12f, stone, copper);
+                    b.Cone(0f, -d * 0.36f, tower * 0.42f, h * 2.22f, h * 0.9f, 6, CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Spire));
+                    // Колоннада у входа.
+                    var column = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
+                    for (int i = -2; i <= 2; i++)
+                        if (i != 0) b.Prism(i * hallW * 0.17f, -d * 0.56f, d * 0.035f, 0f, h * 0.8f, 6, column, column);
+                    b.Box(0f, -d * 0.56f, hallW * 0.82f, d * 0.12f, h * 0.8f, h * 0.08f, stone, copper);
+                    break;
+                }
+                case Kind.Terminal:
+                {
+                    var glassFacade = CityAtlas.Uv(CityAtlas.Row.Tall, random.Next(3));
+                    var metal = Roof(CityAtlas.RoofMetal);
+                    var light = Roof(CityAtlas.RoofLight);
+                    // Двухъярусный терминал: стеклянный корпус и широкая светлая кровля с выносом.
+                    b.Box(0f, 0f, w, d, 0f, h, glassFacade, metal);
+                    b.Box(0f, 0f, w * 1.04f, d * 1.18f, h, h * 0.12f, light, light);
+                    b.Box(0f, d * 0.05f, w * 0.5f, d * 0.6f, h * 1.12f, h * 0.35f, glassFacade, metal);
+                    // Навес над подъездом (−Z) на тонких опорах.
+                    var post = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
+                    b.Box(0f, -d * 0.72f, w * 0.8f, d * 0.3f, h * 0.55f, h * 0.06f, light, light);
+                    for (int i = -3; i <= 3; i++)
+                        b.Prism(i * w * 0.12f, -d * 0.82f, d * 0.02f, 0f, h * 0.55f, 4, post, post);
+                    // Пирс с телетрапами к самолётам (+Z).
+                    b.Box(0f, d * 0.95f, w * 0.12f, d * 0.9f, 0f, h * 0.55f, glassFacade, metal);
+                    for (int s = -1; s <= 1; s += 2)
+                        b.Box(s * w * 0.12f, d * 1.25f, w * 0.14f, d * 0.12f, h * 0.25f, h * 0.18f, light, light);
+                    break;
+                }
+                case Kind.ControlTower:
+                {
+                    float r = Mathf.Min(w, d) / 2f;
+                    var concrete = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeConcrete);
+                    var glassFacade = CityAtlas.Uv(CityAtlas.Row.Tall, 2);
+                    b.Prism(0f, 0f, r * 0.45f, 0f, h * 0.82f, 8, concrete, concrete);
+                    b.Prism(0f, 0f, r * 0.75f, h * 0.82f, h * 0.04f, 8, concrete, concrete);
+                    b.Prism(0f, 0f, r, h * 0.86f, h * 0.1f, 8, glassFacade, Roof(CityAtlas.RoofDark), r * 1.08f);
+                    b.Prism(0f, 0f, r * 1.08f, h * 0.96f, h * 0.03f, 8, Roof(CityAtlas.RoofDark), Roof(CityAtlas.RoofDark), r * 0.5f);
+                    b.Prism(0f, 0f, r * 0.06f, h * 0.99f, h * 0.12f, 4, Roof(CityAtlas.RoofMetal), Roof(CityAtlas.RoofMetal));
+                    break;
+                }
                 case Kind.Panel:
                     // Панельный дом: длинная плита, лестничные выходы на крышу.
                     b.Box(0f, 0f, w, d, 0f, h, CityAtlas.Uv(CityAtlas.Row.Mid, col), flatRoof);
