@@ -21,7 +21,19 @@ namespace CityHighways.Presentation
         /// <summary>Панель уезжает: тот же «вжух» вниз.</summary>
         Close,
         /// <summary>Карусель встала на карточку: тихий щелчок.</summary>
-        Tick
+        Tick,
+        /// <summary>Везунчик: монетка подброшена и звенит, падая на стол.</summary>
+        CharLucky,
+        /// <summary>Прораб: три удара молотка по гвоздю.</summary>
+        CharForeman,
+        /// <summary>Страховщик: два щелчка замков портфеля.</summary>
+        CharInsurer,
+        /// <summary>Сборщик пошлин: касса «дзынь» и шорох монет в мешке.</summary>
+        CharTollman,
+        /// <summary>Чиновник: тяжёлый удар печати по бумаге.</summary>
+        CharOfficial,
+        /// <summary>Мостовик: гулкий звон стальной балки.</summary>
+        CharBridger
     }
 
     /// <summary>
@@ -96,9 +108,114 @@ namespace CityHighways.Presentation
             _clips[Sfx.Tick] = Make("tick", 0.03f, t =>
                 Mathf.Sin(2f * Mathf.PI * 2600f * t) * Mathf.Exp(-t * 160f) * 0.22f);
 
+            // Везунчик: щелчок большого пальца, звон вращающейся монетки и три затухающих «динь» при падении.
+            _clips[Sfx.CharLucky] = Make("char_lucky", 0.9f, t =>
+            {
+                float flick = Noise() * Mathf.Exp(-t * 300f) * 0.3f;
+                float spin = t < 0.45f ? Mathf.Sin(2f * Mathf.PI * 2637f * t) * (0.5f + 0.5f * Mathf.Sin(2f * Mathf.PI * 18f * t)) * 0.05f * Mathf.Clamp01((0.45f - t) / 0.1f) : 0f;
+                float drops = 0f;
+                float[] at = { 0.45f, 0.6f, 0.7f };
+                for (int i = 0; i < at.Length; i++)
+                {
+                    if (t < at[i]) continue;
+                    float l = t - at[i];
+                    drops += (Mathf.Sin(2f * Mathf.PI * 2093f * l) + 0.5f * Mathf.Sin(2f * Mathf.PI * 5274f * l)) * Mathf.Exp(-l * 22f) * (0.2f - i * 0.05f);
+                }
+                return flick + spin + drops;
+            });
+
+            // Прораб: три удара молотка — глухой удар с металлическим «тиньк» по гвоздю.
+            _clips[Sfx.CharForeman] = Make("char_foreman", 0.75f, t =>
+            {
+                float sum = 0f;
+                for (int i = 0; i < 3; i++)
+                {
+                    float start = i * 0.22f;
+                    if (t < start) continue;
+                    float l = t - start;
+                    sum += Mathf.Sin(2f * Mathf.PI * (190f - 300f * l) * l) * Mathf.Exp(-l * 45f) * 0.5f
+                           + Noise() * Mathf.Exp(-l * 140f) * 0.3f
+                           + Mathf.Sin(2f * Mathf.PI * 3100f * l) * Mathf.Exp(-l * 35f) * 0.08f;
+                }
+                return sum;
+            });
+
+            // Страховщик: замки портфеля — два сухих металлических щелчка и мягкий хлопок крышки.
+            _clips[Sfx.CharInsurer] = Make("char_insurer", 0.5f, t =>
+            {
+                float sum = 0f;
+                float[] at = { 0f, 0.12f };
+                foreach (float start in at)
+                {
+                    if (t < start) continue;
+                    float l = t - start;
+                    sum += (Noise() * 0.6f + Mathf.Sin(2f * Mathf.PI * 4200f * l)) * Mathf.Exp(-l * 260f) * 0.35f
+                           + Mathf.Sin(2f * Mathf.PI * 1800f * l) * Mathf.Exp(-l * 90f) * 0.08f;
+                }
+                if (t > 0.3f)
+                {
+                    float l = t - 0.3f;
+                    sum += Noise() * Mathf.Exp(-l * 60f) * 0.12f + Mathf.Sin(2f * Mathf.PI * 120f * l) * Mathf.Exp(-l * 30f) * 0.25f;
+                }
+                return sum;
+            });
+
+            // Сборщик пошлин: касса — щелчок ящика, звонкое «дзынь» и шорох монет.
+            _clips[Sfx.CharTollman] = Make("char_tollman", 0.9f, t =>
+            {
+                float drawer = Noise() * Mathf.Exp(-t * 80f) * 0.2f + Mathf.Sin(2f * Mathf.PI * 160f * t) * Mathf.Exp(-t * 25f) * 0.2f;
+                float bell = t > 0.06f
+                    ? (Mathf.Sin(2f * Mathf.PI * 1975f * (t - 0.06f)) + 0.4f * Mathf.Sin(2f * Mathf.PI * 3950f * (t - 0.06f))) * Mathf.Exp(-(t - 0.06f) * 5f) * 0.16f
+                    : 0f;
+                float coins = 0f;
+                for (int i = 0; i < 5; i++)
+                {
+                    float start = 0.25f + i * 0.07f + (i % 2) * 0.02f;
+                    if (t < start) continue;
+                    float l = t - start;
+                    coins += Mathf.Sin(2f * Mathf.PI * (2600f + i * 340f) * l) * Mathf.Exp(-l * 45f) * 0.06f;
+                }
+                return drawer + bell + coins;
+            });
+
+            // Чиновник: печать — замах (короткий шорох) и тяжёлый удар по столу с бумагой.
+            _clips[Sfx.CharOfficial] = Make("char_official", 0.55f, t =>
+            {
+                float swing = t < 0.12f ? Noise() * Mathf.Sin(Mathf.PI * t / 0.12f) * 0.08f : 0f;
+                if (t < 0.12f) return swing;
+                float l = t - 0.12f;
+                return Mathf.Sin(2f * Mathf.PI * (95f - 80f * l) * l) * Mathf.Exp(-l * 14f) * 0.6f
+                       + Noise() * Mathf.Exp(-l * 50f) * 0.3f;
+            });
+
+            // Мостовик: удар по стальной балке — низкий гул с биением обертонов.
+            _clips[Sfx.CharBridger] = Make("char_bridger", 1.3f, t =>
+            {
+                float hit = Noise() * Mathf.Exp(-t * 120f) * 0.25f;
+                float ring = (Mathf.Sin(2f * Mathf.PI * 220f * t) + 0.7f * Mathf.Sin(2f * Mathf.PI * 563f * t)
+                              + 0.45f * Mathf.Sin(2f * Mathf.PI * 1097f * t) + 0.25f * Mathf.Sin(2f * Mathf.PI * 1811f * t))
+                             * Mathf.Exp(-t * 3.2f) * 0.12f;
+                return hit + ring;
+            });
+
             _clips[Sfx.Bell] = Make("bell", 0.7f, t =>
                 (Mathf.Sin(2f * Mathf.PI * 880f * t) + 0.45f * Mathf.Sin(2f * Mathf.PI * 1760f * t) * Mathf.Exp(-t * 8f))
                 * Mathf.Exp(-t * 5.5f) * 0.25f);
+        }
+
+        /// <summary>Свой звук у каждого персонажа — для карточки выбора.</summary>
+        public static Sfx ForCharacter(CityHighways.Core.CharacterKind kind)
+        {
+            switch (kind)
+            {
+                case CityHighways.Core.CharacterKind.Lucky: return Sfx.CharLucky;
+                case CityHighways.Core.CharacterKind.Foreman: return Sfx.CharForeman;
+                case CityHighways.Core.CharacterKind.Insurer: return Sfx.CharInsurer;
+                case CityHighways.Core.CharacterKind.Tollman: return Sfx.CharTollman;
+                case CityHighways.Core.CharacterKind.Official: return Sfx.CharOfficial;
+                case CityHighways.Core.CharacterKind.Bridger: return Sfx.CharBridger;
+                default: return Sfx.Card;
+            }
         }
 
         public void Play(Sfx sfx, float volume = 1f)

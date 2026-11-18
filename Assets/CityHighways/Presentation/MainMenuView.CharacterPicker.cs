@@ -8,7 +8,7 @@ namespace CityHighways.Presentation
 {
     /// <summary>
     /// «Новая игра» (соревнование и кооператив): окно выбора персонажа для игрока. Слева — крупный герой в фирменном
-    /// цвете (3D-модель или картинка) и сложность игры им (5 делений), справа — имя, девиз, способность с подсказкой
+    /// цвете (картинка Avatars3D/<id>_portrait.png) и сложность игры им (5 делений), справа — имя, девиз, способность с подсказкой
     /// и статистика побед этим персонажем. Сверху — лента из шести героев, стрелки ‹ › и клавиши ←/→ листают.
     /// Внизу: «Выбрать этого персонажа», «Случайный выбор», а также «Выбор из двух в начале» и «Без персонажа».
     /// Esc или клик мимо окна — закрыть без изменений.
@@ -16,7 +16,6 @@ namespace CityHighways.Presentation
     public sealed partial class MainMenuView
     {
         VisualElement _pickerOverlay;
-        Avatar3DStage _pickerStage;
         int _pickerSlot = -1;
         int _pickerIndex;
         Dictionary<string, (int played, int won)> _pickerStats;
@@ -29,13 +28,11 @@ namespace CityHighways.Presentation
             var all = Characters.All;
             _pickerIndex = current > 0 ? Mathf.Max(0, all.ToList().IndexOf((CharacterKind)current)) : 0;
             _pickerStats = LoadCharacterStats();
-            if (_pickerStage == null) _pickerStage = new Avatar3DStage(236f, 300f);
             BuildCharacterPicker();
         }
 
         void CloseCharacterPicker()
         {
-            _pickerStage?.RemoveFromHierarchy();
             _pickerOverlay?.RemoveFromHierarchy();
             _pickerOverlay = null;
             _pickerSlot = -1;
@@ -55,7 +52,6 @@ namespace CityHighways.Presentation
         {
             int count = Characters.All.Count;
             _pickerIndex = ((_pickerIndex + step) % count + count) % count;
-            Ui.Hovered?.Invoke();
             BuildCharacterPicker();
         }
 
@@ -91,7 +87,9 @@ namespace CityHighways.Presentation
             Color accent = avatar?.accent ?? Theme.Gold;
             var config = new GameConfig();
 
-            _pickerStage.RemoveFromHierarchy();
+            // У каждого персонажа свой звук: монетка, молоток, портфель, касса, печать, стальная балка.
+            _app.Sound.Play(SoundBank.ForCharacter(kind), 0.9f);
+
             _pickerOverlay?.RemoveFromHierarchy();
             var overlay = new VisualElement { focusable = true };
             Ui.Fill(overlay);
@@ -163,7 +161,6 @@ namespace CityHighways.Presentation
                 {
                     if (index == _pickerIndex) return;
                     _pickerIndex = index;
-                    Ui.Hovered?.Invoke();
                     BuildCharacterPicker();
                 });
                 strip.Add(cell);
@@ -184,8 +181,7 @@ namespace CityHighways.Presentation
             Ui.Radius(left, 14f);
             left.style.backgroundColor = new Color(accent.r * 0.45f, accent.g * 0.45f, accent.b * 0.45f, 0.9f);
             Ui.Border(left, 1f, new Color(accent.r, accent.g, accent.b, 0.7f));
-            _pickerStage.Show(avatar);
-            left.Add(_pickerStage);
+            left.Add(HeroPicture(kind, accent));
             int level = Characters.Difficulty(kind);
             var squares = Ui.Row();
             squares.style.marginTop = 10f;
@@ -290,6 +286,29 @@ namespace CityHighways.Presentation
 
             Root.Add(overlay);
             overlay.schedule.Execute(() => overlay.Focus());
+        }
+
+        /// <summary>Картинка героя для карточки (Avatars3D/&lt;id&gt;_portrait.png) — с лёгким появлением; нет картинки — значок.</summary>
+        static VisualElement HeroPicture(CharacterKind kind, Color accent)
+        {
+            var portrait = Avatar3DCatalog.Portrait(kind);
+            if (portrait == null)
+            {
+                var box = new VisualElement();
+                box.style.width = 236f;
+                box.style.height = 300f;
+                box.style.alignItems = Align.Center;
+                box.style.justifyContent = Justify.Center;
+                box.Add(new CharacterIcon(160f, kind, accent));
+                return box;
+            }
+            var picture = new VisualElement { pickingMode = PickingMode.Ignore };
+            picture.style.width = 236f;
+            picture.style.height = 330f;
+            picture.style.backgroundImage = new StyleBackground(portrait);
+            picture.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
+            Ui.Appear(picture);
+            return picture;
         }
 
         static VisualElement Arrow(string glyph, System.Action action)

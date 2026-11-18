@@ -12,8 +12,8 @@ namespace CityHighways.Presentation
     /// </summary>
     public sealed class CharacterIcon : VisualElement
     {
-        // Доля картинки героя (1024×1536, голова вверху по центру), которая видна в круге: квадрат ~480 px сверху.
-        const float FaceScaleX = 1024f / 480f, FaceScaleY = 1536f / 480f;
+        // Доля картинки героя (2:3, голова вверху по центру), которая видна в круге: квадрат ~360 из 1024 px сверху — лицо крупно.
+        const float FaceScaleX = 1024f / 360f, FaceScaleY = 1536f / 360f;
 
         CharacterKind _kind;
         Color _color;
@@ -45,7 +45,7 @@ namespace CityHighways.Presentation
             _faceImage.style.width = inner * FaceScaleX;
             _faceImage.style.height = inner * FaceScaleY;
             _faceImage.style.left = (inner - inner * FaceScaleX) / 2f;
-            _faceImage.style.top = -inner * 0.02f;
+            _faceImage.style.top = -inner * 0.04f;
             _face.Add(_faceImage);
             Add(_face);
             UpdateFace();
