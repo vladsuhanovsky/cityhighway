@@ -1089,6 +1089,9 @@ namespace CityHighways.Presentation
             var game = _game;
             _city3D.Sync(_map.Layout, panelSize, _map.worldBound.position, _map.Light, id => game.IsDistrictOpen(id), deltaTime);
             _city3D.SyncRoads(game);
+            // Этап 2 полноценного 3D: бордюры цвета компании, разметка и машины — в сцене.
+            _city3D.SyncRoadDetails(game, Palette.PlayerColor, game.Players.Count);
+            _city3D.SyncTraffic(game, _map.PulseTime);
         }
 
         bool TimerEnabled => _setup.turnSeconds > 0;

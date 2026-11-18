@@ -629,7 +629,19 @@ namespace CityHighways.Presentation
                 TruckPose(truck, index, out var position, out var heading);
                 var move = MoveOf(truck);
                 var kind = _game.GetCargo(truck.Cargo)?.Kind ?? (_animating != null ? move?.CargoKind : null);
-                DrawTruck(p, position, heading, Palette.PlayerColor(truck.Owner), kind, truck.Id == _selectedTruck);
+                // В 3D фура — модель сцены; поверх — только кольцо выбранной фуры.
+                if (_city3D != null && _city3D.HasTrucks)
+                {
+                    if (truck.Id == _selectedTruck)
+                    {
+                        p.strokeColor = Color.white;
+                        p.lineWidth = 2.2f;
+                        p.BeginPath();
+                        p.Arc(position, 15f, Angle.Degrees(0f), Angle.Degrees(360f));
+                        p.Stroke();
+                    }
+                }
+                else DrawTruck(p, position, heading, Palette.PlayerColor(truck.Owner), kind, truck.Id == _selectedTruck);
                 if (move != null && Queued(move) && truck.Location == move.Stops[move.Stops.Count - 1])
                     clocks.Add(move.StoppedBefore + "|" + truck.Location);
             }
@@ -964,6 +976,45 @@ namespace CityHighways.Presentation
             var board = _game.Board;
             _city3D.Sync(_map.Layout, panelSize, _map.worldBound.position, _map.Light, id => board.IsDistrictOpen(id), deltaTime);
             _city3D.SyncRoads(board);
+            // Этап 2 полноценного 3D: бордюры, разметка, машины и фуры — в сцене.
+            _city3D.SyncRoadDetails(board, Palette.PlayerColor, _game.PublicOwner);
+            _city3D.SyncTraffic(board, _map.PulseTime);
+            SyncTrucks3D();
+        }
+
+        readonly List<City3DScene.TruckView> _truckViews3D = new List<City3DScene.TruckView>();
+        readonly Dictionary<string, int> _truckFan3D = new Dictionary<string, int>();
+
+        /// <summary>
+        /// Фуры в 3D: та же поза, что у плоской фуры (TruckPose, в пикселях карты), переводится на землю сцены.
+        /// Слой «Фуры» выключен — фур нет и в 3D.
+        /// </summary>
+        void SyncTrucks3D()
+        {
+            _truckViews3D.Clear();
+            _truckFan3D.Clear();
+            var layout = _map.Layout;
+            if (Has(Layer.Trucks) && layout != null)
+                foreach (var truck in _game.Trucks)
+                {
+                    _truckFan3D.TryGetValue(truck.Location, out int index);
+                    _truckFan3D[truck.Location] = index + 1;
+                    TruckPose(truck, index, out var position, out var heading);
+                    var here = layout.ScreenToMap(position);
+                    var ahead = layout.ScreenToMap(position + heading * 6f);
+                    var world = BoardLayout.World(here.x, here.y);
+                    var move = MoveOf(truck);
+                    var kind = _game.GetCargo(truck.Cargo)?.Kind ?? (_animating != null ? move?.CargoKind : null);
+                    _truckViews3D.Add(new City3DScene.TruckView
+                    {
+                        Id = truck.Id,
+                        Position = world,
+                        Heading = BoardLayout.World(ahead.x, ahead.y) - world,
+                        Company = Palette.PlayerColor(truck.Owner),
+                        Cargo = kind.HasValue ? KindColor(kind.Value) : (Color?)null
+                    });
+                }
+            _city3D.SyncTrucks(_truckViews3D);
         }
     }
 }

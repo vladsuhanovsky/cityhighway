@@ -5,8 +5,8 @@ using UnityEngine.Rendering;
 namespace CityHighways.Presentation
 {
     /// <summary>
-    /// 3D-модели из Scenario (Tripo P2 → Tripo Retopology v3: чистая сетка, 2–4 тыс. граней, развёртка UV, текстура
-    /// запечена): фура, башенный кран и три терминала хабов. Файлы — Resources/CityHighways/Models3D/&lt;id&gt;.glb
+    /// 3D-модели из Scenario (Tripo P2 → Tripo Retopology v3: чистая сетка, 0,5–4 тыс. граней, развёртка UV, текстура
+    /// запечена): фура, башенный кран, три терминала хабов, легковушка, автобус и павильон станции. Файлы — Resources/CityHighways/Models3D/&lt;id&gt;.glb
     /// (их импортирует glTFast как префаб). Скачивает их меню «City Highways → Скачать 3D-модели из Scenario».
     /// Нет файла — сцена строит прежние процедурные здания, ничего не ломается.
     ///
@@ -18,10 +18,11 @@ namespace CityHighways.Presentation
     {
         public const string Folder = "CityHighways/Models3D/";
         public const string Truck = "truck", TowerCrane = "tower_crane",
-            AirportTerminal = "terminal_airport", StationTerminal = "terminal_station", PortTerminal = "terminal_port";
+            AirportTerminal = "terminal_airport", StationTerminal = "terminal_station", PortTerminal = "terminal_port",
+            Car = "car", Bus = "bus", StationStop = "station_stop";
 
         /// <summary>Все модели — для загрузчика и проверки.</summary>
-        public static readonly string[] All = { Truck, TowerCrane, AirportTerminal, StationTerminal, PortTerminal };
+        public static readonly string[] All = { Truck, TowerCrane, AirportTerminal, StationTerminal, PortTerminal, Car, Bus, StationStop };
 
         static readonly Dictionary<string, GameObject> Prefabs = new Dictionary<string, GameObject>();
 

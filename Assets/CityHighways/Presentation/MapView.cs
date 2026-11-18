@@ -1650,32 +1650,8 @@ namespace CityHighways.Presentation
             var look = LookOf(road, owner);
             float tilt = _layout.Tilt;
 
-            // 3D: дорога приподнята над городом и отбрасывает тень от солнца. Высота — по иерархии:
-            // обычная 0.1, магистраль 0.2, путь контракта и активная 0.3 (в пикселях поля — ×20).
-            if (_use3D)
-            {
-                float lift = RoadLift(road, look, owner) * 20f * _layout.ScaleAt(segments.Count > 0 ? segments[0].Center : Vector2.zero);
-                var shadow = _shadowDir * lift * 0.55f + new Vector2(0f, lift * 0.35f * tilt);
-                float alpha = Mathf.Lerp(0.16f, 0.34f, _daylight) * (built > 0 ? 1f : 0.55f);
-                p.fillColor = Fade(new Color(0.02f, 0.03f, 0.06f, alpha));
-                // Пунктирные (ещё не построенные) участки тени не отбрасывают — на земле только линия.
-                int shadowed = DashedFreeRoads ? built : segments.Count;
-                for (int i = 0; i < shadowed; i++)
-                {
-                    SegmentPath(p, segments[i], 1.2f, shadow);
-                    p.Fill();
-                }
-                // Торец: чем выше дорога, тем толще видна её боковина.
-                if (built > 0)
-                {
-                    p.fillColor = Fade(new Color(0.05f, 0.05f, 0.07f, 0.9f));
-                    for (int i = 0; i < built; i++)
-                    {
-                        SegmentPath(p, segments[i], 0.6f, new Vector2(0f, (1.2f + lift * 0.45f) * tilt));
-                        p.Fill();
-                    }
-                }
-            }
+            // 3D: построенные дороги — 3D-объекты сцены со своими тенями и торцами; плоский слой их не рисует.
+            if (_use3D) { }
             // 2.5D: у уложенного участка есть толщина — тёмный торец чуть ниже покрытия.
             else if (built > 0 && tilt > 0.01f)
             {
@@ -1779,8 +1755,8 @@ namespace CityHighways.Presentation
             }
 
             // Построенные участки слегка светятся цветом компании (ночью — сильнее: город в огнях).
-            // Городские дороги магната — без свечения: это просто асфальт.
-            if (owner.HasValue && !(PlainPublicRoads && IsPublicRoad(owner)))
+            // Городские дороги магната — без свечения: это просто асфальт. В 3D цвет компании — у бордюров сцены.
+            if (owner.HasValue && !_use3D && !(PlainPublicRoads && IsPublicRoad(owner)))
             {
                 var c = OwnerColor(owner.Value);
                 p.strokeColor = Fade(CalmRoads ? new Color(c.r, c.g, c.b, 0.16f + 0.14f * _night) : new Color(c.r, c.g, c.b, 0.30f + 0.22f * _night));
@@ -1823,7 +1799,9 @@ namespace CityHighways.Presentation
                 free.a *= fade;
                 // Пунктирные участки покрытия не имеют: их рисует проход 3 линией по оси.
                 int count = DashedFreeRoads ? built : segments.Count;
-                for (int i = 0; i < count; i++)
+                // В 3D построенные участки — асфальт сцены; плоский слой кладёт только «будущее» покрытие.
+                int first = _use3D ? built : 0;
+                for (int i = first; i < count; i++)
                     AddSegmentTexture(texture, segments[i], i < built ? builtTint : free);
             }
             _quads.Flush(context);
@@ -1886,7 +1864,11 @@ namespace CityHighways.Presentation
                 var b = segment.Center + dir * segment.Length / 2f;
                 bool isBuilt = i < built;
 
-                if (isBuilt)
+                if (isBuilt && _use3D)
+                {
+                    // 3D: бордюры, разметка и машины — в сцене. Здесь остаются только рамки (магистраль, пробка, выбор).
+                }
+                else if (isBuilt)
                 {
                     // Бордюры цвета компании по обеим сторонам — так видно, чья дорога.
                     // У городских дорог магната бордюров нет: они не подсвечиваются.
@@ -1948,7 +1930,7 @@ namespace CityHighways.Presentation
                 }
 
                 // Мост — перила со столбиками (у пунктирного, ещё не построенного моста перил нет).
-                if (isBridge && (isBuilt || !DashedFreeRoads))
+                if (isBridge && !_use3D && (isBuilt || !DashedFreeRoads))
                 {
                     float railOffset = _use3D ? half - 1.2f : half + 2.5f;
                     float railSide = half > 0.01f ? railOffset / half : 1f;
@@ -2387,6 +2369,7 @@ namespace CityHighways.Presentation
         /// <summary>Машинки на построенных дорогах: пара фар едет туда и обратно вдоль дороги.</summary>
         void DrawCars(Painter2D p)
         {
+            if (_use3D) return;   // в 3D машины едут в сцене (City3DScene.SyncTraffic)
             foreach (var road in _game.Map.Roads)
             {
                 var owner = _game.GetRoadOwner(road.Id);

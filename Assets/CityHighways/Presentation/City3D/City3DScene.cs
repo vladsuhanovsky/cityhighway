@@ -22,7 +22,7 @@ namespace CityHighways.Presentation
     /// Рисует отдельная камера с рендерером Universal (второй в ассете URP); если его нет — рендерер создаётся
     /// кодом на время партии. На выходе всё убирается и настройки сцены возвращаются как были.
     /// </summary>
-    public sealed class City3DScene : IDisposable
+    public sealed partial class City3DScene : IDisposable
     {
         const string ResourceFolder = "CityHighways/City3D/";
         /// <summary>Высота воды и набережных (метры сцены). Дороги интерфейса лежат на высоте 0.</summary>
@@ -157,6 +157,7 @@ namespace CityHighways.Presentation
             BuildProps(plan);
             SetupRoads();
             BuildJunctions();
+            BuildStations();
             BuildBridges();
             SetupReflections(quality);
         }
@@ -1589,6 +1590,7 @@ namespace CityHighways.Presentation
             _builtRoads.Clear();
             _constructing.Clear();
             _hubs.Clear();
+            ClearLife();
             _roads = null;
             _construction = null;
             if (_root != null) Destroy(_root);
