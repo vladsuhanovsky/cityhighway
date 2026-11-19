@@ -44,6 +44,7 @@ namespace CityHighways.Presentation
         public const float Amplitude = 0.3f;
         const float Step = 0.035f;
         const float CorridorFlat = 0.075f, CorridorBlend = 0.26f;
+        const float HubBlend = 0.2f;
         const float FarStart = 20f, FarEnd = 27f;
 
         readonly float _waterHalf, _valley;
@@ -55,7 +56,9 @@ namespace CityHighways.Presentation
 
         /// <param name="riverLines">Сглаженные русла в мире (как у воды сцены).</param>
         /// <param name="waterHalf">Полуширина воды с набережной: ближе к руслу земля — ноль.</param>
-        public ReliefField(CityMap map, IReadOnlyList<List<Vector3>> riverLines, float waterHalf)
+        /// <param name="hubs">Места комплексов хабов (магнат): под ними земля ровная, на высоте станции.</param>
+        public ReliefField(CityMap map, IReadOnlyList<List<Vector3>> riverLines, float waterHalf,
+            IReadOnlyDictionary<string, HubPlacement.Site> hubs = null)
         {
             _waterHalf = waterHalf;
             _valley = 1.3f;
@@ -83,6 +86,10 @@ namespace CityHighways.Presentation
                 var w = Flat(location.X, location.Y);
                 stations[location.Id] = (w, Hills(w.x, w.y));
             }
+            var hubFlats = new List<(HubPlacement.Site site, float h)>();
+            if (hubs != null)
+                foreach (var pair in hubs)
+                    if (stations.TryGetValue(pair.Key, out var hs)) hubFlats.Add((pair.Value, hs.h));
             var roads = new List<(Vector2 a, Vector2 b, float ha, float hb)>();
             foreach (var road in map.Roads)
                 if (stations.TryGetValue(road.A, out var sa) && stations.TryGetValue(road.B, out var sb))
@@ -102,7 +109,7 @@ namespace CityHighways.Presentation
                 var p = new Vector2(_x0 + ix * Step, _z0 + iz * Step);
                 float h = Hills(p.x, p.y);
                 // Ближайшая дорога: вдоль неё земля — на высоте дороги.
-                float bestWeight = 0f, roadHeight = 0f;
+                float bestWeight = 0f, roadHeight = 0f, roadDistance = float.MaxValue;
                 foreach (var (a, b, ha, hb) in roads)
                 {
                     if (p.x < Mathf.Min(a.x, b.x) - CorridorBlend || p.x > Mathf.Max(a.x, b.x) + CorridorBlend ||
@@ -110,6 +117,7 @@ namespace CityHighways.Presentation
                     var ab = b - a;
                     float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / Mathf.Max(1e-6f, ab.sqrMagnitude));
                     float d = (p - (a + ab * t)).magnitude;
+                    roadDistance = Mathf.Min(roadDistance, d);
                     if (d >= CorridorBlend) continue;
                     float weight = 1f - Smooth(CorridorFlat, CorridorBlend, d);
                     if (weight > bestWeight)
@@ -124,6 +132,15 @@ namespace CityHighways.Presentation
                     float river = RiverDistance(p, _waterHalf + 0.06f);
                     bestWeight *= Smooth(_waterHalf + 0.01f, _waterHalf + 0.06f, river);
                     h = Mathf.Lerp(h, roadHeight, bestWeight);
+                }
+                // Площадка хаба: ровно на высоте станции, плавный переход вокруг. У дорог главнее дорога — её
+                // полотно идёт по своей высоте, и земля рядом не должна его закрывать или подвешивать.
+                foreach (var (site, hubHeight) in hubFlats)
+                {
+                    if ((p - site.Origin).sqrMagnitude > 0.7f * 0.7f) continue;
+                    float hubWeight = 1f - Smooth(0.03f, HubBlend, site.DistanceTo(p));
+                    hubWeight *= Smooth(0.045f, 0.1f, roadDistance);
+                    if (hubWeight > 0f) h = Mathf.Lerp(h, hubHeight, hubWeight);
                 }
                 _grid[iz * _nx + ix] = h;
             }

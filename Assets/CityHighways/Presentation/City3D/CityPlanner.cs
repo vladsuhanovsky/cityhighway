@@ -19,6 +19,8 @@ namespace CityHighways.Presentation
         public const float PixelsPerUnit = 100f;
         /// <summary>Радиус (пиксели поля) свободной земли вокруг хаба магната: там встаёт вокзал или аэропорт.</summary>
         public const float HubClearance = 52f;
+        /// <summary>Радиус свободного места вокруг центра комплекса хаба (пятно 0,4 × 0,27 м плюс запас).</summary>
+        const float ComplexClearance = 32f;
 
         public struct Building
         {
@@ -144,7 +146,9 @@ namespace CityHighways.Presentation
 
         /// <param name="density">0.4–1: сколько зданий оставить (качество графики).</param>
         /// <param name="hubSites">Станции с комплексами хабов: в радиусе HubClearance вокруг них — ни домов, ни деревьев, ни площадок.</param>
-        public static Plan Build(CityMap map, float density = 1f, IEnumerable<string> hubSites = null)
+        /// <param name="hubCenters">Центры комплексов хабов в мире (x, z) — вокруг них тоже свободно.</param>
+        public static Plan Build(CityMap map, float density = 1f, IEnumerable<string> hubSites = null,
+            IEnumerable<Vector2> hubCenters = null)
         {
             var plan = new Plan();
             Vector2 Field(float x, float y) => new Vector2(x * FieldW, y * FieldH);
@@ -152,10 +156,16 @@ namespace CityHighways.Presentation
             var points = map.Locations.ToDictionary(l => l.Id, l => Field(l.X, l.Y));
             var hubs = hubSites == null ? new List<Vector2>()
                 : hubSites.Where(points.ContainsKey).Select(id => points[id]).ToList();
+            // Центр комплекса в координатах поля: 1 м мира = 100 единиц поля.
+            var complexes = hubCenters == null ? new List<Vector2>()
+                : hubCenters.Select(c => new Vector2(c.x / BoardLayout.WorldWidth * FieldW + FieldW / 2f,
+                    FieldH / 2f - c.y / BoardLayout.WorldDepth * FieldH)).ToList();
             bool NearHub(Vector2 p)
             {
                 foreach (var h in hubs)
                     if ((p - h).sqrMagnitude < HubClearance * HubClearance) return true;
+                foreach (var c in complexes)
+                    if ((p - c).sqrMagnitude < ComplexClearance * ComplexClearance) return true;
                 return false;
             }
             var roads = new List<Seg>();

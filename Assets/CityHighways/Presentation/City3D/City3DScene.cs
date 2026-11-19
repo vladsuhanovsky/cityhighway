@@ -111,6 +111,7 @@ namespace CityHighways.Presentation
         /// <summary>Построить город; null — 3D недоступно (нет URP, ошибка) — тогда остаётся прежнее плоское поле.</summary>
         /// <param name="quality">0 — низкое (без теней, меньше зданий), 1 — среднее, 2 — высокое.</param>
         List<string> _hubSites;
+        Dictionary<string, HubPlacement.Site> _hubPlaces = new Dictionary<string, HubPlacement.Site>();
 
         /// <param name="hubSites">Станции с комплексами хабов (магнат): вокруг них планировщик не ставит дома и деревья.</param>
         public static City3DScene TryCreate(CityMap map, int quality, IEnumerable<string> hubSites = null)
@@ -145,9 +146,11 @@ namespace CityHighways.Presentation
             // Рельеф — до планировки: сначала сглаженные русла (по ним долины), затем поле высот. Планировщик
             // смотрит на высоты (ельники на холмах), а всё дальнейшее встаёт на холмы.
             PrepareRiverLines();
-            _relief = new ReliefField(_map, _riverLines, RiverWidth / 2f + BankWidth);
+            // Места хабов — до рельефа: под ними земля выравнивается (бетонная плита больше не нужна).
+            _hubPlaces = HubPlacement.Plan(_map, _hubSites, RiverWidth / 2f + BankWidth);
+            _relief = new ReliefField(_map, _riverLines, RiverWidth / 2f + BankWidth, _hubPlaces);
             Relief.Use(_relief);
-            var plan = CityPlanner.Build(_map, density, _hubSites);
+            var plan = CityPlanner.Build(_map, density, _hubSites, _hubPlaces.Values.Select(h => h.Origin));
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
 
@@ -1030,42 +1033,32 @@ namespace CityHighways.Presentation
             }
             var location = _map.GetLocation(locationId);
             if (location == null) return;
-            var center = BoardLayout.World(location.X, location.Y);
-
-            // Самый широкий промежуток между дорогами станции — туда и ставим комплекс.
-            var angles = _map.RoadsAt(locationId).Select(r =>
+            // Место выбрано при сборке (HubPlacement: в стороне от всех дорог, рек и станций), рельеф под ним ровный.
+            // Хаб, которого не было при сборке, ищет место так же, но без выравнивания земли.
+            bool planned = _hubPlaces.TryGetValue(locationId, out var place);
+            if (!planned)
             {
-                var other = _map.GetLocation(r.A == locationId ? r.B : r.A);
-                var w = BoardLayout.World(other.X, other.Y) - center;
-                return Mathf.Atan2(w.z, w.x);
-            }).OrderBy(a => a).ToList();
-            float direction = 0f;
-            if (angles.Count > 0)
-            {
-                float bestGap = -1f;
-                for (int i = 0; i < angles.Count; i++)
-                {
-                    float a = angles[i], b = i + 1 < angles.Count ? angles[i + 1] : angles[0] + Mathf.PI * 2f;
-                    if (b - a > bestGap) { bestGap = b - a; direction = (a + b) / 2f; }
-                }
+                var others = _hubPlaces.Where(p => p.Key != locationId).Select(p => p.Key).ToList();
+                others.Add(locationId);
+                place = HubPlacement.Plan(_map, others, RiverWidth / 2f + BankWidth)[locationId];
             }
-            var forward = new Vector3(Mathf.Cos(direction), 0f, Mathf.Sin(direction));
-            var origin = center + forward * 0.25f;
-            float yaw = -direction * Mathf.Rad2Deg + 90f;
-            // На рельефе: площадка на высоте самой высокой точки под комплексом, ниже — бетонное основание.
+            float yaw = place.Yaw;
+            var origin = new Vector3(place.Origin.x, 0f, place.Origin.y);
             float groundLow = float.MaxValue, groundHigh = float.MinValue;
             {
                 var turn = Quaternion.Euler(0f, yaw, 0f);
                 for (int gz = 0; gz <= 4; gz++)
                 for (int gx = 0; gx <= 4; gx++)
                 {
-                    var q = origin + turn * new Vector3(Mathf.Lerp(-0.19f, 0.19f, gx / 4f), 0f, Mathf.Lerp(-0.12f, 0.14f, gz / 4f));
+                    var q = origin + turn * new Vector3(Mathf.Lerp(-HubPlacement.HalfX, HubPlacement.HalfX, gx / 4f), 0f,
+                        Mathf.Lerp(HubPlacement.ZMin, HubPlacement.ZMax, gz / 4f));
                     float h = Relief.At(q.x, q.z);
                     groundLow = Mathf.Min(groundLow, h);
                     groundHigh = Mathf.Max(groundHigh, h);
                 }
             }
-            origin.y = groundHigh;
+            // Ровная площадка — по центру; без выравнивания (хаб появился позже) — по самой высокой точке.
+            origin.y = planned ? Relief.At(origin.x, origin.z) : groundHigh;
 
             var builder = new MeshBuilder();
             var local = new MeshBuilder();
@@ -1089,9 +1082,39 @@ namespace CityHighways.Presentation
             if (groundHigh - groundLow > 0.003f)
             {
                 local.Clear();
-                var concrete = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeConcrete);
-                local.Box(0f, 0.01f, 0.4f, 0.28f, groundLow - groundHigh - 0.006f, groundHigh - groundLow + 0.009f, concrete, concrete);
+                if (planned)
+                {
+                    // Земля выровнена; если у края (рядом с дорогой) она всё же ниже — только асфальтовый бортик
+                    // площадки, без большой плиты.
+                    local.Box(0f, 0f, pad * 2f, pad * 2f, groundLow - origin.y - 0.004f, origin.y - groundLow + 0.0075f, asphalt, asphalt);
+                }
+                else
+                {
+                    var concrete = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeConcrete);
+                    local.Box(0f, 0.01f, 0.4f, 0.28f, groundLow - groundHigh - 0.006f, groundHigh - groundLow + 0.009f, concrete, concrete);
+                }
                 builder.Append(local, Matrix4x4.TRS(origin, rotation, Vector3.one));
+            }
+            // Подъезд от станции к площадке, если комплекс отодвинут от неё (рядом тесно): асфальт по рельефу.
+            {
+                var station = _map.GetLocation(locationId);
+                var from = HubPlacement.World(station.X, station.Y);
+                var forward2 = place.Forward;
+                var start = from + forward2 * 0.08f;
+                var end = place.Origin + forward2 * -pad;
+                float length = Vector2.Dot(end - start, forward2);
+                if (length > 0.02f)
+                {
+                    var side = place.Right * 0.018f;
+                    int steps = Mathf.Max(1, Mathf.CeilToInt(length / 0.03f));
+                    Vector3 V(Vector2 q) => new Vector3(q.x, Relief.At(q.x, q.y) + 0.0032f, q.y);
+                    for (int i = 0; i < steps; i++)
+                    {
+                        var a = start + forward2 * (length * i / steps);
+                        var b = start + forward2 * (length * (i + 1) / steps);
+                        builder.Quad(V(a - side), V(b - side), V(b + side), V(a + side), asphalt);
+                    }
+                }
             }
             // 1: у вокзала — здание вокзала с путями и платформами, у аэропорта — аэровокзал, вышка, перрон
             // с самолётами и взлётная полоса, у порта — терминал-склад.
