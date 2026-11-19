@@ -81,6 +81,15 @@ namespace CityHighways.Core
         public int Needed, StartRound, EndRound, RewardPoints, RewardInfluence;
         public int[] Progress;
         public int Winner = -1;
+        /// <summary>Второй выполнивший — получает половину награды; после него заказ закрыт.</summary>
+        public int Second = -1;
+
+        /// <summary>Заказ ещё принимает доставки (нет второго места).</summary>
+        public bool IsOpen => Second < 0;
+        /// <summary>Можно ли этой компании ещё что-то получить за заказ: он открыт и она его не выиграла.</summary>
+        public bool OpenFor(int player) => Second < 0 && Winner != player;
+        public int SecondPoints => (RewardPoints + 1) / 2;
+        public int SecondInfluence => RewardInfluence / 2;
     }
 
     public enum LogisticsEventKind { Accident, RoadRepair, FuelShortage, CustomsCheck, Storm, Festival }
@@ -161,6 +170,12 @@ namespace CityHighways.Core
         /// </summary>
         public bool OpeningBuildRound = true;
         public int OpeningRoads = 1;
+        /// <summary>Догоняющие: каждый раунд первыми ходят (и грузятся) компании с меньшим счётом.</summary>
+        public bool CatchUpOrder = true;
+        /// <summary>Субсидия мэрии: компании с наименьшим счётом (если она не делит его с лидером) — очки стройки за раунд.</summary>
+        public int TrailingBuildBonus = 1;
+        /// <summary>Своя дорога проходится быстрее: участок своей дороги длиной от 2 стоит на столько меньше хода.</summary>
+        public int OwnRoadDiscount = 1;
 
         public static MagnateConfig For(MagnateDifficulty difficulty)
         {
@@ -211,6 +226,10 @@ namespace CityHighways.Core
         int _turnInRound;
         /// <summary>Сколько дорог текущий игрок построил в раунде стройки (там — не больше OpeningRoads).</summary>
         int _openingBuilt;
+        /// <summary>Очерёдность хода в текущем раунде (индексы компаний).</summary>
+        readonly List<int> _order = new List<int>();
+        /// <summary>Вложения компаний в хабы (очки стройки): хабом владеет вложивший больше всех.</summary>
+        readonly Dictionary<string, int[]> _hubInvested = new Dictionary<string, int[]>();
 
         public Game Board { get; }
         public CityMap Map => Board.Map;
@@ -236,6 +255,13 @@ namespace CityHighways.Core
         public bool IsOpeningRound => Config.OpeningBuildRound && Round == 1;
         /// <summary>Сколько всего раундов: раунды доставки плюс раунд стройки (если он есть).</summary>
         public int TotalRounds => Config.Rounds + (Config.OpeningBuildRound ? 1 : 0);
+        /// <summary>Очерёдность хода в этом раунде: первыми — отстающие (CatchUpOrder).</summary>
+        public IReadOnlyList<int> TurnOrder => _order;
+
+        /// <summary>Сколько очков стройки компания вложила в хаб.</summary>
+        public int HubInvestment(string locationId, int player) =>
+            _hubInvested.TryGetValue(locationId, out var a) && player >= 0 && player < a.Length ? a[player] : 0;
+
         /// <summary>Сколько дорог текущий игрок ещё может построить в раунде стройки (вне его — без ограничения).</summary>
         public int OpeningRoadsLeft => IsOpeningRound ? Math.Max(0, Config.OpeningRoads - _openingBuilt) : int.MaxValue;
 
@@ -261,14 +287,19 @@ namespace CityHighways.Core
                 });
             foreach (var id in city.PublicRoads) Board.LogisticsSetOwner(id, PublicOwner);
 
-            // Фуры — по хабам, по кругу, чтобы компании начинали в разных местах.
+            // Равный старт: у каждой компании одинаковый набор — k-я фура на хабе k-го вида (аэропорт, вокзал,
+            // порт по кругу). Внутри вида компании расходятся по разным хабам, если их хватает.
+            var groups = new[] { HubKind.Airport, HubKind.Station, HubKind.Port }
+                .Select(kind => city.Hubs.Where(h => h.Kind == kind).ToList()).Where(g => g.Count > 0).ToList();
+            if (groups.Count == 0) groups.Add(city.Hubs.ToList());
             int truckId = 0;
             for (int k = 0; k < Config.TrucksPerPlayer; k++)
+            {
+                var group = groups[k % groups.Count];
+                int offset = _rng.Next(group.Count) + k / groups.Count;
                 for (int p = 0; p < _players.Count; p++)
-                {
-                    var hub = city.Hubs[(p + k * _players.Count + _rng.Next(2)) % city.Hubs.Count];
-                    _trucks.Add(new Truck { Id = truckId++, Owner = p, Location = hub.LocationId });
-                }
+                    _trucks.Add(new Truck { Id = truckId++, Owner = p, Location = group[(offset + p) % group.Count].LocationId });
+            }
             for (int i = 0; i < 2; i++) SpawnCargo();
             // Грузы, видные в раунде стройки (по ним выбирают дорогу), «появляются» в первом раунде перевозок:
             // норма скоропорта и срок жизни считаются с него.
@@ -277,10 +308,9 @@ namespace CityHighways.Core
             if (!IsOpeningRound) RefillContracts();
             // Жребий первого хода: дальше очередь, как и раньше, сдвигается на одного каждый раунд.
             if (Config.RandomFirstPlayer && _players.Count > 1)
-            {
                 _startPlayer = _rng.Next(_players.Count);
-                CurrentPlayerIndex = _startPlayer;
-            }
+            for (int i = 0; i < _players.Count; i++) _order.Add((_startPlayer + i) % _players.Count);
+            CurrentPlayerIndex = _order[0];
             UpdateClock();
             Emit($"Город {Map.Name}: {Map.Locations.Count} мест, {Hubs.Count} хабов. Сложность: {MagnateConfig.Title(Config.Difficulty)}. Раунд 1.");
             if (IsOpeningRound)
@@ -373,14 +403,22 @@ namespace CityHighways.Core
             if (Phase != MagnatePhase.Build) return "Хабы развиваются в стройку.";
             if (IsOpeningRound) return "В раунде стройки — только дороги. Хабы — со второго раунда.";
             int p = CurrentPlayerIndex;
-            if (hub.Owner >= 0 && hub.Owner != p) return $"Хаб развивает {_players[hub.Owner].Name}.";
             if (hub.Level >= 5) return "Хаб уже максимального уровня.";
             int cost = HubUpgradeCost(hub);
             if (_players[p].BuildPoints < cost) return $"Уровень {hub.Level + 1} стоит {cost} очков стройки.";
             _players[p].BuildPoints -= cost;
-            hub.Owner = p;
+            if (!_hubInvested.TryGetValue(locationId, out var invested)) _hubInvested[locationId] = invested = new int[_players.Count];
+            invested[p] += cost;
             hub.Level++;
             Emit($"{_players[p].Name} развивает «{Map.LocationName(locationId)}» до уровня {hub.Level}.");
+            // Владелец — кто вложил больше всех; при равенстве хаб остаётся у прежнего владельца.
+            int previous = hub.Owner;
+            if (previous < 0 || invested[p] > invested[previous])
+            {
+                hub.Owner = p;
+                if (previous >= 0 && previous != p)
+                    Emit($"{_players[p].Name} перехватывает «{Map.LocationName(locationId)}» у {_players[previous].Name}: вложено {invested[p]} против {invested[previous]}.");
+            }
             Changed();
             return null;
         }
@@ -445,7 +483,7 @@ namespace CityHighways.Core
                 {
                     if (!Allowed(road, kind)) continue;
                     string v = road.A == u ? road.B : road.A;
-                    float cost = road.Length;
+                    float cost = StepCost(road, player);
                     var owner = Board.GetRoadOwner(road.Id);
                     if (owner.HasValue && owner != player && owner != PublicOwner) cost += Config.TollPerRoad * 1.5f;
                     if (avoidJams)
@@ -478,11 +516,26 @@ namespace CityHighways.Core
 
         public int RouteLength(IEnumerable<string> route) => route?.Sum(id => Map.GetRoad(id)?.Length ?? 0) ?? 0;
 
-        /// <summary>Сколько раундов ехать по маршруту с этим грузом.</summary>
-        public int RouteRounds(IEnumerable<string> route, CargoKind? kind = null)
+        /// <summary>
+        /// Сколько хода стоит проехать дорогу: длина, а своя дорога длиной от 2 — на OwnRoadDiscount меньше
+        /// (свои дороги быстрее — смысл строить, а не ездить по бесплатным городским).
+        /// </summary>
+        public int StepCost(Road road, int player)
+        {
+            if (road == null) return 0;
+            bool own = player >= 0 && Board.GetRoadOwner(road.Id) == player;
+            return own && road.Length >= 2 ? Math.Max(1, road.Length - Config.OwnRoadDiscount) : road.Length;
+        }
+
+        /// <summary>Сколько хода займёт маршрут у компании (с учётом своих дорог).</summary>
+        public int RouteSteps(IEnumerable<string> route, int player) => route?.Sum(id => StepCost(Map.GetRoad(id), player)) ?? 0;
+
+        /// <summary>Сколько раундов ехать по маршруту с этим грузом (player &lt; 0 — текущая компания).</summary>
+        public int RouteRounds(IEnumerable<string> route, CargoKind? kind = null, int player = -1)
         {
             int speed = SpeedOf(kind);
-            return Math.Max(1, (RouteLength(route) + speed - 1) / speed);
+            int steps = RouteSteps(route, player < 0 ? CurrentPlayerIndex : player);
+            return Math.Max(1, (steps + speed - 1) / speed);
         }
 
         /// <summary>Сколько очков уйдёт за проезд по чужим дорогам маршрута.</summary>
@@ -605,7 +658,7 @@ namespace CityHighways.Core
             _openingBuilt = 0;
             if (_turnInRound < _players.Count)
             {
-                CurrentPlayerIndex = (_startPlayer + _turnInRound) % _players.Count;
+                CurrentPlayerIndex = _order[_turnInRound];
                 Phase = MagnatePhase.Build;
                 Changed();
                 return;
@@ -626,12 +679,10 @@ namespace CityHighways.Core
         void Resolve()
         {
             var report = new RoundReport { Round = Round };
-            var order = Enumerable.Range(0, _players.Count).Select(i => (_startPlayer + i) % _players.Count).ToList();
-
             // 1. Погрузка: на развитом хабе первым грузит владелец, дальше — по очереди хода раунда.
             var loading = _trucks.Where(t => t.PlannedCargo != null)
                 .OrderBy(t => HubAt(t.Location)?.Owner == t.Owner ? 0 : 1)
-                .ThenBy(t => order.IndexOf(t.Owner)).ToList();
+                .ThenBy(t => _order.IndexOf(t.Owner)).ToList();
             foreach (var truck in loading)
             {
                 var cargo = GetCargo(truck.PlannedCargo);
@@ -639,25 +690,23 @@ namespace CityHighways.Core
                 var owner = _players[truck.Owner];
                 if (cargo == null || cargo.Truck >= 0 || cargo.From != truck.Location)
                 {
-                    truck.Route.Clear();
-                    truck.Target = null;
-                    report.Messages.Add($"{owner.Name}: груз на «{Map.LocationName(truck.Location)}» забрал соперник — фура ждёт.");
-                    continue;
+                    // Груз забрал соперник — фура берёт другой груз с этого хаба (самый выгодный, на который никто
+                    // не нацелился), а не стоит раунд впустую.
+                    var spare = SpareCargo(truck, out var spareRoute);
+                    if (spare == null)
+                    {
+                        truck.Route.Clear();
+                        truck.Target = null;
+                        report.Messages.Add($"{owner.Name}: груз на «{Map.LocationName(truck.Location)}» забрал соперник — другого нет, фура ждёт.");
+                        continue;
+                    }
+                    cargo = spare;
+                    truck.Target = spare.To;
+                    truck.Route = spareRoute;
+                    report.Messages.Add($"{owner.Name}: груз на «{Map.LocationName(truck.Location)}» забрал соперник — фура взяла другой: " +
+                                        $"{KindTitle(spare.Kind).ToLowerInvariant()} в «{Map.LocationName(spare.To)}».");
                 }
-                cargo.Truck = truck.Id;
-                truck.Cargo = cargo.Id;
-                var hub = HubAt(truck.Location);
-                if (hub != null && hub.Owner >= 0 && hub.Owner != truck.Owner)
-                {
-                    owner.Score -= Config.HubFee;
-                    _players[hub.Owner].Score += Config.HubFee;
-                    _players[hub.Owner].HubFees += Config.HubFee;
-                }
-                if (cargo.Kind == CargoKind.Valuable && owner.Influence >= Config.EscortCost)
-                {
-                    owner.Influence -= Config.EscortCost;
-                    cargo.Escorted = true;
-                }
+                Load(truck, cargo, owner);
             }
 
             // 2. Таможня: опасные и ценные грузы без взятки стоят раунд.
@@ -684,8 +733,9 @@ namespace CityHighways.Core
                     foreach (var id in truck.Route)
                     {
                         var road = Map.GetRoad(id);
-                        if (road == null || road.Length > budget || !IsBuilt(id) || IsClosed(id)) break;
-                        budget -= road.Length;
+                        int stepCost = StepCost(road, truck.Owner);
+                        if (road == null || stepCost > budget || !IsBuilt(id) || IsClosed(id)) break;
+                        budget -= stepCost;
                         list.Add(id);
                     }
                 }
@@ -828,11 +878,84 @@ namespace CityHighways.Core
             RollEvents();
             _startPlayer = (_startPlayer + 1) % _players.Count;
             _turnInRound = 0;
-            CurrentPlayerIndex = _startPlayer;
+            ArrangeOrder();
+            CurrentPlayerIndex = _order[0];
             Phase = MagnatePhase.Build;
             UpdateClock();
             Emit($"Раунд {Round}.");
+            if (Config.CatchUpOrder && _players.Count > 1)
+                Emit("Очерёдность: " + string.Join(" → ", _order.Select(i => _players[i].Name)) + " (первыми ходят и грузятся отстающие).");
+            GrantTrailingBonus();
             Changed();
+        }
+
+        /// <summary>
+        /// Очерёдность раунда. С CatchUpOrder — по счёту от меньшего к большему (равные — по кругу, как раньше),
+        /// иначе — просто по кругу. Первый ходит раньше и раньше грузится, если на груз метят двое.
+        /// </summary>
+        void ArrangeOrder()
+        {
+            int n = _players.Count;
+            var rotation = Enumerable.Range(0, n).Select(i => (_startPlayer + i) % n).ToList();
+            _order.Clear();
+            _order.AddRange(Config.CatchUpOrder
+                ? rotation.OrderBy(i => _players[i].Score).ThenBy(i => rotation.IndexOf(i))
+                : (IEnumerable<int>)rotation);
+        }
+
+        /// <summary>Субсидия мэрии отстающим: компаниям с наименьшим счётом (если он меньше, чем у лидера) — очки стройки.</summary>
+        void GrantTrailingBonus()
+        {
+            if (Config.TrailingBuildBonus <= 0 || _players.Count < 2) return;
+            int min = _players.Min(p => p.Score), max = _players.Max(p => p.Score);
+            if (min >= max) return;
+            foreach (var player in _players.Where(p => p.Score == min))
+            {
+                player.BuildPoints = Math.Min(Config.MaxBuildPoints + Config.TrailingBuildBonus, player.BuildPoints + Config.TrailingBuildBonus);
+                Emit($"Субсидия мэрии: {player.Name} отстаёт и получает +{Config.TrailingBuildBonus} очко стройки.");
+            }
+        }
+
+        /// <summary>Погрузить груз в фуру: плата владельцу хаба, охрана ценного груза.</summary>
+        void Load(Truck truck, Cargo cargo, MagnatePlayer owner)
+        {
+            cargo.Truck = truck.Id;
+            truck.Cargo = cargo.Id;
+            var hub = HubAt(truck.Location);
+            if (hub != null && hub.Owner >= 0 && hub.Owner != truck.Owner)
+            {
+                owner.Score -= Config.HubFee;
+                _players[hub.Owner].Score += Config.HubFee;
+                _players[hub.Owner].HubFees += Config.HubFee;
+            }
+            if (cargo.Kind == CargoKind.Valuable && owner.Influence >= Config.EscortCost)
+            {
+                owner.Influence -= Config.EscortCost;
+                cargo.Escorted = true;
+            }
+        }
+
+        /// <summary>
+        /// Запасной груз для фуры, у которой отобрали намеченный: на её хабе, никем не намеченный, доезжает
+        /// (опасный — только если хватит влияния на взятку или Центр объезжается). Самый выгодный за раунд пути.
+        /// </summary>
+        Cargo SpareCargo(Truck truck, out List<string> route)
+        {
+            route = null;
+            Cargo best = null;
+            double bestScore = double.MinValue;
+            var owner = _players[truck.Owner];
+            foreach (var cargo in WaitingAt(truck.Location).ToList())
+            {
+                if (_trucks.Any(t => t.PlannedCargo == cargo.Id)) continue;
+                var path = FindRoute(truck.Owner, truck.Location, cargo.To, cargo.Kind);
+                if (path == null) continue;
+                if (cargo.Kind == CargoKind.Hazard && owner.Influence < Config.HazardBribe && RouteEntersBribeZone(truck.Location, path)) continue;
+                int rounds = RouteRounds(path, cargo.Kind, truck.Owner);
+                double score = ValueIfDelivered(cargo, rounds, truck.Owner) / (double)rounds;
+                if (score > bestScore) { bestScore = score; best = cargo; route = path; }
+            }
+            return best;
         }
 
         void Deliver(Truck truck, Cargo cargo, MagnatePlayer owner, TruckMove move, RoundReport report)
@@ -857,16 +980,30 @@ namespace CityHighways.Core
             move.Delivered = cargo.Id;
             move.Points += points;
             report.Messages.Add($"{owner.Name} доставил {KindTitle(cargo.Kind).ToLowerInvariant()} в «{Map.LocationName(cargo.To)}»: +{points}.");
-            foreach (var contract in _contracts.Where(c => c.Winner < 0 && (!c.Kind.HasValue || c.Kind == cargo.Kind)))
+            foreach (var contract in _contracts.Where(c => c.OpenFor(owner.Index) && (!c.Kind.HasValue || c.Kind == cargo.Kind)))
             {
                 contract.Progress[owner.Index]++;
                 if (contract.Progress[owner.Index] < contract.Needed) continue;
-                contract.Winner = owner.Index;
-                owner.Score += contract.RewardPoints;
-                owner.Influence += contract.RewardInfluence;
-                owner.ContractsWon++;
-                AddReputation(owner, 5);
-                report.Messages.Add($"{owner.Name} выполнил заказ мэрии «{contract.Title}»: +{contract.RewardPoints} очков и +{contract.RewardInfluence} влияния.");
+                if (contract.Winner < 0)
+                {
+                    contract.Winner = owner.Index;
+                    owner.Score += contract.RewardPoints;
+                    owner.Influence += contract.RewardInfluence;
+                    owner.ContractsWon++;
+                    AddReputation(owner, 5);
+                    report.Messages.Add($"{owner.Name} выполнил заказ мэрии «{contract.Title}»: +{contract.RewardPoints} очков и +{contract.RewardInfluence} влияния. " +
+                                        "Второму — половина награды.");
+                }
+                else
+                {
+                    // Второе место — половина награды, после этого заказ закрыт.
+                    contract.Second = owner.Index;
+                    owner.Score += contract.SecondPoints;
+                    owner.Influence += contract.SecondInfluence;
+                    AddReputation(owner, 2);
+                    report.Messages.Add($"{owner.Name} вторым выполнил заказ мэрии «{contract.Title}»: +{contract.SecondPoints} очков" +
+                                        (contract.SecondInfluence > 0 ? $" и +{contract.SecondInfluence} влияния." : "."));
+                }
             }
             _cargo.Remove(cargo.Id);
             truck.Cargo = null;
@@ -972,14 +1109,15 @@ namespace CityHighways.Core
 
         void RefillContracts()
         {
-            foreach (var contract in _contracts.Where(c => c.Winner < 0 && Round > c.EndRound).ToList())
+            // Выполненный заказ ждёт второго до конца срока; невыполненный по сроку — снимается.
+            foreach (var contract in _contracts.Where(c => c.Second < 0 && Round > c.EndRound).ToList())
             {
                 _contracts.Remove(contract);
-                Emit($"Заказ мэрии «{contract.Title}» никто не выполнил.");
+                Emit(contract.Winner < 0 ? $"Заказ мэрии «{contract.Title}» никто не выполнил." : $"Заказ мэрии «{contract.Title}» закрыт: второго не нашлось.");
             }
-            _contracts.RemoveAll(c => c.Winner >= 0);
+            _contracts.RemoveAll(c => c.Second >= 0);
             var kinds = new CargoKind?[] { null, CargoKind.Perishable, CargoKind.Heavy, CargoKind.Fragile, CargoKind.Valuable, CargoKind.Hazard, CargoKind.Oversized };
-            while (_contracts.Count < Config.ActiveContracts && Round <= TotalRounds - 3)
+            while (_contracts.Count(c => c.Winner < 0) < Config.ActiveContracts && Round <= TotalRounds - 3)
             {
                 CargoKind? kind = kinds[_rng.Next(kinds.Length)];
                 for (int attempt = 0; attempt < 10 && _contracts.Any(c => c.Kind == kind); attempt++) kind = kinds[_rng.Next(kinds.Length)];

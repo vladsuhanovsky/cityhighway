@@ -223,7 +223,7 @@ namespace CityHighways.Presentation
             _bottom.Add(cargo);
 
             // 3. Заказы мэрии.
-            var active = _game.Contracts.Where(c => c.Winner < 0).ToList();
+            var active = _game.Contracts.Where(c => c.OpenFor(player.Index)).ToList();
             var orders = Section(OrdersSection, 1f, () => TogglePopup("contracts", OrdersSection));
             orders.Add(Header("Заказы мэрии", Theme.Text, active.Count.ToString()));
             if (active.Count > 0)
@@ -848,12 +848,15 @@ namespace CityHighways.Presentation
                 var titleRow = Ui.Row();
                 titleRow.style.alignItems = Align.Center;
                 if (contract.Kind.HasValue) titleRow.Add(Chip(contract.Kind.Value, CargoIconPanel));
-                var title = Ui.Text(contract.Title + (contract.Winner >= 0 ? $" — выполнил {_game.Players[contract.Winner].Name}" : ""), 14f, Theme.Text, true);
+                string status = contract.Second >= 0 ? $" — выполнили {_game.Players[contract.Winner].Name} и {_game.Players[contract.Second].Name}"
+                    : contract.Winner >= 0 ? $" — выполнил {_game.Players[contract.Winner].Name}, второе место открыто" : "";
+                var title = Ui.Text(contract.Title + status, 14f, Theme.Text, true);
                 title.style.whiteSpace = WhiteSpace.Normal;
                 title.style.flexShrink = 1f;
                 titleRow.Add(title);
                 card.Add(titleRow);
-                card.Add(Hint($"Первому: +{contract.RewardPoints} очков, +{contract.RewardInfluence} влияния и репутация. Срок — до конца раунда {contract.EndRound}."));
+                card.Add(Hint($"Первому: +{contract.RewardPoints} очков, +{contract.RewardInfluence} влияния и репутация. Второму — половина: +{contract.SecondPoints} очков" +
+                              (contract.SecondInfluence > 0 ? $", +{contract.SecondInfluence} влияния" : "") + $". Срок — до конца раунда {contract.EndRound}."));
                 foreach (var company in _game.Players)
                 {
                     var row = Ui.Row();
@@ -891,8 +894,10 @@ namespace CityHighways.Presentation
             }
             var more = Hint($"Пропускная способность за раунд: улица {_game.Config.CapacityStreet}, широкая дорога и мост {_game.Config.CapacityWide}, " +
                             $"магистраль {_game.Config.CapacityHighway}. Больше фур — пробка: все они стоят, каждая −{_game.Config.JamPenalty}. " +
-                            "Серые дороги — городские: общие и бесплатные. Хаб можно развить кликом в фазе стройки. Репутация растёт за доставки вовремя " +
-                            "и заказы мэрии, падает за пробки и потери; с уровнем растут очки за доставку (до ×1,5).");
+                            "Серые дороги — городские: общие и бесплатные. Свои дороги от 2 участков фура проходит на участок быстрее. " +
+                            "Хаб можно развить кликом в фазе стройки; владелец — кто вложил в него больше очков. " +
+                            "Первыми ходят и грузятся отстающие, компании с наименьшим счётом — +1 очко стройки. Если груз забрал соперник, фура возьмёт другой с того же хаба. " +
+                            "Репутация растёт за доставки вовремя и заказы мэрии, падает за пробки и потери; с уровнем растут очки за доставку (до ×1,5).");
             more.style.marginTop = 8f;
             _popupBody.Add(Pad(more));
         }

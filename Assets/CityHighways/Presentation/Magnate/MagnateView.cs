@@ -667,7 +667,7 @@ namespace CityHighways.Presentation
         bool Urgent(Cargo cargo) => cargo.Kind == CargoKind.Perishable && cargo.SpawnRound + cargo.Norm - _game.Round <= 1;
 
         /// <summary>Груз засчитывается в действующий заказ мэрии.</summary>
-        bool ForContract(Cargo cargo) => _game.Contracts.Any(c => c.Winner < 0 && (!c.Kind.HasValue || c.Kind == cargo.Kind));
+        bool ForContract(Cargo cargo) => _game.Contracts.Any(c => c.OpenFor(_game.CurrentPlayerIndex) && (!c.Kind.HasValue || c.Kind == cargo.Kind));
 
         /// <summary>Загрузка дорог по прошлому раунду: линия по оси построенной дороги — зелёная, жёлтая, красная.</summary>
         void DrawTraffic(Painter2D p)
@@ -822,12 +822,19 @@ namespace CityHighways.Presentation
             if (hub != null)
             {
                 text += "\n" + (hub.Kind == HubKind.Airport ? "Аэропорт" : hub.Kind == HubKind.Port ? "Порт" : "Вокзал") +
-                        $" · уровень {hub.Level}" + (hub.Owner >= 0 ? $" · развивает {_game.Players[hub.Owner].Name}" : " · городской");
+                        $" · уровень {hub.Level}" + (hub.Owner >= 0 ? $" · владелец {_game.Players[hub.Owner].Name} (вложено {_game.HubInvestment(location.Id, hub.Owner)})" : " · городской");
                 foreach (var cargo in _game.WaitingAt(location.Id))
                     text += $"\n• {LogisticsGame.KindTitle(cargo.Kind)} → {_game.Map.LocationName(cargo.To)}: {cargo.Value} очк.";
-                if (HumanTurn && _game.Phase == MagnatePhase.Build && !_game.IsOpeningRound && hub.Level < 5 && (hub.Owner < 0 || hub.Owner == _game.CurrentPlayerIndex))
-                    text += $"\nКлик — развить до уровня {hub.Level + 1} за {_game.HubUpgradeCost(hub)}: больше грузов, " +
-                            $"с чужих фур {_game.Config.HubFee} за погрузку, вы грузите первым";
+                if (HumanTurn && _game.Phase == MagnatePhase.Build && !_game.IsOpeningRound && hub.Level < 5)
+                {
+                    int me = _game.CurrentPlayerIndex, cost = _game.HubUpgradeCost(hub);
+                    int mine = _game.HubInvestment(location.Id, me) + cost;
+                    int theirs = hub.Owner >= 0 && hub.Owner != me ? _game.HubInvestment(location.Id, hub.Owner) : 0;
+                    text += $"\nКлик — развить до уровня {hub.Level + 1} за {cost}: больше грузов";
+                    if (hub.Owner == me) text += $" (ваших вложений станет {mine})";
+                    else if (hub.Owner < 0 || mine > theirs) text += $" — хаб станет вашим: с чужих фур {_game.Config.HubFee} за погрузку, вы грузите первым";
+                    else text += $" — владельцем останется {_game.Players[hub.Owner].Name}: у вас будет {mine} из {theirs + 1} нужных";
+                }
             }
             if (location.DistrictId == _game.Config.BribeDistrict) text += $"\nОпасный груз здесь — взятка {_game.Config.HazardBribe} влияния";
 

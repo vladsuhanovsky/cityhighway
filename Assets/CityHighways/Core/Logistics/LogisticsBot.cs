@@ -45,8 +45,11 @@ namespace CityHighways.Core
             // Хаб: развивать свой (или ничей) хаб, у которого стоят его фуры, — больше грузов и плата с соперников.
             if (game.Round <= game.TotalRounds - 4)
             {
+                // Владелец хаба — кто вложил больше: бот развивает свой, ничей или тот, который этим вложением перехватит.
+                bool Takes(Hub h) => h.Owner < 0 || h.Owner == me
+                    || game.HubInvestment(h.LocationId, me) + game.HubUpgradeCost(h) > game.HubInvestment(h.LocationId, h.Owner);
                 var hub = game.Hubs
-                    .Where(h => (h.Owner < 0 || h.Owner == me) && h.Level < 5)
+                    .Where(h => h.Level < 5 && Takes(h))
                     .OrderByDescending(h => game.Trucks.Count(t => t.Owner == me && t.Location == h.LocationId) * 2 + (h.Owner == me ? 1 : 0) + rng.NextDouble())
                     .FirstOrDefault();
                 if (hub != null && player.BuildPoints >= game.HubUpgradeCost(hub) + 2) game.UpgradeHub(hub.LocationId);
@@ -92,7 +95,8 @@ namespace CityHighways.Core
                     float score = game.ValueIfDelivered(cargo, rounds, me) / (float)rounds;
                     // Заказ мэрии на этот вид — груз ценнее.
                     foreach (var contract in game.Contracts)
-                        if (contract.Winner < 0 && (!contract.Kind.HasValue || contract.Kind == cargo.Kind)) score += contract.RewardPoints / (float)contract.Needed / rounds * 0.6f;
+                        if (contract.OpenFor(me) && (!contract.Kind.HasValue || contract.Kind == cargo.Kind))
+                            score += (contract.Winner < 0 ? contract.RewardPoints : contract.SecondPoints) / (float)contract.Needed / rounds * 0.6f;
                     if (cargo.Kind == CargoKind.Valuable && game.CurrentPlayer.Influence < game.Config.EscortCost) score *= 0.6f;
                     if (cargo.Kind == CargoKind.Fragile) score -= game.RouteRisk(route) * 0.8f;
                     if (score > bestScore) { bestScore = score; bestCargo = cargo; }
