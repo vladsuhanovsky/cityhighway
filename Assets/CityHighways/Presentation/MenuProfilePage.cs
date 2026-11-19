@@ -24,6 +24,7 @@ namespace CityHighways.Presentation
         readonly Label _title;
         readonly Dictionary<Tab, (VisualElement button, MenuIcon icon, Label label)> _tabButtons = new Dictionary<Tab, (VisualElement, MenuIcon, Label)>();
         readonly ScrollView _scroll;
+        const float ContentHeight = 664f;
         readonly VisualElement _content;
         readonly Label _statusLabel;
         readonly UnityEngine.UIElements.Button _idChip;
@@ -113,7 +114,11 @@ namespace CityHighways.Presentation
             Root.Add(tabs);
 
             _scroll = new ScrollView(ScrollViewMode.Vertical);
-            _scroll.style.maxHeight = 664f;
+            // Высота у всех вкладок одна (как у «Достижений» и «Кошелька»): страница не прыгает при переключении,
+            // короткие вкладки просто оставляют место снизу, длинные прокручиваются.
+            _scroll.style.height = ContentHeight;
+            _scroll.style.maxHeight = ContentHeight;
+            _scroll.style.flexShrink = 0f;
             Ui.StyleScroller(_scroll);
             Root.Add(_scroll);
             _content = Ui.Column();
@@ -214,7 +219,9 @@ namespace CityHighways.Presentation
         void CharacterTab(PlayerProfile profile)
         {
             var row = Ui.Row();
-            row.style.alignItems = Align.FlexStart;
+            // Карточки персонажа и гардероба — на всю высоту вкладки (она у всех вкладок одна).
+            row.style.alignItems = Align.Stretch;
+            row.style.minHeight = ContentHeight - 4f;
             _content.Add(row);
 
             var worn = profile.Outfit;
@@ -224,6 +231,7 @@ namespace CityHighways.Presentation
             left.style.alignItems = Align.Center;
             left.style.marginRight = 14f;
             left.style.width = 280f;
+            left.style.justifyContent = Justify.Center;
             left.Add(Ui.Text("Персонаж", 18f, Theme.Text, true));
             var hint = Ui.Text("Тяните мышью — повернуть. Перетащите вещь на персонажа — надеть или примерить.", 12f, Theme.TextDim);
             hint.style.unityTextAlign = TextAnchor.MiddleCenter;
