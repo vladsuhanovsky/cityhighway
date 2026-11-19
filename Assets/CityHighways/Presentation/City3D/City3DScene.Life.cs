@@ -27,12 +27,24 @@ namespace CityHighways.Presentation
         readonly Dictionary<string, (GameObject go, int owner)> _curbs = new Dictionary<string, (GameObject, int)>();
         readonly Dictionary<int, Material> _ownerMaterials = new Dictionary<int, Material>();
 
+        /// <summary>
+        /// Материал полос и бордюров цвета компании. Копия CityBuildings.mat, а в нём включено свечение белым
+        /// (_EmissionColor = 1) без карты свечения — копия светилась чисто белым, и цвет владельца не был виден:
+        /// у построенных дорог было белое обрамление. Теперь свечение — слабое, в цвет владельца (полосы видны и
+        /// в тени, и ночью), без бликов.
+        /// </summary>
         Material OwnerMaterial(int owner, Color color)
         {
             if (!_ownerMaterials.TryGetValue(owner, out var material))
             {
                 material = LoadMaterial("CityBuildings", color);
                 material.SetTexture("_BaseMap", CityAtlas.Albedo);
+                material.SetTexture("_EmissionMap", Texture2D.whiteTexture);
+                material.SetColor("_EmissionColor", color * 0.3f);
+                material.EnableKeyword("_EMISSION");
+                material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+                material.SetFloat("_Smoothness", 0.2f);
+                NoSpecular(material);
                 _ownerMaterials[owner] = material;
             }
             return material;
