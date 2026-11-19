@@ -504,6 +504,8 @@ namespace CityHighways.Presentation
             if (string.IsNullOrEmpty(id) && CharacterCatalog.IsRequired(slot)) return;
             var item = CharacterCatalog.Item(id);
             if (!string.IsNullOrEmpty(id) && !profile.HasClothing(item)) return;
+            // Вещь чужого пола на текущую фигуру не надевается (внешность другого пола меняет весь гардероб — см. Outfit.With).
+            if (item != null && slot != "body" && !item.Fits(profile.Outfit.Gender)) return;
             profile.outfit = profile.Outfit.With(slot, id).Serialize();
             Save();
         }

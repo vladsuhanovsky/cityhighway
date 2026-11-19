@@ -209,7 +209,17 @@ namespace CityHighways.Presentation
         public void Tick(float dt)
         {
             _time += dt;
-            if (_tab == Tab.Character) _turntable.Tick(dt);
+            if (_tab == Tab.Character)
+            {
+                _turntable.Tick(dt);
+                // F3 — отладка слоёв: сокеты (точки привязки) и рамки надетых вещей поверх персонажа.
+                var keyboard = UnityEngine.InputSystem.Keyboard.current;
+                if (keyboard != null && keyboard.f3Key.wasPressedThisFrame)
+                {
+                    CharacterLayers.ShowDebug = !CharacterLayers.ShowDebug;
+                    _turntable.RefreshDebug();
+                }
+            }
             if (_tab == Tab.Containers) TickContainers(dt);
             foreach (var frame in _frames) frame.Tick(dt);
             float pulse = 1f + 0.03f * Mathf.Sin(_time * 5f);
@@ -490,6 +500,8 @@ namespace CityHighways.Presentation
             return tile;
         }
 
+        const float GhostSize = 96f;
+
         void StartDrag(VisualElement tile, CharacterItem item, int pointer)
         {
             _dragging = true;
@@ -497,16 +509,28 @@ namespace CityHighways.Presentation
             _ghost = Ui.Box();
             _ghost.style.position = Position.Absolute;
             _ghost.pickingMode = PickingMode.Ignore;
-            _ghost.style.width = 80f;
-            _ghost.style.height = 120f;
-            _ghost.style.opacity = 0.85f;
+            _ghost.style.width = GhostSize;
+            _ghost.style.height = GhostSize;
+            _ghost.style.opacity = 0.9f;
             _ghost.style.backgroundColor = new Color(0f, 0f, 0f, 0.25f);
+            _ghost.style.overflow = Overflow.Hidden;
             Ui.Radius(_ghost, 10f);
             var texture = CharacterCatalog.Texture(item, (_tryOn ?? Profiles.Active.Outfit).Tone);
             if (texture != null)
             {
-                _ghost.style.backgroundImage = new StyleBackground(texture);
-                _ghost.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
+                // Вещь крупно — по её рамке на холсте, а не весь холст 512×768, где шляпа — точка наверху.
+                var bounds = CharacterLayers.Bounds(item);
+                float zoom = (GhostSize - 12f) / Mathf.Max(bounds.width * CharacterLayers.CanvasWidth, bounds.height * CharacterLayers.CanvasHeight);
+                float canvasW = CharacterLayers.CanvasWidth * zoom, canvasH = CharacterLayers.CanvasHeight * zoom;
+                var image = new VisualElement { pickingMode = PickingMode.Ignore };
+                image.style.position = Position.Absolute;
+                image.style.width = canvasW;
+                image.style.height = canvasH;
+                image.style.left = GhostSize / 2f - bounds.center.x * canvasW;
+                image.style.top = GhostSize / 2f - bounds.center.y * canvasH;
+                image.style.backgroundImage = new StyleBackground(texture);
+                image.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
+                _ghost.Add(image);
             }
             Root.Add(_ghost);
             // Подсказка, куда бросать.
@@ -519,8 +543,8 @@ namespace CityHighways.Presentation
         {
             if (_ghost == null) return;
             var local = Root.WorldToLocal(position);
-            _ghost.style.left = local.x - 40f;
-            _ghost.style.top = local.y - 60f;
+            _ghost.style.left = local.x - GhostSize / 2f;
+            _ghost.style.top = local.y - GhostSize / 2f;
         }
 
         /// <summary>Надеть (если вещь есть) или примерить (если ещё не куплена); wear=false — всегда примерка.</summary>

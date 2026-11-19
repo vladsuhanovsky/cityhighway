@@ -55,6 +55,7 @@ namespace CityHighways.Presentation
         public void Set(Outfit outfit)
         {
             outfit = outfit ?? Outfit.Default;
+            CharacterLayers.Arrange(outfit, _layers);
             foreach (var pair in _layers)
             {
                 var texture = outfit.TextureFor(pair.Key);

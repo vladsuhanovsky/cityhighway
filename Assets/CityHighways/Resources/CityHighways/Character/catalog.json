@@ -39,7 +39,13 @@
    "price": 0,
    "file": "body/body_light",
    "gender": "m",
-   "tone": "light"
+   "tone": "light",
+   "bounds": [
+    17,
+    23,
+    475,
+    714
+   ]
   },
   {
    "id": "body_tan",
@@ -48,7 +54,13 @@
    "price": 0,
    "file": "body/body_tan",
    "gender": "m",
-   "tone": "tan"
+   "tone": "tan",
+   "bounds": [
+    17,
+    23,
+    475,
+    714
+   ]
   },
   {
    "id": "body_dark",
@@ -57,7 +69,13 @@
    "price": 0,
    "file": "body/body_dark",
    "gender": "m",
-   "tone": "dark"
+   "tone": "dark",
+   "bounds": [
+    17,
+    23,
+    475,
+    714
+   ]
   },
   {
    "id": "hair_short",
@@ -65,7 +83,13 @@
    "name": "Короткая стрижка",
    "price": 0,
    "file": "hair/hair_short",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    210,
+    21,
+    88,
+    63
+   ]
   },
   {
    "id": "hair_long",
@@ -73,7 +97,13 @@
    "name": "Длинные волосы",
    "price": 0,
    "file": "hair/hair_long",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    178,
+    16,
+    144,
+    141
+   ]
   },
   {
    "id": "hair_bun",
@@ -81,7 +111,13 @@
    "name": "Пучок",
    "price": 10,
    "file": "hair/hair_bun",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    210,
+    8,
+    86,
+    72
+   ]
   },
   {
    "id": "hair_beard",
@@ -89,7 +125,13 @@
    "name": "Борода прораба",
    "price": 15,
    "file": "hair/hair_beard",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    207,
+    15,
+    94,
+    139
+   ]
   },
   {
    "id": "top_tshirt",
@@ -97,7 +139,13 @@
    "name": "Футболка",
    "price": 0,
    "file": "top/top_tshirt",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    94,
+    145,
+    322,
+    245
+   ]
   },
   {
    "id": "top_vest",
@@ -105,7 +153,14 @@
    "name": "Сигнальный жилет",
    "price": 10,
    "file": "top/top_vest",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    163,
+    142,
+    182,
+    247
+   ],
+   "outer": true
   },
   {
    "id": "top_shirt",
@@ -113,7 +168,13 @@
    "name": "Рубашка",
    "price": 15,
    "file": "top/top_shirt",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    68,
+    129,
+    373,
+    271
+   ]
   },
   {
    "id": "top_sweater",
@@ -121,7 +182,13 @@
    "name": "Свитер",
    "price": 15,
    "file": "top/top_sweater",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    25,
+    142,
+    451,
+    268
+   ]
   },
   {
    "id": "top_jacket",
@@ -129,7 +196,14 @@
    "name": "Пиджак",
    "price": 30,
    "file": "top/top_jacket",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    35,
+    130,
+    440,
+    280
+   ],
+   "outer": true
   },
   {
    "id": "bottom_trousers",
@@ -137,7 +211,13 @@
    "name": "Рабочие брюки",
    "price": 0,
    "file": "bottom/bottom_trousers",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    149,
+    369,
+    211,
+    321
+   ]
   },
   {
    "id": "bottom_jeans",
@@ -145,7 +225,13 @@
    "name": "Джинсы",
    "price": 10,
    "file": "bottom/bottom_jeans",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    151,
+    367,
+    212,
+    338
+   ]
   },
   {
    "id": "bottom_classic",
@@ -153,7 +239,13 @@
    "name": "Классические брюки",
    "price": 15,
    "file": "bottom/bottom_classic",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    151,
+    341,
+    207,
+    349
+   ]
   },
   {
    "id": "bottom_overalls",
@@ -161,7 +253,14 @@
    "name": "Комбинезон",
    "price": 20,
    "file": "bottom/bottom_overalls",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    146,
+    149,
+    217,
+    541
+   ],
+   "overTop": true
   },
   {
    "id": "shoes_boots",
@@ -169,7 +268,13 @@
    "name": "Рабочие ботинки",
    "price": 0,
    "file": "shoes/shoes_boots",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    112,
+    621,
+    287,
+    114
+   ]
   },
   {
    "id": "shoes_sneakers",
@@ -177,7 +282,13 @@
    "name": "Кроссовки",
    "price": 10,
    "file": "shoes/shoes_sneakers",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    111,
+    658,
+    287,
+    79
+   ]
   },
   {
    "id": "shoes_rubber",
@@ -185,7 +296,13 @@
    "name": "Резиновые сапоги",
    "price": 15,
    "file": "shoes/shoes_rubber",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    117,
+    554,
+    274,
+    183
+   ]
   },
   {
    "id": "shoes_oxford",
@@ -193,7 +310,13 @@
    "name": "Туфли",
    "price": 20,
    "file": "shoes/shoes_oxford",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    117,
+    662,
+    275,
+    76
+   ]
   },
   {
    "id": "hat_hardhat",
@@ -201,7 +324,13 @@
    "name": "Строительная каска",
    "price": 10,
    "file": "hat/hat_hardhat",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    203,
+    11,
+    103,
+    70
+   ]
   },
   {
    "id": "hat_cap",
@@ -209,7 +338,13 @@
    "name": "Кепка",
    "price": 10,
    "file": "hat/hat_cap",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    210,
+    19,
+    89,
+    60
+   ]
   },
   {
    "id": "hat_fedora",
@@ -217,7 +352,13 @@
    "name": "Шляпа",
    "price": 20,
    "file": "hat/hat_fedora",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    187,
+    15,
+    134,
+    70
+   ]
   },
   {
    "id": "hat_tophat",
@@ -225,7 +366,13 @@
    "name": "Цилиндр",
    "price": 35,
    "file": "hat/hat_tophat",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    192,
+    0,
+    122,
+    83
+   ]
   },
   {
    "id": "acc_glasses",
@@ -233,7 +380,13 @@
    "name": "Очки",
    "price": 10,
    "file": "accessory/acc_glasses",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    209,
+    65,
+    89,
+    27
+   ]
   },
   {
    "id": "acc_tie",
@@ -241,7 +394,13 @@
    "name": "Галстук",
    "price": 15,
    "file": "accessory/acc_tie",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    205,
+    136,
+    100,
+    218
+   ]
   },
   {
    "id": "acc_radio",
@@ -249,7 +408,13 @@
    "name": "Рация",
    "price": 20,
    "file": "accessory/acc_radio",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    301,
+    145,
+    33,
+    74
+   ]
   },
   {
    "id": "acc_blueprint",
@@ -257,7 +422,13 @@
    "name": "Свиток чертежей",
    "price": 20,
    "file": "accessory/acc_blueprint",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    8,
+    385,
+    101,
+    106
+   ]
   },
   {
    "id": "acc_chain",
@@ -265,7 +436,13 @@
    "name": "Золотая цепь",
    "price": 40,
    "file": "accessory/acc_chain",
-   "gender": "m"
+   "gender": "m",
+   "bounds": [
+    199,
+    137,
+    110,
+    79
+   ]
   },
   {
    "id": "body_f_light",
@@ -274,7 +451,13 @@
    "price": 0,
    "file": "body/body_f_light",
    "gender": "f",
-   "tone": "light"
+   "tone": "light",
+   "bounds": [
+    72,
+    28,
+    360,
+    713
+   ]
   },
   {
    "id": "body_f_tan",
@@ -283,7 +466,13 @@
    "price": 0,
    "file": "body/body_f_tan",
    "gender": "f",
-   "tone": "tan"
+   "tone": "tan",
+   "bounds": [
+    72,
+    28,
+    360,
+    713
+   ]
   },
   {
    "id": "body_f_dark",
@@ -292,7 +481,13 @@
    "price": 0,
    "file": "body/body_f_dark",
    "gender": "f",
-   "tone": "dark"
+   "tone": "dark",
+   "bounds": [
+    72,
+    28,
+    360,
+    713
+   ]
   },
   {
    "id": "hair_f_bob",
@@ -300,7 +495,13 @@
    "name": "Каре",
    "price": 0,
    "file": "hair/hair_f_bob",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    181,
+    23,
+    142,
+    139
+   ]
   },
   {
    "id": "hair_f_long",
@@ -308,7 +509,13 @@
    "name": "Длинные волосы",
    "price": 0,
    "file": "hair/hair_f_long",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    180,
+    25,
+    144,
+    245
+   ]
   },
   {
    "id": "hair_f_ponytail",
@@ -316,7 +523,13 @@
    "name": "Высокий хвост",
    "price": 10,
    "file": "hair/hair_f_ponytail",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    202,
+    9,
+    102,
+    179
+   ]
   },
   {
    "id": "hair_f_curly",
@@ -324,7 +537,13 @@
    "name": "Кудри",
    "price": 15,
    "file": "hair/hair_f_curly",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    144,
+    14,
+    215,
+    190
+   ]
   },
   {
    "id": "top_f_tshirt",
@@ -332,7 +551,13 @@
    "name": "Футболка",
    "price": 0,
    "file": "top/top_f_tshirt",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    154,
+    177,
+    195,
+    183
+   ]
   },
   {
    "id": "top_f_vest",
@@ -340,7 +565,14 @@
    "name": "Сигнальный жилет",
    "price": 10,
    "file": "top/top_f_vest",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    185,
+    176,
+    139,
+    194
+   ],
+   "outer": true
   },
   {
    "id": "top_f_blouse",
@@ -348,7 +580,13 @@
    "name": "Блузка",
    "price": 15,
    "file": "top/top_f_blouse",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    149,
+    163,
+    205,
+    195
+   ]
   },
   {
    "id": "top_f_cardigan",
@@ -356,7 +594,14 @@
    "name": "Кардиган",
    "price": 15,
    "file": "top/top_f_cardigan",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    89,
+    172,
+    326,
+    234
+   ],
+   "outer": true
   },
   {
    "id": "top_f_blazer",
@@ -364,7 +609,14 @@
    "name": "Жакет",
    "price": 30,
    "file": "top/top_f_blazer",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    89,
+    161,
+    326,
+    234
+   ],
+   "outer": true
   },
   {
    "id": "bottom_f_trousers",
@@ -372,7 +624,13 @@
    "name": "Рабочие брюки",
    "price": 0,
    "file": "bottom/bottom_f_trousers",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    156,
+    342,
+    196,
+    377
+   ]
   },
   {
    "id": "bottom_f_jeans",
@@ -380,7 +638,13 @@
    "name": "Джинсы",
    "price": 10,
    "file": "bottom/bottom_f_jeans",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    164,
+    341,
+    179,
+    348
+   ]
   },
   {
    "id": "bottom_f_skirt",
@@ -388,7 +652,13 @@
    "name": "Юбка",
    "price": 15,
    "file": "bottom/bottom_f_skirt",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    146,
+    321,
+    216,
+    179
+   ]
   },
   {
    "id": "bottom_f_overalls",
@@ -396,7 +666,14 @@
    "name": "Комбинезон",
    "price": 20,
    "file": "bottom/bottom_f_overalls",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    163,
+    181,
+    182,
+    510
+   ],
+   "overTop": true
   },
   {
    "id": "shoes_f_boots",
@@ -404,7 +681,13 @@
    "name": "Рабочие ботинки",
    "price": 0,
    "file": "shoes/shoes_f_boots",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    145,
+    636,
+    217,
+    105
+   ]
   },
   {
    "id": "shoes_f_sneakers",
@@ -412,7 +695,13 @@
    "name": "Кроссовки",
    "price": 10,
    "file": "shoes/shoes_f_sneakers",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    145,
+    664,
+    215,
+    76
+   ]
   },
   {
    "id": "shoes_f_rubber",
@@ -420,7 +709,13 @@
    "name": "Резиновые сапоги",
    "price": 15,
    "file": "shoes/shoes_f_rubber",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    148,
+    566,
+    210,
+    174
+   ]
   },
   {
    "id": "shoes_f_heels",
@@ -428,7 +723,13 @@
    "name": "Туфли на каблуке",
    "price": 20,
    "file": "shoes/shoes_f_heels",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    145,
+    677,
+    216,
+    65
+   ]
   },
   {
    "id": "hat_f_hardhat",
@@ -436,7 +737,13 @@
    "name": "Строительная каска",
    "price": 10,
    "file": "hat/hat_f_hardhat",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    194,
+    8,
+    120,
+    85
+   ]
   },
   {
    "id": "hat_f_cap",
@@ -444,7 +751,13 @@
    "name": "Кепка",
    "price": 10,
    "file": "hat/hat_f_cap",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    203,
+    23,
+    104,
+    72
+   ]
   },
   {
    "id": "hat_f_beret",
@@ -452,7 +765,13 @@
    "name": "Берет",
    "price": 20,
    "file": "hat/hat_f_beret",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    203,
+    17,
+    120,
+    89
+   ]
   },
   {
    "id": "hat_f_sunhat",
@@ -460,7 +779,13 @@
    "name": "Шляпка",
    "price": 35,
    "file": "hat/hat_f_sunhat",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    147,
+    13,
+    216,
+    119
+   ]
   },
   {
    "id": "acc_f_glasses",
@@ -468,7 +793,13 @@
    "name": "Очки",
    "price": 10,
    "file": "accessory/acc_f_glasses",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    205,
+    85,
+    98,
+    37
+   ]
   },
   {
    "id": "acc_f_scarf",
@@ -476,7 +807,13 @@
    "name": "Шейный платок",
    "price": 15,
    "file": "accessory/acc_f_scarf",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    222,
+    155,
+    92,
+    67
+   ]
   },
   {
    "id": "acc_f_radio",
@@ -484,7 +821,13 @@
    "name": "Рация",
    "price": 20,
    "file": "accessory/acc_f_radio",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    290,
+    171,
+    27,
+    60
+   ]
   },
   {
    "id": "acc_f_tablet",
@@ -492,7 +835,13 @@
    "name": "Планшет",
    "price": 20,
    "file": "accessory/acc_f_tablet",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    60,
+    412,
+    64,
+    98
+   ]
   },
   {
    "id": "acc_f_pearls",
@@ -500,7 +849,13 @@
    "name": "Жемчужное ожерелье",
    "price": 40,
    "file": "accessory/acc_f_pearls",
-   "gender": "f"
+   "gender": "f",
+   "bounds": [
+    203,
+    118,
+    100,
+    84
+   ]
   }
  ]
 }

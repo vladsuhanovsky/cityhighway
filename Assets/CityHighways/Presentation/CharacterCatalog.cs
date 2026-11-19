@@ -18,6 +18,12 @@ namespace CityHighways.Presentation
         public string gender;
         /// <summary>Только у внешности: тон кожи «light», «tan» или «dark» — по нему выбираются варианты слоёв других вещей.</summary>
         public string tone;
+        /// <summary>Рамка непрозрачной части на холсте [x, y, ширина, высота] (сверху вниз) — Tools~/wardrobe_layers.py.</summary>
+        public int[] bounds;
+        /// <summary>Низ, который рисуется поверх верха (комбинезон: нагрудник поверх футболки).</summary>
+        public bool overTop;
+        /// <summary>Верхняя одежда: остаётся поверх даже «overTop»-низа.</summary>
+        public bool outer;
 
         public bool Fits(string g) => string.IsNullOrEmpty(gender) || gender == g;
     }
@@ -172,13 +178,31 @@ namespace CityHighways.Presentation
         /// <summary>Тон кожи — по внешности: под него берутся варианты слоёв.</summary>
         public string Tone => CharacterCatalog.Item(Get("body"))?.tone ?? "light";
 
-        public Texture2D TextureFor(string slot) => CharacterCatalog.Texture(CharacterCatalog.Item(Get(slot)), Tone);
+        /// <summary>
+        /// Картинка слоя под тон кожи. Волосы при надетом головном уборе подрезаются: то, что торчало бы из-под
+        /// него (пучок над кепкой, хвост над беретом), не рисуется — см. <see cref="CharacterLayers.HairUnderHat"/>.
+        /// </summary>
+        public Texture2D TextureFor(string slot)
+        {
+            var texture = CharacterCatalog.Texture(CharacterCatalog.Item(Get(slot)), Tone);
+            if (slot != "hair" || texture == null) return texture;
+            var hat = CharacterCatalog.Texture(CharacterCatalog.Item(Get("hat")), Tone);
+            return hat == null ? texture : CharacterLayers.HairUnderHat(texture, hat);
+        }
 
+        /// <summary>Порядок слоёв снизу вверх для этого наряда (комбинезон поверх футболки и т. п.).</summary>
+        public List<string> DrawOrder() => CharacterLayers.DrawOrder(this);
+
+        /// <summary>
+        /// Наряд с вещью в слоте. Старая вещь слота заменяется целиком (в слоте всегда одна вещь), после чего наряд
+        /// проверяется заново, как при загрузке: вещь чужого пола или чужого слота не наденется, обязательный слот не
+        /// останется пустым, а при смене внешности на другой пол весь гардероб сменится на вещи этого пола.
+        /// </summary>
         public Outfit With(string slot, string id)
         {
             var copy = Parse(Serialize());
             copy._items[slot] = id ?? "";
-            return copy;
+            return Parse(copy.Serialize());
         }
 
         public string Serialize() =>

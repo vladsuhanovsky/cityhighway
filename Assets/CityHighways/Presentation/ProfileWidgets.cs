@@ -54,7 +54,9 @@ namespace CityHighways.Presentation
     /// поэтому поворот сделан как 2.5D: фигура сужается по ширине и чуть смещается, меняется освещение и тень на
     /// полу. Все слои двигаются вместе: раньше одежда, причёска и шляпа сдвигались с разной «глубиной» и при
     /// повороте съезжали с фигуры. Тяните мышью влево-вправо — фигура поворачивается до ±40°, отпустите —
-    /// плавно покачивается. Надетая вещь «проявляется» анимацией.
+    /// плавно покачивается. Надетая вещь «проявляется» анимацией вокруг самой вещи (центр её рамки из catalog.json):
+    /// раньше слой увеличивался вокруг середины холста, и шляпа на время анимации улетала над головой, а обувь —
+    /// под ноги. Порядок слоёв — по наряду (<see cref="CharacterLayers.DrawOrder"/>).
     /// </summary>
     public sealed class TurntableCharacter : VisualElement
     {
@@ -62,7 +64,9 @@ namespace CityHighways.Presentation
         readonly VisualElement _stage;
         readonly VisualElement _shadow;
         readonly Dictionary<string, VisualElement> _layers = new Dictionary<string, VisualElement>();
+        readonly CharacterDebugOverlay _debug;
         Outfit _outfit;
+        IVisualElementScheduledItem _settle;
         float _angle, _velocity, _time;
         bool _dragging;
         float _lastX;
@@ -98,6 +102,8 @@ namespace CityHighways.Presentation
                 _stage.Add(layer);
                 _layers[slot] = layer;
             }
+            _debug = new CharacterDebugOverlay();
+            _stage.Add(_debug);
 
             RegisterCallback<PointerDownEvent>(e =>
             {
@@ -127,25 +133,42 @@ namespace CityHighways.Presentation
         public void Set(Outfit outfit, string animateSlot = null)
         {
             _outfit = outfit ?? Outfit.Default;
+            // Прошлая анимация могла не доиграть — все слои сразу на место, иначе слой «зависал» сдвинутым.
+            _settle?.Pause();
+            _settle = null;
             foreach (var pair in _layers)
             {
+                Ui.Transitions(pair.Value, 0f, "scale", "opacity", "translate");
+                pair.Value.style.scale = new Scale(Vector3.one);
+                pair.Value.style.opacity = 1f;
+                pair.Value.style.translate = new Translate(new Length(0f), new Length(0f));
                 var texture = _outfit.TextureFor(pair.Key);
                 pair.Value.style.backgroundImage = texture != null ? new StyleBackground(texture) : new StyleBackground(StyleKeyword.None);
             }
+            CharacterLayers.Arrange(_outfit, _layers);
+            _debug.BringToFront();
+            _debug.Set(_outfit);
             if (animateSlot != null && _layers.TryGetValue(animateSlot, out var changed))
             {
-                // Анимация надевания: вещь появляется чуть крупнее и прозрачной и «садится» на место.
-                Ui.Transitions(changed, 0f, "scale", "opacity");
-                changed.style.scale = new Scale(new Vector3(1.18f, 1.18f, 1f));
+                // Анимация надевания: вещь чуть крупнее, выше и прозрачная — и «садится» на место вокруг своего центра.
+                var pivot = CharacterLayers.Pivot(CharacterCatalog.Item(_outfit.Get(animateSlot)), animateSlot, _outfit.Gender);
+                changed.style.transformOrigin = new TransformOrigin(Length.Percent(pivot.x * 100f), Length.Percent(pivot.y * 100f));
+                changed.style.scale = new Scale(new Vector3(1.10f, 1.10f, 1f));
+                changed.style.translate = new Translate(new Length(0f), new Length(-6f));
                 changed.style.opacity = 0f;
-                changed.schedule.Execute(() =>
+                _settle = changed.schedule.Execute(() =>
                 {
-                    Ui.Transitions(changed, 0.35f, "scale", "opacity");
+                    Ui.Transitions(changed, 0.3f, "scale", "opacity", "translate");
                     changed.style.scale = new Scale(Vector3.one);
+                    changed.style.translate = new Translate(new Length(0f), new Length(0f));
                     changed.style.opacity = 1f;
-                }).ExecuteLater(30);
+                });
+                _settle.ExecuteLater(30);
             }
         }
+
+        /// <summary>Перерисовать отладочную разметку (сокеты и рамки) после переключения F3.</summary>
+        public void RefreshDebug() => _debug.Set(_outfit);
 
         public void Tick(float dt)
         {
