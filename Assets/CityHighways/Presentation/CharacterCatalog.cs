@@ -24,8 +24,42 @@ namespace CityHighways.Presentation
         public bool overTop;
         /// <summary>Верхняя одежда: остаётся поверх даже «overTop»-низа.</summary>
         public bool outer;
+        /// <summary>Описание для гардероба (подсказка при наведении).</summary>
+        public string description;
+        /// <summary>Редкость вручную: «common», «rare», «epic», «legendary». Пусто — по цене.</summary>
+        public string rarity;
+        /// <summary>
+        /// Что не видно под этой вещью: слоты («hair», «accessory») или id вещей («acc_tie»). Скрытая вещь остаётся
+        /// надетой — снимете эту, и она снова появится.
+        /// </summary>
+        public string[] hides;
 
         public bool Fits(string g) => string.IsNullOrEmpty(gender) || gender == g;
+
+        /// <summary>Редкость: из поля rarity, а без него — по цене.</summary>
+        public Rarity.Level Level
+        {
+            get
+            {
+                switch ((rarity ?? "").Trim().ToLowerInvariant())
+                {
+                    case "common": return Rarity.Level.Common;
+                    case "rare": return Rarity.Level.Rare;
+                    case "epic": return Rarity.Level.Epic;
+                    case "legendary": return Rarity.Level.Legendary;
+                    default: return Rarity.Of(price);
+                }
+            }
+        }
+
+        /// <summary>Скрывает ли эта вещь другую (по её слоту или id).</summary>
+        public bool Hides(CharacterItem other)
+        {
+            if (other == null || other == this || hides == null) return false;
+            foreach (var target in hides)
+                if (target == other.slot || target == other.id) return true;
+            return false;
+        }
     }
 
     [Serializable]
@@ -184,10 +218,25 @@ namespace CityHighways.Presentation
         /// </summary>
         public Texture2D TextureFor(string slot)
         {
+            if (HiddenBy(slot) != null) return null;
             var texture = CharacterCatalog.Texture(CharacterCatalog.Item(Get(slot)), Tone);
             if (slot != "hair" || texture == null) return texture;
             var hat = CharacterCatalog.Texture(CharacterCatalog.Item(Get("hat")), Tone);
             return hat == null ? texture : CharacterLayers.HairUnderHat(texture, hat);
+        }
+
+        /// <summary>Надетая вещь, под которой не видно вещь слота (её «hides»), или null.</summary>
+        public CharacterItem HiddenBy(string slot)
+        {
+            var item = CharacterCatalog.Item(Get(slot));
+            if (item == null) return null;
+            foreach (var other in CharacterCatalog.Slots)
+            {
+                if (other == slot) continue;
+                var cover = CharacterCatalog.Item(Get(other));
+                if (cover != null && cover.Hides(item)) return cover;
+            }
+            return null;
         }
 
         /// <summary>Порядок слоёв снизу вверх для этого наряда (комбинезон поверх футболки и т. п.).</summary>

@@ -15,7 +15,8 @@ namespace CityHighways.Presentation
         public CharacterItem Clothing;
         public ShopItem Style;
 
-        public Rarity.Level Level => Rarity.Of(Value);
+        /// <summary>Редкость: у одежды — её собственная (может быть задана в catalog.json), у оформления — по цене.</summary>
+        public Rarity.Level Level => Clothing != null ? Clothing.Level : Rarity.Of(Value);
         public bool Exclusive => Style != null && Style.Exclusive;
 
         /// <summary>Что это за вещь, коротко: «Головной убор», «Титул»…</summary>

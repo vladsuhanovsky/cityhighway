@@ -3,7 +3,7 @@
   512,
   768
  ],
- "note": "Все PNG — 512×768, прозрачный фон, фигура как у базы своего пола. Слои рисуются по порядку order. price 0 — есть у всех. gender: m — мужское, f — женское. У внешности tone — тон кожи; у вещей рядом лежат варианты <файл>_tan.png и <файл>_dark.png. Нарезка — Tools~/wardrobe_extract.py.",
+ "note": "Все PNG — 512×768, прозрачный фон, фигура как у базы своего пола. Слои рисуются по порядку order. price 0 — есть у всех. gender: m — мужское, f — женское. У внешности tone — тон кожи; у вещей рядом лежат варианты <файл>_tan.png и <файл>_dark.png. Нарезка — Tools~/wardrobe_extract.py. rarity — редкость вручную (common, rare, epic, legendary; нет — по цене). description — подсказка в гардеробе. hides — что не видно под вещью: слоты («hair») или id вещей («acc_tie»); вещь при этом остаётся надетой. overTop, outer, bounds — см. Tools~/wardrobe_layers.py.",
  "order": [
   "body",
   "bottom",
@@ -37,6 +37,8 @@
    "slot": "body",
    "name": "Светлая кожа",
    "price": 0,
+   "rarity": "common",
+   "description": "Тон кожи. Под него подбираются варианты причёсок, рук и открытой одежды.",
    "file": "body/body_light",
    "gender": "m",
    "tone": "light",
@@ -52,6 +54,8 @@
    "slot": "body",
    "name": "Смуглая кожа",
    "price": 0,
+   "rarity": "common",
+   "description": "Тон кожи. Под него подбираются варианты причёсок, рук и открытой одежды.",
    "file": "body/body_tan",
    "gender": "m",
    "tone": "tan",
@@ -67,6 +71,8 @@
    "slot": "body",
    "name": "Тёмная кожа",
    "price": 0,
+   "rarity": "common",
+   "description": "Тон кожи. Под него подбираются варианты причёсок, рук и открытой одежды.",
    "file": "body/body_dark",
    "gender": "m",
    "tone": "dark",
@@ -82,6 +88,8 @@
    "slot": "hair",
    "name": "Короткая стрижка",
    "price": 0,
+   "rarity": "common",
+   "description": "Аккуратная стрижка — практично на стройке и прилично на совещании в мэрии.",
    "file": "hair/hair_short",
    "gender": "m",
    "bounds": [
@@ -96,6 +104,8 @@
    "slot": "hair",
    "name": "Длинные волосы",
    "price": 0,
+   "rarity": "common",
+   "description": "Волосы до плеч: вольный дух проектировщика, который рисует развязки от руки.",
    "file": "hair/hair_long",
    "gender": "m",
    "bounds": [
@@ -110,6 +120,8 @@
    "slot": "hair",
    "name": "Пучок",
    "price": 10,
+   "rarity": "common",
+   "description": "Пучок на макушке, чтобы волосы не мешали чертить. Под головным убором прячется.",
    "file": "hair/hair_bun",
    "gender": "m",
    "bounds": [
@@ -124,6 +136,8 @@
    "slot": "hair",
    "name": "Борода прораба",
    "price": 15,
+   "rarity": "rare",
+   "description": "Стрижка и густая борода. Прораб с такой бородой сдаёт объекты в срок.",
    "file": "hair/hair_beard",
    "gender": "m",
    "bounds": [
@@ -138,6 +152,8 @@
    "slot": "top",
    "name": "Футболка",
    "price": 0,
+   "rarity": "common",
+   "description": "Простая футболка. Удобно на площадке, не жалко испачкать бетоном.",
    "file": "top/top_tshirt",
    "gender": "m",
    "bounds": [
@@ -152,6 +168,8 @@
    "slot": "top",
    "name": "Сигнальный жилет",
    "price": 10,
+   "rarity": "common",
+   "description": "Оранжевый сигнальный жилет: видно издалека, водители объезжают заранее.",
    "file": "top/top_vest",
    "gender": "m",
    "bounds": [
@@ -167,6 +185,8 @@
    "slot": "top",
    "name": "Рубашка",
    "price": 15,
+   "rarity": "rare",
+   "description": "Белая рубашка с закатанными рукавами — для тех, кто и считает, и строит.",
    "file": "top/top_shirt",
    "gender": "m",
    "bounds": [
@@ -181,6 +201,8 @@
    "slot": "top",
    "name": "Свитер",
    "price": 15,
+   "rarity": "rare",
+   "description": "Тёплый вязаный свитер для ночных смен. Галстук под ним не виден.",
    "file": "top/top_sweater",
    "gender": "m",
    "bounds": [
@@ -188,6 +210,9 @@
     142,
     451,
     268
+   ],
+   "hides": [
+    "acc_tie"
    ]
   },
   {
@@ -195,6 +220,8 @@
    "slot": "top",
    "name": "Пиджак",
    "price": 30,
+   "rarity": "epic",
+   "description": "Пиджак поверх рубашки — вид человека, который подписывает контракты.",
    "file": "top/top_jacket",
    "gender": "m",
    "bounds": [
@@ -210,6 +237,8 @@
    "slot": "bottom",
    "name": "Рабочие брюки",
    "price": 0,
+   "rarity": "common",
+   "description": "Рабочие брюки с карманами для рулетки, карандаша и ключей.",
    "file": "bottom/bottom_trousers",
    "gender": "m",
    "bounds": [
@@ -224,6 +253,8 @@
    "slot": "bottom",
    "name": "Джинсы",
    "price": 10,
+   "rarity": "common",
+   "description": "Классические джинсы: и на объект, и после смены.",
    "file": "bottom/bottom_jeans",
    "gender": "m",
    "bounds": [
@@ -238,6 +269,8 @@
    "slot": "bottom",
    "name": "Классические брюки",
    "price": 15,
+   "rarity": "rare",
+   "description": "Строгие брюки — для приёмки объекта комиссией.",
    "file": "bottom/bottom_classic",
    "gender": "m",
    "bounds": [
@@ -252,6 +285,8 @@
    "slot": "bottom",
    "name": "Комбинезон",
    "price": 20,
+   "rarity": "rare",
+   "description": "Джинсовый комбинезон с нагрудником. Поверх футболки, но под пиджаком и жилетом.",
    "file": "bottom/bottom_overalls",
    "gender": "m",
    "bounds": [
@@ -267,6 +302,8 @@
    "slot": "shoes",
    "name": "Рабочие ботинки",
    "price": 0,
+   "rarity": "common",
+   "description": "Прочные рабочие ботинки — выдержат и щебень, и свежий асфальт.",
    "file": "shoes/shoes_boots",
    "gender": "m",
    "bounds": [
@@ -281,6 +318,8 @@
    "slot": "shoes",
    "name": "Кроссовки",
    "price": 10,
+   "rarity": "common",
+   "description": "Белые кроссовки: быстро между участками, но берегите от грязи.",
    "file": "shoes/shoes_sneakers",
    "gender": "m",
    "bounds": [
@@ -295,6 +334,8 @@
    "slot": "shoes",
    "name": "Резиновые сапоги",
    "price": 15,
+   "rarity": "rare",
+   "description": "Резиновые сапоги — когда рядом река и котлован.",
    "file": "shoes/shoes_rubber",
    "gender": "m",
    "bounds": [
@@ -309,6 +350,8 @@
    "slot": "shoes",
    "name": "Туфли",
    "price": 20,
+   "rarity": "rare",
+   "description": "Начищенные туфли для встреч в мэрии.",
    "file": "shoes/shoes_oxford",
    "gender": "m",
    "bounds": [
@@ -323,6 +366,8 @@
    "slot": "hat",
    "name": "Строительная каска",
    "price": 10,
+   "rarity": "common",
+   "description": "Жёлтая строительная каска. Без неё на площадку не пустят.",
    "file": "hat/hat_hardhat",
    "gender": "m",
    "bounds": [
@@ -337,6 +382,8 @@
    "slot": "hat",
    "name": "Кепка",
    "price": 10,
+   "rarity": "common",
+   "description": "Кепка от солнца на открытых участках трассы.",
    "file": "hat/hat_cap",
    "gender": "m",
    "bounds": [
@@ -351,6 +398,8 @@
    "slot": "hat",
    "name": "Шляпа",
    "price": 20,
+   "rarity": "rare",
+   "description": "Фетровая шляпа — стиль градостроителя старой школы.",
    "file": "hat/hat_fedora",
    "gender": "m",
    "bounds": [
@@ -365,6 +414,8 @@
    "slot": "hat",
    "name": "Цилиндр",
    "price": 35,
+   "rarity": "legendary",
+   "description": "Цилиндр магната: дорог много, времени мало.",
    "file": "hat/hat_tophat",
    "gender": "m",
    "bounds": [
@@ -379,6 +430,8 @@
    "slot": "accessory",
    "name": "Очки",
    "price": 10,
+   "rarity": "common",
+   "description": "Очки, чтобы разбирать мелкий шрифт на чертежах.",
    "file": "accessory/acc_glasses",
    "gender": "m",
    "bounds": [
@@ -393,6 +446,8 @@
    "slot": "accessory",
    "name": "Галстук",
    "price": 15,
+   "rarity": "rare",
+   "description": "Красный галстук для переговоров. Под свитером не виден.",
    "file": "accessory/acc_tie",
    "gender": "m",
    "bounds": [
@@ -407,6 +462,8 @@
    "slot": "accessory",
    "name": "Рация",
    "price": 20,
+   "rarity": "rare",
+   "description": "Рация на груди — связь с бригадой на другом конце города.",
    "file": "accessory/acc_radio",
    "gender": "m",
    "bounds": [
@@ -421,6 +478,8 @@
    "slot": "accessory",
    "name": "Свиток чертежей",
    "price": 20,
+   "rarity": "rare",
+   "description": "Свиток чертежей в руке: план новой развязки всегда при себе.",
    "file": "accessory/acc_blueprint",
    "gender": "m",
    "bounds": [
@@ -435,6 +494,8 @@
    "slot": "accessory",
    "name": "Золотая цепь",
    "price": 40,
+   "rarity": "legendary",
+   "description": "Золотая цепь — у кого дороги, у того и цепь.",
    "file": "accessory/acc_chain",
    "gender": "m",
    "bounds": [
@@ -449,6 +510,8 @@
    "slot": "body",
    "name": "Светлая кожа",
    "price": 0,
+   "rarity": "common",
+   "description": "Тон кожи. Под него подбираются варианты причёсок, рук и открытой одежды.",
    "file": "body/body_f_light",
    "gender": "f",
    "tone": "light",
@@ -464,6 +527,8 @@
    "slot": "body",
    "name": "Смуглая кожа",
    "price": 0,
+   "rarity": "common",
+   "description": "Тон кожи. Под него подбираются варианты причёсок, рук и открытой одежды.",
    "file": "body/body_f_tan",
    "gender": "f",
    "tone": "tan",
@@ -479,6 +544,8 @@
    "slot": "body",
    "name": "Тёмная кожа",
    "price": 0,
+   "rarity": "common",
+   "description": "Тон кожи. Под него подбираются варианты причёсок, рук и открытой одежды.",
    "file": "body/body_f_dark",
    "gender": "f",
    "tone": "dark",
@@ -494,6 +561,8 @@
    "slot": "hair",
    "name": "Каре",
    "price": 0,
+   "rarity": "common",
+   "description": "Каре — коротко, аккуратно и не мешает под каской.",
    "file": "hair/hair_f_bob",
    "gender": "f",
    "bounds": [
@@ -508,6 +577,8 @@
    "slot": "hair",
    "name": "Длинные волосы",
    "price": 0,
+   "rarity": "common",
+   "description": "Длинные прямые волосы. Под головным убором спадают на плечи.",
    "file": "hair/hair_f_long",
    "gender": "f",
    "bounds": [
@@ -522,6 +593,8 @@
    "slot": "hair",
    "name": "Высокий хвост",
    "price": 10,
+   "rarity": "common",
+   "description": "Высокий хвост: собранно и по-деловому. Под головным убором прячется.",
    "file": "hair/hair_f_ponytail",
    "gender": "f",
    "bounds": [
@@ -536,6 +609,8 @@
    "slot": "hair",
    "name": "Кудри",
    "price": 15,
+   "rarity": "rare",
+   "description": "Пышные кудри — заметно на любой планёрке.",
    "file": "hair/hair_f_curly",
    "gender": "f",
    "bounds": [
@@ -550,6 +625,8 @@
    "slot": "top",
    "name": "Футболка",
    "price": 0,
+   "rarity": "common",
+   "description": "Простая футболка. Удобно на площадке, не жалко испачкать бетоном.",
    "file": "top/top_f_tshirt",
    "gender": "f",
    "bounds": [
@@ -564,6 +641,8 @@
    "slot": "top",
    "name": "Сигнальный жилет",
    "price": 10,
+   "rarity": "common",
+   "description": "Салатовый сигнальный жилет: безопасность прежде всего.",
    "file": "top/top_f_vest",
    "gender": "f",
    "bounds": [
@@ -579,6 +658,8 @@
    "slot": "top",
    "name": "Блузка",
    "price": 15,
+   "rarity": "rare",
+   "description": "Белая блузка с пышными рукавами — для презентации проекта.",
    "file": "top/top_f_blouse",
    "gender": "f",
    "bounds": [
@@ -593,6 +674,8 @@
    "slot": "top",
    "name": "Кардиган",
    "price": 15,
+   "rarity": "rare",
+   "description": "Жёлтый кардиган поверх майки — уютно в диспетчерской.",
    "file": "top/top_f_cardigan",
    "gender": "f",
    "bounds": [
@@ -608,6 +691,8 @@
    "slot": "top",
    "name": "Жакет",
    "price": 30,
+   "rarity": "epic",
+   "description": "Фиолетовый жакет — сразу видно, кто здесь принимает решения.",
    "file": "top/top_f_blazer",
    "gender": "f",
    "bounds": [
@@ -623,6 +708,8 @@
    "slot": "bottom",
    "name": "Рабочие брюки",
    "price": 0,
+   "rarity": "common",
+   "description": "Рабочие брюки с карманами — всё нужное под рукой.",
    "file": "bottom/bottom_f_trousers",
    "gender": "f",
    "bounds": [
@@ -637,6 +724,8 @@
    "slot": "bottom",
    "name": "Джинсы",
    "price": 10,
+   "rarity": "common",
+   "description": "Светлые джинсы: удобно и на объекте, и в городе.",
    "file": "bottom/bottom_f_jeans",
    "gender": "f",
    "bounds": [
@@ -651,6 +740,8 @@
    "slot": "bottom",
    "name": "Юбка",
    "price": 15,
+   "rarity": "rare",
+   "description": "Тёмно-синяя юбка для встреч с инвесторами.",
    "file": "bottom/bottom_f_skirt",
    "gender": "f",
    "bounds": [
@@ -665,6 +756,8 @@
    "slot": "bottom",
    "name": "Комбинезон",
    "price": 20,
+   "rarity": "rare",
+   "description": "Джинсовый комбинезон с нагрудником. Поверх футболки, но под жакетом и жилетом.",
    "file": "bottom/bottom_f_overalls",
    "gender": "f",
    "bounds": [
@@ -680,6 +773,8 @@
    "slot": "shoes",
    "name": "Рабочие ботинки",
    "price": 0,
+   "rarity": "common",
+   "description": "Рабочие ботинки на шнуровке — устойчиво на любом покрытии.",
    "file": "shoes/shoes_f_boots",
    "gender": "f",
    "bounds": [
@@ -694,6 +789,8 @@
    "slot": "shoes",
    "name": "Кроссовки",
    "price": 10,
+   "rarity": "common",
+   "description": "Кроссовки, чтобы успевать между тремя объектами за день.",
    "file": "shoes/shoes_f_sneakers",
    "gender": "f",
    "bounds": [
@@ -708,6 +805,8 @@
    "slot": "shoes",
    "name": "Резиновые сапоги",
    "price": 15,
+   "rarity": "rare",
+   "description": "Жёлтые резиновые сапоги — лужи и котлованы не страшны.",
    "file": "shoes/shoes_f_rubber",
    "gender": "f",
    "bounds": [
@@ -722,6 +821,8 @@
    "slot": "shoes",
    "name": "Туфли на каблуке",
    "price": 20,
+   "rarity": "rare",
+   "description": "Туфли на каблуке для торжественного открытия моста.",
    "file": "shoes/shoes_f_heels",
    "gender": "f",
    "bounds": [
@@ -736,6 +837,8 @@
    "slot": "hat",
    "name": "Строительная каска",
    "price": 10,
+   "rarity": "common",
+   "description": "Белая каска инженера — её носят те, кто проверяет работу.",
    "file": "hat/hat_f_hardhat",
    "gender": "f",
    "bounds": [
@@ -750,6 +853,8 @@
    "slot": "hat",
    "name": "Кепка",
    "price": 10,
+   "rarity": "common",
+   "description": "Бирюзовая кепка от солнца.",
    "file": "hat/hat_f_cap",
    "gender": "f",
    "bounds": [
@@ -764,6 +869,8 @@
    "slot": "hat",
    "name": "Берет",
    "price": 20,
+   "rarity": "rare",
+   "description": "Красный берет — архитектор с характером.",
    "file": "hat/hat_f_beret",
    "gender": "f",
    "bounds": [
@@ -778,6 +885,8 @@
    "slot": "hat",
    "name": "Шляпка",
    "price": 35,
+   "rarity": "legendary",
+   "description": "Широкополая шляпка с лентой — для летних инспекций.",
    "file": "hat/hat_f_sunhat",
    "gender": "f",
    "bounds": [
@@ -792,6 +901,8 @@
    "slot": "accessory",
    "name": "Очки",
    "price": 10,
+   "rarity": "common",
+   "description": "Очки в тонкой оправе.",
    "file": "accessory/acc_f_glasses",
    "gender": "f",
    "bounds": [
@@ -806,6 +917,8 @@
    "slot": "accessory",
    "name": "Шейный платок",
    "price": 15,
+   "rarity": "rare",
+   "description": "Шейный платок в горошек.",
    "file": "accessory/acc_f_scarf",
    "gender": "f",
    "bounds": [
@@ -820,6 +933,8 @@
    "slot": "accessory",
    "name": "Рация",
    "price": 20,
+   "rarity": "rare",
+   "description": "Рация — бригада всегда на связи.",
    "file": "accessory/acc_f_radio",
    "gender": "f",
    "bounds": [
@@ -834,6 +949,8 @@
    "slot": "accessory",
    "name": "Планшет",
    "price": 20,
+   "rarity": "rare",
+   "description": "Планшет с планом участка в руке.",
    "file": "accessory/acc_f_tablet",
    "gender": "f",
    "bounds": [
@@ -848,6 +965,8 @@
    "slot": "accessory",
    "name": "Жемчужное ожерелье",
    "price": 40,
+   "rarity": "legendary",
+   "description": "Жемчужное ожерелье — легендарный штрих к деловому образу.",
    "file": "accessory/acc_f_pearls",
    "gender": "f",
    "bounds": [

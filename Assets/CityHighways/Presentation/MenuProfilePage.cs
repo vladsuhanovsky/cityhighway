@@ -36,6 +36,7 @@ namespace CityHighways.Presentation
         Outfit _tryOn;
         TurntableCharacter _turntable;
         string _animateSlot;
+        VisualElement _itemInfo;
         VisualElement _ghost;
         CharacterItem _dragItem;
         VisualElement _pressTile;
@@ -306,6 +307,17 @@ namespace CityHighways.Presentation
                 cancel.style.marginTop = 6f;
                 left.Add(cancel);
             }
+            // Что надето, но не видно (под свитером не видно галстука и т. п.).
+            foreach (var slot in CharacterCatalog.Slots)
+            {
+                var cover = shown.HiddenBy(slot);
+                if (cover == null) continue;
+                var hidden = Ui.Text($"«{CharacterCatalog.Item(shown.Get(slot))?.name}» не видно под «{cover.name}»", 12f, Theme.TextDim);
+                hidden.style.unityTextAlign = TextAnchor.MiddleCenter;
+                hidden.style.marginTop = 6f;
+                hidden.style.whiteSpace = WhiteSpace.Normal;
+                left.Add(hidden);
+            }
             var wallet = Ui.Text($"Кошелёк: {profile.wallet} влияния", 14f, GameColors.Accent, true);
             wallet.style.marginTop = 10f;
             left.Add(wallet);
@@ -334,8 +346,18 @@ namespace CityHighways.Presentation
             grid.style.alignItems = Align.FlexStart;
             grid.style.marginTop = 6f;
             if (!CharacterCatalog.IsRequired(_slot)) grid.Add(ClothingTile(profile, null, worn));
-            foreach (var item in CharacterCatalog.ItemsIn(_slot, gender).OrderBy(i => i.price)) grid.Add(ClothingTile(profile, item, worn));
+            foreach (var item in CharacterCatalog.ItemsIn(_slot, gender).OrderBy(i => i.Level).ThenBy(i => i.price))
+                grid.Add(ClothingTile(profile, item, worn));
             right.Add(grid);
+            // Описание вещи: по умолчанию — надетой (или примеряемой) в этом слоте, при наведении — той, что под курсором.
+            _itemInfo = Ui.Column();
+            _itemInfo.style.marginTop = 6f;
+            _itemInfo.style.minHeight = 64f;
+            _itemInfo.style.backgroundColor = new Color(0f, 0f, 0f, 0.18f);
+            Ui.Radius(_itemInfo, 10f);
+            Ui.Padding(_itemInfo, 8f, 10f);
+            right.Add(_itemInfo);
+            ShowItemInfo(profile, CharacterCatalog.Item(shown.Get(_slot)), _slot, shown);
             var legend = Ui.Row();
             legend.style.marginTop = 8f;
             legend.style.flexWrap = Wrap.Wrap;
@@ -400,7 +422,7 @@ namespace CityHighways.Presentation
             bool wearing = worn.Get(slot) == id;
             bool trying = _tryOn != null && _tryOn.Get(slot) == id && !wearing;
             bool has = item == null || profile.HasClothing(item);
-            var rarity = Rarity.ColorOf(Rarity.Of(item?.price ?? 0));
+            var rarity = Rarity.ColorOf(item?.Level ?? Rarity.Level.Common);
 
             var tile = Ui.Column();
             tile.pickingMode = PickingMode.Position;
@@ -425,7 +447,7 @@ namespace CityHighways.Presentation
             tile.Add(name);
             if (item != null)
             {
-                var tag = Rarity.Tag(item.price);
+                var tag = Rarity.Tag(item.Level);
                 tag.style.marginTop = 3f;
                 tile.Add(tag);
             }
@@ -456,8 +478,17 @@ namespace CityHighways.Presentation
             button.style.marginTop = 4f;
             tile.Add(button);
 
-            tile.RegisterCallback<PointerEnterEvent>(_ => tile.style.translate = new Translate(new Length(0f), new Length(-3f)));
-            tile.RegisterCallback<PointerLeaveEvent>(_ => tile.style.translate = new Translate(new Length(0f), new Length(0f)));
+            tile.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                tile.style.translate = new Translate(new Length(0f), new Length(-3f));
+                ShowItemInfo(profile, item, slot, _tryOn ?? profile.Outfit);
+            });
+            tile.RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                tile.style.translate = new Translate(new Length(0f), new Length(0f));
+                var shownNow = _tryOn ?? profile.Outfit;
+                ShowItemInfo(profile, CharacterCatalog.Item(shownNow.Get(slot)), slot, shownNow);
+            });
             // Клик — примерка; перетаскивание — на персонажа.
             tile.RegisterCallback<ClickEvent>(e =>
             {
@@ -498,6 +529,55 @@ namespace CityHighways.Presentation
                 if (_turntable.worldBound.Contains(e.position)) Apply(profile, _dragItem, slot, true);
             });
             return tile;
+        }
+
+        /// <summary>
+        /// Описание вещи под гардеробом: название, редкость, цена или «есть», описание из catalog.json и конфликты —
+        /// что эта вещь скрывает и не скрыта ли она сама другой надетой вещью.
+        /// </summary>
+        void ShowItemInfo(PlayerProfile profile, CharacterItem item, string slot, Outfit shown)
+        {
+            if (_itemInfo == null) return;
+            _itemInfo.Clear();
+            var head = Ui.Row();
+            head.style.alignItems = Align.Center;
+            string title = item?.name ?? "Без " + (slot == "hat" ? "головного убора" : "аксессуара");
+            var name = Ui.Text(title, 14f, Theme.Text, true);
+            name.style.marginRight = 8f;
+            head.Add(name);
+            if (item != null)
+            {
+                var tag = Rarity.Tag(item.Level);
+                tag.style.marginRight = 8f;
+                head.Add(tag);
+                bool has = profile.HasClothing(item);
+                head.Add(Ui.Text(has ? (shown.Get(slot) == item.id ? "надето" : "есть") : $"{item.price} влияния", 12f,
+                    has ? Theme.TextDim : GameColors.Accent, !has));
+            }
+            _itemInfo.Add(head);
+
+            string text = item == null
+                ? "Слот можно оставить пустым."
+                : string.IsNullOrEmpty(item.description) ? CharacterCatalog.SlotTitle(slot) : item.description;
+            var description = Ui.Text(text, 12f, Theme.TextDim);
+            description.style.whiteSpace = WhiteSpace.Normal;
+            description.style.marginTop = 4f;
+            _itemInfo.Add(description);
+
+            if (item?.hides != null && item.hides.Length > 0)
+            {
+                var names = item.hides.Select(h => CharacterCatalog.Item(h)?.name ?? CharacterCatalog.SlotTitle(h).ToLowerInvariant());
+                var line = Ui.Text("Под ней не видно: " + string.Join(", ", names) + " (вещь останется надетой).", 12f, GameColors.Warning);
+                line.style.whiteSpace = WhiteSpace.Normal;
+                line.style.marginTop = 4f;
+                _itemInfo.Add(line);
+            }
+            if (item != null && shown.Get(slot) == item.id && shown.HiddenBy(slot) is CharacterItem cover)
+            {
+                var line = Ui.Text($"Сейчас не видно — под «{cover.name}».", 12f, GameColors.Warning);
+                line.style.marginTop = 4f;
+                _itemInfo.Add(line);
+            }
         }
 
         const float GhostSize = 96f;

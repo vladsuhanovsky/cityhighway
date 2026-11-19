@@ -36,9 +36,11 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Плашка «Редкий» цветом редкости.</summary>
-        public static Label Tag(int price)
+        public static Label Tag(int price) => Tag(Of(price));
+
+        /// <summary>Плашка редкости по уровню (у одежды редкость может быть задана вручную).</summary>
+        public static Label Tag(Level level)
         {
-            var level = Of(price);
             var color = ColorOf(level);
             var tag = Ui.Text(Title(level).ToUpperInvariant(), 10f, color, true);
             tag.style.letterSpacing = 1f;

@@ -252,7 +252,7 @@ namespace CityHighways.Presentation
             var tags = Ui.Row();
             tags.style.marginTop = 4f;
             tags.style.alignItems = Align.Center;
-            tags.Add(Rarity.Tag(item.Value));
+            tags.Add(Rarity.Tag(item.Level));
             var kindLabel = Ui.Text(item.KindTitle, 12f, Theme.TextDim);
             kindLabel.style.marginLeft = 8f;
             tags.Add(kindLabel);
