@@ -979,6 +979,7 @@ namespace CityHighways.Presentation
             // Этап 2 полноценного 3D: бордюры, разметка, машины и фуры — в сцене.
             _city3D.SyncRoadDetails(board, Palette.PlayerColor, _game.PublicOwner);
             _city3D.SyncTraffic(board, _map.PulseTime);
+            _city3D.SyncPeople(board, _map.PulseTime);
             SyncTrucks3D();
         }
 

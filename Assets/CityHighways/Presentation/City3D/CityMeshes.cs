@@ -307,16 +307,19 @@ namespace CityHighways.Presentation
                     // Парапет и надстройка на крыше.
                     b.Box(0f, 0f, w * 0.92f, d * 0.92f, h, 0.008f, Facade(lowRow), Roof(CityAtlas.RoofLight));
                     b.Box(w * 0.18f, -d * 0.12f, w * 0.3f, d * 0.28f, h, 0.025f, Roof(CityAtlas.RoofMetal), Roof(CityAtlas.RoofMetal));
+                    RoofClutter(b, w * 0.8f, d * 0.8f, h + 0.008f, random);
                     break;
                 case Kind.Gable:
                     b.Box(0f, 0f, w, d, 0f, h, Facade(CityAtlas.Row.Low), flatRoof);
                     b.GableRoof(0f, 0f, w * 1.06f, d * 1.06f, h, Mathf.Min(w, d) * 0.45f,
                         Roof(random.NextDouble() < 0.6 ? CityAtlas.RoofRed : CityAtlas.RoofBrown), Facade(CityAtlas.Row.Low));
+                    Yard(b, w, d, random);
                     break;
                 case Kind.Hip:
                     b.Box(0f, 0f, w, d, 0f, h, Facade(CityAtlas.Row.Low), flatRoof);
                     b.HipRoof(0f, 0f, w * 1.06f, d * 1.06f, h, Mathf.Min(w, d) * 0.38f,
                         Roof(random.NextDouble() < 0.5 ? CityAtlas.RoofBrown : CityAtlas.RoofCopper));
+                    Yard(b, w, d, random);
                     break;
                 case Kind.Stepped:
                 {
@@ -464,10 +467,63 @@ namespace CityHighways.Presentation
                     b.Box(0f, 0f, w, d, 0f, h, CityAtlas.Uv(CityAtlas.Row.Mid, col), flatRoof);
                     for (int i = -1; i <= 1; i += 2)
                         b.Box(w * 0.3f * i, 0f, Mathf.Min(w, d) * 0.22f, Mathf.Min(w, d) * 0.22f, h, 0.02f, Roof(CityAtlas.RoofLight), Roof(CityAtlas.RoofLight));
+                    RoofClutter(b, w * 0.85f, d * 0.7f, h, random);
                     break;
                 default:
                     b.Box(0f, 0f, w, d, 0f, h, Facade(lowRow), flatRoof);
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Мелочи на плоской крыше: кондиционеры, бак для воды на ножках, антенна. Ставятся в прямоугольнике
+        /// w × d вокруг центра крыши на высоте roof.
+        /// </summary>
+        static void RoofClutter(MeshBuilder b, float w, float d, float roof, System.Random random)
+        {
+            var metal = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofMetal);
+            var light = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofLight);
+            int units = 1 + random.Next(3);
+            for (int i = 0; i < units; i++)
+            {
+                float x = ((float)random.NextDouble() - 0.5f) * w, z = ((float)random.NextDouble() - 0.5f) * d;
+                b.Box(x, z, 0.006f, 0.005f, roof, 0.0035f, light, metal);
+            }
+            if (random.NextDouble() < 0.35)
+            {
+                float x = ((float)random.NextDouble() - 0.5f) * w * 0.6f, z = ((float)random.NextDouble() - 0.5f) * d * 0.6f;
+                var steel = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeSteel);
+                for (int k = 0; k < 4; k++)
+                    b.Box(x + ((k & 1) == 0 ? -0.003f : 0.003f), z + ((k & 2) == 0 ? -0.003f : 0.003f), 0.0008f, 0.0008f, roof, 0.006f, steel, steel);
+                b.Prism(x, z, 0.0045f, roof + 0.006f, 0.007f, 8, CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofBrown), CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofDark));
+            }
+            if (random.NextDouble() < 0.3)
+            {
+                float x = ((float)random.NextDouble() - 0.5f) * w, z = ((float)random.NextDouble() - 0.5f) * d;
+                b.Prism(x, z, 0.0005f, roof, 0.022f, 4, metal, metal);
+            }
+        }
+
+        /// <summary>
+        /// Двор у частного дома: низкий штакетник вокруг (калитка со стороны −Z) и иногда сарайчик в углу.
+        /// Только у небольших домов — у больших двор в планировке не помещается.
+        /// </summary>
+        static void Yard(MeshBuilder b, float w, float d, System.Random random)
+        {
+            if (w * d > 0.0045f || random.NextDouble() > 0.6) return;
+            var wood = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofBrown);
+            float hx = w / 2f + 0.011f, hz = d / 2f + 0.011f, height = 0.005f, t = 0.0011f;
+            b.Box(0f, hz, hx * 2f, t, 0f, height, wood, wood);
+            b.Box(-hx, 0f, t, hz * 2f, 0f, height, wood, wood);
+            b.Box(hx, 0f, t, hz * 2f, 0f, height, wood, wood);
+            // Спереди — две секции с калиткой посередине.
+            float gate = Mathf.Min(0.014f, hx * 0.5f), part = hx - gate / 2f;
+            b.Box(-hx + part / 2f, -hz, part, t, 0f, height, wood, wood);
+            b.Box(hx - part / 2f, -hz, part, t, 0f, height, wood, wood);
+            if (random.NextDouble() < 0.5)
+            {
+                float sx = (random.NextDouble() < 0.5 ? -1f : 1f) * (hx - 0.006f);
+                b.Box(sx, hz - 0.006f, 0.008f, 0.007f, 0f, 0.006f, CityAtlas.Uv(CityAtlas.Row.Low, 0), CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofDark));
             }
         }
 

@@ -142,6 +142,11 @@ namespace CityHighways.Presentation
         void Build(int quality)
         {
             float density = quality == 0 ? 0.55f : quality == 1 ? 0.8f : 1f;
+            // Рельеф — до планировки: сначала сглаженные русла (по ним долины), затем поле высот. Планировщик
+            // смотрит на высоты (ельники на холмах), а всё дальнейшее встаёт на холмы.
+            PrepareRiverLines();
+            _relief = new ReliefField(_map, _riverLines, RiverWidth / 2f + BankWidth);
+            Relief.Use(_relief);
             var plan = CityPlanner.Build(_map, density, _hubSites);
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
@@ -149,10 +154,6 @@ namespace CityHighways.Presentation
             _quality = quality;
             SetupRendering(quality);
             CreateMaterials(plan);
-            // Рельеф: сначала сглаженные русла (по ним долины), затем поле высот — и всё дальнейшее встаёт на холмы.
-            PrepareRiverLines();
-            _relief = new ReliefField(_map, _riverLines, RiverWidth / 2f + BankWidth);
-            Relief.Use(_relief);
             BuildGround();
             BuildDecals(plan);
             BuildRivers();
@@ -1098,9 +1099,13 @@ namespace CityHighways.Presentation
             string terminalModel = kind == 0 ? Models3D.AirportTerminal : kind == 1 ? Models3D.StationTerminal : Models3D.PortTerminal;
             bool modelTerminal = Models3D.Has(terminalModel);
             var site = new MeshBuilder();
-            if (kind == 1) BuildRailwayStation(site, random, !modelTerminal);
-            else if (kind == 0) BuildAirport(site, random, !modelTerminal);
-            else if (!modelTerminal) Put(CityShapes.Kind.Warehouse, 0f, -0.02f, 0.05f, 0.035f, 0.04f);
+            if (kind == 1) BuildRailwayStation(site, random, !modelTerminal, level);
+            else if (kind == 0) BuildAirport(site, random, !modelTerminal, level);
+            else
+            {
+                if (!modelTerminal) Put(CityShapes.Kind.Warehouse, 0f, -0.02f, 0.05f, 0.035f, 0.04f);
+                BuildPortYard(site, random, level);
+            }
             if (site.VertexCount > 0) builder.Append(site, Matrix4x4.TRS(origin, rotation, Vector3.one));
             // Склады: у вокзала и аэропорта — по бокам от главного здания, у порта — за терминалом.
             float storeX = kind == 2 ? 0.055f : 0.1f, storeZ = kind == 2 ? 0.035f : -0.035f;
@@ -1164,6 +1169,7 @@ namespace CityHighways.Presentation
             }
             var go = AddMesh("Hub " + locationId, builder.ToMesh("City3D Hub " + locationId), _buildings, _root.transform, true);
             PlaceHubModels(go.transform, kind, level, origin, rotation, yaw, random, modelTerminal ? terminalModel : null);
+            _hubSpots[locationId] = (origin, rotation);
             _hubs[locationId] = (go, level);
         }
 
@@ -1171,7 +1177,7 @@ namespace CityHighways.Presentation
         /// Вокзал у станции в локальных координатах комплекса (−Z — к станции): здание вокзала фасадом к дороге,
         /// за ним три пути на щебёнке, две платформы с навесами на столбиках.
         /// </summary>
-        static void BuildRailwayStation(MeshBuilder b, System.Random random, bool building = true)
+        static void BuildRailwayStation(MeshBuilder b, System.Random random, bool building = true, int level = 1)
         {
             var local = new MeshBuilder();
             if (building)
@@ -1197,13 +1203,69 @@ namespace CityHighways.Presentation
                 for (int i = -3; i <= 3; i++)
                     b.Box(i * 0.025f, z, 0.0018f, 0.0018f, y, 0.013f, concrete, concrete);
             }
+            // Светофоры путей на обоих концах.
+            var dark = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofDark);
+            var redLamp = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofRed);
+            foreach (float x in new[] { -half + 0.006f, half - 0.006f })
+            {
+                b.Box(x, 0.074f, 0.0012f, 0.0012f, y, 0.022f, rail, rail);
+                b.Box(x, 0.074f, 0.003f, 0.003f, y + 0.018f, 0.006f, dark, redLamp);
+            }
+            // Уровень 2: грузовой состав на дальнем пути — тепловоз и цветные вагоны.
+            if (level >= 2) Train(b, 0.064f, -0.115f, 6, false, random);
+            // Уровень 3: пассажирский поезд у ближней платформы.
+            if (level >= 3) Train(b, 0.008f, -0.09f, 5, true, random);
+        }
+
+        /// <summary>Поезд вдоль оси X на пути z: локомотив и cars вагонов от x0; пассажирский — длинные белые вагоны с окнами.</summary>
+        static void Train(MeshBuilder b, float z, float x0, int cars, bool passenger, System.Random random)
+        {
+            const float y = 0.0045f;
+            var loco = CityAtlas.Solid(CityAtlas.Row.Roof, passenger ? CityAtlas.RoofRed : CityAtlas.RoofCopper);
+            var roof = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofDark);
+            var windows = CityAtlas.Uv(CityAtlas.Row.Tall, 1);
+            float x = x0;
+            b.Box(x + 0.012f, z, 0.024f, 0.0085f, y, 0.0095f, loco, roof);
+            x += 0.026f;
+            var colors = new[] { CityAtlas.RoofBrown, CityAtlas.RoofMetal, CityAtlas.RoofRed, CityAtlas.RoofCopper, CityAtlas.RoofLight };
+            for (int i = 0; i < cars; i++)
+            {
+                float length = passenger ? 0.03f : 0.022f;
+                var side = passenger ? windows : CityAtlas.Solid(CityAtlas.Row.Roof, colors[random.Next(colors.Length)]);
+                b.Box(x + length / 2f, z, length, 0.0082f, y, passenger ? 0.009f : 0.008f, side, roof);
+                x += length + 0.002f;
+            }
+        }
+
+        /// <summary>
+        /// Двор порта: штабели контейнеров (по два в высоту) по бокам площадки и погрузчики; с уровнем 3 — второй
+        /// ряд штабелей.
+        /// </summary>
+        static void BuildPortYard(MeshBuilder b, System.Random random, int level)
+        {
+            if (level < 2) return;
+            var colors = new[] { CityAtlas.RoofRed, CityAtlas.RoofCopper, CityAtlas.RoofBrown, CityAtlas.RoofMetal, CityAtlas.RoofLight };
+            var top = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofMetal);
+            int rows = level >= 3 ? 2 : 1;
+            for (int side = -1; side <= 1; side += 2)
+            for (int row = 0; row < rows; row++)
+            for (int i = 0; i < 3; i++)
+            for (int tier = 0; tier < 2; tier++)
+            {
+                if (tier == 1 && random.NextDouble() < 0.3) continue;
+                var paint = CityAtlas.Solid(CityAtlas.Row.Roof, colors[random.Next(colors.Length)]);
+                b.Box(side * (0.112f + row * 0.013f), -0.012f + i * 0.026f, 0.011f, 0.024f, 0.0035f + tier * 0.0105f, 0.01f, paint, top);
+            }
+            var yellow = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Spire);
+            for (int k = 0; k < 2; k++)
+                b.Box(k == 0 ? -0.09f : 0.09f, 0.075f, 0.007f, 0.01f, 0.0035f, 0.006f, yellow, yellow);
         }
 
         /// <summary>
         /// Аэропорт в локальных координатах комплекса (−Z — к станции): аэровокзал фасадом к дороге, диспетчерская
         /// вышка, перрон с двумя самолётами и взлётно-посадочная полоса с разметкой.
         /// </summary>
-        static void BuildAirport(MeshBuilder b, System.Random random, bool buildings = true)
+        static void BuildAirport(MeshBuilder b, System.Random random, bool buildings = true, int level = 1)
         {
             var local = new MeshBuilder();
             if (buildings)
@@ -1248,6 +1310,24 @@ namespace CityHighways.Presentation
             }
             Plane(-0.05f, 0.03f, (float)(random.NextDouble() * 10.0 - 5.0));
             Plane(0.035f, 0.034f, 180f + (float)(random.NextDouble() * 10.0 - 5.0));
+
+            // Перронная техника: багажные тележки и топливозаправщик.
+            var cart = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Spire);
+            foreach (var (x, z) in new[] { (-0.025f, 0.012f), (-0.019f, 0.012f), (0.06f, 0.05f) })
+                b.Box(x, z, 0.004f, 0.006f, 0.0042f, 0.003f, cart, cart);
+            b.Box(0.012f, 0.05f, 0.006f, 0.014f, 0.0042f, 0.005f, white, white);
+            // Уровень 2: ангар и топливные баки сбоку от перрона.
+            if (level >= 2)
+            {
+                var hangar = new MeshBuilder();
+                CityShapes.Build(hangar, CityShapes.Kind.Hangar, 0.05f, 0.04f, 0.026f, random);
+                b.Append(hangar, Matrix4x4.Translate(new Vector3(-0.145f, 0f, 0.035f)));
+                var tank = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofLight);
+                foreach (float z in new[] { 0.03f, 0.056f })
+                    b.Prism(0.138f, z, 0.011f, 0.0042f, 0.012f, 10, tank, tank);
+            }
+            // Уровень 3: самолёт выруливает к полосе.
+            if (level >= 3) Plane(0f, 0.07f, 180f);
         }
 
         /// <summary>
@@ -1315,6 +1395,12 @@ namespace CityHighways.Presentation
             var corners = new List<JunctionGeometry.Corner>();
             float half = RoadWidth / 2f, arm = BoardLayout.JunctionArm;
             Vector3 W(Vector2 p, float y) => new Vector3(p.x, y, p.y);
+            var lightBuilders = new Dictionary<string, MeshBuilder>();
+            var lightLocal = new MeshBuilder();
+            var steel = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeSteel);
+            var dark = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofDark);
+            var red = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofRed);
+            var greenLamp = CityAtlas.Solid(CityAtlas.Row.Nature, 1);
 
             foreach (var location in _map.Locations)
             {
@@ -1359,6 +1445,27 @@ namespace CityHighways.Presentation
                             W(center + n * x1 + d * far, y), W(center + n * x0 + d * far, y), paint);
                     }
                 }
+                // Светофоры на перекрёстках с тремя и больше дорогами: справа от въезда, лицом к машинам.
+                // Половина въездов горит зелёным, половина — красным.
+                if (dirs.Count >= 3)
+                {
+                    if (!lightBuilders.TryGetValue(key, out var lights)) lightBuilders[key] = lights = new MeshBuilder();
+                    for (int k = 0; k < dirs.Count; k++)
+                    {
+                        var d = dirs[k];
+                        var n = new Vector2(-d.y, d.x);
+                        var foot = center + d * (arm * 0.8f) + n * (half + 0.01f);
+                        lightLocal.Clear();
+                        lightLocal.Prism(0f, 0f, 0.0009f, 0f, 0.028f, 5, steel, steel);
+                        lightLocal.Box(0f, 0f, 0.004f, 0.003f, 0.02f, 0.011f, dark, dark);
+                        bool green = k % 2 == 0;
+                        lightLocal.Box(0f, 0.0016f, 0.0026f, 0.0006f, 0.0273f, 0.0024f, green ? dark : red, green ? dark : red);
+                        lightLocal.Box(0f, 0.0016f, 0.0026f, 0.0006f, 0.0242f, 0.0024f, dark, dark);
+                        lightLocal.Box(0f, 0.0016f, 0.0026f, 0.0006f, 0.0211f, 0.0024f, green ? greenLamp : dark, green ? greenLamp : dark);
+                        var at = new Vector3(foot.x, Relief.At(foot.x, foot.y), foot.y);
+                        lights.Append(lightLocal, Matrix4x4.TRS(at, Quaternion.LookRotation(new Vector3(d.x, 0f, d.y), Vector3.up), Vector3.one));
+                    }
+                }
                 // Скругления бордюра между соседними рукавами.
                 JunctionGeometry.Corners(center, dirs, half, arm, JunctionFillet, corners);
                 foreach (var corner in corners)
@@ -1380,6 +1487,12 @@ namespace CityHighways.Presentation
                 pair.Value.Drape(Relief.At);
                 var go = AddMesh("Junctions " + pair.Key, pair.Value.ToMesh("City3D Junctions " + pair.Key), _buildings, _root.transform, false);
                 if (pair.Key != "_") _districts[pair.Key + "#junctions"] = go;
+            }
+            foreach (var pair in lightBuilders)
+            {
+                if (pair.Value.VertexCount == 0) continue;
+                var go = AddMesh("Traffic lights " + pair.Key, pair.Value.ToMesh("City3D Lights " + pair.Key), _buildings, _root.transform, true);
+                if (pair.Key != "_") _districts[pair.Key + "#lights"] = go;
             }
         }
 

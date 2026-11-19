@@ -141,6 +141,7 @@ namespace CityHighways.Presentation
                 at.y = Relief.At(at.x, at.z);
                 // Вход (−Z модели) — к перекрёстку.
                 float yaw = -direction * Mathf.Rad2Deg + 90f;
+                _stopSpots.Add((location.Id, at, Quaternion.Euler(0f, yaw, 0f)));
                 string key = _map.GetDistrict(location.DistrictId)?.IsExpansion == true ? location.DistrictId : "_";
                 if (model)
                 {
@@ -509,9 +510,131 @@ namespace CityHighways.Presentation
             _owned.Add(_cabMesh);
         }
 
+        // ================================================================== Люди
+
+        readonly List<(string location, Vector3 at, Quaternion turn)> _stopSpots = new List<(string, Vector3, Quaternion)>();
+        readonly Dictionary<string, (Vector3 origin, Quaternion turn)> _hubSpots = new Dictionary<string, (Vector3, Quaternion)>();
+
+        sealed class Walker
+        {
+            public GameObject Go;
+            public string Location;
+            public Vector3 A, B;
+            public float Phase, Speed;
+            public bool OnPad;     // по площадке хаба (высота площадки), а не по земле
+        }
+
+        readonly List<Walker> _walkers = new List<Walker>();
+        int _walkersHubCount = -1;
+        Mesh[] _personMeshes;
+        GameObject _peopleRoot;
+
+        /// <summary>
+        /// Пешеходы: у каждого павильона станции двое-трое ходят вдоль входа, у хабов — по полдюжины перед
+        /// главным зданием. Станции закрытых районов — без людей. time — время партии в секундах.
+        /// </summary>
+        public void SyncPeople(Game game, float time)
+        {
+            if (_root == null || game == null) return;
+            if (_peopleRoot == null)
+            {
+                _peopleRoot = new GameObject("People");
+                _peopleRoot.transform.SetParent(_root.transform, false);
+            }
+            if (_walkersHubCount != _hubSpots.Count)
+            {
+                foreach (var walker in _walkers) if (walker.Go != null) Destroy(walker.Go);
+                _walkers.Clear();
+                BuildWalkers();
+                _walkersHubCount = _hubSpots.Count;
+            }
+            foreach (var walker in _walkers)
+            {
+                bool open = game.IsLocationOpen(walker.Location);
+                if (walker.Go.activeSelf != open) walker.Go.SetActive(open);
+                if (!open) continue;
+                float run = time * walker.Speed + walker.Phase;
+                float t = Mathf.PingPong(run, 1f);
+                bool there = Mathf.Repeat(run, 2f) < 1f;
+                var p = Vector3.Lerp(walker.A, walker.B, t);
+                if (!walker.OnPad) p.y = Relief.At(p.x, p.z);
+                var heading = there ? walker.B - walker.A : walker.A - walker.B;
+                heading.y = 0f;
+                walker.Go.transform.SetPositionAndRotation(p, heading.sqrMagnitude > 1e-8f ? Quaternion.LookRotation(heading, Vector3.up) : Quaternion.identity);
+            }
+        }
+
+        void BuildWalkers()
+        {
+            EnsurePersonMeshes();
+            int seed = 1;
+            void Add(string location, Vector3 a, Vector3 b, bool onPad)
+            {
+                var random = new System.Random(seed++ * 7919);
+                var go = new GameObject("Walker");
+                go.transform.SetParent(_peopleRoot.transform, false);
+                go.AddComponent<MeshFilter>().sharedMesh = _personMeshes[random.Next(_personMeshes.Length)];
+                var renderer = go.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = _buildings;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.lightProbeUsage = LightProbeUsage.Off;
+                _walkers.Add(new Walker
+                {
+                    Go = go, Location = location, A = a, B = b, OnPad = onPad,
+                    Phase = (float)random.NextDouble() * 2f,
+                    Speed = 0.05f + (float)random.NextDouble() * 0.05f
+                });
+            }
+            foreach (var (location, at, turn) in _stopSpots)
+            {
+                int count = 2 + Mathf.Abs(location.GetHashCode()) % 2;
+                for (int i = 0; i < count; i++)
+                {
+                    // Вдоль входа павильона (вход — −Z), на разном удалении от него.
+                    float z = -0.02f - i * 0.006f;
+                    Add(location, at + turn * new Vector3(-0.028f, 0f, z), at + turn * new Vector3(0.028f, 0f, z), false);
+                }
+            }
+            foreach (var pair in _hubSpots)
+            {
+                var (origin, turn) = pair.Value;
+                for (int i = 0; i < 6; i++)
+                {
+                    float z = -0.068f - (i % 3) * 0.008f, x0 = -0.065f + (i / 3) * 0.02f;
+                    Add(pair.Key, origin + turn * new Vector3(x0, 0.0035f, z), origin + turn * new Vector3(x0 + 0.09f, 0.0035f, z), true);
+                }
+            }
+        }
+
+        /// <summary>Человечек 1,1 см: туловище цвета одежды, голова. Шесть вариантов одежды.</summary>
+        void EnsurePersonMeshes()
+        {
+            if (_personMeshes != null) return;
+            var clothes = new[] { CityAtlas.RoofRed, CityAtlas.RoofDark, CityAtlas.RoofLight, CityAtlas.RoofCopper, CityAtlas.RoofBrown, CityAtlas.RoofMetal };
+            var skin = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofBrown);
+            var legs = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofBlack);
+            _personMeshes = new Mesh[clothes.Length];
+            for (int i = 0; i < clothes.Length; i++)
+            {
+                var cloth = CityAtlas.Solid(CityAtlas.Row.Roof, clothes[i]);
+                var b = new MeshBuilder();
+                b.Box(0f, 0f, 0.0026f, 0.0016f, 0f, 0.0045f, legs, legs);
+                b.Prism(0f, 0f, 0.0017f, 0.0045f, 0.0045f, 6, cloth, cloth);
+                b.Blob(new Vector3(0f, 0.0104f, 0f), 0.0014f, 0.0014f, skin);
+                _personMeshes[i] = b.ToMesh("City3D Person " + i);
+                _owned.Add(_personMeshes[i]);
+            }
+        }
+
         /// <summary>Очистить живые объекты (вызывается из Dispose вместе со сценой).</summary>
         void ClearLife()
         {
+            _stopSpots.Clear();
+            _hubSpots.Clear();
+            _walkers.Clear();
+            _walkersHubCount = -1;
+            _personMeshes = null;
+            _peopleRoot = null;
             _curbs.Clear();
             _ownerMaterials.Clear();
             _cars.Clear();

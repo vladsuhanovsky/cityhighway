@@ -388,7 +388,9 @@ namespace CityHighways.Presentation
                 if (NearHub(p)) return;
                 var location = NearestLocation(p);
                 float pick = Hash((int)p.x, (int)p.y, salt);
-                var kind = forest ? (pick < 0.45f ? CityShapes.Tree.Spruce : CityShapes.Tree.Round)
+                // На вершинах холмов — ельники.
+                bool hill = ToWorld(p).y > ReliefField.Amplitude * 0.55f;
+                var kind = forest || hill ? (pick < (hill ? 0.8f : 0.45f) ? CityShapes.Tree.Spruce : CityShapes.Tree.Round)
                                   : pick < 0.15f ? CityShapes.Tree.Poplar : CityShapes.Tree.Round;
                 plan.Trees.Add(new TreeSpot { At = p, Size = size, Kind = kind, District = location == null ? null : map.DistrictOf(location.Id), Seed = (int)(p.x * 31 + p.y * 17) });
             }
@@ -413,6 +415,19 @@ namespace CityHighways.Presentation
                 bool yard = e < 1f && Hash(ix, iy, 55) < 0.035f * density;
                 bool bank = Nearest(p, river) < 30f && Hash(ix, iy, 56) < 0.35f * density;
                 if (forest || yard || bank) AddTree(p, forest ? 0.07f + Hash(ix, iy, 54) * 0.04f : 0.05f + Hash(ix, iy, 54) * 0.03f, 57, forest);
+            }
+            // Рощи на холмах вне города: чем выше, тем гуще.
+            if (Relief.Active)
+            {
+                const float grove = 16f;
+                for (int iy = 0; iy <= Mathf.CeilToInt(FieldH / grove); iy++)
+                for (int ix = 0; ix <= Mathf.CeilToInt(FieldW / grove); ix++)
+                {
+                    var p = new Vector2((ix + Hash(ix, iy, 430)) * grove, (iy + Hash(ix, iy, 431)) * grove);
+                    float height = ToWorld(p).y / ReliefField.Amplitude;
+                    if (height < 0.45f || NearestPlace(p) < 60f || Hash(ix, iy, 432) > (height - 0.45f) * 2.2f * density) continue;
+                    AddTree(p, 0.05f + Hash(ix, iy, 433) * 0.04f, 434, true);
+                }
             }
             AddProps(map, plan, density, roads, river, points, NearestPlace, q => OnPaved(q) || InPark(q, 0f), FreeOfBuildings, NearHub);
             AddOutskirts(map, plan, density, river);

@@ -1092,6 +1092,7 @@ namespace CityHighways.Presentation
             // Этап 2 полноценного 3D: бордюры цвета компании, разметка и машины — в сцене.
             _city3D.SyncRoadDetails(game, Palette.PlayerColor, game.Players.Count);
             _city3D.SyncTraffic(game, _map.PulseTime);
+            _city3D.SyncPeople(game, _map.PulseTime);
         }
 
         bool TimerEnabled => _setup.turnSeconds > 0;
