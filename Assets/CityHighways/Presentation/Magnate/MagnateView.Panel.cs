@@ -715,7 +715,7 @@ namespace CityHighways.Presentation
                     ? "Сейчас не довезти: нужны широкие дороги — бетон, мосты, магистрали"
                     : "Сейчас не довезти по открытым дорогам");
                 // Путь всё равно показываем — красным: где он пройдёт и какие дороги мешают (ярче).
-                var ideal = _game.IdealRoute(cargo.From, cargo.To);
+                List<string> ideal = ShortestRouteAnyRoads(cargo.From, cargo.To);
                 if (ideal != null && ideal.Count > 0)
                 {
                     _popupBlocked = ideal;
@@ -987,6 +987,45 @@ namespace CityHighways.Presentation
         void RefreshPlayers()
         {
             _players.Clear();
+        }
+
+        /// <summary>
+        /// Кратчайший путь по всем открытым дорогам карты, построенным и нет (по длине): где пройдёт груз, когда
+        /// всё нужное достроят. null — точки не связаны дорогами. Считается здесь, в интерфейсе, по открытым данным карты.
+        /// </summary>
+        List<string> ShortestRouteAnyRoads(string from, string to)
+        {
+            if (from == to) return new List<string>();
+            var distance = new Dictionary<string, float> { [from] = 0f };
+            var via = new Dictionary<string, Road>();
+            var open = new SortedSet<(float, string)> { (0f, from) };
+            while (open.Count > 0)
+            {
+                var (du, u) = open.Min;
+                open.Remove(open.Min);
+                if (u == to) break;
+                foreach (var road in _game.Map.RoadsAt(u))
+                {
+                    if (!_game.Board.IsRoadOpen(road.Id)) continue;
+                    string v = road.A == u ? road.B : road.A;
+                    float nd = du + road.Length;
+                    if (distance.TryGetValue(v, out var old) && nd >= old) continue;
+                    if (distance.ContainsKey(v)) open.Remove((old, v));
+                    distance[v] = nd;
+                    via[v] = road;
+                    open.Add((nd, v));
+                }
+            }
+            if (!via.ContainsKey(to)) return null;
+            var route = new List<string>();
+            for (string at = to; at != from;)
+            {
+                var road = via[at];
+                route.Add(road.Id);
+                at = road.A == at ? road.B : road.A;
+            }
+            route.Reverse();
+            return route;
         }
 
         /// <summary>
