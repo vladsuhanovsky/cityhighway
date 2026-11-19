@@ -4,10 +4,13 @@ using UnityEditor;
 /// Настройки импорта арта из Scenario, чтобы файлы достаточно было просто положить в Resources:
 /// листы иконок (cargo_icons, hub_event_icons) — до 4096 px, без сжатия, с прозрачностью; ключевой арт меню и
 /// арт карточек — без ужатия до 2048 и с качественным сжатием; текстуры 3D-города — повторяющиеся (Repeat);
-/// слои гардероба (Character/) — с прозрачностью, без мип-карт; портреты 3D-аватаров — с прозрачностью; модели 3D-аватаров (FBX) — без анимаций и риг-настроек.
+/// слои гардероба (Character/) — с прозрачностью и мип-картами; портреты 3D-аватаров — с прозрачностью; модели 3D-аватаров (FBX) — без анимаций и риг-настроек.
 /// </summary>
 sealed class GeneratedArtImporter : AssetPostprocessor
 {
+    // Номер версии настроек: при изменении Unity сам переимпортирует затронутые файлы (2 — мип-карты у гардероба).
+    public override uint GetVersion() => 2;
+
     const string Root = "Resources/CityHighways/";
 
     string PathInResources
@@ -55,11 +58,16 @@ sealed class GeneratedArtImporter : AssetPostprocessor
         }
         else if (path.StartsWith("Character/"))
         {
-            // Слои гардероба 512×768: прозрачность без каймы, без мип-карт (показываются в интерфейсе один к одному).
+            // Слои гардероба 512×768 показываются уменьшенными примерно вдвое (персонаж в профиле — 230 px в ширину).
+            // Без мип-карт уменьшение берёт по 4 текселя из 16 — края и складки мерцают («блики» при покачивании).
+            // С мип-картами и альфой-прозрачностью (цвет края растягивается в прозрачное) картинка ровная.
             importer.textureType = TextureImporterType.Default;
             importer.alphaSource = TextureImporterAlphaSource.FromInput;
             importer.alphaIsTransparency = true;
-            importer.mipmapEnabled = false;
+            importer.mipmapEnabled = true;
+            importer.mipmapFilter = TextureImporterMipFilter.KaiserFilter;
+            importer.mipMapsPreserveCoverage = false;
+            importer.filterMode = UnityEngine.FilterMode.Trilinear;
             importer.maxTextureSize = 1024;
             importer.npotScale = TextureImporterNPOTScale.None;
             importer.wrapMode = UnityEngine.TextureWrapMode.Clamp;

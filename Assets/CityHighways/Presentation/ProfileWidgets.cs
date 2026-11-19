@@ -51,18 +51,13 @@ namespace CityHighways.Presentation
 
     /// <summary>
     /// Персонаж на поворотной площадке. Настоящей 3D-модели у персонажа нет (слои — плоские PNG спереди),
-    /// поэтому поворот сделан как 2.5D: фигура сужается по ширине, слои одежды сдвигаются с разной глубиной
-    /// (параллакс), меняется освещение и тень на полу. Тяните мышью влево-вправо — фигура поворачивается
-    /// до ±40°, отпустите — плавно покачивается. Надетая вещь «проявляется» анимацией.
+    /// поэтому поворот сделан как 2.5D: фигура сужается по ширине и чуть смещается, меняется освещение и тень на
+    /// полу. Все слои двигаются вместе: раньше одежда, причёска и шляпа сдвигались с разной «глубиной» и при
+    /// повороте съезжали с фигуры. Тяните мышью влево-вправо — фигура поворачивается до ±40°, отпустите —
+    /// плавно покачивается. Надетая вещь «проявляется» анимацией.
     /// </summary>
     public sealed class TurntableCharacter : VisualElement
     {
-        /// <summary>Глубина слоя: чем больше, тем сильнее сдвигается при повороте (ближе к зрителю).</summary>
-        static readonly Dictionary<string, float> Depth = new Dictionary<string, float>
-        {
-            { "body", 0f }, { "bottom", 0.25f }, { "shoes", 0.35f }, { "top", 0.5f }, { "hair", 0.3f }, { "accessory", 0.85f }, { "hat", 0.6f }
-        };
-
         readonly float _width;
         readonly VisualElement _stage;
         readonly VisualElement _shadow;
@@ -166,14 +161,13 @@ namespace CityHighways.Presentation
             float rad = _angle * Mathf.Deg2Rad;
             float squeeze = Mathf.Lerp(1f, Mathf.Cos(rad), 0.8f);
             _stage.style.scale = new Scale(new Vector3(squeeze, 1f, 1f));
-            foreach (var pair in _layers)
-            {
-                float depth = Depth.TryGetValue(pair.Key, out var d) ? d : 0.4f;
-                pair.Value.style.translate = new Translate(new Length(Mathf.Sin(rad) * depth * _width * 0.06f), new Length(0f));
-                // Свет падает спереди-слева: при повороте фигура чуть темнеет.
-                float light = 1f - 0.22f * Mathf.Abs(Mathf.Sin(rad));
-                pair.Value.style.unityBackgroundImageTintColor = new Color(light, light, light, 1f);
-            }
+            // Сдвиг — целиком и с округлением до пикселя: при дробном сдвиге каждый кадр уменьшенная текстура
+            // заново пересчитывается и края слоёв мерцают.
+            _stage.style.translate = new Translate(new Length(Mathf.Round(Mathf.Sin(rad) * _width * 0.03f)), new Length(0f));
+            // Свет падает спереди-слева: при повороте фигура чуть темнеет.
+            float light = 1f - 0.22f * Mathf.Abs(Mathf.Sin(rad));
+            var tint = new Color(light, light, light, 1f);
+            foreach (var pair in _layers) pair.Value.style.unityBackgroundImageTintColor = tint;
             _shadow.style.translate = new Translate(new Length(-Mathf.Sin(rad) * _width * 0.08f), new Length(0f));
             _shadow.style.scale = new Scale(new Vector3(0.8f + 0.2f * squeeze, 1f, 1f));
         }
