@@ -36,7 +36,11 @@ namespace CityHighways.Presentation
         /// <summary>Приближение или сдвиг карты изменились (мини-карта перерисовывает рамку обзора).</summary>
         public event Action ViewChanged;
 
-        public const float MaxZoom = 4f;
+        /// <summary>
+        /// Наибольшее приближение (×8; было ×4). Приближение — масштаб картинки камеры (BoardLayout.View), сама камера
+        /// не подлетает ближе: ничего не обрезается ближней плоскостью, значки и подписи остаются своего размера.
+        /// </summary>
+        public const float MaxZoom = 8f;
         float _zoom = 1f, _zoomTarget = 1f;
         Vector2 _pan, _panTarget;
         bool _panning;
