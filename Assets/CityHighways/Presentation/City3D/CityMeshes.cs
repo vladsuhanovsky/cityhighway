@@ -197,6 +197,42 @@ namespace CityHighways.Presentation
             }
         }
 
+        /// <summary>
+        /// Китайская вальмовая крыша с загнутыми вверх углами: длинный конёк, углы карниза приподняты на lift,
+        /// середины карнизов — ниже (провис ската). Сверху — тёмный гребень конька с «рогами» на концах.
+        /// w × d — с выносом карниза (больше стен), rh — высота до конька.
+        /// </summary>
+        public void ChineseRoof(float cx, float cz, float w, float d, float y0, float rh, float lift, Rect roof, Rect ridge)
+        {
+            if (w < d)
+            {
+                // Строим вдоль X и поворачиваем на 90° вокруг центра.
+                var turned = new MeshBuilder();
+                turned.ChineseRoof(0f, 0f, d, w, y0, rh, lift, roof, ridge);
+                Append(turned, Matrix4x4.TRS(new Vector3(cx, 0f, cz), Quaternion.Euler(0f, 90f, 0f), Vector3.one));
+                return;
+            }
+            float x0 = cx - w / 2f, x1 = cx + w / 2f, z0 = cz - d / 2f, z1 = cz + d / 2f, top = y0 + rh;
+            float inset = d / 2f * 0.8f;                     // конёк длиннее, чем у обычной вальмы
+            var ra = new Vector3(x0 + inset, top, cz);
+            var rb = new Vector3(x1 - inset, top, cz);
+            var A = new Vector3(x0, y0 + lift, z0); var B = new Vector3(x1, y0 + lift, z0);
+            var C = new Vector3(x1, y0 + lift, z1); var E = new Vector3(x0, y0 + lift, z1);
+            var F1 = new Vector3(x0 + w * 0.25f, y0, z0); var F2 = new Vector3(x1 - w * 0.25f, y0, z0);
+            var K1 = new Vector3(x1 - w * 0.25f, y0, z1); var K2 = new Vector3(x0 + w * 0.25f, y0, z1);
+            var L = new Vector3(x0, y0 + lift * 0.25f, cz); var R = new Vector3(x1, y0 + lift * 0.25f, cz);
+            // Передний и задний скаты (трапеции с провисом посередине), боковые — треугольники.
+            Tri(A, ra, F1, roof); Quad(F1, ra, rb, F2, roof); Tri(F2, rb, B, roof);
+            Tri(C, rb, K1, roof); Quad(K1, rb, ra, K2, roof); Tri(K2, ra, E, roof);
+            Tri(E, ra, L, roof); Tri(L, ra, A, roof);
+            Tri(B, rb, R, roof); Tri(R, rb, C, roof);
+            // Гребень конька и загнутые «рога» на его концах.
+            float t = Mathf.Max(0.0012f, rh * 0.08f);
+            Beam(ra + Vector3.up * t * 0.4f, rb + Vector3.up * t * 0.4f, t, t, ridge, ridge);
+            Beam(ra + Vector3.up * t * 0.4f, ra + new Vector3(-t * 1.2f, t * 2.2f, 0f), t * 0.8f, t * 0.8f, ridge, ridge);
+            Beam(rb + Vector3.up * t * 0.4f, rb + new Vector3(t * 1.2f, t * 2.2f, 0f), t * 0.8f, t * 0.8f, ridge, ridge);
+        }
+
         /// <summary>Многогранная призма (круглая башня, труба, опора моста): sides граней, крыша — веером.</summary>
         public void Prism(float cx, float cz, float r, float y0, float h, int sides, Rect wall, Rect top, float topRadius = -1f)
         {
@@ -285,7 +321,27 @@ namespace CityHighways.Presentation
             /// <summary>Аэровокзал: длинный стеклянный терминал, навес над подъездом, пирс к самолётам.</summary>
             Terminal,
             /// <summary>Диспетчерская вышка аэропорта: ствол и стеклянная кабина наверху.</summary>
-            ControlTower
+            ControlTower,
+
+            // ---- Китайский стиль (Чунцин).
+            /// <summary>Дом под китайской крышей с загнутыми углами: белёные или красные стены, красные колонны.</summary>
+            ChineseHouse,
+            /// <summary>Зал с двойным карнизом: нижний «юбочный» скат вокруг и верхняя крыша.</summary>
+            ChineseHall,
+            /// <summary>Жилой дом в 5–9 этажей с черепичной китайской крышей и красным поясом.</summary>
+            ChineseBlock,
+            /// <summary>Высотка Чунцина: стеклянная башня, уступ и павильон под китайской крышей наверху.</summary>
+            ChineseTower,
+            /// <summary>Пагода: ярусы с выносными крышами и золотое навершие.</summary>
+            Pagoda,
+
+            // ---- Европейский стиль (Амстердам).
+            /// <summary>Ряд узких кирпичных домов на канале: у каждого свой фронтон — острый, ступенчатый или шейный.</summary>
+            CanalRow,
+            /// <summary>Кирпичный дом в 4–6 этажей под крутой мансардной крышей из тёмного сланца.</summary>
+            EuroBlock,
+            /// <summary>Церковь: неф под высокой крышей и башня со ступенями и медным шпилем.</summary>
+            Church
         }
 
         /// <summary>
@@ -469,9 +525,190 @@ namespace CityHighways.Presentation
                         b.Box(w * 0.3f * i, 0f, Mathf.Min(w, d) * 0.22f, Mathf.Min(w, d) * 0.22f, h, 0.02f, Roof(CityAtlas.RoofLight), Roof(CityAtlas.RoofLight));
                     RoofClutter(b, w * 0.85f, d * 0.7f, h, random);
                     break;
+                case Kind.ChineseHouse:
+                case Kind.ChineseHall:
+                case Kind.ChineseBlock:
+                case Kind.ChineseTower:
+                case Kind.Pagoda:
+                    BuildChinese(b, kind, w, d, h, random);
+                    break;
+                case Kind.CanalRow:
+                case Kind.EuroBlock:
+                case Kind.Church:
+                    BuildEuropean(b, kind, w, d, h, random);
+                    break;
                 default:
                     b.Box(0f, 0f, w, d, 0f, h, Facade(lowRow), flatRoof);
                     break;
+            }
+        }
+
+        static Rect StyleUv(int column) => CityAtlas.Uv(CityAtlas.Row.Style, column);
+        static Rect StyleSolid(int column) => CityAtlas.Solid(CityAtlas.Row.Style, column);
+
+        /// <summary>Китайские здания: стены, красные колонны, крыши с загнутыми углами из глазурованной черепицы.</summary>
+        static void BuildChinese(MeshBuilder b, Kind kind, float w, float d, float h, System.Random random)
+        {
+            var tile = StyleUv(random.NextDouble() < 0.7 ? CityAtlas.ChinaTileGray : CityAtlas.ChinaTileGreen);
+            var ridge = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofBlack);
+            var lacquer = StyleSolid(CityAtlas.Lacquer);
+            var wall = StyleUv(random.NextDouble() < 0.6 ? CityAtlas.ChinaWhite : CityAtlas.ChinaRed);
+            var plinth = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Granite);
+            var gold = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Spire);
+            switch (kind)
+            {
+                case Kind.ChineseHouse:
+                {
+                    // Каменный цоколь, стены, четыре красные колонны по углам, крыша с выносом и загнутыми углами.
+                    b.Box(0f, 0f, w * 1.08f, d * 1.08f, 0f, h * 0.12f, plinth, plinth);
+                    b.Box(0f, 0f, w, d, h * 0.12f, h * 0.88f, wall, tile);
+                    float r = Mathf.Min(w, d) * 0.035f;
+                    for (int k = 0; k < 4; k++)
+                        b.Prism(((k & 1) == 0 ? -1f : 1f) * w * 0.5f, ((k & 2) == 0 ? -1f : 1f) * d * 0.5f, r, h * 0.12f, h * 0.88f, 6, lacquer, lacquer);
+                    float rh = Mathf.Min(w, d) * 0.34f;
+                    b.ChineseRoof(0f, 0f, w * 1.28f, d * 1.34f, h, rh, rh * 0.38f, tile, ridge);
+                    break;
+                }
+                case Kind.ChineseHall:
+                {
+                    // Двойной карниз: нижний скат вокруг на 60 % высоты, над ним — верхний ярус и большая крыша.
+                    b.Box(0f, 0f, w * 1.1f, d * 1.1f, 0f, h * 0.1f, plinth, plinth);
+                    b.Box(0f, 0f, w, d, h * 0.1f, h * 0.55f, StyleUv(CityAtlas.ChinaRed), tile);
+                    float skirt = Mathf.Min(w, d) * 0.16f;
+                    b.ChineseRoof(0f, 0f, w * 1.24f, d * 1.28f, h * 0.65f, skirt, skirt * 0.35f, tile, ridge);
+                    b.Box(0f, 0f, w * 0.78f, d * 0.72f, h * 0.65f, h * 0.35f, StyleUv(CityAtlas.ChinaRed), tile);
+                    float rh = Mathf.Min(w, d) * 0.3f;
+                    b.ChineseRoof(0f, 0f, w * 1.0f, d * 0.98f, h, rh, rh * 0.4f, tile, ridge);
+                    break;
+                }
+                case Kind.ChineseBlock:
+                {
+                    // Жилой дом: обычный фасад, красный пояс под крышей и низкая китайская крыша.
+                    var facade = CityAtlas.Uv(h > 0.16f ? CityAtlas.Row.Mid : CityAtlas.Row.Low, random.Next(CityAtlas.Columns));
+                    b.Box(0f, 0f, w, d, 0f, h, facade, tile);
+                    b.Box(0f, 0f, w * 1.02f, d * 1.02f, h, h * 0.05f, lacquer, lacquer);
+                    float rh = Mathf.Min(w, d) * 0.22f;
+                    b.ChineseRoof(0f, 0f, w * 1.16f, d * 1.2f, h * 1.05f, rh, rh * 0.35f, tile, ridge);
+                    break;
+                }
+                case Kind.ChineseTower:
+                {
+                    // Высотка: стеклянный ствол, уступ, павильон с китайской крышей и шпилем.
+                    var glass = CityAtlas.Uv(CityAtlas.Row.Tall, random.Next(3));
+                    b.Box(0f, 0f, w, d, 0f, h * 0.82f, glass, CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofDark));
+                    b.Box(0f, 0f, w * 0.78f, d * 0.78f, h * 0.82f, h * 0.1f, glass, lacquer);
+                    float rh = Mathf.Min(w, d) * 0.3f;
+                    b.ChineseRoof(0f, 0f, w * 0.98f, d * 0.98f, h * 0.92f, rh, rh * 0.4f, tile, ridge);
+                    b.Cone(0f, 0f, Mathf.Min(w, d) * 0.06f, h * 0.92f + rh, h * 0.12f, 6, gold);
+                    break;
+                }
+                case Kind.Pagoda:
+                {
+                    // Ярусы: каждый уже и ниже предыдущего, у каждого — своя крыша с загнутыми углами.
+                    int tiers = h > 0.2f ? 5 : 3;
+                    float side = Mathf.Min(w, d), y = 0f;
+                    b.Box(0f, 0f, side * 1.15f, side * 1.15f, 0f, h * 0.05f, plinth, plinth);
+                    y = h * 0.05f;
+                    float tierH = h * 0.95f / (tiers + 0.6f);
+                    for (int i = 0; i < tiers; i++)
+                    {
+                        float s = side * (1f - i * 0.13f);
+                        float wallH = tierH * (i == 0 ? 1.2f : 0.75f);
+                        b.Box(0f, 0f, s * 0.72f, s * 0.72f, y, wallH, StyleUv(CityAtlas.ChinaRed), tile);
+                        y += wallH;
+                        float rh = s * 0.16f;
+                        b.ChineseRoof(0f, 0f, s * 1.08f, s * 1.08f, y, rh, rh * 0.5f, tile, ridge);
+                        y += rh * 0.6f;
+                    }
+                    b.Prism(0f, 0f, side * 0.03f, y, tierH * 0.3f, 6, gold, gold);
+                    b.Cone(0f, 0f, side * 0.05f, y + tierH * 0.3f, tierH * 0.7f, 6, gold);
+                    break;
+                }
+            }
+        }
+
+        /// <summary>Европейские здания: кирпич, белые рамы и карнизы, фронтоны, тёмный сланец и медь.</summary>
+        static void BuildEuropean(MeshBuilder b, Kind kind, float w, float d, float h, System.Random random)
+        {
+            var white = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
+            var slate = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofBlack);
+            var tiles = CityAtlas.Solid(CityAtlas.Row.Roof, random.NextDouble() < 0.5 ? CityAtlas.RoofBrown : CityAtlas.RoofRed);
+            int[] bricks = { CityAtlas.CanalBrown, CityAtlas.CanalRed, CityAtlas.CanalDark };
+            switch (kind)
+            {
+                case Kind.CanalRow:
+                {
+                    // Ряд узких домов вплотную, фронтонами к улице (−Z): у каждого своя высота, кирпич и фронтон.
+                    int count = Mathf.Clamp(Mathf.RoundToInt(w / 0.034f), 2, 5);
+                    float segment = w / count;
+                    for (int i = 0; i < count; i++)
+                    {
+                        float x = -w / 2f + segment * (i + 0.5f);
+                        float hi = h * (0.82f + (float)random.NextDouble() * 0.36f);
+                        var brick = StyleUv(bricks[random.Next(bricks.Length)]);
+                        var roof = random.NextDouble() < 0.6 ? slate : tiles;
+                        float sw = segment * 0.98f, gable = sw * 0.75f;
+                        b.Box(x, 0f, sw, d, 0f, hi, brick, roof);
+                        // Скат вдоль глубины: фронтон смотрит на улицу.
+                        b.GableRoof(x, 0f, sw, d, hi, gable, roof, brick);
+                        int shape = random.Next(3);
+                        float front = -d / 2f + 0.002f;
+                        if (shape == 1)
+                        {
+                            // Ступенчатый фронтон: три уступа поверх треугольника.
+                            for (int step = 0; step < 3; step++)
+                            {
+                                float stepW = sw * (0.84f - step * 0.27f), stepH = gable * 0.34f;
+                                b.Box(x, front, stepW, 0.004f, hi + step * stepH, stepH, brick, white);
+                            }
+                        }
+                        else if (shape == 2)
+                        {
+                            // Шейный фронтон: узкая «шея» с белым карнизом и завитками-плечиками.
+                            b.Box(x, front, sw * 0.46f, 0.004f, hi, gable * 0.95f, brick, white);
+                            b.Box(x, front, sw * 0.54f, 0.005f, hi + gable * 0.95f, gable * 0.08f, white, white);
+                            b.Box(x, front, sw * 0.86f, 0.004f, hi, gable * 0.22f, brick, white);
+                        }
+                        // Белый пояс-карниз над первым этажом.
+                        b.Box(x, front - 0.0005f, sw * 0.9f, 0.002f, hi * 0.22f, 0.0012f, white, white);
+                    }
+                    break;
+                }
+                case Kind.EuroBlock:
+                {
+                    // Кирпичный дом, белый карниз и крутая мансардная крыша (вальма) из тёмного сланца со слуховыми окнами.
+                    var brick = StyleUv(bricks[random.Next(bricks.Length)]);
+                    b.Box(0f, 0f, w, d, 0f, h, brick, slate);
+                    b.Box(0f, 0f, w * 1.03f, d * 1.03f, h, h * 0.04f, white, white);
+                    float rh = Mathf.Min(w, d) * 0.4f;
+                    b.HipRoof(0f, 0f, w, d, h * 1.04f, rh, slate);
+                    int dormers = Mathf.Clamp(Mathf.RoundToInt(w / 0.03f), 1, 4);
+                    for (int i = 0; i < dormers; i++)
+                    {
+                        float x = -w * 0.35f + (dormers == 1 ? w * 0.35f : w * 0.7f * i / (dormers - 1));
+                        b.Box(x, -d * 0.3f, w * 0.08f, d * 0.12f, h * 1.04f, rh * 0.45f, white, slate);
+                    }
+                    break;
+                }
+                case Kind.Church:
+                {
+                    // Неф вдоль глубины под высокой крышей, башня у фасада (−Z): кирпич, белый ярус, медный шпиль.
+                    var brick = StyleUv(CityAtlas.CanalRed);
+                    var copper = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofCopper);
+                    float naveW = w * 0.55f;
+                    b.Box(0f, d * 0.1f, naveW, d * 0.8f, 0f, h, brick, slate);
+                    b.GableRoof(0f, d * 0.1f, naveW * 1.04f, d * 0.82f, h, naveW * 0.7f, slate, brick);
+                    float tower = Mathf.Min(w, d) * 0.3f, ty = 0f;
+                    b.Box(0f, -d * 0.36f, tower, tower, 0f, h * 1.7f, brick, slate);
+                    ty = h * 1.7f;
+                    b.Box(0f, -d * 0.36f, tower * 0.8f, tower * 0.8f, ty, h * 0.45f, white, copper);
+                    ty += h * 0.45f;
+                    b.Prism(0f, -d * 0.36f, tower * 0.34f, ty, h * 0.35f, 8, copper, copper);
+                    ty += h * 0.35f;
+                    b.Cone(0f, -d * 0.36f, tower * 0.3f, ty, h * 1.1f, 8, copper);
+                    b.Cone(0f, -d * 0.36f, tower * 0.05f, ty + h * 1.1f, h * 0.25f, 4, CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Spire));
+                    break;
+                }
             }
         }
 

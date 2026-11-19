@@ -766,6 +766,30 @@ namespace CityHighways.Presentation
                 float y = 0f;
                 switch (prop.Kind)
                 {
+                    case CityPlanner.PropKind.Lamp when plan.Style == CityPlanner.CityStyle.Chinese:
+                    {
+                        // Чунцин: тёмно-красный столб с перекладиной и два красных фонаря-бочонка.
+                        var lacquer = CityAtlas.Solid(CityAtlas.Row.Style, CityAtlas.Lacquer);
+                        var dark = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofBlack);
+                        local.Prism(0f, 0f, 0.0011f, 0f, 0.028f, 5, dark, dark);
+                        local.Beam(new Vector3(-0.005f, 0.027f, 0f), new Vector3(0.008f, 0.027f, 0f), 0.001f, 0.001f, dark, dark);
+                        foreach (float x in new[] { -0.004f, 0.0068f })
+                        {
+                            local.Prism(x, 0f, 0.0016f, 0.0205f, 0.0045f, 6, lacquer, lampHead, 0.0012f);
+                            local.Prism(x, 0f, 0.0004f, 0.025f, 0.002f, 4, dark, dark);
+                        }
+                        break;
+                    }
+                    case CityPlanner.PropKind.Lamp when plan.Style == CityPlanner.CityStyle.European:
+                    {
+                        // Амстердам: чугунный столб без плеча и фонарь-«домик» наверху.
+                        var iron = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofBlack);
+                        local.Prism(0f, 0f, 0.0013f, 0f, 0.003f, 6, iron, iron);
+                        local.Prism(0f, 0f, 0.0008f, 0.003f, 0.022f, 6, iron, iron);
+                        local.Prism(0f, 0f, 0.0018f, 0.025f, 0.0035f, 4, lampHead, iron, 0.0024f);
+                        local.Cone(0f, 0f, 0.0026f, 0.0285f, 0.002f, 4, iron);
+                        break;
+                    }
                     case CityPlanner.PropKind.Lamp:
                         // Столб 3 см, плечо 6 мм к дороге, плафон на конце.
                         local.Prism(0f, 0f, 0.0011f, 0f, 0.03f, 5, metal, metal);

@@ -69,8 +69,89 @@ namespace CityHighways.Presentation
             public int Seed;
         }
 
+        /// <summary>
+        /// Архитектурный стиль карты: обычный (Москва и города магната), китайский (Чунцин — пагоды, залы и дома под
+        /// крышами с загнутыми углами, высотки с павильонами, красные фонари) или европейский (Амстердам — узкие
+        /// кирпичные дома на каналах с фронтонами, церкви со шпилями, мансарды, без небоскрёбов).
+        /// </summary>
+        public enum CityStyle { Standard, Chinese, European }
+
+        public static CityStyle StyleOf(CityMap map)
+        {
+            string name = map?.Name ?? "";
+            if (name == "Чунцин") return CityStyle.Chinese;
+            if (name == "Амстердам") return CityStyle.European;
+            return CityStyle.Standard;
+        }
+
+        /// <summary>
+        /// Тип здания в стиле карты: обычный тип (по характеру района) заменяется на свой для Китая или Европы.
+        /// Промзоны и аэропорты не меняются. Размеры и высота подгоняются под новый тип.
+        /// </summary>
+        static CityShapes.Kind Restyle(CityStyle style, CityShapes.Kind kind, bool center, float pick, float cell,
+            ref float w, ref float d, ref float h)
+        {
+            if (style == CityStyle.Standard) return kind;
+            switch (kind)
+            {
+                case CityShapes.Kind.Hangar:
+                case CityShapes.Kind.Warehouse:
+                case CityShapes.Kind.Sawtooth:
+                case CityShapes.Kind.Factory:
+                    return kind;
+            }
+            if (style == CityStyle.Chinese)
+            {
+                switch (kind)
+                {
+                    case CityShapes.Kind.Stepped:
+                    case CityShapes.Kind.Round:
+                        if (!center) { h = Mathf.Min(h, 0.2f); return CityShapes.Kind.Pagoda; }
+                        return CityShapes.Kind.ChineseTower;
+                    case CityShapes.Kind.Spire:
+                    case CityShapes.Kind.Landmark:
+                        w = d = cell * 0.72f;
+                        h = Mathf.Clamp(h, 0.16f, 0.3f);
+                        return CityShapes.Kind.Pagoda;
+                    case CityShapes.Kind.Gable:
+                    case CityShapes.Kind.Hip:
+                        return CityShapes.Kind.ChineseHouse;
+                    case CityShapes.Kind.LBlock:
+                        h = Mathf.Clamp(h * 0.6f, 0.05f, 0.09f);
+                        w = cell * 0.85f;
+                        return CityShapes.Kind.ChineseHall;
+                    default:
+                        // Плоские коробки: в центре — половина залов, остальное — жилые дома с китайской крышей.
+                        if (center && pick < 0.35f) { h = Mathf.Clamp(h * 0.6f, 0.06f, 0.1f); w = cell * 0.85f; return CityShapes.Kind.ChineseHall; }
+                        return CityShapes.Kind.ChineseBlock;
+                }
+            }
+            // Европейский стиль: без небоскрёбов, дома на каналах и мансарды, церкви вместо шпилей.
+            switch (kind)
+            {
+                case CityShapes.Kind.Spire:
+                case CityShapes.Kind.Landmark:
+                    if (pick < 0.45f)
+                    {
+                        w = cell * 0.7f; d = cell * 0.9f; h = 0.07f;
+                        return CityShapes.Kind.Church;
+                    }
+                    break;
+                case CityShapes.Kind.Gable:
+                case CityShapes.Kind.Hip:
+                    return kind;
+            }
+            h = Mathf.Clamp(h, 0.07f, 0.13f);
+            if (kind == CityShapes.Kind.Panel || (!center && pick < 0.4f)) return CityShapes.Kind.EuroBlock;
+            w = cell * (0.75f + pick * 0.2f);
+            d = cell * (0.55f + pick * 0.15f);
+            return CityShapes.Kind.CanalRow;
+        }
+
         public sealed class Plan
         {
+            /// <summary>Архитектурный стиль города (фонари, деревья и здания — в его духе).</summary>
+            public CityStyle Style;
             public readonly List<Building> Buildings = new List<Building>();
             public readonly List<Prop> Props = new List<Prop>();
             public readonly List<TreeSpot> Trees = new List<TreeSpot>();
@@ -150,7 +231,7 @@ namespace CityHighways.Presentation
         public static Plan Build(CityMap map, float density = 1f, IEnumerable<string> hubSites = null,
             IEnumerable<Vector2> hubCenters = null)
         {
-            var plan = new Plan();
+            var plan = new Plan { Style = StyleOf(map) };
             Vector2 Field(float x, float y) => new Vector2(x * FieldW, y * FieldH);
 
             var points = map.Locations.ToDictionary(l => l.Id, l => Field(l.X, l.Y));
@@ -261,6 +342,8 @@ namespace CityHighways.Presentation
                         else if (roll < 0.74f) { kind = CityShapes.Kind.Gable; h = Mathf.Min(h, 0.07f); }
                         break;
                 }
+                // Стиль карты: Чунцин — китайская архитектура, Амстердам — европейская.
+                kind = Restyle(plan.Style, kind, character == Character.Center, Hash(ix, iy, 16), cell, ref w, ref d, ref h);
 
                 // Отступы: чем выше здание, тем дальше от дорог; севернее здания (за ним на экране) — ещё дальше.
                 float heightPx = h * PixelsPerUnit;
@@ -400,8 +483,11 @@ namespace CityHighways.Presentation
                 float pick = Hash((int)p.x, (int)p.y, salt);
                 // На вершинах холмов — ельники.
                 bool hill = ToWorld(p).y > ReliefField.Amplitude * 0.55f;
-                var kind = forest || hill ? (pick < (hill ? 0.8f : 0.45f) ? CityShapes.Tree.Spruce : CityShapes.Tree.Round)
-                                  : pick < 0.15f ? CityShapes.Tree.Poplar : CityShapes.Tree.Round;
+                // Амстердам — вязы и тополя вдоль каналов (тополей больше, елей в городе нет).
+                float poplars = plan.Style == CityStyle.European ? 0.35f : 0.15f;
+                var kind = (forest || hill) && plan.Style != CityStyle.European
+                    ? (pick < (hill ? 0.8f : 0.45f) ? CityShapes.Tree.Spruce : CityShapes.Tree.Round)
+                    : pick < poplars ? CityShapes.Tree.Poplar : CityShapes.Tree.Round;
                 plan.Trees.Add(new TreeSpot { At = p, Size = size, Kind = kind, District = location == null ? null : map.DistrictOf(location.Id), Seed = (int)(p.x * 31 + p.y * 17) });
             }
             for (int pi = 0; pi < parks.Count; pi++)
@@ -587,7 +673,8 @@ namespace CityHighways.Presentation
                 {
                     Center = p, Width = w, Depth = d, Height = 0.032f + Hash(ix, iy, 325) * 0.022f,
                     Angle = (Hash(ix, iy, 326) < 0.5f ? 0f : 90f) + (Hash(ix, iy, 327) - 0.5f) * 14f,
-                    Kind = Hash(ix, iy, 328) < 0.55f ? CityShapes.Kind.Gable : CityShapes.Kind.Hip,
+                    Kind = plan.Style == CityStyle.Chinese ? CityShapes.Kind.ChineseHouse
+                        : Hash(ix, iy, 328) < 0.55f ? CityShapes.Kind.Gable : CityShapes.Kind.Hip,
                     District = null, Seed = 500000 + ix * 7919 + iy * 104729
                 });
             }

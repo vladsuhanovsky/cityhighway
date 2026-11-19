@@ -8,7 +8,8 @@ namespace CityHighways.Presentation
     /// Вторая текстура — карта свечения: ночью горят окна (случайно, тёплым и холодным светом).
     /// Ряды (снизу вверх):
     /// 0 — фасады в 3 этажа, 1 — в 6 этажей, 2 — высотки (12 этажей, стекло), 3 — промышленные,
-    /// 4 — крыши, 5 — листва и стволы, 6 — мосты, гранит, шпили, кирпич.
+    /// 4 — крыши, 5 — листва и стволы, 6 — мосты, гранит, шпили, кирпич,
+    /// 7 — архитектурные стили карт: китайские стены и черепица (Чунцин), кирпичные фасады каналов (Амстердам).
     /// </summary>
     public static class CityAtlas
     {
@@ -19,13 +20,17 @@ namespace CityHighways.Presentation
         public static Texture2D Albedo { get { Build(); return _albedo; } }
         public static Texture2D Emission { get { Build(); return _emission; } }
 
-        public enum Row { Low = 0, Mid = 1, Tall = 2, Industrial = 3, Roof = 4, Nature = 5, Misc = 6 }
+        public enum Row { Low = 0, Mid = 1, Tall = 2, Industrial = 3, Roof = 4, Nature = 5, Misc = 6, Style = 7 }
 
         // Плитки ряда «Природа» и «Разное».
         public const int Leaf0 = 0, Leaf1 = 1, Leaf2 = 2, Leaf3 = 3, LeafAutumn = 4, Spruce = 5, Trunk = 6, LeafDark = 7;
         public const int BridgeConcrete = 0, BridgeSteel = 1, Railing = 2, Granite = 3, Spire = 4, Brick = 5, ChimneyStripe = 6, Asphalt = 7;
         // Крыши.
         public const int RoofDark = 0, RoofGravel = 1, RoofLight = 2, RoofRed = 3, RoofBrown = 4, RoofCopper = 5, RoofMetal = 6, RoofBlack = 7;
+        // Ряд стилей: китайская белёная стена с красными решётками, красная стена, серая и зелёная глазурованная
+        // черепица; кирпичные фасады каналов — коричневый, красный, тёмный; красный лак (колонны, балки).
+        public const int ChinaWhite = 0, ChinaRed = 1, ChinaTileGray = 2, ChinaTileGreen = 3,
+            CanalBrown = 4, CanalRed = 5, CanalDark = 6, Lacquer = 7;
 
         /// <summary>Прямоугольник плитки в UV (с отступом в 1 пиксель от краёв, чтобы соседние плитки не просвечивали).</summary>
         public static Rect Uv(Row row, int column)
@@ -102,6 +107,15 @@ namespace CityHighways.Presentation
                 var stripe = (y / 8) % 2 == 0 ? misc[ChimneyStripe] : new Color(0.94f, 0.94f, 0.92f);
                 for (int x = 0; x < Tile; x++) Set(albedo, Row.Misc, ChimneyStripe, x, y, stripe);
             }
+
+            ChinaWall(albedo, emission, ChinaWhite, new Color(0.90f, 0.88f, 0.82f), new Color(0.62f, 0.16f, 0.12f), random);
+            ChinaWall(albedo, emission, ChinaRed, new Color(0.64f, 0.18f, 0.14f), new Color(0.78f, 0.62f, 0.30f), random);
+            ChinaTiles(albedo, ChinaTileGray, new Color(0.30f, 0.32f, 0.34f));
+            ChinaTiles(albedo, ChinaTileGreen, new Color(0.22f, 0.46f, 0.40f));
+            CanalFacade(albedo, emission, CanalBrown, new Color(0.46f, 0.30f, 0.22f), random);
+            CanalFacade(albedo, emission, CanalRed, new Color(0.60f, 0.27f, 0.20f), random);
+            CanalFacade(albedo, emission, CanalDark, new Color(0.24f, 0.23f, 0.24f), random);
+            Fill(albedo, Row.Style, Lacquer, new Color(0.70f, 0.14f, 0.10f), random, 0.03f);
 
             ApplyGeneratedTextures(albedo, roofs, misc);
 
@@ -234,6 +248,96 @@ namespace CityHighways.Presentation
                 glow.a = 1f;
                 Set(albedo, row, column, x, y, color);
                 Set(emission, row, column, x, y, glow);
+            }
+        }
+
+        /// <summary>
+        /// Китайская стена: стена, серый цоколь, по краям — колонны цвета lattice, два этажа окон-решёток
+        /// (переплёт в клетку), сверху — тёмная балка под карнизом.
+        /// </summary>
+        static void ChinaWall(Color[] albedo, Color[] emission, int column, Color wall, Color lattice, System.Random random)
+        {
+            const int floors = 2, windows = 3;
+            var lit = new bool[floors, windows];
+            for (int f = 0; f < floors; f++)
+            for (int w = 0; w < windows; w++) lit[f, w] = random.NextDouble() < 0.5;
+            for (int y = 0; y < Tile; y++)
+            for (int x = 0; x < Tile; x++)
+            {
+                var color = wall * Mathf.Lerp(0.85f, 1f, Mathf.Clamp01(y / 14f));
+                var glow = Color.black;
+                if (y < 6) color = new Color(0.46f, 0.46f, 0.46f);                       // цоколь
+                else if (y >= Tile - 5) color = new Color(0.28f, 0.12f, 0.10f);           // балка под карнизом
+                else if (x < 4 || x >= Tile - 4) color = lattice * 0.95f;                 // колонны по краям
+                else
+                {
+                    float floorH = (Tile - 11f) / floors, colW = (Tile - 8f) / windows;
+                    int f = Mathf.Min(floors - 1, (int)((y - 6) / floorH)), w = Mathf.Min(windows - 1, (int)((x - 4) / colW));
+                    float fy = (y - 6) - f * floorH, fx = (x - 4) - w * colW;
+                    if (fy > floorH * 0.2f && fy < floorH * 0.85f && fx > colW * 0.18f && fx < colW * 0.82f)
+                    {
+                        // Окно-решётка: переплёт в клетку на тёмном стекле.
+                        bool bar = ((int)fx % 4 == 0) || ((int)fy % 4 == 0);
+                        color = bar ? lattice : new Color(0.20f, 0.17f, 0.15f);
+                        if (!bar && lit[f, w]) glow = new Color(1f, 0.62f, 0.32f);
+                    }
+                }
+                color.a = 1f;
+                glow.a = 1f;
+                Set(albedo, Row.Style, column, x, y, color);
+                Set(emission, Row.Style, column, x, y, glow);
+            }
+        }
+
+        /// <summary>Глазурованная черепица: желобки вдоль ската (полосы по x), блики на гребнях, ряды по y.</summary>
+        static void ChinaTiles(Color[] albedo, int column, Color tile)
+        {
+            for (int y = 0; y < Tile; y++)
+            for (int x = 0; x < Tile; x++)
+            {
+                float groove = Mathf.Abs(Mathf.Sin(x * Mathf.PI / 4f));                 // полукруглые желобки
+                float k = Mathf.Lerp(0.72f, 1.18f, groove) * (y % 8 == 0 ? 0.82f : 1f);
+                Set(albedo, Row.Style, column, x, y, new Color(Mathf.Clamp01(tile.r * k), Mathf.Clamp01(tile.g * k), Mathf.Clamp01(tile.b * k), 1f));
+            }
+        }
+
+        /// <summary>
+        /// Фасад дома на канале: кирпич (ряды кладки), четыре этажа по два высоких окна в белых рамах,
+        /// внизу — дверь и цокольное окно, белый карниз сверху.
+        /// </summary>
+        static void CanalFacade(Color[] albedo, Color[] emission, int column, Color brick, System.Random random)
+        {
+            const int floors = 4, windows = 2;
+            var lit = new bool[floors, windows];
+            for (int f = 0; f < floors; f++)
+            for (int w = 0; w < windows; w++) lit[f, w] = random.NextDouble() < 0.5;
+            var frame = new Color(0.94f, 0.93f, 0.90f);
+            for (int y = 0; y < Tile; y++)
+            for (int x = 0; x < Tile; x++)
+            {
+                float mortar = (y % 3 == 0 || (x + (y / 3 % 2) * 3) % 6 == 0) ? 0.86f : 1f;
+                var color = brick * mortar * Mathf.Lerp(0.85f, 1f, Mathf.Clamp01(y / 12f));
+                var glow = Color.black;
+                if (y >= Tile - 3) color = frame;                                        // белый карниз
+                else
+                {
+                    float floorH = (Tile - 5f) / floors, colW = Tile / (float)windows;
+                    int f = Mathf.Min(floors - 1, (int)((y - 2) / floorH)), w = Mathf.Min(windows - 1, (int)(x / colW));
+                    float fy = (y - 2) - f * floorH, fx = x - w * colW;
+                    bool inside = fy > floorH * 0.14f && fy < floorH * 0.9f && fx > colW * 0.22f && fx < colW * 0.78f;
+                    bool rim = fy > floorH * 0.1f && fy < floorH * 0.94f && fx > colW * 0.17f && fx < colW * 0.83f;
+                    if (rim && !inside) color = frame;
+                    else if (inside)
+                    {
+                        bool bar = Mathf.Abs(fx - colW / 2f) < 0.6f || Mathf.Abs(fy - floorH * 0.55f) < 0.6f;
+                        color = bar ? frame : new Color(0.18f, 0.22f, 0.27f);
+                        if (!bar && lit[f, w]) glow = new Color(1f, 0.82f, 0.52f);
+                    }
+                }
+                color.a = 1f;
+                glow.a = 1f;
+                Set(albedo, Row.Style, column, x, y, color);
+                Set(emission, Row.Style, column, x, y, glow);
             }
         }
 
