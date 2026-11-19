@@ -132,7 +132,7 @@ namespace CityHighways.Presentation
 
         void Refresh()
         {
-            _roundLabel.text = $"{_game.Map.Name} · раунд {_game.Round}/{_game.Config.Rounds} · {MagnateConfig.Title(_game.Config.Difficulty)}";
+            _roundLabel.text = $"{_game.Map.Name} · раунд {_game.Round}/{_game.TotalRounds}{(_game.IsOpeningRound ? " · стройка" : "")} · {MagnateConfig.Title(_game.Config.Difficulty)}";
             RefreshEventChip();
             RefreshPlayers();
             if (_popupKind == "truck" && (!HumanTurn || _game.Phase != MagnatePhase.Plan || _selectedTruck < 0)) ClosePopup(false);
@@ -268,6 +268,26 @@ namespace CityHighways.Presentation
                 return;
             }
 
+            if (_game.IsOpeningRound)
+            {
+                // Раунд стройки: по одной дороге на компанию, фуры стоят; маршруты — со второго раунда.
+                bool built = _game.OpeningRoadsLeft <= 0;
+                card.Add(Header($"{player.Name} · Раунд стройки · {player.BuildPoints} очков стройки", color));
+                card.Add(Hint(built
+                    ? "Дорога построена. Остальные очки стройки перейдут на следующий раунд."
+                    : $"Первый раунд — только стройка: каждая компания строит {(_game.Config.OpeningRoads == 1 ? "одну дорогу" : _game.Config.OpeningRoads + " дороги")} (без магистралей и хабов). " +
+                      "Посмотрите, где лежат грузы, и проложите дорогу к ним. Фуры берут грузы со второго раунда."));
+                var pass = Ui.Button(_game.IsLastTurnInRound ? "Готово — начать перевозки" : "Готово — передать ход", () =>
+                {
+                    _game.FinishBuild();
+                    _app.Sound.Play(Sfx.Ticket, 0.6f);
+                    AfterTurn();
+                }, built ? ButtonKind.Primary : ButtonKind.Secondary, 14f);
+                pass.style.alignSelf = Align.FlexStart;
+                pass.style.marginTop = 4f;
+                card.Add(pass);
+                return;
+            }
             if (_game.Phase == MagnatePhase.Build)
             {
                 card.Add(Header($"{player.Name} · Стройка · {player.BuildPoints} очков стройки", color));
@@ -610,7 +630,8 @@ namespace CityHighways.Presentation
         {
             if (!HumanTurn || _game.Phase != MagnatePhase.Plan)
             {
-                Toast(_game.Phase == MagnatePhase.Build ? "Грузы назначаются в фазе маршрутов — сначала «Дальше: маршруты фур»." : "Сейчас не ваш ход.");
+                Toast(_game.IsOpeningRound ? "Сейчас раунд стройки: фуры берут грузы со второго раунда."
+                    : _game.Phase == MagnatePhase.Build ? "Грузы назначаются в фазе маршрутов — сначала «Дальше: маршруты фур»." : "Сейчас не ваш ход.");
                 _app.Sound.Play(Sfx.Error, 0.5f);
                 return;
             }

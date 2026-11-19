@@ -43,7 +43,7 @@ namespace CityHighways.Core
                 .OrderByDescending(r => game.LastTraffic(r.Id)).FirstOrDefault();
             if (busy != null && player.BuildPoints >= game.UpgradeCost(busy) + 2) game.BuildOrUpgrade(busy.Id);
             // Хаб: развивать свой (или ничей) хаб, у которого стоят его фуры, — больше грузов и плата с соперников.
-            if (game.Round <= game.Config.Rounds - 4)
+            if (game.Round <= game.TotalRounds - 4)
             {
                 var hub = game.Hubs
                     .Where(h => (h.Owner < 0 || h.Owner == me) && h.Level < 5)

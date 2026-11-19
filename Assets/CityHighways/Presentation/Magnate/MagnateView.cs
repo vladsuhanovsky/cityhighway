@@ -418,7 +418,14 @@ namespace CityHighways.Presentation
             if (_game.Phase == MagnatePhase.GameOver || !_game.CurrentPlayer.IsBot) return;
             if (_game.Phase == MagnatePhase.Build)
             {
+                // В раунде стройки ход бота на стройке и заканчивается (маршрутов нет).
+                bool opening = _game.IsOpeningRound;
                 LogisticsBot.Build(_game, _botRandom);
+                if (opening)
+                {
+                    AfterTurn();
+                    return;
+                }
                 _botTimer = 0.35f;
                 return;
             }
@@ -793,8 +800,10 @@ namespace CityHighways.Presentation
             if (_game.IsClosed(road.Id)) text += $"\nЗакрыта: {closing?.Title ?? "событие"}";
             if (HumanTurn && _game.Phase == MagnatePhase.Build)
             {
-                if (!owner.HasValue) text += $"\nКупить: {_game.BuildCost(road)} очков стройки";
-                else if (owner == _game.CurrentPlayerIndex && !_game.IsHighway(road.Id)) text += $"\nУлучшить до магистрали: {_game.UpgradeCost(road)}";
+                if (!owner.HasValue)
+                    text += _game.OpeningRoadsLeft > 0 ? $"\nКупить: {_game.BuildCost(road)} очков стройки" : "\nВ раунде стройки — одна дорога на компанию";
+                else if (owner == _game.CurrentPlayerIndex && !_game.IsHighway(road.Id) && !_game.IsOpeningRound)
+                    text += $"\nУлучшить до магистрали: {_game.UpgradeCost(road)}";
             }
             ShowTooltip(text, position);
         }
@@ -816,7 +825,7 @@ namespace CityHighways.Presentation
                         $" · уровень {hub.Level}" + (hub.Owner >= 0 ? $" · развивает {_game.Players[hub.Owner].Name}" : " · городской");
                 foreach (var cargo in _game.WaitingAt(location.Id))
                     text += $"\n• {LogisticsGame.KindTitle(cargo.Kind)} → {_game.Map.LocationName(cargo.To)}: {cargo.Value} очк.";
-                if (HumanTurn && _game.Phase == MagnatePhase.Build && hub.Level < 5 && (hub.Owner < 0 || hub.Owner == _game.CurrentPlayerIndex))
+                if (HumanTurn && _game.Phase == MagnatePhase.Build && !_game.IsOpeningRound && hub.Level < 5 && (hub.Owner < 0 || hub.Owner == _game.CurrentPlayerIndex))
                     text += $"\nКлик — развить до уровня {hub.Level + 1} за {_game.HubUpgradeCost(hub)}: больше грузов, " +
                             $"с чужих фур {_game.Config.HubFee} за погрузку, вы грузите первым";
             }

@@ -155,6 +155,12 @@ namespace CityHighways.Core
         public string BribeDistrict = "center";
         /// <summary>Кто ходит первым в первом раунде — жребий (в партии против ботов). Иначе — первый в списке.</summary>
         public bool RandomFirstPlayer;
+        /// <summary>
+        /// Раунд стройки перед перевозками: в первом раунде каждая компания строит OpeningRoads дорог (без магистралей
+        /// и хабов), фуры стоят, маршруты — со второго раунда. Раундов доставки по-прежнему Rounds, всего — Rounds + 1.
+        /// </summary>
+        public bool OpeningBuildRound = true;
+        public int OpeningRoads = 1;
 
         public static MagnateConfig For(MagnateDifficulty difficulty)
         {
@@ -203,6 +209,8 @@ namespace CityHighways.Core
         int _cargoCounter, _contractCounter;
         int _startPlayer;
         int _turnInRound;
+        /// <summary>Сколько дорог текущий игрок построил в раунде стройки (там — не больше OpeningRoads).</summary>
+        int _openingBuilt;
 
         public Game Board { get; }
         public CityMap Map => Board.Map;
@@ -224,6 +232,12 @@ namespace CityHighways.Core
         public bool IsLastTurnInRound => _turnInRound == _players.Count - 1;
         /// <summary>Индекс владельца городских дорог (за пределами списка игроков).</summary>
         public int PublicOwner => _players.Count;
+        /// <summary>Сейчас раунд стройки: только по дороге каждому, фуры стоят.</summary>
+        public bool IsOpeningRound => Config.OpeningBuildRound && Round == 1;
+        /// <summary>Сколько всего раундов: раунды доставки плюс раунд стройки (если он есть).</summary>
+        public int TotalRounds => Config.Rounds + (Config.OpeningBuildRound ? 1 : 0);
+        /// <summary>Сколько дорог текущий игрок ещё может построить в раунде стройки (вне его — без ограничения).</summary>
+        public int OpeningRoadsLeft => IsOpeningRound ? Math.Max(0, Config.OpeningRoads - _openingBuilt) : int.MaxValue;
 
         public event Action<string> Log;
         public event Action StateChanged;
@@ -256,7 +270,11 @@ namespace CityHighways.Core
                     _trucks.Add(new Truck { Id = truckId++, Owner = p, Location = hub.LocationId });
                 }
             for (int i = 0; i < 2; i++) SpawnCargo();
-            RefillContracts();
+            // Грузы, видные в раунде стройки (по ним выбирают дорогу), «появляются» в первом раунде перевозок:
+            // норма скоропорта и срок жизни считаются с него.
+            if (IsOpeningRound) foreach (var cargo in _cargo.Values) cargo.SpawnRound = 2;
+            // Заказы мэрии — с первого раунда перевозок: в раунде стройки их всё равно не выполнить.
+            if (!IsOpeningRound) RefillContracts();
             // Жребий первого хода: дальше очередь, как и раньше, сдвигается на одного каждый раунд.
             if (Config.RandomFirstPlayer && _players.Count > 1)
             {
@@ -265,6 +283,8 @@ namespace CityHighways.Core
             }
             UpdateClock();
             Emit($"Город {Map.Name}: {Map.Locations.Count} мест, {Hubs.Count} хабов. Сложность: {MagnateConfig.Title(Config.Difficulty)}. Раунд 1.");
+            if (IsOpeningRound)
+                Emit($"Раунд стройки: каждая компания строит {RoadsWord(Config.OpeningRoads)}, фуры стоят. Маршруты — со второго раунда.");
             if (Config.RandomFirstPlayer && _players.Count > 1) Emit($"Жребий: первым ходит {_players[_startPlayer].Name}.");
         }
 
@@ -302,7 +322,12 @@ namespace CityHighways.Core
         public string CanBuild(int player, Road road)
         {
             if (Phase != MagnatePhase.Build || player != CurrentPlayerIndex) return "Сейчас не ваша стройка.";
-            if (IsBuilt(road.Id)) return Board.GetRoadOwner(road.Id) == player ? null : "Дорога уже построена.";
+            if (IsBuilt(road.Id))
+            {
+                if (Board.GetRoadOwner(road.Id) != player) return "Дорога уже построена.";
+                return IsOpeningRound ? "В раунде стройки магистрали не строятся." : null;
+            }
+            if (OpeningRoadsLeft <= 0) return $"В раунде стройки — {RoadsWord(Config.OpeningRoads)} на компанию. Остальное — со второго раунда.";
             if (_players[player].BuildPoints < BuildCost(road)) return $"Нужно очков стройки: {BuildCost(road)}.";
             return null;
         }
@@ -318,6 +343,7 @@ namespace CityHighways.Core
             if (Board.GetRoadOwner(roadId) == p)
             {
                 if (IsHighway(roadId)) return "Это уже магистраль.";
+                if (IsOpeningRound) return "В раунде стройки магистрали не строятся.";
                 int cost = UpgradeCost(road);
                 if (player.BuildPoints < cost) return $"Магистраль стоит {cost} очков стройки.";
                 player.BuildPoints -= cost;
@@ -330,6 +356,7 @@ namespace CityHighways.Core
             if (error != null) return error;
             player.BuildPoints -= BuildCost(road);
             Board.LogisticsSetOwner(roadId, p);
+            if (IsOpeningRound) _openingBuilt++;
             Emit($"{player.Name} строит {(road.IsBridge ? "мост" : "дорогу")} {Map.LocationName(road.A)} — {Map.LocationName(road.B)}.");
             Changed();
             return null;
@@ -344,6 +371,7 @@ namespace CityHighways.Core
             var hub = HubAt(locationId);
             if (hub == null) return "Здесь нет хаба.";
             if (Phase != MagnatePhase.Build) return "Хабы развиваются в стройку.";
+            if (IsOpeningRound) return "В раунде стройки — только дороги. Хабы — со второго раунда.";
             int p = CurrentPlayerIndex;
             if (hub.Owner >= 0 && hub.Owner != p) return $"Хаб развивает {_players[hub.Owner].Name}.";
             if (hub.Level >= 5) return "Хаб уже максимального уровня.";
@@ -357,12 +385,20 @@ namespace CityHighways.Core
             return null;
         }
 
+        /// <summary>Закончить стройку. В раунде стройки маршрутов нет — ход сразу переходит к следующему.</summary>
         public void FinishBuild()
         {
             if (Phase != MagnatePhase.Build) return;
+            if (IsOpeningRound)
+            {
+                EndTurn();
+                return;
+            }
             Phase = MagnatePhase.Plan;
             Changed();
         }
+
+        static string RoadsWord(int n) => n == 1 ? "одну дорогу" : n >= 2 && n <= 4 ? $"{n} дороги" : $"{n} дорог";
 
         // ================================================================== Маршруты
 
@@ -516,6 +552,7 @@ namespace CityHighways.Core
         {
             var truck = GetTruck(truckId);
             if (truck == null) return "Нет такой фуры.";
+            if (IsOpeningRound) return "Маршруты фур — со второго раунда: сейчас раунд стройки.";
             if (Phase != MagnatePhase.Plan || truck.Owner != CurrentPlayerIndex) return "Сейчас не ваше планирование.";
             CargoKind? kind = truck.Cargo != null ? GetCargo(truck.Cargo)?.Kind : (CargoKind?)null;
             if (cargoId != null)
@@ -558,12 +595,25 @@ namespace CityHighways.Core
         public void FinishPlanning()
         {
             if (Phase != MagnatePhase.Plan) return;
+            EndTurn();
+        }
+
+        /// <summary>Ход передаётся следующему; после последнего — движение (а после раунда стройки — сразу новый раунд).</summary>
+        void EndTurn()
+        {
             _turnInRound++;
+            _openingBuilt = 0;
             if (_turnInRound < _players.Count)
             {
                 CurrentPlayerIndex = (_startPlayer + _turnInRound) % _players.Count;
                 Phase = MagnatePhase.Build;
                 Changed();
+                return;
+            }
+            if (IsOpeningRound)
+            {
+                Emit("Стройка закончена: со следующего раунда фуры берут грузы.");
+                StartNextRound();
                 return;
             }
             Resolve();
@@ -750,10 +800,15 @@ namespace CityHighways.Core
             LastReport = report;
             foreach (var message in report.Messages) Emit(message);
 
-            // 5. Новый раунд.
+            StartNextRound();
+        }
+
+        /// <summary>Конец раунда: старые грузы уходят, затем конец партии или новый раунд (очки, грузы, заказы, события).</summary>
+        void StartNextRound()
+        {
             foreach (var cargo in _cargo.Values.Where(c => c.Truck < 0 && Round - c.SpawnRound >= Config.CargoLifetime).ToList())
                 _cargo.Remove(cargo.Id);
-            if (Round >= Config.Rounds)
+            if (Round >= TotalRounds)
             {
                 Phase = MagnatePhase.GameOver;
                 Board.LogisticsSetPhase(GamePhase.GameOver);
@@ -924,7 +979,7 @@ namespace CityHighways.Core
             }
             _contracts.RemoveAll(c => c.Winner >= 0);
             var kinds = new CargoKind?[] { null, CargoKind.Perishable, CargoKind.Heavy, CargoKind.Fragile, CargoKind.Valuable, CargoKind.Hazard, CargoKind.Oversized };
-            while (_contracts.Count < Config.ActiveContracts && Round <= Config.Rounds - 3)
+            while (_contracts.Count < Config.ActiveContracts && Round <= TotalRounds - 3)
             {
                 CargoKind? kind = kinds[_rng.Next(kinds.Length)];
                 for (int attempt = 0; attempt < 10 && _contracts.Any(c => c.Kind == kind); attempt++) kind = kinds[_rng.Next(kinds.Length)];
@@ -1060,7 +1115,7 @@ namespace CityHighways.Core
         {
             int start = Board.Config.RoadPiecesFor(_players.Count);
             int finish = Board.Config.FinalWarningPieces;
-            int pieces = start - (int)Math.Round((start - finish) * (Round - 1) / (double)Math.Max(1, Config.Rounds - 1));
+            int pieces = start - (int)Math.Round((start - finish) * (Round - 1) / (double)Math.Max(1, TotalRounds - 1));
             foreach (var player in Board.Players) player.RoadPieces = Math.Max(0, pieces);
         }
 

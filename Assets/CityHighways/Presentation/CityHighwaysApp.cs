@@ -258,6 +258,8 @@ namespace CityHighways.Presentation
                     // Против ботов первый ход — по жребию. Кроме партии с обучением: наставник ведёт с хода игрока.
                     bool coach = setup.forceMagnateTutorial || (!setup.magnateTutorialDone && bots.Any(b => !b));
                     config.RandomFirstPlayer = bots.Any(b => b) && !coach;
+                    // Раунд стройки — во всех партиях, кроме обучения: наставник с первого раунда ведёт к маршрутам.
+                    config.OpeningBuildRound = !coach && !setup.magnateTutorialMap;
                     if (setup.magnateTutorialMap)
                     {
                         config.Rounds = GameSetup.TutorialMagnateRounds;

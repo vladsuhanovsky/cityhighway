@@ -132,7 +132,7 @@ namespace CityHighways.Presentation
                 {
                     date = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                     map = game.Map.Name,
-                    turns = game.Config.Rounds,
+                    turns = game.TotalRounds,
                     seconds = Mathf.RoundToInt(seconds),
                     mode = "magnate",
                     difficulty = MagnateConfig.Title(game.Config.Difficulty),
