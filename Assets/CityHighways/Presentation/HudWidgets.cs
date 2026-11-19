@@ -538,7 +538,7 @@ namespace CityHighways.Presentation
             _cameraRow.style.justifyContent = Justify.SpaceBetween;
             var cameraCaption = Ui.Text("Камера", 12f, Theme.TextDim, true);
             cameraCaption.style.flexGrow = 1f;
-            cameraCaption.tooltip = "Правая кнопка мыши — крутить и наклонять, колесо — приближать. Q/E — поворот, R/F — наклон, Home — север.";
+            cameraCaption.tooltip = $"Тяните {DisplaySettings.RotateButtonText} — крутить и наклонять, колесо — приближать. Q/E — поворот, R/F — наклон, Home — север.";
             cameraCaption.pickingMode = PickingMode.Position;
             _cameraRow.Add(cameraCaption);
             IconButton CameraButton(IconButton.Glyph glyph, string hint, Action click)

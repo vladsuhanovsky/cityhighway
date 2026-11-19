@@ -48,14 +48,22 @@ namespace CityHighways.Presentation
         int _panPointer = -1;
 
         // ---------------------------------------------------------------- Свободная камера (3D)
-        // Поворот вокруг вертикали (yaw) и наклон от вертикали (pitch), только при 3D-городе. Правая кнопка мыши —
-        // крутить и наклонять, колесо — приближать, левая/средняя по пустому месту — тянуть. Клавиши Q/E — поворот,
-        // R/F — наклон, Home — север сверху. Карта крутится вокруг точки в центре экрана.
+        // Поворот вокруг вертикали (yaw) и наклон от вертикали (pitch), только при 3D-городе. По умолчанию
+        // (DisplaySettings.leftDragRotates) левая кнопка — крутить и наклонять (клик без перетаскивания — выбор дороги
+        // или станции), правая/средняя — тянуть приближенную карту. Иначе — как раньше: правая крутит, левая тянет.
+        // Колесо — приближать, Q/E — поворот, R/F — наклон, Home — север сверху. Карта крутится вокруг центра экрана.
         public const float MinPitch = 12f;
         float _yaw, _yawTarget;
         float _pitch = -1f, _pitchTarget = -1f;   // −1 — наклон из настроек (CameraTiltDegrees)
         bool _rotating;
         int _rotatePointer = -1;
+        // Левая кнопка нажата, но ещё не ясно, клик это или поворот: сдвиг больше DragThreshold — поворот.
+        bool _leftPending;
+        int _leftPointer = -1;
+        Vector2 _leftStart;
+        const float DragThreshold = 6f;
+
+        static bool LeftRotates => DisplaySettings.Active == null || DisplaySettings.Active.leftDragRotates;
         Vector2 _rotateStartPointer;
         float _rotateStartYaw, _rotateStartPitch;
 
@@ -116,7 +124,7 @@ namespace CityHighways.Presentation
             {
                 if (_use3D == value) return;
                 _use3D = value;
-                if (!value) { _yaw = _yawTarget = 0f; _rotating = false; }
+                if (!value) { _yaw = _yawTarget = 0f; _rotating = false; _leftPending = false; }
                 Relayout();
                 _waterLayer?.MarkDirtyRepaint();
                 _roadUnderLayer?.MarkDirtyRepaint();
@@ -341,6 +349,12 @@ namespace CityHighways.Presentation
                 Vector2 position = e.localPosition;
                 _pointer = position;
                 _pointerInside = true;
+                if (_leftPending && e.pointerId == _leftPointer && (position - _leftStart).magnitude > DragThreshold)
+                {
+                    // Потянули — это поворот, а не клик.
+                    _leftPending = false;
+                    StartRotate(e.pointerId, _leftStart, position);
+                }
                 if (_rotating && e.pointerId == _rotatePointer)
                 {
                     // Вправо-влево — поворот, вверх-вниз — наклон. Без задержки, как перетаскивание карты.
@@ -377,35 +391,23 @@ namespace CityHighways.Presentation
             {
                 if (_game == null) return;
                 Vector2 position = e.localPosition;
-                // Правая кнопка — крутить и наклонять камеру (3D).
-                if (e.button == 1 && CanRotate)
+                bool leftRotates = LeftRotates && CanRotate;
+                // Левая кнопка (если она крутит поле): ждём — клик это или перетаскивание. Клик сработает при отпускании.
+                if (e.button == 0 && leftRotates)
                 {
-                    _rotating = true;
-                    _rotatePointer = e.pointerId;
-                    _rotateStartPointer = position;
-                    _rotateStartYaw = _yawTarget;
-                    _rotateStartPitch = PitchTarget;
+                    _leftPending = true;
+                    _leftPointer = e.pointerId;
+                    _leftStart = position;
                     this.CapturePointer(e.pointerId);
-                    SetHover(null, position);
-                    SetHoverLocation(null, position);
                     return;
                 }
-                // Клик по станции (режим магната: «ехать сюда») — раньше дороги под ней.
-                if (e.button == 0 && Interactive && LocationClicked != null)
+                // Правая кнопка крутит поле, если левая этого не делает (или карту не приближали — тянуть нечего).
+                if (e.button == 1 && CanRotate && (!leftRotates || _zoomTarget <= 1.001f))
                 {
-                    var clicked = LocationAt(position);
-                    if (clicked != null)
-                    {
-                        LocationClicked(clicked, position);
-                        return;
-                    }
-                }
-                var road = e.button == 0 && Interactive ? OpenRoadAt(position) : null;
-                if (road != null)
-                {
-                    RoadClicked?.Invoke(road, position);
+                    StartRotate(e.pointerId, position, position);
                     return;
                 }
+                if (e.button == 0 && Click(position)) return;
                 // Пусто под курсором (или правая/средняя кнопка) — тянем карту, если она приближена.
                 if (_zoomTarget > 1.001f)
                 {
@@ -420,6 +422,14 @@ namespace CityHighways.Presentation
             });
             RegisterCallback<PointerUpEvent>(e =>
             {
+                if (_leftPending && e.pointerId == _leftPointer)
+                {
+                    // Отпустили, не сдвинув, — обычный клик по станции или дороге.
+                    _leftPending = false;
+                    if (this.HasPointerCapture(e.pointerId)) this.ReleasePointer(e.pointerId);
+                    Click(e.localPosition);
+                    return;
+                }
                 if (_rotating && e.pointerId == _rotatePointer)
                 {
                     _rotating = false;
@@ -443,6 +453,38 @@ namespace CityHighways.Presentation
         // ================================================================== Обзор: приближение и сдвиг
 
         public float Zoom => _zoomTarget;
+
+        /// <summary>Начать поворот камеры: start — где нажали (от него считается сдвиг), now — где курсор сейчас.</summary>
+        void StartRotate(int pointer, Vector2 start, Vector2 now)
+        {
+            _rotating = true;
+            _rotatePointer = pointer;
+            _rotateStartPointer = start;
+            _rotateStartYaw = _yawTarget;
+            _rotateStartPitch = PitchTarget;
+            if (!this.HasPointerCapture(pointer)) this.CapturePointer(pointer);
+            SetHover(null, now);
+            SetHoverLocation(null, now);
+        }
+
+        /// <summary>Клик левой кнопкой: станция (магнат — «ехать сюда») раньше дороги под ней. true — что-то выбрано.</summary>
+        bool Click(Vector2 position)
+        {
+            if (_game == null || !Interactive) return false;
+            if (LocationClicked != null)
+            {
+                var clicked = LocationAt(position);
+                if (clicked != null)
+                {
+                    LocationClicked(clicked, position);
+                    return true;
+                }
+            }
+            var road = OpenRoadAt(position);
+            if (road == null) return false;
+            RoadClicked?.Invoke(road, position);
+            return true;
+        }
 
         /// <summary>Приблизить (factor больше 1) или отдалить так, чтобы точка anchor осталась под курсором.</summary>
         public void ZoomAt(Vector2 anchor, float factor)
@@ -606,6 +648,7 @@ namespace CityHighways.Presentation
             _pan = _panTarget = Vector2.zero;
             _panning = false;
             _rotating = false;
+            _leftPending = false;
             _yaw = _yawTarget = 0f;
             _pitch = _pitchTarget = -1f;
             _dimLevel = 0f;

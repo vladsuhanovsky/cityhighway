@@ -55,6 +55,14 @@ namespace CityHighways.Presentation
         public bool invertTilt;
         /// <summary>Плавное вращение: камера догоняет мышь за несколько кадров; выключено — поворот сразу за курсором.</summary>
         public bool smoothCamera = true;
+        /// <summary>
+        /// Левая кнопка мыши крутит и наклоняет 3D-поле (тянуть), а клик без перетаскивания выбирает дорогу или станцию;
+        /// сдвиг приближенной карты — правой или средней кнопкой. Выключено — как раньше: левая тянет карту, правая крутит.
+        /// </summary>
+        public bool leftDragRotates = true;
+
+        /// <summary>Чем крутится поле — для подсказок.</summary>
+        public static string RotateButtonText => Active == null || Active.leftDragRotates ? "левой кнопкой мыши" : "правой кнопкой мыши";
 
         public static readonly string[] SpeedNames = { "Медленно", "Обычно", "Быстро" };
         static readonly float[] SpeedFactors = { 0.6f, 1f, 1.6f };
