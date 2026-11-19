@@ -158,9 +158,10 @@ namespace CityHighways.Presentation
         bool _groundRoads;
         /// <summary>
         /// Магнат: городские дороги, построенные с начала партии, — просто асфальт, без бордюров и свечения
-        /// (их цвет — PublicRoadColor), а ничьи участки — пунктир по оси: «здесь можно построить».
+        /// (их цвет — PublicRoadColor).
         /// </summary>
         public bool PlainPublicRoads;
+        /// <summary>Магнат: ничьи участки выглядят как дороги «из любых материалов» в соревновании (брусчатка и светлый контур), без ореола.</summary>
         public bool DashedFreeRoads;
         /// <summary>Прозрачность свободных (никому не принадлежащих) дорог: 1 — как обычно, 0 — не рисуются.</summary>
         public float FreeRoadAlpha = 1f;
@@ -1797,7 +1798,9 @@ namespace CityHighways.Presentation
                 var look = LookOf(road, _game.GetRoadOwner(road.Id));
                 // Свободный участок — проступающее «будущее» покрытие: у активной дороги ярче,
                 // у заблокированной — бледное и серое.
-                var free = CalmRoads
+                // Магнат: свободные участки — как дороги «из любых материалов» в соревновании (брусчатка с контуром).
+                var freeTexture = DashedFreeRoads ? RoadTextures.Cobble : texture;
+                var free = CalmRoads && !DashedFreeRoads
                     ? new Color(0.82f, 0.84f, 0.88f, look == RoadLook.Active ? 0.5f : look == RoadLook.Blocked ? 0.22f : 0.38f)
                     : look == RoadLook.Active ? new Color(1f, 1f, 1f, 0.85f)
                     : look == RoadLook.Blocked ? new Color(0.70f, 0.70f, 0.74f, 0.25f)
@@ -1808,12 +1811,11 @@ namespace CityHighways.Presentation
                     ? new Color(0.86f, 0.86f, 0.88f, fade)
                     : new Color(1f, 1f, 1f, fade);
                 free.a *= fade;
-                // Пунктирные участки покрытия не имеют: их рисует проход 3 линией по оси.
-                int count = DashedFreeRoads ? built : segments.Count;
+                int count = segments.Count;
                 // В 3D построенные участки — асфальт сцены; плоский слой кладёт только «будущее» покрытие.
                 int first = _use3D ? built : 0;
                 for (int i = first; i < count; i++)
-                    AddSegmentTexture(texture, segments[i], i < built ? builtTint : free);
+                    AddSegmentTexture(i < built ? texture : freeTexture, segments[i], i < built ? builtTint : free);
             }
             _quads.Flush(context);
         }
@@ -1902,37 +1904,29 @@ namespace CityHighways.Presentation
                 {
                     // Свободный участок — неоновая обводка цвета ресурса: у активной — яркая и толще,
                     // у заблокированной — серая и тонкая.
-                    if (DashedFreeRoads)
                     {
-                        // Магнат: дорогу ещё нужно построить — пунктир по оси (тёмная подложка — чтобы читался
-                        // и на светлых полях). Заблокированная — бледнее.
-                        // Белый полупрозрачный тонкий пунктир; доступная к покупке — чуть ярче, заблокированная — бледнее.
-                        float strength = look == RoadLook.Blocked ? 0.5f : look == RoadLook.Active ? 1f : 0.85f;
-                        DrawDashes(p, a, b, 2.6f, Fade(new Color(0.05f, 0.06f, 0.08f, 0.18f * strength)));
-                        DrawDashes(p, a, b, 1.4f, Fade(new Color(1f, 1f, 1f, 0.6f * strength)));
-                    }
-                    else
-                    {
-                        if (CalmRoads)
+                        // Магнат: свободный участок — как дорога «из любых материалов» в соревновании: светлый контур.
+                        var freeColor = DashedFreeRoads ? AnyRoadColor : baseColor;
+                        if (CalmRoads && !DashedFreeRoads)
                         {
                             p.strokeColor = Fade(new Color(baseColor.r, baseColor.g, baseColor.b, look == RoadLook.Active ? 0.55f : look == RoadLook.Blocked ? 0.18f : 0.35f));
                             p.lineWidth = look == RoadLook.Active ? 1.5f : 1.1f;
                         }
                         else if (look == RoadLook.Active)
                         {
-                            var bright = Color.Lerp(baseColor, Color.white, 0.35f);
+                            var bright = Color.Lerp(freeColor, Color.white, 0.35f);
                             p.strokeColor = Fade(new Color(bright.r, bright.g, bright.b, 1f));
                             p.lineWidth = 2.2f;
                         }
                         else if (look == RoadLook.Blocked)
                         {
-                            var muted = Color.Lerp(baseColor, new Color(0.5f, 0.5f, 0.52f), 0.6f);
+                            var muted = Color.Lerp(freeColor, new Color(0.5f, 0.5f, 0.52f), 0.6f);
                             p.strokeColor = Fade(new Color(muted.r, muted.g, muted.b, 0.35f));
                             p.lineWidth = 1.2f;
                         }
                         else
                         {
-                            p.strokeColor = Fade(new Color(baseColor.r, baseColor.g, baseColor.b, 0.85f));
+                            p.strokeColor = Fade(new Color(freeColor.r, freeColor.g, freeColor.b, 0.85f));
                             p.lineWidth = 1.6f;
                         }
                         SegmentPath(p, segment, 0f, Vector2.zero);
@@ -1941,7 +1935,7 @@ namespace CityHighways.Presentation
                 }
 
                 // Мост — перила со столбиками (у пунктирного, ещё не построенного моста перил нет).
-                if (isBridge && !_use3D && (isBuilt || !DashedFreeRoads))
+                if (isBridge && !_use3D)
                 {
                     float railOffset = _use3D ? half - 1.2f : half + 2.5f;
                     float railSide = half > 0.01f ? railOffset / half : 1f;
@@ -2153,6 +2147,9 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Цвета дорог для ночной карты: светлее, чем на картах в руке, чтобы читались на тёмном.</summary>
+        /// <summary>Цвет дороги «из любых материалов» (соревнование) — им же контур свободных дорог магната.</summary>
+        static readonly Color AnyRoadColor = new Color(0.92f, 0.92f, 0.90f);
+
         static Color NightRoadColor(Road road)
         {
             if (!road.Resource.HasValue) return new Color(0.92f, 0.92f, 0.90f);

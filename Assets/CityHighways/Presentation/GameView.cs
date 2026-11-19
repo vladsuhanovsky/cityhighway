@@ -158,6 +158,77 @@ namespace CityHighways.Presentation
         // Поле и плашка статуса
         readonly VisualElement _mapArea;
         readonly MiniMapView _minimap;
+        readonly VisualElement _layersPanel, _layersList;
+        int _layers;
+
+        // ================================================================== Слои карты
+
+        [Flags]
+        public enum MapLayer { StationNames = 1, DistrictNames = 2, FreeRoads = 4, Cars = 8, People = 16, Focus = 32 }
+
+        static readonly (MapLayer layer, string title, string hint)[] LayerItems =
+        {
+            (MapLayer.StationNames, "Названия мест", "Подписи под станциями"),
+            (MapLayer.DistrictNames, "Названия районов", "Крупные подписи районов"),
+            (MapLayer.FreeRoads, "Свободные дороги", "Ничьи дороги — те, что ещё можно построить"),
+            (MapLayer.Cars, "Машины", "Машины на построенных дорогах (3D-город)"),
+            (MapLayer.People, "Пешеходы", "Люди у станций (3D-город)"),
+            (MapLayer.Focus, "Фокус под курсором", "Вдали от курсора карта тускнеет"),
+        };
+
+        bool HasLayer(MapLayer layer) => (_layers & (int)layer) != 0;
+
+        void BuildLayersList()
+        {
+            _layersList.Clear();
+            var caption = Ui.Text("Что показывать на карте", 12f, Theme.TextDim, true);
+            caption.style.marginBottom = 6f;
+            _layersList.Add(caption);
+            foreach (var item in LayerItems)
+            {
+                bool on = HasLayer(item.layer);
+                var row = Ui.Row();
+                row.style.alignItems = Align.Center;
+                row.style.marginBottom = 4f;
+                row.pickingMode = PickingMode.Position;
+                row.tooltip = item.hint;
+                var box = Ui.Text(on ? "✓" : "", 12f, new Color(0.08f, 0.08f, 0.1f), true);
+                box.style.width = 16f;
+                box.style.height = 16f;
+                box.style.unityTextAlign = TextAnchor.MiddleCenter;
+                box.style.backgroundColor = on ? GameColors.Accent : new Color(1f, 1f, 1f, 0.08f);
+                Ui.Radius(box, 4f);
+                box.style.marginRight = 8f;
+                row.Add(box);
+                row.Add(Ui.Text(item.title, 13f, on ? Theme.Text : Theme.TextDim));
+                var layer = item.layer;
+                row.RegisterCallback<ClickEvent>(_ =>
+                {
+                    _layers ^= (int)layer;
+                    // Слои — личная настройка игрока: в сохранённые настройки, даже в тренировке и сетевой партии.
+                    _setup.classicLayers = _layers;
+                    var stored = GameSetup.Load();
+                    stored.classicLayers = _layers;
+                    stored.Save();
+                    ApplyLayers();
+                    BuildLayersList();
+                });
+                _layersList.Add(row);
+            }
+        }
+
+        void ApplyLayers()
+        {
+            if (_game == null) return;
+            _map.SetLabelLayers(HasLayer(MapLayer.StationNames), HasLayer(MapLayer.DistrictNames));
+            _map.FreeRoadAlpha = HasLayer(MapLayer.FreeRoads) ? 1f : 0f;
+            _map.FocusRadius = HasLayer(MapLayer.Focus) ? 230f : 0f;
+            if (_city3D != null)
+            {
+                _city3D.ShowTraffic = HasLayer(MapLayer.Cars);
+                _city3D.ShowPeople = HasLayer(MapLayer.People);
+            }
+        }
         readonly VisualElement _statusBanner;
         readonly VisualElement _statusChip;
         readonly Label _statusName;
@@ -325,6 +396,7 @@ namespace CityHighways.Presentation
                 else _map.SetContractHighlight(contract.DistrictA, contract.DistrictB, contract.IsComplex ? contract.DistrictC : null);
             });
             Ui.Show(_coopPanel, false);
+            _coopPanel.style.top = 58f; // под кнопкой «Слои карты»
             _mapArea.Add(_coopPanel);
 
             // Статус хода — плашка сверху по центру поля.
@@ -341,6 +413,33 @@ namespace CityHighways.Presentation
             Ui.Padding(_statusBanner, 10f, 16f);
             Ui.Shadow(_statusBanner, 12f);
             _mapArea.Add(_statusBanner);
+
+            // Слои карты: кнопка в правом верхнем углу поля, по клику — список переключателей (как в магнате).
+            _layers = GameSetup.Load().classicLayers;
+            _layersPanel = new VisualElement();
+            _layersPanel.style.position = Position.Absolute;
+            _layersPanel.style.right = 14f;
+            _layersPanel.style.top = 14f;
+            _layersPanel.style.alignItems = Align.FlexEnd;
+            var layersButton = Ui.Button("Слои карты", () =>
+            {
+                bool open = _layersList.style.display == DisplayStyle.None;
+                _app.Sound.Play(open ? Sfx.Open : Sfx.Close, 0.4f);
+                Ui.Show(_layersList, open);
+            }, ButtonKind.Secondary, 13f);
+            layersButton.style.minHeight = 34f;
+            _layersPanel.Add(layersButton);
+            _layersList = new VisualElement();
+            _layersList.style.marginTop = 6f;
+            _layersList.style.backgroundColor = Theme.PanelGlass;
+            _layersList.style.width = 220f;
+            Ui.Padding(_layersList, 8f, 10f);
+            Ui.Radius(_layersList, 10f);
+            Ui.Border(_layersList, 1f, Theme.Line);
+            Ui.Show(_layersList, false);
+            _layersPanel.Add(_layersList);
+            _mapArea.Add(_layersPanel);
+            BuildLayersList();
 
             _statusChip = Ui.Box();
             _statusChip.style.width = 14f;
@@ -981,6 +1080,7 @@ namespace CityHighways.Presentation
             _map.TiltEnabled = _app.Display == null || _app.Display.tiltedBoard;
             _map.SetGame(_game);
             Setup3D();
+            ApplyLayers();
             _minimap.SetGame(_game);
             bool minimap = _app.Display == null || _app.Display.showMinimap;
             _minimap.style.display = minimap ? DisplayStyle.Flex : DisplayStyle.None;

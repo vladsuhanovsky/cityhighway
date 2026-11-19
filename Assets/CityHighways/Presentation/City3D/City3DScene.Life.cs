@@ -48,7 +48,8 @@ namespace CityHighways.Presentation
             foreach (var road in game.Map.Roads)
             {
                 var owner = game.GetRoadOwner(road.Id);
-                bool want = owner.HasValue && !road.IsBridge && _builtRoads.ContainsKey(road.Id) && !_constructing.Contains(road.Id);
+                // Мосты тоже: на них — только полосы цвета владельца (без бордюров и разметки по земле).
+                bool want = owner.HasValue && _builtRoads.ContainsKey(road.Id) && !_constructing.Contains(road.Id);
                 bool has = _curbs.TryGetValue(road.Id, out var curb);
                 if (has && (!want || curb.owner != owner.Value))
                 {
@@ -64,15 +65,32 @@ namespace CityHighways.Presentation
                 var end = BoardLayout.World(lb.X, lb.Y);
                 TrimForJunctions(ref start, ref end);
                 bool isPublic = owner.Value >= publicOwner;
-                var go = BuildCurbs(road.Id, start, end, isPublic ? null : OwnerMaterial(owner.Value, ownerColor(owner.Value)));
+                var go = BuildCurbs(road.Id, _builtRoads[road.Id], start, end, isPublic ? null : OwnerMaterial(owner.Value, ownerColor(owner.Value)), road.IsBridge);
                 _curbs[road.Id] = (go, owner.Value);
             }
         }
 
         const float RoadTop = 0.006f;
 
-        /// <summary>Два бордюра по краям полотна (цветной материал) и белый пунктир по оси.</summary>
-        GameObject BuildCurbs(string roadId, Vector3 start, Vector3 end, Material curbMaterial)
+        /// <summary>Точка верха полотна на расстоянии d от начала: земля по линии дороги плюс высота куска (подъезд, пролёт).</summary>
+        static Vector3 SurfaceAt(BuiltRoad built, float d)
+        {
+            float height = RoadTop;
+            foreach (var piece in built.Pieces)
+                if (d >= piece.From - 1e-4f && d <= piece.To + 1e-4f)
+                {
+                    float t = piece.To - piece.From > 1e-5f ? Mathf.Clamp01((d - piece.From) / (piece.To - piece.From)) : 0f;
+                    height = Mathf.Lerp(piece.FromHeight, piece.ToHeight, t);
+                    break;
+                }
+            return built.PointAt(d) + Vector3.up * height;
+        }
+
+        /// <summary>
+        /// Два бордюра по краям полотна и полосы цвета владельца вдоль них (curbMaterial; null — городская дорога
+        /// магната, без цвета), белый пунктир по оси. У моста — только полосы, по высоте полотна (подъезды, пролёт).
+        /// </summary>
+        GameObject BuildCurbs(string roadId, BuiltRoad built, Vector3 start, Vector3 end, Material curbMaterial, bool bridge)
         {
             var root = new GameObject("Road details " + roadId);
             root.transform.SetParent(_root.transform, false);
@@ -84,6 +102,35 @@ namespace CityHighways.Presentation
             var across = new Vector3(-along.z, 0f, along.x);
             float edge = RoadWidth / 2f - 0.004f;
             var white = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
+
+            if (curbMaterial != null)
+            {
+                // Полосы цвета владельца на полотне у обоих краёв: видно издалека и под любым углом, и на мостах.
+                var bands = new MeshBuilder();
+                var paint = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofLight);
+                var line = built.End - built.Start;
+                line.y = 0f;
+                var side = new Vector3(-line.z, 0f, line.x).normalized;
+                float outer = RoadWidth / 2f - (bridge ? 0.006f : 0.008f), inner = outer - 0.014f;
+                const float step = 0.04f;
+                for (float d = 0f; d < built.Length - 1e-4f; d += step)
+                {
+                    float e = Mathf.Min(built.Length, d + step);
+                    var p0 = SurfaceAt(built, d) + Vector3.up * 0.0006f;
+                    var p1 = SurfaceAt(built, e) + Vector3.up * 0.0006f;
+                    foreach (float s in new[] { -1f, 1f })
+                    {
+                        var o0 = side * (outer * s);
+                        var i0 = side * (inner * s);
+                        // Грань смотрит вверх при любом знаке стороны.
+                        // (как у разметки: сначала левая кромка полосы, потом правая — грань вверх)
+                        if (s > 0f) bands.Quad(p0 + o0, p1 + o0, p1 + i0, p0 + i0, paint);
+                        else bands.Quad(p0 + i0, p1 + i0, p1 + o0, p0 + o0, paint);
+                    }
+                }
+                if (bands.VertexCount > 0) AddMesh("Owner bands", bands.ToMesh("City3D Owner " + roadId), curbMaterial, root.transform, false);
+            }
+            if (bridge) return root;
 
             if (curbMaterial != null)
             {
@@ -224,6 +271,9 @@ namespace CityHighways.Presentation
         /// на каждую единицу загрузки (не больше шести), иногда автобус. Едут туда-обратно по своим полосам;
         /// в пробке ползут. time — время партии в секундах.
         /// </summary>
+        /// <summary>Слои карты: машины на дорогах и пешеходы (выключенные — спрятаны и не двигаются).</summary>
+        public bool ShowTraffic = true, ShowPeople = true;
+
         public void SyncTraffic(Game game, float time)
         {
             if (_root == null || game == null) return;
@@ -232,6 +282,8 @@ namespace CityHighways.Presentation
                 _carRoot = new GameObject("Traffic");
                 _carRoot.transform.SetParent(_root.transform, false);
             }
+            if (_carRoot.activeSelf != ShowTraffic) _carRoot.SetActive(ShowTraffic);
+            if (!ShowTraffic) return;
             foreach (var road in game.Map.Roads)
             {
                 var owner = game.GetRoadOwner(road.Id);
@@ -541,6 +593,8 @@ namespace CityHighways.Presentation
                 _peopleRoot = new GameObject("People");
                 _peopleRoot.transform.SetParent(_root.transform, false);
             }
+            if (_peopleRoot.activeSelf != ShowPeople) _peopleRoot.SetActive(ShowPeople);
+            if (!ShowPeople) return;
             if (_walkersHubCount != _hubSpots.Count)
             {
                 foreach (var walker in _walkers) if (walker.Go != null) Destroy(walker.Go);

@@ -50,11 +50,15 @@ namespace CityHighways.Tests
         }
 
         [Test]
-        public void Moscow_KeepsOneRiverAndMkad()
+        public void Moscow_KeepsOneRiverToTheEdgesWithoutMkad()
         {
             var map = TestCities.Moscow();
             Assert.AreEqual(1, map.Rivers.Count);
-            Assert.AreEqual("МКАД", map.Ring?.Name);
+            Assert.IsNull(map.Ring, "МКАД убран с карты");
+            // Москва-река идёт от левого края карты до правого.
+            var river = map.Rivers[0];
+            Assert.LessOrEqual(river[0].X, 0.001f);
+            Assert.GreaterOrEqual(river[river.Count - 1].X, 0.999f);
             Assert.AreEqual(1f, map.PiecesScale);
         }
 

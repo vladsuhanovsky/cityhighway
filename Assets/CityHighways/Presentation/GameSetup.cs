@@ -66,6 +66,8 @@ namespace CityHighways.Presentation
         public bool magnateTutorialDone;
         /// <summary>Слои карты магната (битовая маска MagnateView.Layer): названия станций, грузы, фуры, свободные дороги, фокус.</summary>
         public int magnateLayers = 109;
+        /// <summary>Слои карты соревнования и кооператива (битовая маска GameView.MapLayer): подписи, свободные дороги, машины, люди, фокус.</summary>
+        public int classicLayers = 31;
 
         /// <summary>Тренировочная партия из раздела «Обучение»: её настройки не сохраняются поверх настроек игрока.</summary>
         [NonSerialized] public bool practice;
@@ -85,7 +87,7 @@ namespace CityHighways.Presentation
         public static readonly MapChoice[] Maps =
         {
             new MapChoice { Path = "CityHighways/Maps/moscow", Title = "Москва",
-                Hint = "Большой город: 66 мест, Москва-река, МКАД и три района на окраинах." },
+                Hint = "Большой город: 66 мест, Москва-река через всю карту и три района на окраинах." },
             new MapChoice { Path = "CityHighways/Maps/amsterdam", Title = "Амстердам",
                 Hint = "Компактный город каналов: залив Эй отрезает Норд, Амстел подходит к центру. Кольцо A10." },
             new MapChoice { Path = "CityHighways/Maps/chongqing", Title = "Чунцин",
