@@ -581,10 +581,11 @@ namespace CityHighways.Presentation
             row.style.backgroundColor = new Color(1f, 1f, 1f, 0.05f);
             if (Urgent(cargo)) Ui.Border(row, 1.5f, new Color(0.95f, 0.25f, 0.2f));
             row.pickingMode = PickingMode.Position;
-            row.tooltip = "Подробнее о грузе";
+            row.tooltip = $"{LogisticsGame.KindTitle(cargo.Kind)} — подробнее о грузе";
             row.Add(Chip(cargo.Kind, CargoIconPanel));
             int roundsLeft = cargo.Kind == CargoKind.Perishable ? Mathf.Max(0, cargo.SpawnRound + cargo.Norm - _game.Round) : -1;
-            var text = Ui.Text($"{LogisticsGame.KindTitle(cargo.Kind)} → {_game.Map.LocationName(cargo.To)} · {cargo.Value} очк." +
+            // Маршрут груза — откуда (станция, где он ждёт) и куда; вид груза показывает значок слева.
+            var text = Ui.Text($"{_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)} · {cargo.Value} очк." +
                                (roundsLeft >= 0 ? $" · норма {roundsLeft} р." : "") + (ForContract(cargo) ? " · заказ мэрии" : ""), 12f, Theme.Text);
             text.style.whiteSpace = WhiteSpace.Normal;
             text.style.flexShrink = 1f;
@@ -645,7 +646,7 @@ namespace CityHighways.Presentation
             if (truck.Location == cargo.From)
             {
                 error = _game.PlanTruck(truck.Id, cargo.Id, null);
-                if (error == null) Toast($"Фура {TruckNumber(truck)} берёт груз: {LogisticsGame.KindTitle(cargo.Kind).ToLowerInvariant()} → {_game.Map.LocationName(cargo.To)}.");
+                if (error == null) Toast($"Фура {TruckNumber(truck)} берёт груз ({LogisticsGame.KindTitle(cargo.Kind).ToLowerInvariant()}): {_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)}.");
             }
             else
             {
@@ -664,7 +665,7 @@ namespace CityHighways.Presentation
         void FillCargoDetail(Cargo cargo)
         {
             if (cargo == null) { FillCargoList(); return; }
-            _popupTitle.text = $"{LogisticsGame.KindTitle(cargo.Kind)} → {_game.Map.LocationName(cargo.To)}";
+            _popupTitle.text = $"{_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)}";
             var back = Ui.Button("← Все грузы", () => { _popupKind = "cargo"; _dirty = true; }, ButtonKind.Ghost, 12f);
             back.style.alignSelf = Align.FlexStart;
             _popupBody.Add(Pad(back));
@@ -673,7 +674,7 @@ namespace CityHighways.Presentation
             head.style.alignItems = Align.Center;
             head.style.marginTop = 4f;
             head.Add(Chip(cargo.Kind, 26f));
-            var rule = Ui.Text(LogisticsGame.KindRule(cargo.Kind, _game.Config), 12f, Theme.Text);
+            var rule = Ui.Text($"{LogisticsGame.KindTitle(cargo.Kind)}. {LogisticsGame.KindRule(cargo.Kind, _game.Config)}", 12f, Theme.Text);
             rule.style.whiteSpace = WhiteSpace.Normal;
             rule.style.flexShrink = 1f;
             head.Add(rule);
@@ -741,10 +742,10 @@ namespace CityHighways.Presentation
             var kind = cargo?.Kind ?? planned?.Kind;
             _popupTitle.text = $"Фура {number} · {_game.Map.LocationName(truck.Location)} · скорость {_game.SpeedOf(kind)}";
             string status = cargo != null
-                ? $"Везёт: {LogisticsGame.KindTitle(cargo.Kind).ToLowerInvariant()} → {_game.Map.LocationName(cargo.To)} " +
+                ? $"Везёт ({LogisticsGame.KindTitle(cargo.Kind).ToLowerInvariant()}): {_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)} " +
                   $"(~{_game.ValueIfDelivered(cargo, _game.RouteRounds(truck.Route, cargo.Kind), truck.Owner)} очк.)" +
                   (cargo.Kind == CargoKind.Valuable ? (cargo.Escorted ? " · с охраной" : " · без охраны!") : "")
-                : planned != null ? $"Берёт: {LogisticsGame.KindTitle(planned.Kind).ToLowerInvariant()} → {_game.Map.LocationName(planned.To)}"
+                : planned != null ? $"Берёт ({LogisticsGame.KindTitle(planned.Kind).ToLowerInvariant()}): {_game.Map.LocationName(planned.From)} → {_game.Map.LocationName(planned.To)}"
                 : truck.Target != null ? $"Пустая → {_game.Map.LocationName(truck.Target)}"
                 : "Стоит, ждёт задания";
             var statusLabel = Ui.Text(status, 13f, Theme.Text, true);
