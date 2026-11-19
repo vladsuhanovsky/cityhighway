@@ -251,7 +251,11 @@ namespace CityHighways.Presentation
             MagnateView view = null;
             var steps = new List<(string, Action)>
             {
-                ("Прокладываем реки и намечаем кварталы…", () => city = setup.magnateTutorialMap ? CityGenerator.GenerateTutorial() : GenerateCheckedCity(seed)),
+                ("Прокладываем реки и намечаем кварталы…", () =>
+                {
+                    city = setup.magnateTutorialMap ? CityGenerator.GenerateTutorial() : GenerateCheckedCity(seed);
+                    loading.SetCity(city.Map.Name);
+                }),
                 ("Расставляем аэропорты, вокзалы и порты…", () =>
                 {
                     var config = MagnateConfig.For((MagnateDifficulty)Mathf.Clamp(setup.magnateDifficulty, 0, 3));

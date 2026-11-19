@@ -9,7 +9,7 @@ using UnityEditor;
 sealed class GeneratedArtImporter : AssetPostprocessor
 {
     // Номер версии настроек: при изменении Unity сам переимпортирует затронутые файлы (2 — мип-карты у гардероба).
-    public override uint GetVersion() => 2;
+    public override uint GetVersion() => 3;
 
     const string Root = "Resources/CityHighways/";
 
@@ -39,7 +39,7 @@ sealed class GeneratedArtImporter : AssetPostprocessor
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.npotScale = TextureImporterNPOTScale.None;
         }
-        else if (path == "UI/key_art.png" || path.StartsWith("Cards/Art/"))
+        else if (path == "UI/key_art.png" || path == "UI/magnate_loading.jpg" || path.StartsWith("Cards/Art/"))
         {
             importer.textureType = TextureImporterType.Default;
             importer.mipmapEnabled = false;

@@ -14,6 +14,8 @@ namespace CityHighways.Presentation
         public const string CargoIcons = "CityHighways/UI/cargo_icons";
         public const string HubEventIcons = "CityHighways/UI/hub_event_icons";
         public const string KeyArt = "CityHighways/UI/key_art";
+        /// <summary>Экран загрузки магната: логистический город на закате (Scenario, GPT Image 2.5).</summary>
+        public const string MagnateLoading = "CityHighways/UI/magnate_loading";
         public const string GroundTexture = "CityHighways/City3D/Textures/ground";
         public const string AsphaltTexture = "CityHighways/City3D/Textures/asphalt";
         public const string PavingTexture = "CityHighways/City3D/Textures/paving";
