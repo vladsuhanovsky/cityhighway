@@ -62,7 +62,7 @@ namespace CityHighways.Presentation
             public string error;
         }
 
-        static bool _busy, _dirty, _started;
+        static bool _busy, _started;
         static float _nextAt = -1f, _lastSync;
 
         /// <summary>ID записи на сервере («steam:…»), когда сервер его подтвердил; пусто — ещё не синхронизировано.</summary>
@@ -87,7 +87,6 @@ namespace CityHighways.Presentation
         /// <summary>Профиль изменился — отправить чуть позже (несколько сохранений подряд уйдут одним запросом).</summary>
         public static void MarkDirty()
         {
-            _dirty = true;
             float at = Time.realtimeSinceStartup + SaveDelay;
             if (_nextAt < 0f || at < _nextAt || _nextAt <= Time.realtimeSinceStartup) _nextAt = at;
         }
@@ -114,7 +113,6 @@ namespace CityHighways.Presentation
             var steam = NetPlatforms.Steam;
             if (profile == null || steam == null) return;
             _busy = true;
-            _dirty = false;
             steam.RequestWebApiTicket(TicketIdentity, ticket =>
             {
                 try
