@@ -790,15 +790,6 @@ namespace CityHighways.Presentation
             gameCard.style.width = 360f;
             gameCard.Add(Ui.SectionTitle("Параметры партии"));
 
-            var mapRow = SettingRow("Карта");
-            _mapRow = mapRow;
-            _mapButton = Ui.Button("", NextMap, ButtonKind.Secondary, 14f);
-            _mapButton.style.width = 170f;
-            mapRow.Add(_mapButton);
-            gameCard.Add(mapRow);
-            _mapHint = Hint();
-            gameCard.Add(_mapHint);
-
             var modeRow = SettingRow("Режим");
             // Режимы по кругу: Магнат → Соревнование → Кооператив.
             _modeButton = Ui.Button("", () =>
@@ -813,6 +804,17 @@ namespace CityHighways.Presentation
             gameCard.Add(modeRow);
             _modeHint = Hint();
             gameCard.Add(_modeHint);
+
+            // Карта — под режимом: от режима зависит, есть ли выбор карты (в магнате город генерируется), и при
+            // переключении режимов строка «Режим» остаётся на месте.
+            var mapRow = SettingRow("Карта");
+            _mapRow = mapRow;
+            _mapButton = Ui.Button("", NextMap, ButtonKind.Secondary, 14f);
+            _mapButton.style.width = 170f;
+            mapRow.Add(_mapButton);
+            gameCard.Add(mapRow);
+            _mapHint = Hint();
+            gameCard.Add(_mapHint);
 
             var scenarioRow = SettingRow("Сценарий");
             _scenarioButton = Ui.Button("", NextScenario, ButtonKind.Secondary, 14f);
