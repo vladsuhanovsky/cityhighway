@@ -66,6 +66,7 @@ namespace CityHighways.Presentation
             if (usedFont != null) _root.style.unityFontDefinition = new StyleFontDefinition(FontDefinition.FromFont(usedFont));
 
             Display = DisplaySettings.Load();
+            DisplaySettings.Active = Display;
             DisplaySettings.Panel = settings;
             Display.Apply();
 

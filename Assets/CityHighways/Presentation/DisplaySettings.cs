@@ -46,6 +46,24 @@ namespace CityHighways.Presentation
 
         public static readonly float[] UiScales = { 0.9f, 1f, 1.1f, 1.2f, 1.3f };
 
+        // ---- Управление камерой (Настройки → Управление)
+        /// <summary>Скорость поворота и наклона камеры (мышь и клавиши Q/E, R/F): 0 — медленно, 1 — обычно, 2 — быстро.</summary>
+        public int cameraSpeed = 1;
+        /// <summary>Скорость приближения колесом: 0 — плавно, 1 — обычно, 2 — быстро.</summary>
+        public int zoomSpeed = 1;
+        /// <summary>Инвертировать наклон: мышь вверх — камера ближе к горизонту.</summary>
+        public bool invertTilt;
+        /// <summary>Плавное вращение: камера догоняет мышь за несколько кадров; выключено — поворот сразу за курсором.</summary>
+        public bool smoothCamera = true;
+
+        public static readonly string[] SpeedNames = { "Медленно", "Обычно", "Быстро" };
+        static readonly float[] SpeedFactors = { 0.6f, 1f, 1.6f };
+        public float CameraSpeedFactor => SpeedFactors[Mathf.Clamp(cameraSpeed, 0, 2)];
+        public float ZoomStep => new[] { 1.1f, 1.2f, 1.35f }[Mathf.Clamp(zoomSpeed, 0, 2)];
+
+        /// <summary>Настройки, с которыми работает игра (общий объект приложения); задаётся при запуске.</summary>
+        public static DisplaySettings Active;
+
         /// <summary>Панель интерфейса — ей меняем масштаб; задаёт приложение при запуске.</summary>
         public static PanelSettings Panel;
 

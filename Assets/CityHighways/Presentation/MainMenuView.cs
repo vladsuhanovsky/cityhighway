@@ -315,6 +315,7 @@ namespace CityHighways.Presentation
         /// <summary>Что нового в игре — короткие строки для ленты на главной.</summary>
         static readonly string[] News =
         {
+            "Магнат: за опасный груз — новая фура (до 5). Плавное вращение поля, раздел «Управление» в настройках, Esc — назад в меню",
             "Магнат: хабы встают в стороне от дорог и рек, на ровной земле — без серой плиты, с подъездом от станции",
             "Профиль: персонаж без розовой каймы и мерцания, свиток и планшет держатся в руке, шляпы и одежда садятся ровно",
             "3D-город живее: пешеходы у станций и хабов, светофоры на перекрёстках, рощи на холмах, дворы и техника на крышах, поезда и ангары у крупных хабов",
@@ -341,7 +342,7 @@ namespace CityHighways.Presentation
         };
 
         /// <summary>Номер выпуска новостей: если больше прочитанного — в уведомлениях «Что нового».</summary>
-        const int NewsVersion = 43;
+        const int NewsVersion = 44;
         const string NewsSeenKey = "CityHighways.NewsSeen";
 
         int _newsIndex;
@@ -732,6 +733,9 @@ namespace CityHighways.Presentation
         /// <summary>Анимация меню: фон, блики на кнопках, рамка профиля, лента новостей, плашка «онлайн».</summary>
         public void Tick(float dt)
         {
+            // Esc — в предыдущий раздел (самая вложенная видимая кнопка «← Назад»).
+            var keyboard = UnityEngine.InputSystem.Keyboard.current;
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame) Ui.GoBack(Root);
             _background.Tick(dt);
             if (_page == Page.Profile) _profile.Tick(dt);
             if (_page != Page.Home) return;

@@ -22,6 +22,8 @@ namespace CityHighways.Presentation
     public sealed partial class MagnateView
     {
         const float BottomHeight = 132f, PopupWidth = 460f;
+        /// <summary>Иконки грузов: на нижней панели и в панелях «Грузы» и «Заказы мэрии» (там — одного размера).</summary>
+        const float CargoIconBottom = 32f, CargoIconPanel = 28f;
         /// <summary>«Раздел» окон правил и журнала: они открываются под верхней строкой, у её кнопок.</summary>
         const int TopSection = 9;
         /// <summary>Разделы нижней панели слева направо.</summary>
@@ -202,7 +204,7 @@ namespace CityHighways.Presentation
             kinds.style.marginTop = 4f;
             foreach (var group in waiting.GroupBy(c => c.Kind).OrderBy(g => g.Key))
             {
-                var chip = Chip(group.Key, 27f);
+                var chip = Chip(group.Key, CargoIconBottom);
                 chip.tooltip = $"{LogisticsGame.KindTitle(group.Key)}: {group.Count()}";
                 chip.style.marginRight = 3f;
                 chip.style.marginBottom = 2f;
@@ -508,7 +510,7 @@ namespace CityHighways.Presentation
             foreach (CargoKind kind in Enum.GetValues(typeof(CargoKind)))
             {
                 bool hidden = _hiddenKinds.Contains(kind);
-                var chip = Chip(kind, 22f);
+                var chip = Chip(kind, CargoIconPanel);
                 chip.style.opacity = hidden ? 0.25f : 1f;
                 chip.style.marginBottom = 4f;
                 chip.tooltip = LogisticsGame.KindTitle(kind) + (hidden ? " — скрыт, клик — показать" : " — клик, чтобы скрыть");
@@ -556,7 +558,7 @@ namespace CityHighways.Presentation
             if (Urgent(cargo)) Ui.Border(row, 1.5f, new Color(0.95f, 0.25f, 0.2f));
             row.pickingMode = PickingMode.Position;
             row.tooltip = "Подробнее о грузе";
-            row.Add(Chip(cargo.Kind, 20f));
+            row.Add(Chip(cargo.Kind, CargoIconPanel));
             int roundsLeft = cargo.Kind == CargoKind.Perishable ? Mathf.Max(0, cargo.SpawnRound + cargo.Norm - _game.Round) : -1;
             var text = Ui.Text($"{LogisticsGame.KindTitle(cargo.Kind)} → {_game.Map.LocationName(cargo.To)} · {cargo.Value} очк." +
                                (roundsLeft >= 0 ? $" · норма {roundsLeft} р." : "") + (ForContract(cargo) ? " · заказ мэрии" : ""), 12f, Theme.Text);
@@ -824,7 +826,7 @@ namespace CityHighways.Presentation
                 card.style.backgroundColor = Theme.PanelLight;
                 var titleRow = Ui.Row();
                 titleRow.style.alignItems = Align.Center;
-                if (contract.Kind.HasValue) titleRow.Add(Chip(contract.Kind.Value, 18f));
+                if (contract.Kind.HasValue) titleRow.Add(Chip(contract.Kind.Value, CargoIconPanel));
                 var title = Ui.Text(contract.Title + (contract.Winner >= 0 ? $" — выполнил {_game.Players[contract.Winner].Name}" : ""), 14f, Theme.Text, true);
                 title.style.whiteSpace = WhiteSpace.Normal;
                 title.style.flexShrink = 1f;

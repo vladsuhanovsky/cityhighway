@@ -14,7 +14,7 @@ namespace CityHighways.Presentation
     /// </summary>
     public sealed class MenuSettingsPage
     {
-        enum Category { Screen, Sound, Gameplay, Access }
+        enum Category { Screen, Sound, Gameplay, Controls, Access }
 
         readonly CityHighwaysApp _app;
         readonly GameSetup _setup;
@@ -76,6 +76,7 @@ namespace CityHighways.Presentation
             AddCategory(Category.Screen, MenuIcon.Glyph.Monitor, "Экран");
             AddCategory(Category.Sound, MenuIcon.Glyph.Speaker, "Звук");
             AddCategory(Category.Gameplay, MenuIcon.Glyph.Gamepad, "Геймплей");
+            AddCategory(Category.Controls, MenuIcon.Glyph.Keyboard, "Управление");
             AddCategory(Category.Access, MenuIcon.Glyph.Access, "Доступность");
             _indicator = Ui.Box();
             _indicator.pickingMode = PickingMode.Ignore;
@@ -134,6 +135,7 @@ namespace CityHighways.Presentation
                 case Category.Screen: ScreenSection(section); break;
                 case Category.Sound: SoundSection(section); break;
                 case Category.Gameplay: GameplaySection(section); break;
+                case Category.Controls: ControlsSection(section); break;
                 default: AccessSection(section); break;
             }
             _content.Add(section);
@@ -400,7 +402,78 @@ namespace CityHighways.Presentation
                 Ui.SetEnabled(tutorial, false);
             };
             s.Add(Row("Подсказки первого хода", "Наставник подскажет, что делать, в начале следующей партии.", tutorial));
-            s.Add(Note("Управление в партии — мышью: клик по дороге, колесо для приближения, перетаскивание поля. Горячих клавиш в игре пока нет."));
+            s.Add(Note("Камера, колесо мыши и горячие клавиши — в разделе «Управление»."));
+        }
+
+        void ControlsSection(VisualElement s)
+        {
+            s.Add(SectionHead(MenuIcon.Glyph.Keyboard, "Управление"));
+            s.Add(Row("Скорость камеры", "Поворот и наклон 3D-поля мышью и клавишами Q/E, R/F.",
+                new Segmented(DisplaySettings.SpeedNames, Mathf.Clamp(_display.cameraSpeed, 0, 2), i =>
+                {
+                    _display.cameraSpeed = i;
+                    Save();
+                    UpdatePreview($"Скорость камеры: {DisplaySettings.SpeedNames[i].ToLowerInvariant()}.");
+                })));
+            s.Add(Row("Плавное вращение", "Камера мягко догоняет мышь; выключено — поворачивается ровно за курсором.", new SwitchToggle(_display.smoothCamera, on =>
+            {
+                _display.smoothCamera = on;
+                Save();
+                UpdatePreview(on ? "Поворот поля плавный, без рывков." : "Поле поворачивается сразу за мышью.");
+            })));
+            s.Add(Row("Инвертировать наклон", "Мышь вверх — камера опускается к горизонту, вниз — поднимается.", new SwitchToggle(_display.invertTilt, on =>
+            {
+                _display.invertTilt = on;
+                Save();
+                UpdatePreview(on ? "Наклон инвертирован." : "Наклон как обычно: мышь вверх — вид сверху.");
+            })));
+            s.Add(Row("Приближение колесом", "Насколько сильно приближает один щелчок колеса мыши.",
+                new Segmented(new[] { "Плавно", "Обычно", "Быстро" }, Mathf.Clamp(_display.zoomSpeed, 0, 2), i =>
+                {
+                    _display.zoomSpeed = i;
+                    Save();
+                    UpdatePreview("Шаг приближения колесом изменён.");
+                })));
+
+            s.Add(SubHead("Мышь"));
+            foreach (var (keys, action) in new[]
+            {
+                ("Левая кнопка", "выбрать дорогу, станцию, груз; перетаскивание — сдвинуть карту"),
+                ("Правая кнопка + движение", "повернуть (влево-вправо) и наклонить (вверх-вниз) 3D-поле"),
+                ("Колесо", "приблизить или отдалить под курсором"),
+            }) s.Add(KeyRow(keys, action));
+            s.Add(SubHead("Клавиатура"));
+            foreach (var (keys, action) in new[]
+            {
+                ("Q / E", "повернуть поле влево / вправо"),
+                ("R / F", "наклонить камеру к горизонту / к виду сверху"),
+                ("Home", "север сверху, наклон из настроек"),
+                ("Esc", "в меню — назад, в предыдущий раздел"),
+                ("← / →, Enter", "в выборе персонажа — листать и выбрать"),
+            }) s.Add(KeyRow(keys, action));
+        }
+
+        /// <summary>Строка справки: клавиша в рамке и что она делает.</summary>
+        static VisualElement KeyRow(string keys, string action)
+        {
+            var row = Ui.Row();
+            row.style.alignItems = Align.Center;
+            row.style.paddingTop = 5f;
+            row.style.paddingBottom = 5f;
+            var key = Ui.Text(keys, 13f, Theme.Text, true);
+            key.style.minWidth = 170f;
+            key.style.marginRight = 12f;
+            key.style.unityTextAlign = TextAnchor.MiddleCenter;
+            key.style.backgroundColor = new Color(1f, 1f, 1f, 0.06f);
+            Ui.Border(key, 1f, Theme.Line);
+            Ui.Radius(key, 6f);
+            Ui.Padding(key, 4f, 8f);
+            row.Add(key);
+            var text = Ui.Text(action, 13f, Theme.TextDim);
+            text.style.whiteSpace = WhiteSpace.Normal;
+            text.style.flexShrink = 1f;
+            row.Add(text);
+            return row;
         }
 
         void AccessSection(VisualElement s)

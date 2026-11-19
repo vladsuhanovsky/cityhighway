@@ -18,7 +18,7 @@ namespace CityHighways.Core
         Fragile,
         /// <summary>Ценный: без охраны (1 влияние при погрузке) могут украсть в пути.</summary>
         Valuable,
-        /// <summary>Негабаритный: только широкие дороги, медленно, и на его дороге другие фуры в этот раунд стоят.</summary>
+        /// <summary>Крупногабаритный: только широкие дороги, медленно, и на его дороге другие фуры в этот раунд стоят.</summary>
         Oversized
     }
 
@@ -127,6 +127,8 @@ namespace CityHighways.Core
         public MagnateDifficulty Difficulty = MagnateDifficulty.Normal;
         public int Rounds = 15;
         public int TrucksPerPlayer = 3;
+        /// <summary>За каждый доставленный опасный груз — ещё одна фура, но не больше стольких у компании.</summary>
+        public int MaxTrucksPerPlayer = 5;
         /// <summary>Сколько участков дороги фура проезжает за раунд (скоропорт +1, тяжёлые −1, нехватка топлива −2).</summary>
         public int TruckSpeed = 6;
         public int StartBuildPoints = 6, BuildPointsPerRound = 4, MaxBuildPoints = 12;
@@ -191,6 +193,8 @@ namespace CityHighways.Core
         readonly Random _rng;
         readonly List<MagnatePlayer> _players = new List<MagnatePlayer>();
         readonly List<Truck> _trucks = new List<Truck>();
+        /// <summary>Фуры-награды за опасный груз: встают в парк после движения раунда (во время него список не меняется).</summary>
+        readonly List<Truck> _bonusTrucks = new List<Truck>();
         readonly Dictionary<string, Cargo> _cargo = new Dictionary<string, Cargo>();
         readonly Dictionary<string, int> _lastTraffic = new Dictionary<string, int>();
         readonly List<LogisticsContract> _contracts = new List<LogisticsContract>();
@@ -273,7 +277,7 @@ namespace CityHighways.Core
         public bool IsClosed(string roadId) => _closed.Contains(roadId);
         public bool HasEvent(LogisticsEventKind kind) => _events.Any(e => e.Kind == kind);
 
-        /// <summary>Широкая дорога (для тяжеловеса и негабарита): бетон, мост или магистраль.</summary>
+        /// <summary>Широкая дорога (для тяжеловеса и крупногабарита): бетон, мост или магистраль.</summary>
         public bool IsWide(Road road) =>
             road.Resource == Resource.Concrete || road.Resource == Resource.Steel || IsHighway(road.Id);
 
@@ -730,12 +734,14 @@ namespace CityHighways.Core
                 if (truck.Route.Count == 0 && truck.Cargo == null) truck.Target = null;
                 report.Moves.Add(move);
             }
+            _trucks.AddRange(_bonusTrucks);
+            _bonusTrucks.Clear();
             foreach (var id in report.Jams)
             {
                 var road = Map.GetRoad(id);
                 report.Messages.Add(trueJams.Contains(id)
                     ? $"Пробка: {Map.LocationName(road.A)} — {Map.LocationName(road.B)} ({report.Traffic[id]} фур при пропускной {Capacity(road)})."
-                    : $"Негабарит перекрыл {Map.LocationName(road.A)} — {Map.LocationName(road.B)}.");
+                    : $"Крупногабарит перекрыл {Map.LocationName(road.A)} — {Map.LocationName(road.B)}.");
             }
 
             _lastTraffic.Clear();
@@ -781,7 +787,17 @@ namespace CityHighways.Core
             owner.Score += points;
             owner.Delivered++;
             if (cargo.Kind == CargoKind.Perishable && onTime) owner.PerishableOnTime++;
-            if (cargo.Kind == CargoKind.Hazard) owner.Influence += 1;
+            if (cargo.Kind == CargoKind.Hazard)
+            {
+                owner.Influence += 1;
+                // Награда за опасный груз — новая фура там, где груз сдан (до предела парка).
+                int fleet = _trucks.Count(t => t.Owner == owner.Index) + _bonusTrucks.Count(t => t.Owner == owner.Index);
+                if (fleet < Config.MaxTrucksPerPlayer)
+                {
+                    _bonusTrucks.Add(new Truck { Id = _trucks.Count + _bonusTrucks.Count, Owner = owner.Index, Location = truck.Location });
+                    report.Messages.Add($"{owner.Name} получает новую фуру за опасный груз ({fleet + 1} из {Config.MaxTrucksPerPlayer}).");
+                }
+            }
             AddReputation(owner, onTime ? 3 : 0);
             move.Delivered = cargo.Id;
             move.Points += points;
@@ -933,7 +949,7 @@ namespace CityHighways.Core
                 case CargoKind.Fragile: return $"Музейные экспонаты: {needed} хрупких груза";
                 case CargoKind.Valuable: return $"Казначейство: {needed} ценных груза";
                 case CargoKind.Hazard: return $"Химзавод: {needed} опасных груза";
-                case CargoKind.Oversized: return $"Новый мост: {needed} негабарита";
+                case CargoKind.Oversized: return $"Новый мост: {needed} крупногабарита";
                 default: return $"Снабжение города: {needed} любых груза";
             }
         }
@@ -977,7 +993,7 @@ namespace CityHighways.Core
                         break;
                     case LogisticsEventKind.Storm:
                         e.Title = "Штормовое предупреждение";
-                        e.Description = "Мосты пропускают на одну фуру меньше, тяжеловесы и негабарит по мостам не едут.";
+                        e.Description = "Мосты пропускают на одну фуру меньше, тяжеловесы и крупногабарит по мостам не едут.";
                         break;
                     default:
                         e.Title = "Фестиваль";
@@ -1018,7 +1034,7 @@ namespace CityHighways.Core
                 case CargoKind.Hazard: return "Опасный груз";
                 case CargoKind.Fragile: return "Хрупкий груз";
                 case CargoKind.Valuable: return "Ценный груз";
-                case CargoKind.Oversized: return "Негабарит";
+                case CargoKind.Oversized: return "Крупногабарит";
                 default: return "Обычный груз";
             }
         }
@@ -1029,7 +1045,7 @@ namespace CityHighways.Core
             {
                 case CargoKind.Perishable: return $"Едет быстрее (+1 участок), но за каждый раунд сверх нормы −{config.PerishableLatePenalty}.";
                 case CargoKind.Heavy: return "Только широкие дороги: бетон, мосты, магистрали; едет медленнее (−1).";
-                case CargoKind.Hazard: return $"Въезд в Центр — взятка {config.HazardBribe} влияния, иначе конфискация (−{config.ConfiscationPenalty}).";
+                case CargoKind.Hazard: return $"Въезд в Центр — взятка {config.HazardBribe} влияния, иначе конфискация (−{config.ConfiscationPenalty}). За доставку — новая фура (до {config.MaxTrucksPerPlayer}).";
                 case CargoKind.Fragile: return $"Каждая пробка на пути — груз дешевеет на {config.FragileJamPenalty}.";
                 case CargoKind.Valuable: return $"Охрана — {config.EscortCost} влияния при погрузке (берётся сама, если хватает); без охраны каждый раунд риск кражи.";
                 case CargoKind.Oversized: return "Только широкие дороги, медленно; на его дороге другие фуры в этот раунд стоят.";

@@ -453,6 +453,24 @@ namespace CityHighways.Presentation
             BuildOutskirtsGround();
         }
 
+        /// <summary>Расстояние по горизонтали до ближайшего сглаженного русла (не дальше limit).</summary>
+        float RiverDistance2D(Vector2 p, float limit)
+        {
+            float best = limit;
+            foreach (var line in _riverLines)
+                for (int i = 0; i + 1 < line.Count; i++)
+                {
+                    var a = new Vector2(line[i].x, line[i].z);
+                    var b = new Vector2(line[i + 1].x, line[i + 1].z);
+                    if (p.x < Mathf.Min(a.x, b.x) - best || p.x > Mathf.Max(a.x, b.x) + best ||
+                        p.y < Mathf.Min(a.y, b.y) - best || p.y > Mathf.Max(a.y, b.y) + best) continue;
+                    var ab = b - a;
+                    float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / Mathf.Max(1e-6f, ab.sqrMagnitude));
+                    best = Mathf.Min(best, (p - (a + ab * t)).magnitude);
+                }
+            return best;
+        }
+
         /// <summary>
         /// Земля вокруг доски до горизонта: квадрат 60 × 60 м с текстурой окрестностей (поля, лесная подстилка,
         /// деревни; у края доски — тот же цвет шва, что у доски) и за ним ровная равнина 400 × 400 м, которую
@@ -472,9 +490,19 @@ namespace CityHighways.Presentation
                 // Под доской (с запасом в полметра) окрестностей нет: крупная сетка на рельефе вылезла бы сквозь
                 // мелкую там, где земля подрезана под дорогу.
                 if (x0 > -plateX + 0.5f && x1 < plateX - 0.5f && z0 > -plateZ + 0.5f && z1 < plateZ - 0.5f) continue;
-                var uv = new Rect((x0 + extent) / (2f * extent), (z0 + extent) / (2f * extent), (x1 - x0) / (2f * extent), (z1 - z0) / (2f * extent));
-                // Юго-запад, северо-запад, северо-восток, юго-восток — грань смотрит вверх.
-                near.Quad(new Vector3(x0, y, z0), new Vector3(x0, y, z1), new Vector3(x1, y, z1), new Vector3(x1, y, z0), uv);
+                // У реки клетка 0,5 м перекрывает русло целиком: её углы стоят на берегах, и земля между ними
+                // вылезала зубцами поверх воды. Такие клетки делятся на 5-сантиметровые — дно долины повторяет русло.
+                var middle = new Vector2((x0 + x1) / 2f, (z0 + z1) / 2f);
+                int split = RiverDistance2D(middle, 1.2f) < 0.36f + RiverWidth / 2f + BankWidth + 0.3f ? 10 : 1;
+                for (int sz = 0; sz < split; sz++)
+                for (int sx = 0; sx < split; sx++)
+                {
+                    float ax = Mathf.Lerp(x0, x1, (float)sx / split), bx = Mathf.Lerp(x0, x1, (float)(sx + 1) / split);
+                    float az = Mathf.Lerp(z0, z1, (float)sz / split), bz = Mathf.Lerp(z0, z1, (float)(sz + 1) / split);
+                    var uv = new Rect((ax + extent) / (2f * extent), (az + extent) / (2f * extent), (bx - ax) / (2f * extent), (bz - az) / (2f * extent));
+                    // Юго-запад, северо-запад, северо-восток, юго-восток — грань смотрит вверх.
+                    near.Quad(new Vector3(ax, y, az), new Vector3(ax, y, bz), new Vector3(bx, y, bz), new Vector3(bx, y, az), uv);
+                }
             }
             var outskirts = LoadMaterial("CityGround", Color.white);
             outskirts.SetTexture("_BaseMap", CityTextures.Outskirts(_map));

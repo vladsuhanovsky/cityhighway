@@ -460,7 +460,7 @@ namespace CityHighways.Presentation
             StartTurn();
         }
 
-        /// <summary>Доля анимации, за которую фура проходит путь: скоропорт быстрее, тяжёлые и негабарит — дольше.</summary>
+        /// <summary>Доля анимации, за которую фура проходит путь: скоропорт быстрее, тяжёлые и крупногабарит — дольше.</summary>
         static float TravelShare(CargoKind? kind) =>
             kind == CargoKind.Perishable ? 0.62f : kind == CargoKind.Heavy || kind == CargoKind.Oversized ? 0.95f : 0.8f;
 
@@ -788,7 +788,7 @@ namespace CityHighways.Presentation
             string kind = _game.IsHighway(road.Id) ? "магистраль" : road.IsBridge ? "мост" : _game.IsWide(road) ? "широкая (бетон)" : "улица";
             string text = $"{_game.Map.LocationName(road.A)} — {_game.Map.LocationName(road.B)}\n{kind}, длина {road.Length} · {who}\n" +
                           $"Пропускает {_game.Capacity(road)} фур за раунд · в прошлом раунде: {_game.LastTraffic(road.Id)}" +
-                          (_game.IsWide(road) ? "\nТяжеловес и негабарит — можно" : "\nТяжеловес и негабарит — нельзя");
+                          (_game.IsWide(road) ? "\nТяжеловес и крупногабарит — можно" : "\nТяжеловес и крупногабарит — нельзя");
             var closing = _game.Events.FirstOrDefault(e => e.Road == road.Id);
             if (_game.IsClosed(road.Id)) text += $"\nЗакрыта: {closing?.Title ?? "событие"}";
             if (HumanTurn && _game.Phase == MagnatePhase.Build)

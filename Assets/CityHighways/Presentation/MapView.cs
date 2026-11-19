@@ -333,7 +333,13 @@ namespace CityHighways.Presentation
                 {
                     // Вправо-влево — поворот, вверх-вниз — наклон. Без задержки, как перетаскивание карты.
                     var delta = position - _rotateStartPointer;
-                    SetAngles(_rotateStartYaw - delta.x * 0.35f, _rotateStartPitch - delta.y * 0.22f, true);
+                    // Мышь задаёт цель, камера догоняет её за несколько кадров: события мыши приходят неровно
+                    // (то два за кадр, то ни одного), и прямой поворот давал «перескоки».
+                    var controls = DisplaySettings.Active;
+                    float speed = controls?.CameraSpeedFactor ?? 1f;
+                    float tiltSign = controls != null && controls.invertTilt ? -1f : 1f;
+                    SetAngles(_rotateStartYaw - delta.x * 0.35f * speed, _rotateStartPitch - delta.y * 0.22f * speed * tiltSign,
+                        controls != null && !controls.smoothCamera);
                     return;
                 }
                 if (_panning && e.pointerId == _panPointer)
@@ -416,7 +422,8 @@ namespace CityHighways.Presentation
             RegisterCallback<WheelEvent>(e =>
             {
                 if (_game == null || Mathf.Abs(e.delta.y) < 0.01f) return;
-                ZoomAt(e.localMousePosition, e.delta.y > 0f ? 1f / 1.2f : 1.2f);
+                float step = DisplaySettings.Active?.ZoomStep ?? 1.2f;
+                ZoomAt(e.localMousePosition, e.delta.y > 0f ? 1f / step : step);
                 e.StopPropagation();
             });
         }
@@ -475,7 +482,7 @@ namespace CityHighways.Presentation
             _pitchTarget = -1f;
         }
 
-        /// <summary>Новые углы камеры; immediate — сразу (мышь), иначе плавно догоняют (кнопки, клавиши).</summary>
+        /// <summary>Новые углы камеры; immediate — сразу (клавиши Q/E, R/F — они и так меняют угол каждый кадр), иначе плавно догоняют (мышь, кнопки).</summary>
         void SetAngles(float yaw, float pitch, bool immediate)
         {
             _yawTarget = yaw;
@@ -509,7 +516,10 @@ namespace CityHighways.Presentation
             float turn = (keyboard.eKey.isPressed ? 1f : 0f) - (keyboard.qKey.isPressed ? 1f : 0f);
             float lean = (keyboard.rKey.isPressed ? 1f : 0f) - (keyboard.fKey.isPressed ? 1f : 0f);
             if (Mathf.Abs(turn) > 0f || Mathf.Abs(lean) > 0f)
-                SetAngles(_yawTarget + turn * 90f * dt, PitchTarget + lean * 40f * dt, true);
+            {
+                float speed = DisplaySettings.Active?.CameraSpeedFactor ?? 1f;
+                SetAngles(_yawTarget + turn * 90f * speed * dt, PitchTarget + lean * 40f * speed * dt, true);
+            }
             if (keyboard.homeKey.wasPressedThisFrame) ResetCamera();
         }
 
@@ -807,7 +817,8 @@ namespace CityHighways.Presentation
             float pitchTarget = PitchTarget;
             if (_use3D && (Mathf.Abs(Mathf.DeltaAngle(_yaw, _yawTarget)) > 0.05f || Mathf.Abs(Pitch - pitchTarget) > 0.05f))
             {
-                float k = 1f - Mathf.Exp(-dt * 10f);
+                // Мышью — быстрее (камера идёт почти вплотную за курсором), кнопками и «севером» — мягче.
+                float k = 1f - Mathf.Exp(-Mathf.Min(dt, 0.05f) * (_rotating ? 16f : 10f));
                 float yaw = Mathf.Abs(_yawTarget - _yaw) < 0.06f ? _yawTarget : Mathf.Lerp(_yaw, _yawTarget, k);
                 float pitch = Mathf.Abs(pitchTarget - Pitch) < 0.06f ? pitchTarget : Mathf.Lerp(Pitch, pitchTarget, k);
                 ApplyAngles(yaw, pitch);

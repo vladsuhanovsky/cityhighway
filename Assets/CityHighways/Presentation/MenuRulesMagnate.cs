@@ -101,6 +101,8 @@ namespace CityHighways.Presentation
             s.Add(flow);
             Para(s, $"Влияние: в начале {Magnate.StartInfluence}, каждый раунд +{Magnate.InfluencePerRound}. Оно нужно на взятку за опасный груз в Центре " +
                      $"({Magnate.HazardBribe}), охрану ценного груза ({Magnate.EscortCost}) и таможенную проверку ({Magnate.CustomsBribe}).");
+            Para(s, $"За каждый доставленный опасный груз компания получает ещё одну фуру — она появляется там, где груз сдан. " +
+                     $"Больше {Magnate.MaxTrucksPerPlayer} фур у компании не бывает.");
             Para(s, "Фура, у которой маршрут длиннее одного раунда, продолжит путь в следующем. Маршрут можно поменять в любом раунде, " +
                      "пока груз не доставлен.");
             return s;
@@ -113,7 +115,7 @@ namespace CityHighways.Presentation
                      "Цена груза зависит от расстояния и вида, а репутация компании умножает очки за доставку.");
             foreach (CargoKind kind in Enum.GetValues(typeof(CargoKind)))
                 s.Add(PlainTile(LogisticsGame.KindTitle(kind), LogisticsGame.KindRule(kind, Magnate), MagnateView.KindColor(kind), KindChip(kind, 30f)));
-            Para(s, $"Скорость: обычная фура проезжает {Magnate.TruckSpeed} участков за раунд, со скоропортом — на 1 больше, с тяжеловесом и негабаритом — на 1 меньше.");
+            Para(s, $"Скорость: обычная фура проезжает {Magnate.TruckSpeed} участков за раунд, со скоропортом — на 1 больше, с тяжеловесом и крупногабаритом — на 1 меньше.");
             return s;
         }
 
@@ -143,7 +145,7 @@ namespace CityHighways.Presentation
             s.Add(PlainTile("Пробка", $"Если за раунд на дорогу заехало больше фур, чем она пропускает, — все эти фуры стоят до следующего раунда. " +
                                        $"Каждая теряет {Magnate.JamPenalty} очко и немного репутации, хрупкий груз дешевеет на {Magnate.FragileJamPenalty}. " +
                                        "Над очередью на карте крутятся часы.", GameColors.Danger, new MenuIcon(MenuIcon.Glyph.Clock, 26f, GameColors.Danger)));
-            Para(s, "Широкие дороги — бетонные, мосты и магистрали. Тяжеловес и негабарит едут только по ним. Негабарит к тому же перекрывает участок " +
+            Para(s, "Широкие дороги — бетонные, мосты и магистрали. Тяжеловес и крупногабарит едут только по ним. Крупногабарит к тому же перекрывает участок " +
                      "для всех, кто въезжает туда следом в том же раунде.");
             Para(s, "Совет: наведите курсор на дорогу — подсказка покажет владельца, пропускную способность и сколько фур проехало по ней в прошлом раунде. " +
                      "Слой «Загрузка дорог» раскрашивает дороги по этой загрузке.");
@@ -158,7 +160,7 @@ namespace CityHighways.Presentation
             {
                 var kinds = Ui.Row();
                 kinds.style.marginTop = 8f;
-                foreach (var (kind, name) in new[] { (HubKind.Airport, "Аэропорт: скоропорт, ценные, хрупкие"), (HubKind.Station, "Вокзал: обычные и тяжеловесы"), (HubKind.Port, "Порт: тяжеловесы, негабарит, опасные") })
+                foreach (var (kind, name) in new[] { (HubKind.Airport, "Аэропорт: скоропорт, ценные, хрупкие"), (HubKind.Station, "Вокзал: обычные и тяжеловесы"), (HubKind.Port, "Порт: тяжеловесы, крупногабарит, опасные") })
                 {
                     var item = Ui.Row();
                     item.style.alignItems = Align.Center;
@@ -249,7 +251,7 @@ namespace CityHighways.Presentation
                 EventIcon(LogisticsEventKind.FuelShortage, new MenuIcon(MenuIcon.Glyph.Clock, 24f, new Color(0.95f, 0.75f, 0.3f)))));
             s.Add(PlainTile("Таможенная проверка", $"Опасные и ценные грузы в пути платят {Magnate.CustomsBribe} влияния — иначе стоят раунд.", new Color(0.75f, 0.60f, 0.98f),
                 EventIcon(LogisticsEventKind.CustomsCheck, new MenuIcon(MenuIcon.Glyph.Document, 24f, new Color(0.75f, 0.60f, 0.98f)))));
-            s.Add(PlainTile("Штормовое предупреждение", "Мосты пропускают на одну фуру меньше, тяжеловесы и негабарит по мостам не едут.", new Color(0.45f, 0.70f, 1f),
+            s.Add(PlainTile("Штормовое предупреждение", "Мосты пропускают на одну фуру меньше, тяжеловесы и крупногабарит по мостам не едут.", new Color(0.45f, 0.70f, 1f),
                 EventIcon(LogisticsEventKind.Storm, new MenuIcon(MenuIcon.Glyph.Snow, 24f, new Color(0.45f, 0.70f, 1f)))));
             s.Add(PlainTile("Фестиваль", "Улицы Центра перекрыты на раунд.", GameColors.Success,
                 EventIcon(LogisticsEventKind.Festival, new MenuIcon(MenuIcon.Glyph.Star, 24f, GameColors.Success))));

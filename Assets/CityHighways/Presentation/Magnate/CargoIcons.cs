@@ -6,7 +6,7 @@ namespace CityHighways.Presentation
 {
     /// <summary>
     /// Иконки видов груза из листа Resources/CityHighways/UI/cargo_icons.png (сгенерирован в Scenario): семь квадратных
-    /// ячеек в ряд, в порядке CargoKind — обычный, скоропорт, тяжеловес, опасный, хрупкий, ценный, негабарит.
+    /// ячеек в ряд, в порядке CargoKind — обычный, скоропорт, тяжеловес, опасный, хрупкий, ценный, крупногабарит.
     /// Листа нет — Get возвращает null, и чипы рисуются как раньше: буква на цветном квадрате.
     /// </summary>
     public static class CargoIcons

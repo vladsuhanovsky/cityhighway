@@ -47,6 +47,43 @@ namespace CityHighways.Presentation
     /// <summary>Короткие помощники для сборки интерфейса из кода (без UXML и USS).</summary>
     public static class Ui
     {
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<VisualElement, Action> BackActions =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<VisualElement, Action>();
+
+        /// <summary>Пометить элемент как «Назад»: по Esc вызывается его действие (если он виден).</summary>
+        public static void MarkBack(VisualElement element, Action back)
+        {
+            BackActions.Remove(element);
+            BackActions.Add(element, back);
+        }
+
+        /// <summary>
+        /// Esc в меню: нажать самую вложенную видимую кнопку «Назад» внутри root (вложенная — ближе к открытому
+        /// разделу: шаг брифинга, окно выбора персонажа). false — такой кнопки нет (главная страница).
+        /// </summary>
+        public static bool GoBack(VisualElement root)
+        {
+            Action best = null;
+            int bestDepth = -1;
+            void Walk(VisualElement e, int depth)
+            {
+                var style = e.resolvedStyle;
+                if (style.display == DisplayStyle.None || style.visibility == Visibility.Hidden || style.opacity < 0.05f) return;
+                if (e is UnityEngine.UIElements.Button button && !button.enabledInHierarchy) return;
+                if (BackActions.TryGetValue(e, out var action) && depth >= bestDepth)
+                {
+                    best = action;
+                    bestDepth = depth;
+                }
+                foreach (var child in e.Children()) Walk(child, depth + 1);
+            }
+            if (root == null || root.panel == null) return false;
+            Walk(root, 0);
+            if (best == null) return false;
+            best();
+            return true;
+        }
+
         /// <summary>Вызывается при нажатии любой кнопки — приложение проигрывает щелчок.</summary>
         public static Action ButtonClicked;
         /// <summary>Тихий звук наведения на пункт навигации (вкладки, разделы, строки истории); задаёт приложение.</summary>
@@ -314,12 +351,15 @@ namespace CityHighways.Presentation
         public static UnityEngine.UIElements.Button Button(string text, Action onClick, Color normal, Color hover, Color textColor,
             float fontSize = 16f, bool outlined = false)
         {
-            var button = new UnityEngine.UIElements.Button(() =>
+            Action click = () =>
             {
                 ButtonClicked?.Invoke();
                 onClick?.Invoke();
-            });
+            };
+            var button = new UnityEngine.UIElements.Button(click);
             button.text = text;
+            // Кнопки «← Назад» срабатывают и по Esc (см. GoBack).
+            if (text != null && text.StartsWith("← Назад", StringComparison.Ordinal)) MarkBack(button, click);
             button.style.fontSize = fontSize;
             Fonts.Apply(button, fontSize >= Fonts.DisplayFrom ? Fonts.Weight.Bold : Fonts.Weight.SemiBold);
             button.style.unityTextAlign = TextAnchor.MiddleCenter;

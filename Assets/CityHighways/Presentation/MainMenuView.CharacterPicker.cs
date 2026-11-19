@@ -102,8 +102,8 @@ namespace CityHighways.Presentation
             });
             overlay.RegisterCallback<KeyDownEvent>(e =>
             {
-                if (e.keyCode == KeyCode.Escape) CloseCharacterPicker();
-                else if (e.keyCode == KeyCode.LeftArrow) FlipCharacter(-1);
+                // Esc закрывает окно через общий обработчик меню (кнопка «← Назад» окна), здесь — только L.
+                if (e.keyCode == KeyCode.LeftArrow) FlipCharacter(-1);
                 else if (e.keyCode == KeyCode.RightArrow) FlipCharacter(1);
                 else if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter) PickCharacter((int)kind);
                 else return;
