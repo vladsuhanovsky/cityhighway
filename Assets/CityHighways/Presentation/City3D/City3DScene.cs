@@ -94,6 +94,8 @@ namespace CityHighways.Presentation
         RoadBuilder _roads;
         RoadPrefabSet _roadSet;
         readonly List<List<Vector3>> _riverLines = new List<List<Vector3>>();
+        /// <summary>Река впадает в другую (хотя бы один конец внутри карты): её вода лежит ниже, под водой главной.</summary>
+        readonly List<bool> _riverIsTributary = new List<bool>();
         readonly Dictionary<string, BuiltRoad> _builtRoads = new Dictionary<string, BuiltRoad>();
         bool _roadsSynced;
         RoadConstructionPlayer _construction;
@@ -543,7 +545,9 @@ namespace CityHighways.Presentation
         void PrepareRiverLines()
         {
             _riverLines.Clear();
+            _riverIsTributary.Clear();
             float half = RiverWidth / 2f;
+            var inner = new List<(bool start, bool end)>();
             foreach (var line in _map.Rivers)
             {
                 if (line.Count < 2) continue;
@@ -567,7 +571,69 @@ namespace CityHighways.Presentation
                 smooth.Insert(0, smooth[0] + startDir * (startAtEdge ? 30f : half * 0.6f));
                 smooth.Add(smooth[smooth.Count - 1] + endDir * (endAtEdge ? 30f : half * 0.6f));
                 _riverLines.Add(smooth);
+                inner.Add((!startAtEdge, !endAtEdge));
             }
+
+            // Стык: приток доходил до середины главной реки и ещё дальше — почти до противоположного берега, и тот
+            // берег вокруг устья вырезался. Теперь внутренний конец обрезается в воде главной реки, на JoinDepth от её
+            // середины: устье открыто, дальний берег цел, конец притока спрятан под водой главной (она выше).
+            var originals = _riverLines.Select(l => new List<Vector3>(l)).ToList();
+            for (int r = 0; r < _riverLines.Count; r++)
+            {
+                if (inner[r].end) _riverLines[r] = TrimAtJoin(_riverLines[r], r, originals, half * JoinDepth);
+                if (inner[r].start)
+                {
+                    var reversed = new List<Vector3>(_riverLines[r]);
+                    reversed.Reverse();
+                    reversed = TrimAtJoin(reversed, r, originals, half * JoinDepth);
+                    reversed.Reverse();
+                    _riverLines[r] = reversed;
+                }
+                _riverIsTributary.Add(inner[r].start || inner[r].end);
+            }
+        }
+
+        /// <summary>Конец притока — на этой доле полуширины от середины главной реки (внутри её воды).</summary>
+        const float JoinDepth = 0.35f;
+
+        /// <summary>
+        /// Обрезать конец русла там, где оно входит глубже limit в воду другой реки (по расстоянию до её середины).
+        /// Не заходит в другую реку — русло без изменений.
+        /// </summary>
+        static List<Vector3> TrimAtJoin(List<Vector3> line, int self, List<List<Vector3>> rivers, float limit)
+        {
+            float DistanceToOthers(Vector3 point)
+            {
+                float best = float.MaxValue;
+                var p = new Vector2(point.x, point.z);
+                for (int r = 0; r < rivers.Count; r++)
+                {
+                    if (r == self) continue;
+                    var other = rivers[r];
+                    for (int i = 0; i + 1 < other.Count; i++)
+                    {
+                        var a = new Vector2(other[i].x, other[i].z);
+                        var ab = new Vector2(other[i + 1].x, other[i + 1].z) - a;
+                        float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / Mathf.Max(1e-8f, ab.sqrMagnitude));
+                        best = Mathf.Min(best, (p - (a + ab * t)).magnitude);
+                    }
+                }
+                return best;
+            }
+
+            // С конца назад — первая точка, которая ещё дальше limit: между ней и следующей и проходит обрез.
+            for (int i = line.Count - 1; i > 0; i--)
+            {
+                float inside = DistanceToOthers(line[i]);
+                if (inside > limit) return line;               // конец не в другой реке — не трогаем
+                float before = DistanceToOthers(line[i - 1]);
+                if (before <= limit) continue;
+                float t = Mathf.InverseLerp(before, inside, limit);
+                var cut = line.GetRange(0, i);
+                cut.Add(Vector3.Lerp(line[i - 1], line[i], t));
+                return cut.Count >= 2 ? cut : line;
+            }
+            return line;
         }
 
         /// <summary>Реки: вода (текстура течёт вдоль русла) и гранитные набережные с двух сторон — в долинах рельефа.</summary>
@@ -583,8 +649,10 @@ namespace CityHighways.Presentation
             for (int r = 0; r < _riverLines.Count; r++)
             {
                 var points = _riverLines[r];
-                // Каждая следующая река чуть выше предыдущей: на слиянии вода не мерцает.
-                var wl = Vector3.up * (WaterLevel + r * 0.0003f);
+                // Притоки — ниже главных рек: их обрезанный конец лежит под водой главной и не виден. Внутри одной
+                // группы каждая следующая река чуть выше: на слиянии вода не мерцает.
+                bool tributary = r < _riverIsTributary.Count && _riverIsTributary[r];
+                var wl = Vector3.up * (WaterLevel + (tributary ? 0f : 0.0008f) + r * 0.0002f);
                 float along = 0f;
                 for (int i = 0; i + 1 < points.Count; i++)
                 {
@@ -596,12 +664,19 @@ namespace CityHighways.Presentation
                     float u0 = along / 0.9f, u1 = (along + length) / 0.9f;
                     along += length;
                     water.Quad(a + na * half + wl, a - na * half + wl, b - nb * half + wl, b + nb * half + wl, new Rect(u0, 0f, u1 - u0, 1f));
-                    // Набережные: верх, стенка к воде, стенка к земле — на каждом берегу.
+                    // Набережные: верх, стенка к воде, стенка к земле — на каждом берегу. Кусками не длиннее BankPiece:
+                    // у стыка рек каждый кусок проверяется отдельно — набережная обрывается ровно у воды другой реки,
+                    // а не торчит в неё (раньше решение принималось по середине длинного куска).
+                    int pieces = Mathf.Max(1, Mathf.CeilToInt(length / BankPiece));
+                    for (int k = 0; k < pieces; k++)
                     for (int s = -1; s <= 1; s += 2)
                     {
-                        var ia = a + na * half * s; var ib = b + nb * half * s;
-                        var oa = a + na * (half + BankWidth) * s; var ob = b + nb * (half + BankWidth) * s;
-                        if (InOtherRiver(r, (ia + ib + oa + ob) * 0.25f, half + BankWidth * 0.5f)) continue;
+                        float t0 = k / (float)pieces, t1 = (k + 1) / (float)pieces;
+                        var pa = Vector3.Lerp(a, b, t0); var pb = Vector3.Lerp(a, b, t1);
+                        var sa = Vector3.Lerp(na, nb, t0).normalized; var sb = Vector3.Lerp(na, nb, t1).normalized;
+                        var ia = pa + sa * half * s; var ib = pb + sb * half * s;
+                        var oa = pa + sa * (half + BankWidth) * s; var ob = pb + sb * (half + BankWidth) * s;
+                        if (InOtherRiver(r, (ia + ib + oa + ob) * 0.25f)) continue;
                         var up = Vector3.up * BankHeight;
                         // Порядок вершин подобран так, чтобы все грани смотрели наружу (верх — вверх, стенки — от камня).
                         if (s > 0)
@@ -627,6 +702,9 @@ namespace CityHighways.Presentation
             AddMesh("Embankments", banks.ToMesh("City3D Embankments"), _buildings, _root.transform, true);
         }
 
+        /// <summary>Длина куска набережной (м): на стыке рек каждый кусок проверяется отдельно.</summary>
+        const float BankPiece = 0.03f;
+
         /// <summary>Шаг русла меньше этого (м) — точка-дубль: сплайн на таком отрезке перехлёстывает.</summary>
         const float MinRiverStep = 0.15f;
 
@@ -641,14 +719,22 @@ namespace CityHighways.Presentation
         /// <summary>Точка реки у края карты (там река уходит за доску), а не внутри (впадает в другую реку).</summary>
         static bool AtMapEdge(float x, float y) => x < 0.03f || x > 0.97f || y < 0.03f || y > 0.97f;
 
-        /// <summary>Лежит ли точка в воде другой реки (по горизонтали ближе radius к её руслу).</summary>
-        bool InOtherRiver(int self, Vector3 point, float radius)
+        /// <summary>
+        /// Не строить здесь набережную реки self: точка в воде другой реки (или в её набережной). Набережная притока
+        /// обрывается у набережной главной реки, а в набережной главной вырезается ровно ширина воды притока —
+        /// углы устья смыкаются без щелей. На пересечении равных рек — по воде и половине набережной.
+        /// </summary>
+        bool InOtherRiver(int self, Vector3 point)
         {
             var p = new Vector2(point.x, point.z);
-            float limit = radius * radius;
+            float half = RiverWidth / 2f;
+            bool selfTributary = self < _riverIsTributary.Count && _riverIsTributary[self];
             for (int r = 0; r < _riverLines.Count; r++)
             {
                 if (r == self) continue;
+                bool otherTributary = r < _riverIsTributary.Count && _riverIsTributary[r];
+                float radius = otherTributary && !selfTributary ? half : half + BankWidth * 0.5f;
+                float limit = radius * radius;
                 var line = _riverLines[r];
                 for (int i = 0; i + 1 < line.Count; i++)
                 {
