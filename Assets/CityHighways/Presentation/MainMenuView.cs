@@ -84,6 +84,13 @@ namespace CityHighways.Presentation
             });
             MenuButton.Hovered = () => { if (_display.uiSounds) _app.Sound.Play(Sfx.Tick, 0.35f); };
             Profiles.SyncSteam();
+            // С сервера пришли изменения (начисление, вещь, бан) — обновить уголок профиля и уведомления.
+            CloudProfiles.Changed += () =>
+            {
+                if (Root.panel == null) return;
+                RefreshProfileCorner();
+                RefreshNotifications();
+            };
 
             _pageHost = Ui.Column();
             _pageHost.style.width = 1120f;
@@ -128,6 +135,7 @@ namespace CityHighways.Presentation
         /// <summary>Друг пригласил нас в лобби Steam — открываем «Сетевую игру» и входим.</summary>
         public void JoinSteamLobby(ulong lobby)
         {
+            if (Profiles.Active.cloudBanned) return;
             ShowPage(Page.Online);
             _online.JoinSteam(lobby);
         }
@@ -285,7 +293,16 @@ namespace CityHighways.Presentation
             quick.style.backgroundColor = new Color(1f, 1f, 1f, 0.16f);
             newGame.Badge.Add(quick);
             Add(MenuIcon.Glyph.Cap, AnyTutorialDone ? "Обучение" : "Обучение — начните отсюда", () => ShowPage(Page.Tutorial), false);
-            _onlineButton = Add(MenuIcon.Glyph.Globe, "Сетевая игра", () => ShowPage(Page.Online), false);
+            _onlineButton = Add(MenuIcon.Glyph.Globe, "Сетевая игра", () =>
+            {
+                // Заблокированному аккаунту сетевая игра закрыта — показываем причину в уведомлениях.
+                if (Profiles.Active.cloudBanned)
+                {
+                    if (!_bellOpen) ToggleBell();
+                    return;
+                }
+                ShowPage(Page.Online);
+            }, false);
             _onlineBadge = Pill("");
             Ui.Show(_onlineBadge, false);
             _onlineButton.Badge.Add(_onlineBadge);
@@ -607,6 +624,14 @@ namespace CityHighways.Presentation
         {
             var list = new List<(MenuIcon.Glyph, string, Action)>();
             var profile = Profiles.Active;
+            if (profile != null && profile.cloudBanned)
+                list.Add((MenuIcon.Glyph.Flag, "Аккаунт заблокирован" + (string.IsNullOrWhiteSpace(profile.cloudBanReason) ? "" : ": " + profile.cloudBanReason) +
+                          ". Сетевая игра недоступна.", null));
+            foreach (var message in CloudProfiles.Messages.ToList())
+            {
+                string shown = message;
+                list.Add((MenuIcon.Glyph.Envelope, shown, () => { CloudProfiles.Messages.Remove(shown); RefreshNotifications(); }));
+            }
             void OpenProfile()
             {
                 _profile.Rebuild();

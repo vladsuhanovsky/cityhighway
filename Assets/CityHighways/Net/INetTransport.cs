@@ -62,6 +62,11 @@ namespace CityHighways.Net
         string PersonaName { get; }
         /// <summary>Свой SteamID строкой (для привязки профиля).</summary>
         string SteamId { get; }
+        /// <summary>
+        /// Билет входа для своего сервера (ISteamUser::GetAuthTicketForWebApi): done получает билет в hex или null
+        /// (Steam недоступен, отказ). Сервер проверяет его у Steam и так узнаёт SteamID игрока.
+        /// </summary>
+        void RequestWebApiTicket(string identity, Action<string> done);
         /// <summary>Большой аватар из Steam; null — ещё грузится или его нет (спросите позже).</summary>
         Texture2D Avatar { get; }
         INetTransport CreateHost(int maxMembers);

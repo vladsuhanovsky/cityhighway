@@ -99,6 +99,7 @@ namespace CityHighways.Presentation
         void Update()
         {
             NetPlatforms.Steam?.Poll();
+            CloudProfiles.Tick();
             Net?.Poll();
             Tweener.Tick(Time.deltaTime);
             _game?.Tick(Time.deltaTime);

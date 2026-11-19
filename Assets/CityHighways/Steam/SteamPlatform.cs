@@ -98,6 +98,42 @@ namespace CityHighways.Steam
 
         public string SteamId => Available ? SteamUser.GetSteamID().m_SteamID.ToString() : "";
 
+        Callback<GetTicketForWebApiResponse_t> _webApiTicket;
+        readonly List<(HAuthTicket handle, Action<string> done)> _ticketWaiters = new List<(HAuthTicket, Action<string>)>();
+
+        public void RequestWebApiTicket(string identity, Action<string> done)
+        {
+            if (!Available)
+            {
+                done?.Invoke(null);
+                return;
+            }
+            if (_webApiTicket == null) _webApiTicket = Callback<GetTicketForWebApiResponse_t>.Create(OnWebApiTicket);
+            var handle = SteamUser.GetAuthTicketForWebApi(identity);
+            if (handle == HAuthTicket.Invalid)
+            {
+                done?.Invoke(null);
+                return;
+            }
+            _ticketWaiters.Add((handle, done));
+        }
+
+        void OnWebApiTicket(GetTicketForWebApiResponse_t response)
+        {
+            int index = _ticketWaiters.FindIndex(w => w.handle == response.m_hAuthTicket);
+            if (index < 0) return;
+            var done = _ticketWaiters[index].done;
+            _ticketWaiters.RemoveAt(index);
+            if (response.m_eResult != EResult.k_EResultOK || response.m_cubTicket <= 0)
+            {
+                done?.Invoke(null);
+                return;
+            }
+            var hex = new System.Text.StringBuilder(response.m_cubTicket * 2);
+            for (int i = 0; i < response.m_cubTicket; i++) hex.Append(response.m_rgubTicket[i].ToString("X2"));
+            done?.Invoke(hex.ToString());
+        }
+
         Texture2D _avatar;
 
         /// <summary>

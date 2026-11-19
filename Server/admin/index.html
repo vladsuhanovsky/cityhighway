@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>City Highways — админ-панель</title>
+<style>
+  :root { --bg:#1a2332; --panel:#2e3d4d; --panel2:#24313f; --line:#3d4f63; --text:#e8eef5; --dim:#9fb0c2;
+          --accent:#f3a640; --ok:#33cc66; --bad:#e64d4d; --warn:#f3bf33; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 system-ui, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--text); }
+  header { display:flex; align-items:center; gap:16px; padding:14px 22px; background:var(--panel2); border-bottom:1px solid var(--line); }
+  header h1 { margin:0; font-size:20px; color:var(--accent); }
+  header .grow { flex:1; }
+  main { padding:18px 22px; max-width:1400px; margin:0 auto; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
+  input, select, textarea, button { font:inherit; color:var(--text); }
+  input, select, textarea { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 10px; }
+  button { background:#405973; border:0; border-radius:8px; padding:7px 14px; cursor:pointer; }
+  button:hover { background:#4d6b8a; }
+  button.primary { background:var(--accent); color:#1f1709; font-weight:600; }
+  button.danger { background:var(--bad); }
+  button.ghost { background:transparent; border:1px solid var(--line); }
+  button:disabled { opacity:.5; cursor:default; }
+  .muted { color:var(--dim); }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin-bottom:14px; }
+  .stat b { display:block; font-size:24px; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { color:var(--dim); font-weight:600; cursor:pointer; user-select:none; }
+  tbody tr { cursor:pointer; }
+  tbody tr:hover { background:#34465a; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:700; margin-left:6px; }
+  .tag.ban { background:rgba(230,77,77,.2); color:var(--bad); }
+  .tag.dev { background:rgba(243,191,51,.18); color:var(--warn); }
+  .layout { display:grid; grid-template-columns:minmax(0, 1fr) 460px; gap:16px; align-items:start; }
+  .detail h2 { margin:0 0 4px; }
+  .detail h3 { margin:18px 0 8px; font-size:15px; }
+  .kv { display:grid; grid-template-columns:150px 1fr; gap:4px 10px; }
+  .items { display:flex; flex-wrap:wrap; gap:6px; }
+  .item { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:3px 8px; font-size:12px; }
+  .item button { padding:0 6px; margin-left:4px; background:transparent; color:var(--bad); }
+  pre { background:var(--bg); border-radius:8px; padding:10px; max-height:260px; overflow:auto; font-size:12px; }
+  .login { max-width:380px; margin:80px auto; display:grid; gap:10px; }
+  .msg { padding:8px 12px; border-radius:8px; margin:8px 0; }
+  .msg.err { background:rgba(230,77,77,.15); color:#ffb3b3; }
+  .msg.ok { background:rgba(51,204,102,.15); color:#9df0bb; }
+  .hidden { display:none !important; }
+  .pager { display:flex; gap:8px; align-items:center; margin-top:10px; }
+  @media (max-width: 1000px) { .layout { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>City Highways · игроки</h1>
+  <span class="muted">Профили Steam (позже Epic) — данные из облака Supabase</span>
+  <span class="grow"></span>
+  <span id="who" class="muted"></span>
+  <button id="logout" class="ghost hidden">Выйти</button>
+</header>
+
+<div id="loginView" class="login card hidden">
+  <h2 style="margin:0">Вход администратора</h2>
+  <div class="muted">Учётная запись Supabase Auth, добавленная в таблицу admins (см. Server/README.md).</div>
+  <input id="email" type="email" placeholder="Почта" autocomplete="username">
+  <input id="password" type="password" placeholder="Пароль" autocomplete="current-password">
+  <button id="loginBtn" class="primary">Войти</button>
+  <div id="loginMsg"></div>
+</div>
+
+<main id="appView" class="hidden">
+  <div class="stats">
+    <div class="card stat"><span class="muted">Всего игроков</span><b id="sTotal">—</b></div>
+    <div class="card stat"><span class="muted">Заходили за сутки</span><b id="sDay">—</b></div>
+    <div class="card stat"><span class="muted">За неделю</span><b id="sWeek">—</b></div>
+    <div class="card stat"><span class="muted">Заблокировано</span><b id="sBanned">—</b></div>
+  </div>
+  <div class="layout">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <input id="search" placeholder="Имя или SteamID" style="flex:1; min-width:200px">
+        <select id="filter">
+          <option value="all">Все</option>
+          <option value="banned">Заблокированные</option>
+          <option value="unverified">Без проверки билета</option>
+        </select>
+        <button id="refresh">Обновить</button>
+        <button id="csv" class="ghost">CSV</button>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr>
+            <th data-sort="name">Игрок</th><th data-sort="platform_user_id">ID</th><th data-sort="wallet">Влияние</th>
+            <th data-sort="games">Партии</th><th data-sort="wins">Победы</th><th data-sort="containers_opened">Контейнеры</th>
+            <th data-sort="last_seen">Был в игре</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="pager"><button id="prev" class="ghost">←</button><span id="page" class="muted"></span><button id="next" class="ghost">→</button></div>
+    </div>
+    <div id="detail" class="card detail"><span class="muted">Выберите игрока в списке.</span></div>
+  </div>
+</main>
+
+<datalist id="itemList"></datalist>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+const SUPABASE_URL = "https://nswqxnjyxlrtfzdlounk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_uawmnbX-MRpqMCeWBFZdCA_0yXpJ_qK";   // публичный ключ: таблицы закрыты RLS, читать и править может только администратор
+const ITEMS = [{"id": "hair_bun", "name": "Пучок (муж.)", "kind": "Одежда"}, {"id": "hair_beard", "name": "Борода прораба (муж.)", "kind": "Одежда"}, {"id": "top_vest", "name": "Сигнальный жилет (муж.)", "kind": "Одежда"}, {"id": "top_shirt", "name": "Рубашка (муж.)", "kind": "Одежда"}, {"id": "top_sweater", "name": "Свитер (муж.)", "kind": "Одежда"}, {"id": "top_jacket", "name": "Пиджак (муж.)", "kind": "Одежда"}, {"id": "bottom_jeans", "name": "Джинсы (муж.)", "kind": "Одежда"}, {"id": "bottom_classic", "name": "Классические брюки (муж.)", "kind": "Одежда"}, {"id": "bottom_overalls", "name": "Комбинезон (муж.)", "kind": "Одежда"}, {"id": "shoes_sneakers", "name": "Кроссовки (муж.)", "kind": "Одежда"}, {"id": "shoes_rubber", "name": "Резиновые сапоги (муж.)", "kind": "Одежда"}, {"id": "shoes_oxford", "name": "Туфли (муж.)", "kind": "Одежда"}, {"id": "hat_hardhat", "name": "Строительная каска (муж.)", "kind": "Одежда"}, {"id": "hat_cap", "name": "Кепка (муж.)", "kind": "Одежда"}, {"id": "hat_fedora", "name": "Шляпа (муж.)", "kind": "Одежда"}, {"id": "hat_tophat", "name": "Цилиндр (муж.)", "kind": "Одежда"}, {"id": "acc_glasses", "name": "Очки (муж.)", "kind": "Одежда"}, {"id": "acc_tie", "name": "Галстук (муж.)", "kind": "Одежда"}, {"id": "acc_radio", "name": "Рация (муж.)", "kind": "Одежда"}, {"id": "acc_blueprint", "name": "Свиток чертежей (муж.)", "kind": "Одежда"}, {"id": "acc_chain", "name": "Золотая цепь (муж.)", "kind": "Одежда"}, {"id": "hair_f_ponytail", "name": "Высокий хвост (жен.)", "kind": "Одежда"}, {"id": "hair_f_curly", "name": "Кудри (жен.)", "kind": "Одежда"}, {"id": "top_f_vest", "name": "Сигнальный жилет (жен.)", "kind": "Одежда"}, {"id": "top_f_blouse", "name": "Блузка (жен.)", "kind": "Одежда"}, {"id": "top_f_cardigan", "name": "Кардиган (жен.)", "kind": "Одежда"}, {"id": "top_f_blazer", "name": "Жакет (жен.)", "kind": "Одежда"}, {"id": "bottom_f_jeans", "name": "Джинсы (жен.)", "kind": "Одежда"}, {"id": "bottom_f_skirt", "name": "Юбка (жен.)", "kind": "Одежда"}, {"id": "bottom_f_overalls", "name": "Комбинезон (жен.)", "kind": "Одежда"}, {"id": "shoes_f_sneakers", "name": "Кроссовки (жен.)", "kind": "Одежда"}, {"id": "shoes_f_rubber", "name": "Резиновые сапоги (жен.)", "kind": "Одежда"}, {"id": "shoes_f_heels", "name": "Туфли на каблуке (жен.)", "kind": "Одежда"}, {"id": "hat_f_hardhat", "name": "Строительная каска (жен.)", "kind": "Одежда"}, {"id": "hat_f_cap", "name": "Кепка (жен.)", "kind": "Одежда"}, {"id": "hat_f_beret", "name": "Берет (жен.)", "kind": "Одежда"}, {"id": "hat_f_sunhat", "name": "Шляпка (жен.)", "kind": "Одежда"}, {"id": "acc_f_glasses", "name": "Очки (жен.)", "kind": "Одежда"}, {"id": "acc_f_scarf", "name": "Шейный платок (жен.)", "kind": "Одежда"}, {"id": "acc_f_radio", "name": "Рация (жен.)", "kind": "Одежда"}, {"id": "acc_f_tablet", "name": "Планшет (жен.)", "kind": "Одежда"}, {"id": "acc_f_pearls", "name": "Жемчужное ожерелье (жен.)", "kind": "Одежда"}, {"id": "emblem_star", "name": "Звезда", "kind": "Эмблема"}, {"id": "emblem_diamond", "name": "Ромб", "kind": "Эмблема"}, {"id": "emblem_gear", "name": "Шестерня", "kind": "Эмблема"}, {"id": "emblem_flag", "name": "Флажок", "kind": "Эмблема"}, {"id": "emblem_bolt", "name": "Молния", "kind": "Эмблема"}, {"id": "emblem_crown", "name": "Корона", "kind": "Эмблема"}, {"id": "title_foreman", "name": "Прораб года", "kind": "Титул"}, {"id": "title_friend", "name": "Друг мэрии", "kind": "Титул"}, {"id": "title_bridges", "name": "Мостостроитель", "kind": "Титул"}, {"id": "title_asphalt", "name": "Король асфальта", "kind": "Титул"}, {"id": "title_honest", "name": "Неподкупный", "kind": "Титул"}, {"id": "title_cardinal", "name": "Серый кардинал", "kind": "Титул"}, {"id": "frame_steel", "name": "Стальная рамка", "kind": "Рамка"}, {"id": "frame_neon", "name": "Неоновая рамка", "kind": "Рамка"}, {"id": "frame_gold", "name": "Золотая рамка", "kind": "Рамка"}, {"id": "emblem_truck", "name": "Фура ★", "kind": "Эмблема"}, {"id": "emblem_cup", "name": "Кубок ★", "kind": "Эмблема"}, {"id": "title_logist", "name": "Логист от бога ★", "kind": "Титул"}, {"id": "title_highway", "name": "Хозяин трассы ★", "kind": "Титул"}, {"id": "title_mayor", "name": "Почти мэр ★", "kind": "Титул"}, {"id": "frame_violet", "name": "Фиолетовая рамка ★", "kind": "Рамка"}, {"id": "frame_ruby", "name": "Рубиновая рамка ★", "kind": "Рамка"}, {"id": "frame_platinum", "name": "Платиновая рамка ★", "kind": "Рамка"}];
+const PAGE = 50;
+
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const itemName = (id) => ITEMS.find((i) => i.id === id)?.name ?? id;
+const when = (t) => t ? new Date(t).toLocaleString("ru-RU") : "—";
+let sort = { col: "last_seen", asc: false }, page = 0, current = null, lastRows = [];
+
+$("itemList").innerHTML = ITEMS.map((i) => `<option value="${esc(i.id)}">${esc(i.kind)}: ${esc(i.name)}</option>`).join("");
+
+async function boot() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) return showLogin();
+  const { data: me, error } = await db.from("admins").select("user_id").eq("user_id", session.user.id).maybeSingle();
+  if (error || !me) {
+    showLogin(`Учётная запись ${esc(session.user.email)} не в списке администраторов. Добавьте её в таблицу admins (Server/README.md).`);
+    await db.auth.signOut();
+    return;
+  }
+  $("who").textContent = session.user.email;
+  $("logout").classList.remove("hidden");
+  $("loginView").classList.add("hidden");
+  $("appView").classList.remove("hidden");
+  loadStats();
+  loadRows();
+}
+
+function showLogin(message) {
+  $("appView").classList.add("hidden");
+  $("logout").classList.add("hidden");
+  $("loginView").classList.remove("hidden");
+  $("loginMsg").innerHTML = message ? `<div class="msg err">${message}</div>` : "";
+}
+
+$("loginBtn").onclick = async () => {
+  const { error } = await db.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
+  if (error) return showLogin(esc(error.message));
+  boot();
+};
+$("password").addEventListener("keydown", (e) => { if (e.key === "Enter") $("loginBtn").click(); });
+$("logout").onclick = async () => { await db.auth.signOut(); location.reload(); };
+
+async function count(build) {
+  const { count } = await build(db.from("players").select("id", { count: "exact", head: true }));
+  return count ?? 0;
+}
+async function loadStats() {
+  const day = new Date(Date.now() - 864e5).toISOString(), week = new Date(Date.now() - 7 * 864e5).toISOString();
+  $("sTotal").textContent = await count((q) => q);
+  $("sDay").textContent = await count((q) => q.gte("last_seen", day));
+  $("sWeek").textContent = await count((q) => q.gte("last_seen", week));
+  $("sBanned").textContent = await count((q) => q.eq("banned", true));
+}
+
+function query() {
+  let q = db.from("players").select("id, platform, platform_user_id, name, verified, wallet, games, wins, containers_opened, banned, last_seen", { count: "exact" });
+  const s = $("search").value.trim();
+  if (s) q = /^\d+$/.test(s) ? q.ilike("platform_user_id", `%${s}%`) : q.ilike("name", `%${s}%`);
+  if ($("filter").value === "banned") q = q.eq("banned", true);
+  if ($("filter").value === "unverified") q = q.eq("verified", false);
+  return q.order(sort.col, { ascending: sort.asc });
+}
+
+async function loadRows() {
+  const { data, count: total, error } = await query().range(page * PAGE, page * PAGE + PAGE - 1);
+  if (error) { $("rows").innerHTML = `<tr><td colspan="7" class="msg err">${esc(error.message)}</td></tr>`; return; }
+  lastRows = data;
+  $("rows").innerHTML = data.map((p) => `<tr data-id="${esc(p.id)}">
+    <td>${esc(p.name || "—")}${p.banned ? '<span class="tag ban">БАН</span>' : ""}${p.verified ? "" : '<span class="tag dev">БЕЗ ПРОВЕРКИ</span>'}</td>
+    <td class="muted">${esc(p.platform)}:${esc(p.platform_user_id)}</td>
+    <td>${p.wallet}</td><td>${p.games}</td><td>${p.wins}</td><td>${p.containers_opened}</td><td class="muted">${when(p.last_seen)}</td></tr>`).join("")
+    || `<tr><td colspan="7" class="muted">Никого не нашлось.</td></tr>`;
+  const pages = Math.max(1, Math.ceil((total ?? 0) / PAGE));
+  $("page").textContent = `стр. ${page + 1} из ${pages} · ${total ?? 0} игроков`;
+  $("prev").disabled = page === 0;
+  $("next").disabled = page + 1 >= pages;
+  document.querySelectorAll("#rows tr[data-id]").forEach((tr) => tr.onclick = () => openPlayer(tr.dataset.id));
+}
+
+let searchTimer;
+$("search").oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { page = 0; loadRows(); }, 300); };
+$("filter").onchange = () => { page = 0; loadRows(); };
+$("refresh").onclick = () => { loadStats(); loadRows(); if (current) openPlayer(current); };
+$("prev").onclick = () => { page--; loadRows(); };
+$("next").onclick = () => { page++; loadRows(); };
+document.querySelectorAll("th[data-sort]").forEach((th) => th.onclick = () => {
+  sort = { col: th.dataset.sort, asc: sort.col === th.dataset.sort ? !sort.asc : th.dataset.sort === "name" };
+  loadRows();
+});
+$("csv").onclick = async () => {
+  const { data } = await query().range(0, 9999);
+  const cols = ["id", "name", "platform_user_id", "verified", "wallet", "games", "wins", "containers_opened", "banned", "last_seen"];
+  const csv = [cols.join(";")].concat((data ?? []).map((r) => cols.map((c) => `"${String(r[c] ?? "").replace(/"/g, '""')}"`).join(";"))).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv" }));
+  a.download = `cityhighways_players_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+};
+
+async function openPlayer(id) {
+  current = id;
+  const [{ data: p, error }, { data: actions }] = await Promise.all([
+    db.from("players").select("*").eq("id", id).single(),
+    db.from("admin_actions").select("*").eq("player_id", id).order("id", { ascending: false }).limit(100),
+  ]);
+  if (error) { $("detail").innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  const steamUrl = p.platform === "steam" ? `https://steamcommunity.com/profiles/${encodeURIComponent(p.platform_user_id)}` : "";
+  const kindTitle = { grant_influence: "Влияние ±", set_wallet: "Кошелёк =", grant_item: "Выдать вещь", revoke_item: "Забрать вещь", message: "Сообщение" };
+  $("detail").innerHTML = `
+    <h2>${esc(p.name || "—")}${p.banned ? '<span class="tag ban">БАН</span>' : ""}</h2>
+    <div class="muted">${esc(p.id)} ${steamUrl ? `· <a style="color:var(--accent)" href="${steamUrl}" target="_blank" rel="noopener">профиль Steam</a>` : ""}</div>
+    <div id="note"></div>
+    <h3>Профиль</h3>
+    <div class="kv">
+      <span class="muted">Влияние</span><b>${p.wallet}</b>
+      <span class="muted">Заработано всего</span><span>${p.earned_total}</span>
+      <span class="muted">Партии / победы</span><span>${p.games} / ${p.wins}</span>
+      <span class="muted">Контейнеров открыто</span><span>${p.containers_opened}</span>
+      <span class="muted">Оформление</span><span>${esc([p.emblem, p.title, p.frame].filter(Boolean).map(itemName).join(", ") || "—")}</span>
+      <span class="muted">Достижений</span><span>${(p.achievements ?? []).length}</span>
+      <span class="muted">Вход проверен</span><span>${p.verified ? "да (билет Steam)" : "нет — режим разработки"}</span>
+      <span class="muted">Версия игры</span><span>${esc(p.game_version || "—")}</span>
+      <span class="muted">Первый вход</span><span>${when(p.created_at)}</span>
+      <span class="muted">Последний</span><span>${when(p.last_seen)}</span>
+    </div>
+
+    <h3>Вещи · ${(p.owned ?? []).length}</h3>
+    <div class="items">${(p.owned ?? []).map((i) => `<span class="item">${esc(itemName(i))}<button title="Забрать" data-revoke="${esc(i)}">✕</button></span>`).join("") || '<span class="muted">Нет купленных вещей.</span>'}</div>
+
+    <h3>Действия</h3>
+    <div class="muted" style="margin-bottom:8px">Применяются в игре при следующей синхронизации (до 5 минут, либо при запуске).</div>
+    <div class="row"><input id="aAmount" type="number" placeholder="± влияние" style="width:120px"><input id="aNote" placeholder="Комментарий (игрок увидит)" style="flex:1"></div>
+    <div class="row" style="margin-top:8px">
+      <button id="aGrant" class="primary">Начислить / списать</button>
+      <button id="aSet">Установить кошелёк</button>
+    </div>
+    <div class="row" style="margin-top:8px"><input id="aItem" list="itemList" placeholder="ID вещи" style="flex:1"><button id="aGive">Выдать вещь</button></div>
+    <div class="row" style="margin-top:8px"><input id="aMsg" placeholder="Сообщение игроку" style="flex:1"><button id="aSend">Отправить</button></div>
+
+    <h3>Блокировка</h3>
+    <div class="row"><input id="banReason" placeholder="Причина" value="${esc(p.ban_reason)}" style="flex:1">
+      ${p.banned ? '<button id="unban">Разблокировать</button>' : '<button id="ban" class="danger">Заблокировать</button>'}</div>
+    <div class="muted" style="margin-top:4px">Заблокированному игроку закрыта сетевая игра, причина показывается в уведомлениях.</div>
+
+    <h3>История действий</h3>
+    <table><tbody>${(actions ?? []).map((a) => `<tr><td class="muted">${when(a.created_at)}</td><td>${kindTitle[a.kind] ?? a.kind}</td>
+      <td>${a.kind === "grant_item" || a.kind === "revoke_item" ? esc(itemName(a.item_id)) : a.kind === "message" ? "" : a.amount}</td>
+      <td class="muted">${esc(a.note)}</td><td>${a.applied_at ? '<span class="muted">применено</span>' : `<button class="ghost" data-cancel="${a.id}">отменить</button>`}</td></tr>`).join("")
+      || '<tr><td class="muted">Пока пусто.</td></tr>'}</tbody></table>
+
+    <h3>Профиль целиком (как его прислала игра)</h3>
+    <pre>${esc(JSON.stringify(p.profile, null, 2))}</pre>
+    <button id="del" class="danger" style="margin-top:8px">Удалить запись игрока</button>`;
+
+  const note = (text, ok = true) => $("note").innerHTML = `<div class="msg ${ok ? "ok" : "err"}">${esc(text)}</div>`;
+  const act = async (row, done) => {
+    const { error: e } = await db.from("admin_actions").insert({ player_id: id, ...row });
+    if (e) return note(e.message, false);
+    await openPlayer(id);
+    note(done);
+  };
+  $("aGrant").onclick = () => {
+    const n = parseInt($("aAmount").value, 10);
+    if (!n) return note("Укажите количество влияния (можно отрицательное).", false);
+    act({ kind: "grant_influence", amount: n, note: $("aNote").value.trim() }, `Влияние ${n > 0 ? "+" : ""}${n} — уйдёт при синхронизации.`);
+  };
+  $("aSet").onclick = () => {
+    const n = parseInt($("aAmount").value, 10);
+    if (isNaN(n) || n < 0) return note("Укажите новое значение кошелька (0 и больше).", false);
+    act({ kind: "set_wallet", amount: n, note: $("aNote").value.trim() }, `Кошелёк станет ${n}.`);
+  };
+  $("aGive").onclick = () => {
+    const item = $("aItem").value.trim();
+    if (!ITEMS.some((i) => i.id === item)) return note("Нет такой вещи — выберите из списка.", false);
+    act({ kind: "grant_item", item_id: item, note: "" }, `Вещь «${itemName(item)}» будет выдана.`);
+  };
+  $("aSend").onclick = () => {
+    const text = $("aMsg").value.trim();
+    if (!text) return note("Пустое сообщение.", false);
+    act({ kind: "message", note: text }, "Сообщение отправлено.");
+  };
+  document.querySelectorAll("[data-revoke]").forEach((b) => b.onclick = () => {
+    if (!confirm(`Забрать «${itemName(b.dataset.revoke)}»?`)) return;
+    act({ kind: "revoke_item", item_id: b.dataset.revoke, note: "" }, "Вещь будет забрана.");
+  });
+  document.querySelectorAll("[data-cancel]").forEach((b) => b.onclick = async () => {
+    const { error: e } = await db.from("admin_actions").delete().eq("id", b.dataset.cancel).is("applied_at", null);
+    if (e) return note(e.message, false);
+    openPlayer(id);
+  });
+  const setBan = async (banned) => {
+    const { error: e } = await db.from("players").update({ banned, ban_reason: banned ? $("banReason").value.trim() : "" }).eq("id", id);
+    if (e) return note(e.message, false);
+    await openPlayer(id);
+    loadRows(); loadStats();
+    note(banned ? "Игрок заблокирован." : "Блокировка снята.");
+  };
+  $("ban")?.addEventListener("click", () => setBan(true));
+  $("unban")?.addEventListener("click", () => setBan(false));
+  $("del").onclick = async () => {
+    if (!confirm("Удалить запись игрока с сервера? При следующем входе игра создаст её заново из своего профиля.")) return;
+    const { error: e } = await db.from("players").delete().eq("id", id);
+    if (e) return note(e.message, false);
+    current = null;
+    $("detail").innerHTML = '<span class="muted">Запись удалена.</span>';
+    loadRows(); loadStats();
+  };
+}
+
+boot();
+</script>
+</body>
+</html>

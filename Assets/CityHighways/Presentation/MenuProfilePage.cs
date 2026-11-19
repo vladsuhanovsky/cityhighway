@@ -26,6 +26,7 @@ namespace CityHighways.Presentation
         readonly ScrollView _scroll;
         readonly VisualElement _content;
         readonly Label _statusLabel;
+        readonly UnityEngine.UIElements.Button _idChip;
         Tab _tab = Tab.Character;
         string _status = "";
 
@@ -78,8 +79,24 @@ namespace CityHighways.Presentation
             backButton.style.marginRight = 16f;
             header.Add(backButton);
             _title = Ui.Text("Профиль", 32f, GameColors.Accent, true);
-            _title.style.flexGrow = 1f;
             header.Add(_title);
+            // ID игрока — тот же, что у профиля в Steam (по нему профиль хранится на сервере).
+            _idChip = Ui.Button("", () =>
+            {
+                var id = Profiles.Active.PlatformId;
+                if (id.Length == 0) return;
+                GUIUtility.systemCopyBuffer = Profiles.Active.steamId;
+                _status = "ID скопирован.";
+                Rebuild();
+            }, GameColors.Button, GameColors.ButtonHover, Theme.TextDim, 12f);
+            _idChip.style.marginLeft = 14f;
+            _idChip.style.minHeight = 28f;
+            Ui.Padding(_idChip, 3f, 10f);
+            _idChip.tooltip = "ID профиля Steam — нажмите, чтобы скопировать";
+            header.Add(_idChip);
+            var grow = Ui.Box();
+            grow.style.flexGrow = 1f;
+            header.Add(grow);
             _statusLabel = Ui.Text("", 14f, GameColors.Accent);
             header.Add(_statusLabel);
             Root.Add(header);
@@ -161,6 +178,8 @@ namespace CityHighways.Presentation
             if (_tab != Tab.Containers) FinishSpin(false);
             var profile = Profiles.Active;
             _title.text = "Профиль: " + profile.name;
+            _idChip.text = profile.IsSteam ? $"ID Steam: {profile.steamId}" : "";
+            Ui.Show(_idChip, profile.IsSteam);
             _statusLabel.text = _status;
             StyleTabs();
             _content.Clear();
@@ -677,6 +696,7 @@ namespace CityHighways.Presentation
                 case "shop": return "Оформление";
                 case "clothing": return "Одежда";
                 case "container": return "Контейнеры";
+                case "admin": return "От разработчика";
                 default: return "Прочее";
             }
         }

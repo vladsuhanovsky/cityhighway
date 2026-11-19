@@ -29,6 +29,12 @@ namespace CityHighways.Presentation
         public string steamId = "";
 
         public bool IsSteam => !string.IsNullOrEmpty(steamId);
+
+        /// <summary>
+        /// Идентификатор игрока — тот же, что у его профиля в магазине: «steam:&lt;SteamID64&gt;» (позже «epic:…»).
+        /// Под ним профиль хранится на сервере. Пусто — локальный профиль без магазина.
+        /// </summary>
+        public string PlatformId => IsSteam ? "steam:" + steamId : "";
         /// <summary>Открытые достижения (Id), отметки для накопительных («победа в сценарии…»), задание дня.</summary>
         public List<string> achievements = new List<string>();
         public List<string> marks = new List<string>();
@@ -37,6 +43,10 @@ namespace CityHighways.Presentation
         public int dailyTotal;
         /// <summary>Сколько контейнеров открыто (раздел «Контейнеры» профиля).</summary>
         public int containersOpened;
+        /// <summary>Облако: номера применённых действий администратора (ждут подтверждения сервера), бан и его причина.</summary>
+        public List<long> appliedActions = new List<long>();
+        public bool cloudBanned;
+        public string cloudBanReason = "";
 
         public bool HasMark(string mark) => marks != null && marks.Contains(mark);
         public void AddMark(string mark)
@@ -222,7 +232,15 @@ namespace CityHighways.Presentation
             return new ProfileBook();
         }
 
+        /// <summary>Сохранить на диск и (для профиля Steam) отправить на сервер чуть позже.</summary>
         public static void Save()
+        {
+            SaveLocal();
+            CloudProfiles.MarkDirty();
+        }
+
+        /// <summary>Только на диск (после изменений, пришедших с сервера).</summary>
+        public static void SaveLocal()
         {
             try
             {
