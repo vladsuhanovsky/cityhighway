@@ -111,8 +111,9 @@ namespace CityHighways.Presentation
 
         // ------------------------------------------------------------------ волосы под головным убором
 
-        static readonly Dictionary<long, Texture2D> HairCache = new Dictionary<long, Texture2D>();
-        static readonly Dictionary<int, HatShape> HatCache = new Dictionary<int, HatShape>();
+        // Ключи — сами текстуры (GetInstanceID в Unity 6 устарел и запрещён): волосы → головной убор → результат.
+        static readonly Dictionary<Texture2D, Dictionary<Texture2D, Texture2D>> HairCache = new Dictionary<Texture2D, Dictionary<Texture2D, Texture2D>>();
+        static readonly Dictionary<Texture2D, HatShape> HatCache = new Dictionary<Texture2D, HatShape>();
 
         /// <summary>Силуэт головного убора: верхний край по столбцам и линия полей (в долях высоты холста).</summary>
         sealed class HatShape
@@ -129,8 +130,8 @@ namespace CityHighways.Presentation
         public static Texture2D HairUnderHat(Texture2D hair, Texture2D hat)
         {
             if (hair == null || hat == null) return hair;
-            long key = ((long)hair.GetInstanceID() << 32) ^ (uint)hat.GetInstanceID();
-            if (HairCache.TryGetValue(key, out var cached)) return cached ?? hair;
+            if (!HairCache.TryGetValue(hair, out var byHat)) HairCache[hair] = byHat = new Dictionary<Texture2D, Texture2D>();
+            if (byHat.TryGetValue(hat, out var cached)) return cached ?? hair;
             Texture2D result = null;
             try
             {
@@ -141,14 +142,13 @@ namespace CityHighways.Presentation
             {
                 Debug.LogWarning("City Highways: не удалось подрезать волосы под головной убор: " + e.Message);
             }
-            HairCache[key] = result;
+            byHat[hat] = result;
             return result ?? hair;
         }
 
         static HatShape Shape(Texture2D hat)
         {
-            int id = hat.GetInstanceID();
-            if (HatCache.TryGetValue(id, out var cached)) return cached;
+            if (HatCache.TryGetValue(hat, out var cached)) return cached;
             var pixels = Pixels(hat, out int w, out int h);
             HatShape shape = null;
             if (pixels != null)
@@ -176,7 +176,7 @@ namespace CityHighways.Presentation
                     shape = new HatShape { Top = top, Brim = bottoms[bottoms.Count / 2] / (float)h };
                 }
             }
-            HatCache[id] = shape;
+            HatCache[hat] = shape;
             return shape;
         }
 
