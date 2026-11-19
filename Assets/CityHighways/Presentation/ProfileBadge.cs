@@ -3,7 +3,8 @@ using UnityEngine.UIElements;
 
 namespace CityHighways.Presentation
 {
-    /// <summary>Эмблема профиля у имени игрока, нарисованная кодом: звезда, ромб, шестерня, флажок, молния, корона.</summary>
+    /// <summary>Эмблема профиля у имени игрока, нарисованная кодом: звезда, ромб, шестерня, флажок, молния, корона;
+    /// из контейнеров — фура и кубок.</summary>
     public sealed class ProfileBadge : VisualElement
     {
         string _emblem;
@@ -86,6 +87,48 @@ namespace CityHighways.Presentation
                     p.LineTo(c + new Vector2(-r * 0.25f, r));
                     p.LineTo(c + new Vector2(r * 0.55f, -r * 0.2f));
                     p.LineTo(c + new Vector2(r * 0.05f, -r * 0.2f));
+                    p.ClosePath();
+                    p.Fill();
+                    break;
+                case "emblem_truck":
+                    // Фура сбоку: кузов, кабина, два колеса.
+                    p.BeginPath();
+                    p.MoveTo(c + new Vector2(-r, -r * 0.55f));
+                    p.LineTo(c + new Vector2(r * 0.2f, -r * 0.55f));
+                    p.LineTo(c + new Vector2(r * 0.2f, r * 0.35f));
+                    p.LineTo(c + new Vector2(-r, r * 0.35f));
+                    p.ClosePath();
+                    p.Fill();
+                    p.BeginPath();
+                    p.MoveTo(c + new Vector2(r * 0.3f, -r * 0.25f));
+                    p.LineTo(c + new Vector2(r * 0.75f, -r * 0.25f));
+                    p.LineTo(c + new Vector2(r, r * 0.05f));
+                    p.LineTo(c + new Vector2(r, r * 0.35f));
+                    p.LineTo(c + new Vector2(r * 0.3f, r * 0.35f));
+                    p.ClosePath();
+                    p.Fill();
+                    foreach (float x in new[] { -r * 0.6f, r * 0.62f })
+                    {
+                        p.BeginPath();
+                        p.Arc(c + new Vector2(x, r * 0.52f), r * 0.24f, Angle.Degrees(0f), Angle.Degrees(360f));
+                        p.Fill();
+                    }
+                    break;
+                case "emblem_cup":
+                    // Кубок: чаша, ножка, подставка.
+                    p.BeginPath();
+                    p.MoveTo(c + new Vector2(-r * 0.75f, -r));
+                    p.LineTo(c + new Vector2(r * 0.75f, -r));
+                    p.LineTo(c + new Vector2(r * 0.55f, -r * 0.2f));
+                    p.LineTo(c + new Vector2(r * 0.15f, r * 0.1f));
+                    p.LineTo(c + new Vector2(r * 0.15f, r * 0.55f));
+                    p.LineTo(c + new Vector2(r * 0.55f, r * 0.75f));
+                    p.LineTo(c + new Vector2(r * 0.55f, r));
+                    p.LineTo(c + new Vector2(-r * 0.55f, r));
+                    p.LineTo(c + new Vector2(-r * 0.55f, r * 0.75f));
+                    p.LineTo(c + new Vector2(-r * 0.15f, r * 0.55f));
+                    p.LineTo(c + new Vector2(-r * 0.15f, r * 0.1f));
+                    p.LineTo(c + new Vector2(-r * 0.55f, -r * 0.2f));
                     p.ClosePath();
                     p.Fill();
                     break;

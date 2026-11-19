@@ -315,6 +315,7 @@ namespace CityHighways.Presentation
         /// <summary>Что нового в игре — короткие строки для ленты на главной.</summary>
         static readonly string[] News =
         {
+            "Профиль: контейнеры за влияние — одежда, эмблемы, титулы и рамки, восемь вещей бывают только в контейнерах",
             "Магнат: за опасный груз — новая фура (до 5). Плавное вращение поля, раздел «Управление» в настройках, Esc — назад в меню",
             "Магнат: хабы встают в стороне от дорог и рек, на ровной земле — без серой плиты, с подъездом от станции",
             "Профиль: персонаж без розовой каймы и мерцания, свиток и планшет держатся в руке, шляпы и одежда садятся ровно",
@@ -342,7 +343,7 @@ namespace CityHighways.Presentation
         };
 
         /// <summary>Номер выпуска новостей: если больше прочитанного — в уведомлениях «Что нового».</summary>
-        const int NewsVersion = 44;
+        const int NewsVersion = 45;
         const string NewsSeenKey = "CityHighways.NewsSeen";
 
         int _newsIndex;
@@ -615,7 +616,7 @@ namespace CityHighways.Presentation
                 list.Add((MenuIcon.Glyph.Star, $"Задание дня: {Achievements.Today.Title} (+{Achievements.DailyReward} влияния)", OpenProfile));
             if (profile != null)
             {
-                var item = Profiles.Catalog.Where(i => !profile.Owns(i.Id) && i.Price > 0 && i.Price <= profile.wallet)
+                var item = Profiles.Catalog.Where(i => !i.Exclusive && !profile.Owns(i.Id) && i.Price > 0 && i.Price <= profile.wallet)
                     .OrderByDescending(i => i.Price).FirstOrDefault();
                 if (item != null) list.Add((MenuIcon.Glyph.Palette, $"Хватает влияния на «{item.Name}» ({item.Price}) — загляните в профиль", OpenProfile));
             }

@@ -35,6 +35,8 @@ namespace CityHighways.Presentation
         /// <summary>День (yyyy-MM-dd), за который задание дня уже засчитано; сколько всего выполнено.</summary>
         public string dailyDone = "";
         public int dailyTotal;
+        /// <summary>Сколько контейнеров открыто (раздел «Контейнеры» профиля).</summary>
+        public int containersOpened;
 
         public bool HasMark(string mark) => marks != null && marks.Contains(mark);
         public void AddMark(string mark)
@@ -100,13 +102,16 @@ namespace CityHighways.Presentation
         public ShopKind Kind { get; }
         public string Name { get; }
         public int Price { get; }
+        /// <summary>Только из контейнеров: в «Стиле» не продаётся. Цена — ценность (редкость и возврат за дубликат).</summary>
+        public bool Exclusive { get; }
 
-        public ShopItem(string id, ShopKind kind, string name, int price)
+        public ShopItem(string id, ShopKind kind, string name, int price, bool exclusive = false)
         {
             Id = id;
             Kind = kind;
             Name = name;
             Price = price;
+            Exclusive = exclusive;
         }
     }
 
@@ -153,7 +158,17 @@ namespace CityHighways.Presentation
 
             new ShopItem("frame_steel", ShopKind.Frame, "Стальная рамка", 20),
             new ShopItem("frame_neon", ShopKind.Frame, "Неоновая рамка", 30),
-            new ShopItem("frame_gold", ShopKind.Frame, "Золотая рамка", 35)
+            new ShopItem("frame_gold", ShopKind.Frame, "Золотая рамка", 35),
+
+            // Только из контейнеров.
+            new ShopItem("emblem_truck", ShopKind.Emblem, "Фура", 28, true),
+            new ShopItem("emblem_cup", ShopKind.Emblem, "Кубок", 45, true),
+            new ShopItem("title_logist", ShopKind.Title, "Логист от бога", 18, true),
+            new ShopItem("title_highway", ShopKind.Title, "Хозяин трассы", 28, true),
+            new ShopItem("title_mayor", ShopKind.Title, "Почти мэр", 45, true),
+            new ShopItem("frame_violet", ShopKind.Frame, "Фиолетовая рамка", 18, true),
+            new ShopItem("frame_ruby", ShopKind.Frame, "Рубиновая рамка", 28, true),
+            new ShopItem("frame_platinum", ShopKind.Frame, "Платиновая рамка", 45, true)
         };
 
         public static ShopItem Item(string id) => Catalog.FirstOrDefault(i => i.Id == id);
@@ -167,6 +182,9 @@ namespace CityHighways.Presentation
                 case "frame_gold": return new Color(0.98f, 0.78f, 0.25f);
                 case "frame_neon": return new Color(0.30f, 0.95f, 0.90f);
                 case "frame_steel": return new Color(0.70f, 0.76f, 0.84f);
+                case "frame_violet": return new Color(0.66f, 0.42f, 0.98f);
+                case "frame_ruby": return new Color(0.92f, 0.20f, 0.32f);
+                case "frame_platinum": return new Color(0.88f, 0.94f, 1.00f);
                 default: return Color.clear;
             }
         }
@@ -412,6 +430,7 @@ namespace CityHighways.Presentation
         public static string Buy(PlayerProfile profile, ShopItem item)
         {
             if (profile.Owns(item.Id)) return "Уже куплено.";
+            if (item.Exclusive) return "Эта вещь выпадает только из контейнеров.";
             if (profile.wallet < item.Price) return $"Нужно {item.Price} влияния, в кошельке {profile.wallet}.";
             profile.wallet -= item.Price;
             Record(profile, -item.Price, "shop", item.Name);

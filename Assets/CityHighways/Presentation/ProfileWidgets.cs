@@ -173,6 +173,51 @@ namespace CityHighways.Presentation
         }
     }
 
+    /// <summary>Контейнер профиля, нарисованный кодом: ящик с крышкой, ремнями и замком своего цвета.</summary>
+    public sealed class CrateIcon : VisualElement
+    {
+        readonly Color _color;
+
+        public CrateIcon(float size, Color color)
+        {
+            _color = color;
+            pickingMode = PickingMode.Ignore;
+            style.width = size;
+            style.height = size * 0.8f;
+            style.flexShrink = 0f;
+            generateVisualContent += Draw;
+        }
+
+        void Draw(MeshGenerationContext context)
+        {
+            var r = contentRect;
+            if (r.width < 4f) return;
+            var p = context.painter2D;
+            float w = r.width, h = r.height;
+            Color dark = Color.Lerp(_color, Color.black, 0.35f), light = Color.Lerp(_color, Color.white, 0.25f);
+            void Rect(float x0, float y0, float x1, float y1, Color c)
+            {
+                p.fillColor = c;
+                p.BeginPath();
+                p.MoveTo(new Vector2(r.x + x0 * w, r.y + y0 * h));
+                p.LineTo(new Vector2(r.x + x1 * w, r.y + y0 * h));
+                p.LineTo(new Vector2(r.x + x1 * w, r.y + y1 * h));
+                p.LineTo(new Vector2(r.x + x0 * w, r.y + y1 * h));
+                p.ClosePath();
+                p.Fill();
+            }
+            // Тень, корпус, крышка (чуть шире), ремни, замок.
+            Rect(0.10f, 0.92f, 0.90f, 1.00f, new Color(0f, 0f, 0f, 0.25f));
+            Rect(0.12f, 0.38f, 0.88f, 0.94f, _color);
+            Rect(0.12f, 0.38f, 0.88f, 0.46f, dark);
+            Rect(0.08f, 0.14f, 0.92f, 0.40f, light);
+            Rect(0.08f, 0.34f, 0.92f, 0.40f, dark);
+            foreach (float x in new[] { 0.26f, 0.70f }) Rect(x, 0.14f, x + 0.05f, 0.94f, dark);
+            Rect(0.43f, 0.30f, 0.57f, 0.52f, new Color(0.98f, 0.82f, 0.32f));
+            Rect(0.48f, 0.38f, 0.52f, 0.46f, new Color(0.25f, 0.18f, 0.05f));
+        }
+    }
+
     /// <summary>
     /// Анимированная рамка вокруг элемента (превью игрока): мягкое свечение пульсирует, по контуру бегут
     /// яркие «кометы». Цвет — рамки из профиля; без рамки — едва заметный контур.

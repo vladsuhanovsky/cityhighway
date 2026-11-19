@@ -14,7 +14,7 @@ namespace CityHighways.Presentation
         public enum Glyph
         {
             Gamepad, Cap, Globe, Book, Chart, Gear, Moon, Sun, Palette, Bell, Close, Skyline, News, Play, Star, Person, Trophy, Coins,
-            Search, Flame, Snow, Speaker, Monitor, Access, Road, Swap, Document, Envelope, Flag, Clock, Pin, Chevron, Keyboard
+            Search, Flame, Snow, Speaker, Monitor, Access, Road, Swap, Document, Envelope, Flag, Clock, Pin, Chevron, Keyboard, Box
         }
 
         Glyph _glyph;
@@ -307,6 +307,11 @@ namespace CityHighways.Presentation
                     Poly(false, 3, 4, 21, 4, 21, 16, 3, 16);
                     Line(12f, 16f, 12f, 20f);
                     Line(8f, 20.5f, 16f, 20.5f);
+                    break;
+                case Glyph.Box:
+                    Poly(false, 2, 5, 22, 5, 22, 9.5f, 2, 9.5f);
+                    Poly(false, 3.5f, 9.5f, 20.5f, 9.5f, 20.5f, 20.5f, 3.5f, 20.5f);
+                    Line(10f, 12.5f, 14f, 12.5f);
                     break;
                 case Glyph.Keyboard:
                     Poly(false, 2, 6, 22, 6, 22, 18, 2, 18);

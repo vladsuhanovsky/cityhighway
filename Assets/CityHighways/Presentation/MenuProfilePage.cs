@@ -12,9 +12,9 @@ namespace CityHighways.Presentation
     /// Стиль (эмблемы, титулы, рамки с живым превью) и Стата (итоги партий и управление профилями).
     /// Профиль привязан к имени игрока: игрок с таким именем в «Новой игре» получает его оформление и пополняет кошелёк.
     /// </summary>
-    public sealed class MenuProfilePage
+    public sealed partial class MenuProfilePage
     {
-        enum Tab { Character, Achievements, Wallet, Style, Stats }
+        enum Tab { Character, Achievements, Wallet, Style, Containers, Stats }
         enum AchievementFilter { All, Active, Done }
         enum StyleFilter { All, Owned, Affordable }
 
@@ -91,6 +91,7 @@ namespace CityHighways.Presentation
             AddTab(tabs, Tab.Achievements, MenuIcon.Glyph.Trophy, "Достижения");
             AddTab(tabs, Tab.Wallet, MenuIcon.Glyph.Coins, "Кошелёк");
             AddTab(tabs, Tab.Style, MenuIcon.Glyph.Palette, "Стиль");
+            AddTab(tabs, Tab.Containers, MenuIcon.Glyph.Box, "Контейнеры");
             AddTab(tabs, Tab.Stats, MenuIcon.Glyph.Chart, "Стата");
             Root.Add(tabs);
 
@@ -156,6 +157,8 @@ namespace CityHighways.Presentation
 
         public void Rebuild()
         {
+            // Ушли с вкладки посреди открытия — вещь уже выдана, рулетку просто досматривать не нужно.
+            if (_tab != Tab.Containers) FinishSpin(false);
             var profile = Profiles.Active;
             _title.text = "Профиль: " + profile.name;
             _statusLabel.text = _status;
@@ -169,6 +172,7 @@ namespace CityHighways.Presentation
                 case Tab.Achievements: AchievementsTab(profile); break;
                 case Tab.Wallet: WalletTab(profile); break;
                 case Tab.Style: StyleTab(profile); break;
+                case Tab.Containers: ContainersTab(profile); break;
                 default: StatsTab(profile); break;
             }
             // В прокрутке блоки не должны сжиматься: иначе заголовки наезжают на содержимое.
@@ -180,6 +184,7 @@ namespace CityHighways.Presentation
         {
             _time += dt;
             if (_tab == Tab.Character) _turntable.Tick(dt);
+            if (_tab == Tab.Containers) TickContainers(dt);
             foreach (var frame in _frames) frame.Tick(dt);
             float pulse = 1f + 0.03f * Mathf.Sin(_time * 5f);
             foreach (var element in _pulsing) element.style.scale = new Scale(new Vector3(pulse, pulse, 1f));
@@ -671,6 +676,7 @@ namespace CityHighways.Presentation
                 case "daily": return "Задания дня";
                 case "shop": return "Оформление";
                 case "clothing": return "Одежда";
+                case "container": return "Контейнеры";
                 default: return "Прочее";
             }
         }
@@ -755,7 +761,7 @@ namespace CityHighways.Presentation
             int maxSource = 1;
             var groups = history.GroupBy(h => h.source).Select(g => (source: g.Key, sum: g.Sum(h => h.amount))).ToList();
             foreach (var g in groups) maxSource = Mathf.Max(maxSource, Mathf.Abs(g.sum));
-            foreach (var source in new[] { "game", "achievement", "daily", "shop", "clothing" })
+            foreach (var source in new[] { "game", "achievement", "daily", "shop", "clothing", "container" })
             {
                 int sum = groups.Where(g => g.source == source).Sum(g => g.sum);
                 var line = Ui.Row();
@@ -913,7 +919,7 @@ namespace CityHighways.Presentation
             var items = Profiles.Catalog.Where(i => i.Kind == kind).Where(i =>
                 _styleFilter == StyleFilter.All ||
                 (_styleFilter == StyleFilter.Owned && profile.Owns(i.Id)) ||
-                (_styleFilter == StyleFilter.Affordable && !profile.Owns(i.Id) && i.Price <= profile.wallet)).ToList();
+                (_styleFilter == StyleFilter.Affordable && !i.Exclusive && !profile.Owns(i.Id) && i.Price <= profile.wallet)).ToList();
             var title = Ui.SectionTitle($"{caption} · {items.Count}");
             _content.Add(title);
             if (items.Count == 0)
@@ -982,6 +988,12 @@ namespace CityHighways.Presentation
                 button = Btn("Снять", () => { profile.Equip(item.Kind, ""); Profiles.Save(); _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
             else if (owned)
                 button = Btn("Надеть", () => { profile.Equip(item.Kind, item.Id); Profiles.Save(); _preview = null; _status = $"Надето: {item.Name}."; Rebuild(); }, ButtonKind.Secondary, 13f);
+            else if (item.Exclusive)
+            {
+                // В продаже не бывает: только из контейнеров.
+                button = Btn("Из контейнера", () => { _tab = Tab.Containers; Rebuild(); }, ButtonKind.Secondary, 13f);
+                button.tooltip = "Эта вещь выпадает только из контейнеров — вкладка «Контейнеры».";
+            }
             else
             {
                 button = Btn($"Купить · {item.Price}", () =>
