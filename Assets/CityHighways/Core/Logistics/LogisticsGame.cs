@@ -466,6 +466,45 @@ namespace CityHighways.Core
             truck.Cargo != null ? GetCargo(truck.Cargo)?.Kind : truck.PlannedCargo != null ? GetCargo(truck.PlannedCargo)?.Kind : (CargoKind?)null;
 
         /// <summary>
+        /// Путь, по которому груз поедет, когда всё нужное будет построено: кратчайший по всем открытым дорогам карты
+        /// (построенным и нет). Нужен, чтобы показать недоступный сейчас путь. null — точки не связаны дорогами.
+        /// </summary>
+        public List<string> IdealRoute(string from, string to)
+        {
+            if (from == to) return new List<string>();
+            var distance = new Dictionary<string, float> { [from] = 0f };
+            var via = new Dictionary<string, Road>();
+            var open = new SortedSet<(float, string)> { (0f, from) };
+            while (open.Count > 0)
+            {
+                var (du, u) = open.Min;
+                open.Remove(open.Min);
+                if (u == to) break;
+                foreach (var road in Map.RoadsAt(u))
+                {
+                    if (!Board.IsRoadOpen(road.Id)) continue;
+                    string v = road.A == u ? road.B : road.A;
+                    float nd = du + road.Length;
+                    if (distance.TryGetValue(v, out var old) && nd >= old) continue;
+                    if (distance.ContainsKey(v)) open.Remove((old, v));
+                    distance[v] = nd;
+                    via[v] = road;
+                    open.Add((nd, v));
+                }
+            }
+            if (!via.ContainsKey(to)) return null;
+            var route = new List<string>();
+            for (string at = to; at != from;)
+            {
+                var road = via[at];
+                route.Add(road.Id);
+                at = road.A == at ? road.B : road.A;
+            }
+            route.Reverse();
+            return route;
+        }
+
+        /// <summary>
         /// Лучший маршрут по построенным дорогам: длина + плата за чужие + (если avoidJams) прошлогодняя загрузка
         /// сверх пропускной способности + уже запланированные свои фуры. null — не доехать.
         /// </summary>

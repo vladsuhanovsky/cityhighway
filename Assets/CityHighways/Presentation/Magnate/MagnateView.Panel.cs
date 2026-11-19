@@ -38,6 +38,9 @@ namespace CityHighways.Presentation
         int _popupSection;
         /// <summary>Путь груза из открытой карточки груза — подсвечен на карте золотом.</summary>
         List<string> _popupPreview;
+        /// <summary>Путь груза, который сейчас не проехать (красным): дороги, которые мешают, — ярче.</summary>
+        List<string> _popupBlocked;
+        CargoKind? _popupBlockedKind;
 
         // ================================================================== Каркас
 
@@ -437,6 +440,7 @@ namespace CityHighways.Presentation
             _popupKind = null;
             _popupCargo = null;
             _popupPreview = null;
+            _popupBlocked = null;
             Ui.Show(_popup, false);
             PlaceCoach(false);
             if (sound) _app.Sound.Play(Sfx.Close, 0.35f);
@@ -455,6 +459,7 @@ namespace CityHighways.Presentation
         void RefreshPopup()
         {
             _popupPreview = null;
+            _popupBlocked = null;
             if (_popupKind == null) { Ui.Show(_popup, false); PlaceCoach(false); return; }
             if (_popupKind == "cargoDetail")
             {
@@ -704,9 +709,28 @@ namespace CityHighways.Presentation
                 if (cargo.Kind == CargoKind.Hazard && _game.RouteEntersBribeZone(cargo.From, delivery))
                     lines.Add($"Путь идёт через Центр: взятка {_game.Config.HazardBribe} влияния, иначе конфискация");
             }
-            else lines.Add(cargo.Kind == CargoKind.Heavy || cargo.Kind == CargoKind.Oversized
-                ? "Сейчас не довезти: нужны широкие дороги — бетон, мосты, магистрали"
-                : "Сейчас не довезти по открытым дорогам");
+            else
+            {
+                lines.Add(cargo.Kind == CargoKind.Heavy || cargo.Kind == CargoKind.Oversized
+                    ? "Сейчас не довезти: нужны широкие дороги — бетон, мосты, магистрали"
+                    : "Сейчас не довезти по открытым дорогам");
+                // Путь всё равно показываем — красным: где он пройдёт и какие дороги мешают (ярче).
+                var ideal = _game.IdealRoute(cargo.From, cargo.To);
+                if (ideal != null && ideal.Count > 0)
+                {
+                    _popupBlocked = ideal;
+                    _popupBlockedKind = cargo.Kind;
+                    var roads = ideal.Select(id => _game.Map.GetRoad(id)).ToList();
+                    int unbuilt = roads.Count(r => !_game.IsBuilt(r.Id));
+                    int narrow = roads.Count(r => _game.IsBuilt(r.Id) && !_game.Allowed(r, cargo.Kind));
+                    var why = new List<string>();
+                    if (unbuilt > 0) why.Add($"не построено дорог: {unbuilt}");
+                    if (narrow > 0) why.Add(cargo.Kind == CargoKind.Heavy || cargo.Kind == CargoKind.Oversized
+                        ? $"узких или закрытых: {narrow}" : $"закрытых: {narrow}");
+                    lines.Add($"Красным на карте — кратчайший путь ({_game.RouteLength(ideal)} участков); ярко-красные дороги мешают" +
+                              (why.Count > 0 ? " — " + string.Join(", ", why) : "") + ".");
+                }
+            }
             foreach (var line in lines)
             {
                 var label = Hint("• " + line);
@@ -967,7 +991,8 @@ namespace CityHighways.Presentation
 
         /// <summary>
         /// Подсветка: в стройку — доступные дороги, в план — маршруты своих фур (выбранная белым), голубой — путь
-        /// при наведении на станцию, золотой — путь груза из открытой карточки груза.
+        /// при наведении на станцию, золотой — путь груза из открытой карточки груза, красный — путь груза, который
+        /// пока не проехать (ярко-красные — мешающие дороги: не построены, узкие, закрыты).
         /// </summary>
         void RefreshHighlights()
         {
@@ -975,6 +1000,13 @@ namespace CityHighways.Presentation
             _map.PathRoads.Clear();
             if (_popupPreview != null)
                 foreach (var id in _popupPreview) _map.PathRoads[id] = new Color(1f, 0.82f, 0.3f, 0.9f);
+            if (_popupBlocked != null)
+                foreach (var id in _popupBlocked)
+                {
+                    var road = _game.Map.GetRoad(id);
+                    bool blocks = road != null && !_game.Allowed(road, _popupBlockedKind);
+                    _map.PathRoads[id] = blocks ? new Color(1f, 0.18f, 0.16f, 0.95f) : new Color(0.95f, 0.42f, 0.38f, 0.7f);
+                }
             if (!HumanTurn) return;
             var player = _game.CurrentPlayer;
             if (_game.Phase == MagnatePhase.Build)
