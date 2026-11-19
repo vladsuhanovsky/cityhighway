@@ -31,8 +31,10 @@ namespace CityHighways.Presentation
         readonly MapView _map;
         readonly MiniMapView _minimap;
         readonly List<string> _log = new List<string>();
-        /// <summary>Кнопки «Правила» и «Журнал» в верхней строке (к их правому краю прижимаются их окна).</summary>
+        /// <summary>Кнопки «Журнал», «Меню», «Настройки» в правом углу верхней строки (к их правому краю прижимаются их окна).</summary>
         VisualElement _topActions;
+        Button _journalButton;
+        int _logSeen;
         readonly HashSet<CargoKind> _hiddenKinds = new HashSet<CargoKind>();
         VisualElement _layersPanel;
         readonly VisualElement _layersList;
@@ -58,8 +60,13 @@ namespace CityHighways.Presentation
             _game.Log += message =>
             {
                 _log.Add(message);
-                if (_log.Count > 60) _log.RemoveAt(0);
+                if (_log.Count > 60)
+                {
+                    _log.RemoveAt(0);
+                    _logSeen = Math.Max(0, _logSeen - 1);
+                }
                 _dirty = true;
+                RefreshJournalButton();
             };
 
             Root = new VisualElement();
@@ -179,25 +186,24 @@ namespace CityHighways.Presentation
             _players.style.flexGrow = 1f;
             _players.style.overflow = Overflow.Hidden;
             top.Add(_players);
-            // Правила и журнал — в верхней строке, слева от «Обучения»; окна открываются под строкой.
+            // Справа, как в соревновании: «Журнал» (с точкой, когда есть новые записи), «Меню» (обучение, правила,
+            // выход), «Настройки» — в самом углу. Окна журнала и меню открываются под строкой у правого края.
             _topActions = Ui.Row();
             _topActions.style.alignItems = Align.Center;
-            var rules = Ui.Button("Правила", () => TogglePopup("rules", TopSection), ButtonKind.Secondary, 13f);
-            rules.style.width = 96f;
-            rules.style.marginRight = 8f;
-            _topActions.Add(rules);
-            var journal = Ui.Button("Журнал", () => TogglePopup("log", TopSection), ButtonKind.Secondary, 13f);
-            journal.style.width = 96f;
-            journal.style.marginRight = 8f;
-            _topActions.Add(journal);
+            _journalButton = Ui.Button("Журнал", () =>
+            {
+                TogglePopup("log", TopSection);
+                _logSeen = _log.Count;
+                RefreshJournalButton();
+            }, ButtonKind.Ghost, 14f);
+            _journalButton.style.marginRight = 8f;
+            _journalButton.style.minHeight = 40f;
+            _topActions.Add(_journalButton);
+            var menu = new IconButton(IconButton.Glyph.Menu, "Меню", () => TogglePopup("menu", TopSection));
+            menu.style.marginRight = 8f;
+            _topActions.Add(menu);
+            _topActions.Add(new IconButton(IconButton.Glyph.Gear, "Настройки", () => ToggleModal("settings")));
             top.Add(_topActions);
-            var help = Ui.Button("? Обучение", () => StartCoach(), ButtonKind.Ghost, 13f);
-            help.style.width = 110f;
-            help.style.marginRight = 8f;
-            top.Add(help);
-            var menu = Ui.Button("Меню", () => _app.ShowMenu(), ButtonKind.Secondary, 14f);
-            menu.style.width = 96f;
-            top.Add(menu);
 
             BuildBottomBar();
             BuildCoach();
@@ -206,6 +212,8 @@ namespace CityHighways.Presentation
             _results = Overlay();
             Root.Add(_handoff);
             Root.Add(_results);
+            // Настройки и полные правила — поверх всего, даже поверх итогов партии.
+            BuildModals();
         }
 
         static VisualElement Overlay()

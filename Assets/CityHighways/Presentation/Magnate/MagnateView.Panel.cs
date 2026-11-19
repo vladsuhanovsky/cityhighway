@@ -14,7 +14,8 @@ namespace CityHighways.Presentation
     ///   фуры в пути, итог;
     /// - «Грузы [N]» — сколько грузов ждёт на хабах, срочные, по видам;
     /// - «Заказы [N]» — действующие заказы мэрии и ваш прогресс.
-    /// «Правила» и «Журнал» — кнопки в верхней строке (слева от «Обучения»), их окна открываются под ней.
+    /// Справа в верхней строке — «Журнал», «Меню» (обучение, правила, выход) и «Настройки» (MagnateView.Menu.cs);
+    /// окна журнала и меню открываются под ней.
     /// Клик по разделу открывает окно над панелью (одно за раз): список грузов с кнопкой «Выбрать», карточку
     /// груза (правило, маршрут, время, плата, сколько очков принесёт, путь подсвечен на карте), заказы с
     /// прогрессом компаний, правила, журнал, карточку выбранной фуры.
@@ -460,6 +461,7 @@ namespace CityHighways.Presentation
         {
             _popupPreview = null;
             _popupBlocked = null;
+            RefreshJournalButton();
             if (_popupKind == null) { Ui.Show(_popup, false); PlaceCoach(false); return; }
             if (_popupKind == "cargoDetail")
             {
@@ -474,6 +476,7 @@ namespace CityHighways.Presentation
                 case "contracts": FillContracts(); break;
                 case "players": FillPlayers(); break;
                 case "rules": FillRules(); break;
+                case "menu": FillMenu(); break;
                 case "log": FillLog(); break;
                 case "truck": FillTruck(_game.GetTruck(_selectedTruck)); break;
             }
@@ -496,7 +499,7 @@ namespace CityHighways.Presentation
             PlaceCoach(false);
             if (_popupSection == TopSection)
             {
-                // Правила и журнал — под верхней строкой, правым краем у кнопок «Правила»/«Журнал».
+                // Журнал и меню партии — под верхней строкой, правым краем у кнопок справа.
                 _popup.style.top = TopBarHeight + 8f;
                 _popup.style.bottom = StyleKeyword.Auto;
                 _popup.style.maxHeight = new Length(Mathf.Max(240f, height - TopBarHeight - BottomHeight - 24f));
