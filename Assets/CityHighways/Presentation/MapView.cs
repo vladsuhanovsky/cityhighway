@@ -183,6 +183,13 @@ namespace CityHighways.Presentation
         /// </summary>
         public Func<Road, string> RoadBadge;
         public Func<Road, bool> RoadBadgeMuted;
+        /// <summary>Цвет плашки дороги (null — обычная золотистая), например цвет игрока у плашки способности.</summary>
+        public Func<Road, Color?> RoadBadgeColor;
+        /// <summary>
+        /// Подсветка дорог, на которые действует способность владельца (мосты Мостовика, дороги Сборщика пошлин):
+        /// мягкий пульсирующий ореол его цвета. null — нет подсветки.
+        /// </summary>
+        public Func<Road, Color?> AbilityGlow;
         readonly Dictionary<string, Label> _roadBadges = new Dictionary<string, Label>();
         readonly Dictionary<string, string> _roadBadgeState = new Dictionary<string, string>();
         VisualElement _badgeLayer;
@@ -994,8 +1001,11 @@ namespace CityHighways.Presentation
                             PositionRoadBadge(road, badge);
                         }
                         badge.text = text;
-                        badge.style.backgroundColor = muted ? BadgeMutedBack : BadgeBack;
-                        badge.style.color = muted ? new Color(0.75f, 0.77f, 0.8f) : new Color(0.12f, 0.10f, 0.06f);
+                        var custom = !muted && RoadBadgeColor != null ? RoadBadgeColor(road) : null;
+                        badge.style.backgroundColor = muted ? BadgeMutedBack : custom ?? BadgeBack;
+                        // На цвете игрока — тёмный или белый текст, смотря по яркости.
+                        bool lightBack = !custom.HasValue || custom.Value.r * 0.3f + custom.Value.g * 0.59f + custom.Value.b * 0.11f > 0.55f;
+                        badge.style.color = muted ? new Color(0.75f, 0.77f, 0.8f) : lightBack ? new Color(0.12f, 0.10f, 0.06f) : Color.white;
                         Ui.Border(badge, 1f, muted ? new Color(1f, 1f, 1f, 0.15f) : new Color(0f, 0f, 0f, 0.45f));
                         Ui.Show(badge, true);
                     }
@@ -1715,6 +1725,12 @@ namespace CityHighways.Presentation
             {
                 glow = new Color(Glow.r, Glow.g, Glow.b, 0.50f + 0.25f * Mathf.Sin(PulseTime * 3.2f));
                 glowWidth = 6f;
+            }
+            // Способность владельца действует на эту дорогу (мост Мостовика, дорога Сборщика пошлин) — его цветом.
+            else if (owner.HasValue && AbilityGlow != null && AbilityGlow(road) is Color ability)
+            {
+                glow = new Color(ability.r, ability.g, ability.b, 0.40f + 0.22f * Mathf.Sin(PulseTime * 2.6f));
+                glowWidth = road.IsBridge ? 13f : 9f;
             }
             // Субсидия мэрии: свободные мосты подсвечены голубым.
             else if (look == RoadLook.Idle && road.IsBridge && _game.CurrentEvent != null && _game.CurrentEvent.Kind == CityEventKind.Subsidy)

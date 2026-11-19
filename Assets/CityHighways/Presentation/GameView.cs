@@ -217,6 +217,31 @@ namespace CityHighways.Presentation
             }
         }
 
+        /// <summary>
+        /// Способности на карте: мосты Мостовика подсвечены его цветом и подписаны «+N» (столько очков он за них
+        /// получит), дороги Сборщика пошлин — мягким ореолом его цвета (проезд по ним дороже). Соперники видят,
+        /// чья это выгода.
+        /// </summary>
+        void SetupAbilityMarks()
+        {
+            var game = _game;
+            CharacterKind? OwnerCharacter(Road road)
+            {
+                var owner = game.GetRoadOwner(road.Id);
+                if (!owner.HasValue || owner.Value < 0 || owner.Value >= game.Players.Count) return null;
+                return game.Players[owner.Value].Character;
+            }
+            bool Applies(Road road)
+            {
+                var kind = OwnerCharacter(road);
+                return kind == CharacterKind.Bridger && road.IsBridge || kind == CharacterKind.Tollman;
+            }
+            _map.AbilityGlow = road => Applies(road) ? Palette.PlayerColor(game.GetRoadOwner(road.Id).Value) : (Color?)null;
+            _map.RoadBadge = road => OwnerCharacter(road) == CharacterKind.Bridger && road.IsBridge && game.Config.BridgerPointsPerBridge > 0
+                ? $"+{game.Config.BridgerPointsPerBridge}" : null;
+            _map.RoadBadgeColor = road => game.GetRoadOwner(road.Id) is int owner ? Palette.PlayerColor(owner) : (Color?)null;
+        }
+
         void ApplyLayers()
         {
             if (_game == null) return;
@@ -1081,6 +1106,7 @@ namespace CityHighways.Presentation
             _map.SetGame(_game);
             Setup3D();
             ApplyLayers();
+            SetupAbilityMarks();
             _minimap.SetGame(_game);
             bool minimap = _app.Display == null || _app.Display.showMinimap;
             _minimap.style.display = minimap ? DisplayStyle.Flex : DisplayStyle.None;

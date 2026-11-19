@@ -82,7 +82,7 @@ namespace CityHighways.Presentation
             foreach (var slot in CharacterCatalog.Slots)
                 foreach (var item in CharacterCatalog.ItemsIn(slot, gender))
                     if (item.price > 0) list.Add(new LootItem { Id = item.id, Name = item.name, Value = item.price, Clothing = item });
-            foreach (var item in Profiles.Catalog)
+            foreach (var item in Profiles.Catalog.Where(i => !i.Mastery))
                 list.Add(new LootItem { Id = item.Id, Name = item.Name, Value = item.Price, Style = item });
             return list;
         }

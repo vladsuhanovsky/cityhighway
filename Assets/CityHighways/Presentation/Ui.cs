@@ -97,6 +97,40 @@ namespace CityHighways.Presentation
         /// Единое появление контента при смене вкладки или раздела: проявление и подъём на 14 px за 0,28 с.
         /// Вешайте на контейнер раздела, а не на интерактивные плитки (у тех свои переходы).
         /// </summary>
+        /// <summary>
+        /// «Выпрыгивание»: масштаб 0 → 1,1 → 1 за durationMs (из центра элемента), с задержкой delayMs.
+        /// С «меньше анимаций» элемент просто появляется.
+        /// </summary>
+        public static void PopIn(VisualElement e, long delayMs = 0, float durationMs = 420f)
+        {
+            if (e == null) return;
+            e.style.transitionDuration = new StyleList<TimeValue>(new List<TimeValue> { new TimeValue(0f) });
+            if (ReducedMotion)
+            {
+                e.style.scale = new Scale(Vector3.one);
+                e.style.opacity = 1f;
+                return;
+            }
+            e.style.transformOrigin = new TransformOrigin(Length.Percent(50f), Length.Percent(60f), 0f);
+            e.style.scale = new Scale(Vector3.zero);
+            e.style.opacity = 0f;
+            float start = -1f;
+            IVisualElementScheduledItem item = null;
+            item = e.schedule.Execute(() =>
+            {
+                float now = Time.realtimeSinceStartup;
+                if (start < 0f) start = now;
+                float t = Mathf.Clamp01((now - start) * 1000f / durationMs);
+                // Две части: до 1,1 с замедлением (65 % времени), потом мягко назад к 1.
+                float scale = t < 0.65f
+                    ? 1.1f * (1f - Mathf.Pow(1f - t / 0.65f, 3f))
+                    : Mathf.Lerp(1.1f, 1f, EaseOutCubic((t - 0.65f) / 0.35f));
+                e.style.scale = new Scale(new Vector3(scale, scale, 1f));
+                e.style.opacity = Mathf.Clamp01(t * 3f);
+                if (t >= 1f) item?.Pause();
+            }).Every(16).StartingIn(delayMs);
+        }
+
         public static void Appear(VisualElement e, long delayMs = 0)
         {
             if (e == null) return;

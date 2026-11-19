@@ -47,6 +47,9 @@ namespace CityHighways.Presentation
         public List<long> appliedActions = new List<long>();
         public bool cloudBanned;
         public string cloudBanReason = "";
+        /// <summary>Мастерство персонажей: счётчики по каждому и открытые узлы древа (CharacterMastery).</summary>
+        public List<CharacterProgress> characterProgress = new List<CharacterProgress>();
+        public List<string> masteryDone = new List<string>();
 
         public bool HasMark(string mark) => marks != null && marks.Contains(mark);
         public void AddMark(string mark)
@@ -114,14 +117,17 @@ namespace CityHighways.Presentation
         public int Price { get; }
         /// <summary>Только из контейнеров: в «Стиле» не продаётся. Цена — ценность (редкость и возврат за дубликат).</summary>
         public bool Exclusive { get; }
+        /// <summary>Только за мастерство персонажа (древо в профиле): не продаётся и из контейнеров не выпадает.</summary>
+        public bool Mastery { get; }
 
-        public ShopItem(string id, ShopKind kind, string name, int price, bool exclusive = false)
+        public ShopItem(string id, ShopKind kind, string name, int price, bool exclusive = false, bool mastery = false)
         {
             Id = id;
             Kind = kind;
             Name = name;
             Price = price;
-            Exclusive = exclusive;
+            Exclusive = exclusive || mastery;
+            Mastery = mastery;
         }
     }
 
@@ -178,7 +184,15 @@ namespace CityHighways.Presentation
             new ShopItem("title_mayor", ShopKind.Title, "Почти мэр", 45, true),
             new ShopItem("frame_violet", ShopKind.Frame, "Фиолетовая рамка", 18, true),
             new ShopItem("frame_ruby", ShopKind.Frame, "Рубиновая рамка", 28, true),
-            new ShopItem("frame_platinum", ShopKind.Frame, "Платиновая рамка", 45, true)
+            new ShopItem("frame_platinum", ShopKind.Frame, "Платиновая рамка", 45, true),
+
+            // Только за мастерство персонажей (ветка «Подмастерье»).
+            new ShopItem("title_m_lucky", ShopKind.Title, "Баловень судьбы", 30, mastery: true),
+            new ShopItem("title_m_foreman", ShopKind.Title, "Бригадир года", 30, mastery: true),
+            new ShopItem("title_m_insurer", ShopKind.Title, "Без рисков", 30, mastery: true),
+            new ShopItem("title_m_tollman", ShopKind.Title, "Король шлагбаумов", 30, mastery: true),
+            new ShopItem("title_m_official", ShopKind.Title, "Свой человек в мэрии", 30, mastery: true),
+            new ShopItem("title_m_bridger", ShopKind.Title, "Мастер мостов", 30, mastery: true)
         };
 
         public static ShopItem Item(string id) => Catalog.FirstOrDefault(i => i.Id == id);
@@ -448,6 +462,7 @@ namespace CityHighways.Presentation
         public static string Buy(PlayerProfile profile, ShopItem item)
         {
             if (profile.Owns(item.Id)) return "Уже куплено.";
+            if (item.Mastery) return "Эта вещь — награда за мастерство персонажа.";
             if (item.Exclusive) return "Эта вещь выпадает только из контейнеров.";
             if (profile.wallet < item.Price) return $"Нужно {item.Price} влияния, в кошельке {profile.wallet}.";
             profile.wallet -= item.Price;
@@ -503,6 +518,8 @@ namespace CityHighways.Presentation
             public List<Achievement> Unlocked;
             public bool DailyDone;
             public int Bonus;
+            /// <summary>Узлы древа мастерства, открытые этой партией.</summary>
+            public List<MasteryNode> Mastery;
         }
 
         /// <summary>
@@ -538,10 +555,12 @@ namespace CityHighways.Presentation
                 var outcome = Achievements.Apply(profile, GameFacts.Of(game, i), DateTime.Now);
                 foreach (var achievement in outcome.Unlocked) Record(profile, achievement.Reward, "achievement", achievement.Title);
                 if (outcome.DailyDone) Record(profile, Achievements.DailyReward, "daily", Achievements.Today.Title);
+                // Мастерство персонажа: счётчики и новые узлы древа (награды — сразу в профиль).
+                var mastery = CharacterMastery.AfterGame(profile, GameFacts.Of(game, i));
                 credits.Add(new Credit
                 {
                     Profile = profile.name, Amount = Math.Max(0, player.Influence),
-                    Unlocked = outcome.Unlocked, DailyDone = outcome.DailyDone, Bonus = outcome.Reward
+                    Unlocked = outcome.Unlocked, DailyDone = outcome.DailyDone, Bonus = outcome.Reward, Mastery = mastery
                 });
             }
             if (credits.Count > 0) Save();

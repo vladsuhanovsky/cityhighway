@@ -16,6 +16,8 @@ namespace CityHighways.Presentation
         public int Completed;
         public int Failed;
         public int Bridges;
+        /// <summary>Сколько дорог у игрока к концу партии.</summary>
+        public int RoadsBuilt;
         public int TollsEarned;
         public int NetworkDistricts;
         public int BribesGiven;
@@ -73,6 +75,7 @@ namespace CityHighways.Presentation
                 Completed = score.CompletedContracts,
                 Failed = score.FailedContracts,
                 Bridges = player.Roads.Count(r => r.IsBridge),
+                RoadsBuilt = player.Roads.Count,
                 TollsEarned = score.TollsEarned,
                 NetworkDistricts = score.NetworkDistricts,
                 BribesGiven = player.BribesGiven,

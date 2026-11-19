@@ -14,7 +14,7 @@ namespace CityHighways.Presentation
     /// </summary>
     public sealed partial class MenuProfilePage
     {
-        enum Tab { Character, Achievements, Wallet, Style, Containers, Stats }
+        enum Tab { Character, Achievements, Wallet, Style, Containers, Mastery, Stats }
         enum AchievementFilter { All, Active, Done }
         enum StyleFilter { All, Owned, Affordable }
 
@@ -110,6 +110,7 @@ namespace CityHighways.Presentation
             AddTab(tabs, Tab.Wallet, MenuIcon.Glyph.Coins, "Кошелёк");
             AddTab(tabs, Tab.Style, MenuIcon.Glyph.Palette, "Стиль");
             AddTab(tabs, Tab.Containers, MenuIcon.Glyph.Box, "Контейнеры");
+            AddTab(tabs, Tab.Mastery, MenuIcon.Glyph.Cap, "Мастерство");
             AddTab(tabs, Tab.Stats, MenuIcon.Glyph.Chart, "Стата");
             Root.Add(tabs);
 
@@ -197,6 +198,7 @@ namespace CityHighways.Presentation
                 case Tab.Wallet: WalletTab(profile); break;
                 case Tab.Style: StyleTab(profile); break;
                 case Tab.Containers: ContainersTab(profile); break;
+                case Tab.Mastery: MasteryTab(profile); break;
                 default: StatsTab(profile); break;
             }
             // В прокрутке блоки не должны сжиматься: иначе заголовки наезжают на содержимое.
@@ -705,6 +707,7 @@ namespace CityHighways.Presentation
                 case "clothing": return "Одежда";
                 case "container": return "Контейнеры";
                 case "admin": return "От разработчика";
+                case "mastery": return "Мастерство";
                 default: return "Прочее";
             }
         }
@@ -789,7 +792,7 @@ namespace CityHighways.Presentation
             int maxSource = 1;
             var groups = history.GroupBy(h => h.source).Select(g => (source: g.Key, sum: g.Sum(h => h.amount))).ToList();
             foreach (var g in groups) maxSource = Mathf.Max(maxSource, Mathf.Abs(g.sum));
-            foreach (var source in new[] { "game", "achievement", "daily", "shop", "clothing", "container" })
+            foreach (var source in new[] { "game", "achievement", "daily", "shop", "clothing", "container", "mastery" })
             {
                 int sum = groups.Where(g => g.source == source).Sum(g => g.sum);
                 var line = Ui.Row();
@@ -1016,6 +1019,12 @@ namespace CityHighways.Presentation
                 button = Btn("Снять", () => { profile.Equip(item.Kind, ""); Profiles.Save(); _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
             else if (owned)
                 button = Btn("Надеть", () => { profile.Equip(item.Kind, item.Id); Profiles.Save(); _preview = null; _status = $"Надето: {item.Name}."; Rebuild(); }, ButtonKind.Secondary, 13f);
+            else if (item.Mastery)
+            {
+                // Награда древа мастерства: ни купить, ни выиграть в контейнере.
+                button = Btn("За мастерство", () => { _tab = Tab.Mastery; Rebuild(); }, ButtonKind.Secondary, 13f);
+                button.tooltip = "Титул персонажа за ветку «Подмастерье» — вкладка «Мастерство».";
+            }
             else if (item.Exclusive)
             {
                 // В продаже не бывает: только из контейнеров.

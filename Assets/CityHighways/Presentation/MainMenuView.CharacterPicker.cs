@@ -259,6 +259,13 @@ namespace CityHighways.Presentation
                 right.Add(bar);
             }
             body.Add(right);
+            // Текст карточки появляется вслед за аватаром, строка за строкой.
+            long delay = 160;
+            foreach (var child in right.Children())
+            {
+                Ui.Appear(child, delay);
+                delay += 45;
+            }
             body.Add(Arrow("›", () => FlipCharacter(1)));
             panel.Add(body);
 
@@ -300,6 +307,7 @@ namespace CityHighways.Presentation
                 box.style.alignItems = Align.Center;
                 box.style.justifyContent = Justify.Center;
                 box.Add(new CharacterIcon(160f, kind, accent));
+                Ui.PopIn(box);
                 return box;
             }
             var picture = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -307,7 +315,8 @@ namespace CityHighways.Presentation
             picture.style.height = 330f;
             picture.style.backgroundImage = new StyleBackground(portrait);
             picture.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
-            Ui.Appear(picture);
+            // Аватар «выпрыгивает»: 0 → 1,1 → 1.
+            Ui.PopIn(picture);
             return picture;
         }
 
