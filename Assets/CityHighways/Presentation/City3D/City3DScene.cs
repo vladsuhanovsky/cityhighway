@@ -547,15 +547,23 @@ namespace CityHighways.Presentation
             foreach (var line in _map.Rivers)
             {
                 if (line.Count < 2) continue;
-                var raw = line.Select(p => BoardLayout.World(p.X, p.Y)).ToList();
+                // Почти совпадающие точки убираем: сплайн на крошечном отрезке после длинного «перехлёстывает» назад,
+                // и продолжение реки за край карты разворачивалось внутрь (в Амстердаме 30-метровый хвост канала
+                // прошёл через весь город — по станциям NDSM и Вестерпарк).
+                var raw = new List<Vector3>();
+                foreach (var point in line.Select(p => BoardLayout.World(p.X, p.Y)))
+                    if (raw.Count == 0 || Flat(point - raw[raw.Count - 1]) > MinRiverStep) raw.Add(point);
+                    else raw[raw.Count - 1] = point;                       // крайняя точка важнее (она у края карты)
+                if (raw.Count < 2) continue;
                 bool startAtEdge = AtMapEdge(line[0].X, line[0].Y), endAtEdge = AtMapEdge(line[line.Count - 1].X, line[line.Count - 1].Y);
                 // Сначала сглаживаем само русло, и только потом достраиваем прямые продолжения. Раньше 30-метровый
                 // хвост входил в сплайн: рядом с коротким отрезком у края касательная становилась огромной, и кривая
                 // уходила от края внутрь карты почти на 2 м прямым «языком» — вода ложилась на дома (их ставят
                 // по настоящему руслу), а у края получался кривой излом.
                 var smooth = Smooth(raw, 5);
-                var startDir = (smooth[0] - smooth[1]).normalized;
-                var endDir = (smooth[smooth.Count - 1] - smooth[smooth.Count - 2]).normalized;
+                // Направление продолжения — по исходным точкам (по горизонтали): у сплайна последний шаг может смотреть назад.
+                var startDir = FlatDir(raw[0] - raw[1]);
+                var endDir = FlatDir(raw[raw.Count - 1] - raw[raw.Count - 2]);
                 smooth.Insert(0, smooth[0] + startDir * (startAtEdge ? 30f : half * 0.6f));
                 smooth.Add(smooth[smooth.Count - 1] + endDir * (endAtEdge ? 30f : half * 0.6f));
                 _riverLines.Add(smooth);
@@ -617,6 +625,17 @@ namespace CityHighways.Presentation
             // Коллайдер на слое Water — по нему RoadBuilder находит реку лучом (LayerMask «Water»).
             if (waterMesh.vertexCount > 0) waterObject.AddComponent<MeshCollider>().sharedMesh = waterMesh;
             AddMesh("Embankments", banks.ToMesh("City3D Embankments"), _buildings, _root.transform, true);
+        }
+
+        /// <summary>Шаг русла меньше этого (м) — точка-дубль: сплайн на таком отрезке перехлёстывает.</summary>
+        const float MinRiverStep = 0.15f;
+
+        static float Flat(Vector3 v) => new Vector2(v.x, v.z).magnitude;
+
+        static Vector3 FlatDir(Vector3 v)
+        {
+            v.y = 0f;
+            return v.sqrMagnitude > 1e-10f ? v.normalized : Vector3.forward;
         }
 
         /// <summary>Точка реки у края карты (там река уходит за доску), а не внутри (впадает в другую реку).</summary>
