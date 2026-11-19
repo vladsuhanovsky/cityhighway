@@ -161,7 +161,8 @@ namespace CityHighways.Core
                     if (!mine && !game.Allowed(road, kind)) continue;
                     if (mine && (kind == CargoKind.Heavy || kind == CargoKind.Oversized) && !game.IsWide(road)) continue;
                     string v = road.A == u ? road.B : road.A;
-                    float cost = road.Length;
+                    // Своя дорога (и та, что бот примеряет к покупке) проходится быстрее — как в движении.
+                    float cost = mine && road.Length >= 2 ? Math.Max(1, road.Length - game.Config.OwnRoadDiscount) : game.StepCost(road, me);
                     var owner = game.Board.GetRoadOwner(road.Id);
                     if (!mine && owner.HasValue && owner != me && owner != game.PublicOwner) cost += game.Config.TollPerRoad * 1.5f;
                     if (!mine && game.LastTraffic(road.Id) >= game.Capacity(road)) cost += 2f;

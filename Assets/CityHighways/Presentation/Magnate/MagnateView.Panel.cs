@@ -166,8 +166,11 @@ namespace CityHighways.Presentation
             var list = Ui.Row();
             list.style.flexWrap = UnityEngine.UIElements.Wrap.Wrap;
             list.style.marginTop = 4f;
-            foreach (var p in _game.Players)
+            // В порядке хода раунда: первыми ходят отстающие — номер перед именем.
+            int position = 0;
+            foreach (var p in _game.TurnOrder.Select(i => _game.Players[i]))
             {
+                position++;
                 bool current = p.Index == _game.CurrentPlayerIndex && _game.Phase != MagnatePhase.GameOver;
                 var chip = Ui.Row();
                 chip.style.alignItems = Align.Center;
@@ -181,7 +184,7 @@ namespace CityHighways.Presentation
                 if (current) Ui.Border(dot, 1.5f, Color.white);
                 dot.style.marginRight = 4f;
                 chip.Add(dot);
-                chip.Add(Ui.Text($"{p.Name} {p.Score}", 12f, current ? Theme.Text : Theme.TextDim, current));
+                chip.Add(Ui.Text($"{position}. {p.Name} {p.Score}", 12f, current ? Theme.Text : Theme.TextDim, current));
                 list.Add(chip);
             }
             players.Add(list);
@@ -258,7 +261,8 @@ namespace CityHighways.Presentation
             if (player.IsBot)
             {
                 card.Add(Header(player.Name, color));
-                card.Add(Hint(_game.Phase == MagnatePhase.Build ? "Строит дороги и развивает хабы…" : "Планирует маршруты…"));
+                card.Add(Hint(_game.IsOpeningRound ? "Раунд стройки: выбирает, где построить дорогу…"
+                    : _game.Phase == MagnatePhase.Build ? "Строит дороги и развивает хабы…" : "Планирует маршруты…"));
                 return;
             }
             if (_awaitingHandoff)
@@ -810,7 +814,8 @@ namespace CityHighways.Presentation
 
                 var head = Ui.Row();
                 head.style.alignItems = Align.Center;
-                var name = Ui.Text(p.Name + (p.IsBot ? " · бот" : "") + (current ? " · ходит" : ""), 15f, color, true);
+                int turn = _game.TurnOrder.ToList().IndexOf(p.Index) + 1;
+                var name = Ui.Text(p.Name + (p.IsBot ? " · бот" : "") + (current ? " · ходит" : $" · ход {turn}-й"), 15f, color, true);
                 name.style.flexGrow = 1f;
                 name.style.flexShrink = 1f;
                 head.Add(name);
@@ -945,6 +950,7 @@ namespace CityHighways.Presentation
             var player = _game.CurrentPlayer;
             if (_game.Phase == MagnatePhase.Build)
             {
+                if (_game.OpeningRoadsLeft <= 0) return; // в раунде стройки дорога уже куплена
                 foreach (var road in _game.Map.Roads)
                     if (!_game.IsBuilt(road.Id) && _game.Board.IsRoadOpen(road.Id) && _game.BuildCost(road) <= player.BuildPoints)
                         _map.Affordable.Add(road.Id);

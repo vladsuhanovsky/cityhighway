@@ -235,7 +235,8 @@ namespace CityHighways.Presentation
             _map.HubIcons = true;
             _map.FocusExempt = id => _game.HubAt(id) != null;
             // Цена свободной улицы в очках стройки — плашкой на дороге, только в свою стройку.
-            _map.RoadBadge = road => Has(Layer.RoadCost) && _game.Phase == MagnatePhase.Build && HumanTurn && !_game.IsBuilt(road.Id)
+            // В раунде стройки, когда своя дорога уже куплена, цены не нужны.
+            _map.RoadBadge = road => Has(Layer.RoadCost) && _game.Phase == MagnatePhase.Build && HumanTurn && !_game.IsBuilt(road.Id) && _game.OpeningRoadsLeft > 0
                 ? _game.BuildCost(road).ToString() : null;
             _map.RoadBadgeMuted = road => _game.BuildCost(road) > _game.CurrentPlayer.BuildPoints;
             _map.SetGame(_game.Board);
@@ -918,7 +919,8 @@ namespace CityHighways.Presentation
             card.style.minWidth = 620f;
             var ranking = _game.Players.OrderByDescending(p => p.Score).ToList();
             card.Add(Ui.Text($"Победил {ranking[0].Name}!", 28f, Palette.PlayerColor(ranking[0].Index), true));
-            var sub = Ui.Text($"{_game.Map.Name}, {_game.Config.Rounds} раундов, сложность «{MagnateConfig.Title(_game.Config.Difficulty)}»", 14f, Theme.TextDim);
+            string rounds = _game.Config.OpeningBuildRound ? $"раунд стройки и {_game.Config.Rounds} раундов перевозок" : $"{_game.Config.Rounds} раундов";
+            var sub = Ui.Text($"{_game.Map.Name}, {rounds}, сложность «{MagnateConfig.Title(_game.Config.Difficulty)}»", 14f, Theme.TextDim);
             sub.style.marginBottom = 16f;
             card.Add(sub);
             int place = 1;

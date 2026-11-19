@@ -149,7 +149,7 @@ namespace CityHighways.Presentation
             new Achievement { Id = "mg_win", Title = "Логистический магнат", Description = "Магнат: выиграйте партию.", Reward = 6, Check = f => f.Won },
             new Achievement { Id = "mg_nojam", Title = "Зелёная волна", Description = "Магнат: доставьте 6 грузов и ни разу не встаньте в пробку.", Reward = 6, Check = f => f.Delivered >= 6 && f.Jams == 0 },
             new Achievement { Id = "mg_cold", Title = "Холодная цепь", Description = "Магнат: довезите вовремя 4 скоропортящихся груза.", Reward = 5, Check = f => f.PerishableOnTime >= 4 },
-            new Achievement { Id = "mg_hub", Title = "Мегахаб", Description = "Магнат: разовьите хаб до 5-го уровня.", Reward = 6, Check = f => f.MaxHubLevel >= 5 },
+            new Achievement { Id = "mg_hub", Title = "Мегахаб", Description = "Магнат: владейте хабом 5-го уровня в конце партии (владелец — кто вложил в хаб больше всех).", Reward = 6, Check = f => f.MaxHubLevel >= 5 },
             new Achievement { Id = "mg_contracts", Title = "Подрядчик мэрии", Description = "Магнат: первым выполните 2 заказа мэрии за партию.", Reward = 5, Check = f => f.ContractsWon >= 2 },
             new Achievement { Id = "mg_legend", Title = "Легенда дорог", Description = "Магнат: поднимите репутацию до уровня «Легенда».", Reward = 8, Check = f => f.Reputation == ReputationLevel.Legendary },
             new Achievement { Id = "mg_expert", Title = "Эксперт", Description = "Магнат: выиграйте на сложности «Эксперт».", Reward = 10, Check = f => f.Won && f.Difficulty == MagnateDifficulty.Expert },
