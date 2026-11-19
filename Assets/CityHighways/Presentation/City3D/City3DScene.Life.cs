@@ -138,6 +138,7 @@ namespace CityHighways.Presentation
                 float direction = WidestGap(location.Id, center);
                 var forward = new Vector3(Mathf.Cos(direction), 0f, Mathf.Sin(direction));
                 var at = center + forward * 0.105f;
+                at.y = Relief.At(at.x, at.z);
                 // Вход (−Z модели) — к перекрёстку.
                 float yaw = -direction * Mathf.Rad2Deg + 90f;
                 string key = _map.GetDistrict(location.DistrictId)?.IsExpansion == true ? location.DistrictId : "_";

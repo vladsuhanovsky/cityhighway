@@ -79,8 +79,12 @@ namespace CityHighways.Presentation
 
         struct Seg { public Vector2 A, B; }
 
-        public static Vector3 ToWorld(Vector2 field, float y = 0f) =>
-            new Vector3(field.x / PixelsPerUnit - BoardLayout.WorldWidth / 2f, y, BoardLayout.WorldDepth / 2f - field.y / PixelsPerUnit);
+        /// <summary>Точка поля в мире; y — высота над землёй (с рельефом 3D-города).</summary>
+        public static Vector3 ToWorld(Vector2 field, float y = 0f)
+        {
+            float x = field.x / PixelsPerUnit - BoardLayout.WorldWidth / 2f, z = BoardLayout.WorldDepth / 2f - field.y / PixelsPerUnit;
+            return new Vector3(x, y + Relief.At(x, z), z);
+        }
 
         public static float Hash(int x, int y, int salt)
         {

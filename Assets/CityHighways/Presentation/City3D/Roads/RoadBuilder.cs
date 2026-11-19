@@ -266,10 +266,14 @@ namespace CityHighways.Presentation
             for (int i = 1; i <= count; i++)
             {
                 float at = Mathf.Lerp(span.From, span.To, i / (float)(count + 1));
+                // Дно — на настоящей высоте воды (линия дороги на рельефе может идти выше), верх — под полотном.
+                var point = road.PointAt(at);
+                float pierHeight = point.y + prefabs.deckTop - prefabs.deckThickness - bottom;
+                if (pierHeight <= 0f) continue;
                 var go = Instantiate(prefabs.pierPrefab, road.Root.transform);
                 go.name = "Pier";
-                go.transform.SetPositionAndRotation(road.PointAt(at) + Vector3.up * bottom, rotation);
-                var scale = new Vector3(prefabs.pierDiameter, height, prefabs.pierDiameter);
+                go.transform.SetPositionAndRotation(new Vector3(point.x, bottom, point.z), rotation);
+                var scale = new Vector3(prefabs.pierDiameter, pierHeight, prefabs.pierDiameter);
                 go.transform.localScale = scale;
                 road.Growing.Add((go.transform, scale, at, true));
             }

@@ -19,6 +19,20 @@ namespace CityHighways.Presentation
 
         public int VertexCount => _vertices.Count;
 
+        /// <summary>
+        /// Положить построенное на рельеф: к высоте каждой вершины прибавить высоту земли под ней (для плоских
+        /// вещей — земли, перекрёстков, декалей). Нормали остаются как были: склоны пологие.
+        /// </summary>
+        public void Drape(System.Func<float, float, float> height)
+        {
+            for (int i = 0; i < _vertices.Count; i++)
+            {
+                var v = _vertices[i];
+                v.y += height(v.x, v.z);
+                _vertices[i] = v;
+            }
+        }
+
         /// <summary>Четырёхугольник a-b-c-d по часовой стрелке, если смотреть на лицевую сторону (так Unity видит грань).</summary>
         public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Rect uv)
         {

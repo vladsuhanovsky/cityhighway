@@ -149,6 +149,10 @@ namespace CityHighways.Presentation
             _quality = quality;
             SetupRendering(quality);
             CreateMaterials(plan);
+            // Рельеф: сначала сглаженные русла (по ним долины), затем поле высот — и всё дальнейшее встаёт на холмы.
+            PrepareRiverLines();
+            _relief = new ReliefField(_map, _riverLines, RiverWidth / 2f + BankWidth);
+            Relief.Use(_relief);
             BuildGround();
             BuildDecals(plan);
             BuildRivers();
@@ -419,22 +423,26 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Земля — плита с местностью сверху и тёмными торцами (поле лежит на «столе», как раньше).</summary>
+        ReliefField _relief;
+
         void BuildGround()
         {
             const float m = TerrainTexture.Margin, span = 1f + 2f * m;
             var top = new MeshBuilder();
-            const int cells = 8; // несколько клеток — чтобы тени и туман ложились ровнее
-            for (int iy = 0; iy < cells; iy++)
-            for (int ix = 0; ix < cells; ix++)
+            // Сетка по рельефу: клетка ~7 см — вдвое мельче полосы вдоль дорог, холмы и подрезки под дорогами видны.
+            const int cellsX = 240, cellsY = 136;
+            for (int iy = 0; iy < cellsY; iy++)
+            for (int ix = 0; ix < cellsX; ix++)
             {
-                float x0 = -m + span * ix / cells, x1 = -m + span * (ix + 1) / cells;
-                float y0 = -m + span * iy / cells, y1 = -m + span * (iy + 1) / cells;
+                float x0 = -m + span * ix / cellsX, x1 = -m + span * (ix + 1) / cellsX;
+                float y0 = -m + span * iy / cellsY, y1 = -m + span * (iy + 1) / cellsY;
                 var a = BoardLayout.World(x0, y1); var b = BoardLayout.World(x0, y0);
                 var c = BoardLayout.World(x1, y0); var d = BoardLayout.World(x1, y1);
                 var uv = new Rect((x0 + m) / span, 1f - (y1 + m) / span, (x1 - x0) / span, (y1 - y0) / span);
                 top.Quad(a, b, c, d, uv);
             }
             var groundMesh = top.ToMesh("City3D Ground");
+            groundMesh.RecalculateNormals();   // склоны освещаются по-настоящему
             groundMesh.RecalculateTangents(); // карте неровностей нужны касательные, иначе освещение ломается
             AddMesh("Ground", groundMesh, _ground, _root.transform, false);
 
@@ -450,12 +458,16 @@ namespace CityHighways.Presentation
         {
             const float extent = CityTextures.OutskirtsExtent, y = -0.003f;
             var near = new MeshBuilder();
-            const int cells = 16;
+            const int cells = 120;   // клетка 0,5 м: холмы за полем продолжаются, к горизонту сходят на нет
+            float plateX = BoardLayout.WorldWidth * (0.5f + TerrainTexture.Margin), plateZ = BoardLayout.WorldDepth * (0.5f + TerrainTexture.Margin);
             for (int iz = 0; iz < cells; iz++)
             for (int ix = 0; ix < cells; ix++)
             {
                 float x0 = -extent + 2f * extent * ix / cells, x1 = -extent + 2f * extent * (ix + 1) / cells;
                 float z0 = -extent + 2f * extent * iz / cells, z1 = -extent + 2f * extent * (iz + 1) / cells;
+                // Под доской (с запасом в полметра) окрестностей нет: крупная сетка на рельефе вылезла бы сквозь
+                // мелкую там, где земля подрезана под дорогу.
+                if (x0 > -plateX + 0.5f && x1 < plateX - 0.5f && z0 > -plateZ + 0.5f && z1 < plateZ - 0.5f) continue;
                 var uv = new Rect((x0 + extent) / (2f * extent), (z0 + extent) / (2f * extent), (x1 - x0) / (2f * extent), (z1 - z0) / (2f * extent));
                 // Юго-запад, северо-запад, северо-восток, юго-восток — грань смотрит вверх.
                 near.Quad(new Vector3(x0, y, z0), new Vector3(x0, y, z1), new Vector3(x1, y, z1), new Vector3(x1, y, z0), uv);
@@ -473,7 +485,9 @@ namespace CityHighways.Presentation
             float tiles = 40f / (BoardLayout.WorldWidth * (1f + 2f * TerrainTexture.Margin)) * 2f * extent;
             outskirts.SetTextureScale("_DetailAlbedoMap", new Vector2(tiles, tiles));
             outskirts.EnableKeyword("_DETAIL_MULX2");
+            near.Drape(Relief.At);
             var nearMesh = near.ToMesh("City3D Outskirts");
+            nearMesh.RecalculateNormals();
             nearMesh.RecalculateTangents();
             AddMesh("Outskirts", nearMesh, outskirts, _root.transform, false);
 
@@ -490,16 +504,14 @@ namespace CityHighways.Presentation
             AddMesh("Plain", plain.ToMesh("City3D Plain"), plainMaterial, _root.transform, false);
         }
 
-        /// <summary>Реки: вода (текстура течёт вдоль русла) и гранитные набережные с двух сторон.</summary>
-        void BuildRivers()
+        /// <summary>
+        /// Сглаженные русла (до рельефа: высота 0). Конец у края карты уходит за доску до горизонта (окрестности —
+        /// 30 м), а конец внутри карты (приток впадает в другую реку) — продлевается чуть-чуть, чтобы вода слилась.
+        /// </summary>
+        void PrepareRiverLines()
         {
-            var water = new MeshBuilder();
-            var banks = new MeshBuilder();
-            var granite = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Granite);
+            _riverLines.Clear();
             float half = RiverWidth / 2f;
-
-            // Проход 1: сглаженные русла. Конец у края карты уходит за доску до горизонта (окрестности — 30 м),
-            // а конец внутри карты (приток впадает в другую реку) — продлевается чуть-чуть, чтобы вода слилась.
             foreach (var line in _map.Rivers)
             {
                 if (line.Count < 2) continue;
@@ -516,8 +528,17 @@ namespace CityHighways.Presentation
                 smooth.Add(smooth[smooth.Count - 1] + endDir * (endAtEdge ? 30f : half * 0.6f));
                 _riverLines.Add(smooth);
             }
+        }
 
-            // Проход 2: вода и набережные. Там, где русло заходит в воду другой реки (слияние, пересечение),
+        /// <summary>Реки: вода (текстура течёт вдоль русла) и гранитные набережные с двух сторон — в долинах рельефа.</summary>
+        void BuildRivers()
+        {
+            var water = new MeshBuilder();
+            var banks = new MeshBuilder();
+            var granite = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Granite);
+            float half = RiverWidth / 2f;
+
+            // Вода и набережные. Там, где русло заходит в воду другой реки (слияние, пересечение),
             // набережная не строится — иначе гранитная стенка перегородила бы воду.
             for (int r = 0; r < _riverLines.Count; r++)
             {
@@ -629,13 +650,28 @@ namespace CityHighways.Presentation
                 return b;
             }
             var local = new MeshBuilder();
+            var plinth = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Granite);
             foreach (var building in plan.Buildings)
             {
                 local.Clear();
                 var random = new System.Random(building.Seed);
-                CityShapes.Build(local, building.Kind, building.Width / CityPlanner.PixelsPerUnit, building.Depth / CityPlanner.PixelsPerUnit,
-                    building.Height, random);
-                For(building.District).Append(local, Matrix4x4.TRS(CityPlanner.ToWorld(building.Center), Quaternion.Euler(0f, building.Angle, 0f), Vector3.one));
+                float w = building.Width / CityPlanner.PixelsPerUnit, d = building.Depth / CityPlanner.PixelsPerUnit;
+                CityShapes.Build(local, building.Kind, w, d, building.Height, random);
+                // На склоне дом стоит на высоте верхнего угла, а под нижним — цоколь до земли.
+                var rotation = Quaternion.Euler(0f, building.Angle, 0f);
+                var at = CityPlanner.ToWorld(building.Center);
+                float low = at.y, high = at.y;
+                for (int k = 0; k < 4; k++)
+                {
+                    var corner = at + rotation * new Vector3((k & 1) == 0 ? -w / 2f : w / 2f, 0f, (k & 2) == 0 ? -d / 2f : d / 2f);
+                    float h = Relief.At(corner.x, corner.z);
+                    low = Mathf.Min(low, h);
+                    high = Mathf.Max(high, h);
+                }
+                if (high - low > 0.002f)
+                    local.Box(0f, 0f, w * 0.98f, d * 0.98f, low - high - 0.004f, high - low + 0.004f, plinth, plinth);
+                at.y = high;
+                For(building.District).Append(local, Matrix4x4.TRS(at, rotation, Vector3.one));
             }
             foreach (var pair in builders)
             {
@@ -653,18 +689,26 @@ namespace CityHighways.Presentation
             {
                 string key = decal.District ?? "_";
                 if (!builders.TryGetValue(key, out var b)) builders[key] = b = new MeshBuilder();
-                var center = CityPlanner.ToWorld(decal.Center, DecalHeight);
+                var center = CityPlanner.ToWorld(decal.Center, 0f);
+                center.y = DecalHeight;   // высота над землёй; рельеф добавит Drape
                 float hw = decal.Width / CityPlanner.PixelsPerUnit / 2f, hd = decal.Depth / CityPlanner.PixelsPerUnit / 2f;
                 var rotation = Quaternion.Euler(0f, decal.Angle, 0f);
-                // Порядок углов (юго-запад, северо-запад, северо-восток, юго-восток) — грань смотрит вверх.
-                var a = center + rotation * new Vector3(-hw, 0f, -hd);
-                var nw = center + rotation * new Vector3(-hw, 0f, hd);
-                var ne = center + rotation * new Vector3(hw, 0f, hd);
-                var se = center + rotation * new Vector3(hw, 0f, -hd);
-                b.Quad(a, nw, ne, se, CityTextures.DecalUv(decal.Kind));
+                var uv = CityTextures.DecalUv(decal.Kind);
+                // На рельефе декаль — сетка до 6 × 6 клеток по 6 см, каждая вершина ляжет на землю.
+                int nx = Mathf.Clamp(Mathf.CeilToInt(hw * 2f / 0.06f), 1, 6), nz = Mathf.Clamp(Mathf.CeilToInt(hd * 2f / 0.06f), 1, 6);
+                for (int iz = 0; iz < nz; iz++)
+                for (int ix = 0; ix < nx; ix++)
+                {
+                    float u0 = ix / (float)nx, u1 = (ix + 1) / (float)nx, v0 = iz / (float)nz, v1 = (iz + 1) / (float)nz;
+                    Vector3 P(float u, float v) => center + rotation * new Vector3(Mathf.Lerp(-hw, hw, u), 0f, Mathf.Lerp(-hd, hd, v));
+                    // Порядок углов (юго-запад, северо-запад, северо-восток, юго-восток) — грань смотрит вверх.
+                    b.Quad(P(u0, v0), P(u0, v1), P(u1, v1), P(u1, v0),
+                        new Rect(uv.x + uv.width * u0, uv.y + uv.height * v0, uv.width * (u1 - u0), uv.height * (v1 - v0)));
+                }
             }
             foreach (var pair in builders)
             {
+                pair.Value.Drape(Relief.At);
                 var go = AddMesh("Decals " + pair.Key, pair.Value.ToMesh("City3D Decals " + pair.Key), _decals, _root.transform, false);
                 if (pair.Key != "_") _districts[pair.Key + "#decals"] = go;
             }
@@ -1007,6 +1051,20 @@ namespace CityHighways.Presentation
             var forward = new Vector3(Mathf.Cos(direction), 0f, Mathf.Sin(direction));
             var origin = center + forward * 0.25f;
             float yaw = -direction * Mathf.Rad2Deg + 90f;
+            // На рельефе: площадка на высоте самой высокой точки под комплексом, ниже — бетонное основание.
+            float groundLow = float.MaxValue, groundHigh = float.MinValue;
+            {
+                var turn = Quaternion.Euler(0f, yaw, 0f);
+                for (int gz = 0; gz <= 4; gz++)
+                for (int gx = 0; gx <= 4; gx++)
+                {
+                    var q = origin + turn * new Vector3(Mathf.Lerp(-0.19f, 0.19f, gx / 4f), 0f, Mathf.Lerp(-0.12f, 0.14f, gz / 4f));
+                    float h = Relief.At(q.x, q.z);
+                    groundLow = Mathf.Min(groundLow, h);
+                    groundHigh = Mathf.Max(groundHigh, h);
+                }
+            }
+            origin.y = groundHigh;
 
             var builder = new MeshBuilder();
             var local = new MeshBuilder();
@@ -1027,6 +1085,13 @@ namespace CityHighways.Presentation
             // Площадка: с уровнем растёт (уровень 4 — расширенная территория).
             float pad = level >= 4 ? 0.13f : level >= 2 ? 0.09f : 0.06f;
             builder.Quad(P(-pad, 0.0035f, -pad), P(-pad, 0.0035f, pad), P(pad, 0.0035f, pad), P(pad, 0.0035f, -pad), asphalt);
+            if (groundHigh - groundLow > 0.003f)
+            {
+                local.Clear();
+                var concrete = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.BridgeConcrete);
+                local.Box(0f, 0.01f, 0.4f, 0.28f, groundLow - groundHigh - 0.006f, groundHigh - groundLow + 0.009f, concrete, concrete);
+                builder.Append(local, Matrix4x4.TRS(origin, rotation, Vector3.one));
+            }
             // 1: у вокзала — здание вокзала с путями и платформами, у аэропорта — аэровокзал, вышка, перрон
             // с самолётами и взлётная полоса, у порта — терминал-склад.
             // Если скачаны модели из Scenario — главное здание модельное, а пути, перрон и полоса остаются свои.
@@ -1311,6 +1376,8 @@ namespace CityHighways.Presentation
             foreach (var pair in builders)
             {
                 if (pair.Value.VertexCount == 0) continue;
+                // Перекрёсток построен на высоте 0 — ложится на землю, а вдоль дорог земля и есть высота дороги.
+                pair.Value.Drape(Relief.At);
                 var go = AddMesh("Junctions " + pair.Key, pair.Value.ToMesh("City3D Junctions " + pair.Key), _buildings, _root.transform, false);
                 if (pair.Key != "_") _districts[pair.Key + "#junctions"] = go;
             }
@@ -1336,9 +1403,11 @@ namespace CityHighways.Presentation
             flat.y = 0f;
             float length = flat.magnitude, trim = BoardLayout.JunctionArm * 0.95f;
             if (length < trim * 2.5f) return;
-            var along = flat / length;
-            start += along * trim;
-            end -= along * trim;
+            // По самой прямой дороги (с наклоном): начало и конец остаются на линии между станциями.
+            var a = start;
+            var b = end;
+            start = Vector3.Lerp(a, b, trim / length);
+            end = Vector3.Lerp(a, b, 1f - trim / length);
         }
 
         /// <summary>Мосты карты стоят всегда (как и раньше); мосты к районам-расширениям прячутся вместе с ними.</summary>
@@ -1591,6 +1660,8 @@ namespace CityHighways.Presentation
             _constructing.Clear();
             _hubs.Clear();
             ClearLife();
+            Relief.Release(_relief);
+            _relief = null;
             _roads = null;
             _construction = null;
             if (_root != null) Destroy(_root);

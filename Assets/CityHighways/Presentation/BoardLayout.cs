@@ -127,7 +127,12 @@ namespace CityHighways.Presentation
             _perspectiveDirty = true;
         }
 
-        public static Vector3 World(float x, float y) => new Vector3((x - 0.5f) * WorldWidth, 0f, (0.5f - y) * WorldDepth);
+        /// <summary>Точка карты в мире: по горизонтали — поле, по высоте — рельеф 3D-города (без него — 0).</summary>
+        public static Vector3 World(float x, float y)
+        {
+            float wx = (x - 0.5f) * WorldWidth, wz = (0.5f - y) * WorldDepth;
+            return new Vector3(wx, Relief.At(wx, wz), wz);
+        }
         public static Vector2 MapOf(Vector3 world) => new Vector2(world.x / WorldWidth + 0.5f, 0.5f - world.z / WorldDepth);
 
         void FitCamera()
@@ -217,8 +222,17 @@ namespace CityHighways.Presentation
             var a = (Vector3)near / near.w;
             var b = (Vector3)far / far.w;
             float denominator = b.y - a.y;
-            float t = Mathf.Abs(denominator) < 1e-6f ? 0f : -a.y / denominator;
-            return MapOf(a + (b - a) * t);
+            if (Mathf.Abs(denominator) < 1e-6f) return MapOf(a);
+            // Луч до земли: сначала до высоты 0, затем несколько раз уточняем по рельефу под найденной точкой.
+            float height = 0f;
+            var hit = a;
+            for (int i = 0; i < (Relief.Active ? 4 : 1); i++)
+            {
+                float t = (height - a.y) / denominator;
+                hit = a + (b - a) * t;
+                height = Relief.At(hit.x, hit.z);
+            }
+            return MapOf(hit);
         }
 
         /// <summary>
