@@ -124,6 +124,45 @@ namespace CityHighways.Core
             return Generate(TutorialSeed);
         }
 
+        /// <summary>
+        /// Дороги-«единственные пути» (мосты графа): без такой дороги часть мест отрезана от остальных. Поиск Тарьяна:
+        /// ребро (u, v) — единственный путь, если из поддерева v нельзя вернуться выше v другой дорогой.
+        /// </summary>
+        public static HashSet<int> OnlyPathEdges(int n, IList<(int i, int j)> edges)
+        {
+            var adjacency = new List<(int to, int edge)>[n];
+            for (int v = 0; v < n; v++) adjacency[v] = new List<(int, int)>();
+            for (int e = 0; e < edges.Count; e++)
+            {
+                adjacency[edges[e].i].Add((edges[e].j, e));
+                adjacency[edges[e].j].Add((edges[e].i, e));
+            }
+            var result = new HashSet<int>();
+            var order = new int[n];
+            var low = new int[n];
+            for (int v = 0; v < n; v++) order[v] = -1;
+            int time = 0;
+            void Visit(int v, int viaEdge)
+            {
+                order[v] = low[v] = time++;
+                foreach (var (to, edge) in adjacency[v])
+                {
+                    if (edge == viaEdge) continue;
+                    if (order[to] >= 0)
+                    {
+                        low[v] = Math.Min(low[v], order[to]);
+                        continue;
+                    }
+                    Visit(to, edge);
+                    low[v] = Math.Min(low[v], low[to]);
+                    if (low[to] > order[v]) result.Add(edge);
+                }
+            }
+            for (int v = 0; v < n; v++)
+                if (order[v] < 0) Visit(v, -1);
+            return result;
+        }
+
         // ================================================================== Проверка воды
 
         /// <summary>Полуширина воды с набережной в пикселях генератора (3D: река 0,26 м + набережная, 1 м = 100 px).</summary>
@@ -566,9 +605,12 @@ namespace CityHighways.Core
             if (map.Validate(6).Count > 0 || CheckWater(map).Count > 0) return null;
 
             // Городская сеть: минимальное остовное дерево (мосты чуть «дороже» — их в общей сети меньше).
+            // Дороги — единственный путь куда-либо (без них карта распадается: тупик вроде Крутого Яра, единственная
+            // переправа) в городскую сеть не входят: их строят игроки, это ценные участки.
             var city = new GeneratedCity { Map = map, Seed = seed };
+            var onlyPath = OnlyPathEdges(n, edges.Select(x => (x.i, x.j)).ToList());
             for (int i = 0; i < n; i++) parent[i] = i;
-            foreach (var e in Enumerable.Range(0, edges.Count).OrderBy(e => edges[e].d * (edges[e].bridge ? 1.3f : 1f)))
+            foreach (var e in Enumerable.Range(0, edges.Count).Where(e => !onlyPath.Contains(e)).OrderBy(e => edges[e].d * (edges[e].bridge ? 1.3f : 1f)))
             {
                 int a = Find(edges[e].i), b = Find(edges[e].j);
                 if (a == b) continue;

@@ -643,6 +643,13 @@ namespace CityHighways.Presentation
             var truck = BestTruckFor(cargo, out var toHub);
             if (truck == null) { Toast("Нет свободной фуры, которая доедет до этого хаба."); _app.Sound.Play(Sfx.Error, 0.5f); return; }
             string error;
+            if (truck.Location == cargo.From && _game.FindRoute(truck.Owner, cargo.From, cargo.To, cargo.Kind) == null)
+            {
+                // Фура уже на хабе, а довезти нельзя — ехать никуда не нужно, нужен широкий путь.
+                Toast($"Фура {TruckNumber(truck)} уже на хабе, но довезти пока нельзя: этому грузу нужны широкие дороги (бетон, мост или магистраль) до «{_game.Map.LocationName(cargo.To)}».", 4f);
+                _app.Sound.Play(Sfx.Error, 0.5f);
+                return;
+            }
             if (truck.Location == cargo.From)
             {
                 error = _game.PlanTruck(truck.Id, cargo.Id, null);
@@ -709,7 +716,27 @@ namespace CityHighways.Presentation
             }
 
             var truck = BestTruckFor(cargo, out var toHub);
-            if (truck != null && delivery != null)
+            if (truck != null && delivery == null)
+            {
+                // Довезти пока нельзя (крупногабарит и тяжеловес — только по широким дорогам), но доехать до хаба
+                // пустой фурой можно: пока она едет, достройте широкий путь.
+                bool here = truck.Location == cargo.From;
+                var info = Hint(here
+                    ? $"Фура {TruckNumber(truck)} уже на хабе: возьмёт груз, как только появится путь — постройте широкие дороги (бетон, мост или магистраль) до «{_game.Map.LocationName(cargo.To)}»."
+                    : $"Ближайшая свободная — фура {TruckNumber(truck)}: до хаба ~{_game.RouteRounds(toHub)} р. Пустая фура доедет по любым дорогам, " +
+                      $"а пока она в пути — постройте широкий путь до «{_game.Map.LocationName(cargo.To)}».");
+                info.style.color = Theme.Gold;
+                info.style.marginTop = 8f;
+                _popupBody.Add(Pad(info));
+                if (!here)
+                {
+                    var go = Ui.Button($"Отправить фуру {TruckNumber(truck)} к хабу", () => AssignCargo(cargo), ButtonKind.Primary, 13f);
+                    go.style.marginTop = 8f;
+                    go.style.alignSelf = Align.FlexStart;
+                    _popupBody.Add(Pad(go));
+                }
+            }
+            else if (truck != null && delivery != null)
             {
                 int rounds = _game.RouteRounds(toHub) + _game.RouteRounds(delivery, cargo.Kind);
                 int value = _game.ValueIfDelivered(cargo, rounds, truck.Owner);
@@ -768,7 +795,8 @@ namespace CityHighways.Presentation
                 {
                     var row = CargoRow(item, false);
                     var path = _game.FindRoute(truck.Owner, truck.Location, item.To, item.Kind);
-                    var takeButton = Ui.Button(path != null ? $"Взять · {_game.RouteRounds(path, item.Kind)} р." : "Не проехать", () =>
+                    bool wide = item.Kind == CargoKind.Heavy || item.Kind == CargoKind.Oversized;
+                    var takeButton = Ui.Button(path != null ? $"Взять · {_game.RouteRounds(path, item.Kind)} р." : wide ? "Нужен широкий путь" : "Не проехать", () =>
                     {
                         var error = _game.PlanTruck(truck.Id, item.Id, null);
                         if (error != null) { Toast(error); _app.Sound.Play(Sfx.Error, 0.5f); }
