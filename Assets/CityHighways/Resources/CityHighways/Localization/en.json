@@ -3491,6 +3491,190 @@
     {
       "key": "magnate.tutorial.024",
       "value": "Map Layers: hide labels, cargo and unclaimed roads, or display traffic loads."
+    },
+    {
+      "key": "magnate.ui.001",
+      "value": "Map Layers"
+    },
+    {
+      "key": "magnate.ui.002",
+      "value": "Logistics Magnate"
+    },
+    {
+      "key": "magnate.ui.003",
+      "value": "Log"
+    },
+    {
+      "key": "magnate.ui.004",
+      "value": "Menu"
+    },
+    {
+      "key": "magnate.ui.005",
+      "value": "Settings"
+    },
+    {
+      "key": "magnate.ui.006",
+      "value": "Station Names"
+    },
+    {
+      "key": "magnate.ui.007",
+      "value": "Labels Below Stations"
+    },
+    {
+      "key": "magnate.ui.008",
+      "value": "District Names"
+    },
+    {
+      "key": "magnate.ui.009",
+      "value": "Large District Labels"
+    },
+    {
+      "key": "magnate.ui.010",
+      "value": "Cargo"
+    },
+    {
+      "key": "magnate.ui.011",
+      "value": "Cargo markers above hubs"
+    },
+    {
+      "key": "magnate.ui.012",
+      "value": "Trucks"
+    },
+    {
+      "key": "magnate.ui.013",
+      "value": "Company trucks on map"
+    },
+    {
+      "key": "magnate.ui.014",
+      "value": "Road Traffic"
+    },
+    {
+      "key": "magnate.ui.015",
+      "value": "Traffic from last round: green free, yellow near capacity, red congested"
+    },
+    {
+      "key": "magnate.ui.016",
+      "value": "Unclaimed Roads"
+    },
+    {
+      "key": "magnate.ui.017",
+      "value": "Unclaimed roads appear faded during the routing phase; trucks cannot use them"
+    },
+    {
+      "key": "magnate.ui.018",
+      "value": "Focus Under Cursor"
+    },
+    {
+      "key": "magnate.ui.019",
+      "value": "Dim the map away from the cursor"
+    },
+    {
+      "key": "magnate.ui.020",
+      "value": "Road Costs"
+    },
+    {
+      "key": "magnate.ui.021",
+      "value": "Cost to build an unclaimed road on your turn (gray if you lack construction points)"
+    },
+    {
+      "key": "magnate.ui.022",
+      "value": "Map Display Options"
+    },
+    {
+      "key": "magnate.ui.023",
+      "value": "P"
+    },
+    {
+      "key": "magnate.ui.024",
+      "value": "H"
+    },
+    {
+      "key": "magnate.ui.025",
+      "value": "C"
+    },
+    {
+      "key": "magnate.ui.026",
+      "value": "O"
+    },
+    {
+      "key": "magnate.ui.027",
+      "value": "S"
+    },
+    {
+      "key": "magnate.ui.028",
+      "value": "R"
+    },
+    {
+      "key": "magnate.ui.029",
+      "value": "unclaimed — available to build"
+    },
+    {
+      "key": "magnate.ui.030",
+      "value": "public city road (free for all)"
+    },
+    {
+      "key": "magnate.ui.031",
+      "value": " (yours)"
+    },
+    {
+      "key": "magnate.ui.032",
+      "value": "highway"
+    },
+    {
+      "key": "magnate.ui.033",
+      "value": "bridge"
+    },
+    {
+      "key": "magnate.ui.034",
+      "value": "wide road (concrete)"
+    },
+    {
+      "key": "magnate.ui.035",
+      "value": "street"
+    },
+    {
+      "key": "magnate.ui.036",
+      "value": "Airport"
+    },
+    {
+      "key": "magnate.ui.037",
+      "value": "Port"
+    },
+    {
+      "key": "magnate.ui.038",
+      "value": "Rail Station"
+    },
+    {
+      "key": "magnate.ui.039",
+      "value": " · public"
+    },
+    {
+      "key": "magnate.ui.040",
+      "value": "\nHeavy and oversize cargo allowed"
+    },
+    {
+      "key": "magnate.ui.041",
+      "value": "\nHeavy and oversize cargo not allowed"
+    },
+    {
+      "key": "magnate.ui.042",
+      "value": "\nOne road per company during construction round"
+    },
+    {
+      "key": "magnate.ui.043",
+      "value": "\nNo route available there right now"
+    },
+    {
+      "key": "magnate.ui.044",
+      "value": "Select a truck in the Truck Routes section below."
+    },
+    {
+      "key": "magnate.ui.045",
+      "value": "New City"
+    },
+    {
+      "key": "magnate.ui.046",
+      "value": "Back to Menu"
     }
   ]
 }

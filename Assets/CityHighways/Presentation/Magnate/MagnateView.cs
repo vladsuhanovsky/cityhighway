@@ -104,7 +104,7 @@ namespace CityHighways.Presentation
             _layersPanel.style.right = 14f;
             _layersPanel.style.top = 14f;
             _layersPanel.style.alignItems = Align.FlexEnd;
-            var layersButton = Ui.Button("Слои карты", () =>
+            var layersButton = Ui.Button(LocalizationService.Get("magnate.ui.001"), () =>
             {
                 bool open = _layersList.style.display == DisplayStyle.None;
                 // Справа под кнопкой — и панель грузов: открываем слои — грузы закрываются.
@@ -163,7 +163,7 @@ namespace CityHighways.Presentation
             top.style.alignItems = Align.Center;
             Ui.Padding(top, 0f, 16f);
             Root.Add(top);
-            var title = Ui.Text("Логистический магнат", 17f, Theme.Text, true);
+            var title = Ui.Text(LocalizationService.Get("magnate.ui.002"), 17f, Theme.Text, true);
             title.style.marginRight = 14f;
             top.Add(title);
             _roundLabel = Ui.Text("", 14f, Theme.TextDim);
@@ -190,7 +190,7 @@ namespace CityHighways.Presentation
             // выход), «Настройки» — в самом углу. Окна журнала и меню открываются под строкой у правого края.
             _topActions = Ui.Row();
             _topActions.style.alignItems = Align.Center;
-            _journalButton = Ui.Button("Журнал", () =>
+            _journalButton = Ui.Button(LocalizationService.Get("magnate.ui.003"), () =>
             {
                 TogglePopup("log", TopSection);
                 _logSeen = _log.Count;
@@ -199,10 +199,10 @@ namespace CityHighways.Presentation
             _journalButton.style.marginRight = 8f;
             _journalButton.style.minHeight = 40f;
             _topActions.Add(_journalButton);
-            var menu = new IconButton(IconButton.Glyph.Menu, "Меню", () => TogglePopup("menu", TopSection));
+            var menu = new IconButton(IconButton.Glyph.Menu, LocalizationService.Get("magnate.ui.004"), () => TogglePopup("menu", TopSection));
             menu.style.marginRight = 8f;
             _topActions.Add(menu);
-            _topActions.Add(new IconButton(IconButton.Glyph.Gear, "Настройки", () => ToggleModal("settings")));
+            _topActions.Add(new IconButton(IconButton.Glyph.Gear, LocalizationService.Get("magnate.ui.005"), () => ToggleModal("settings")));
             top.Add(_topActions);
 
             BuildBottomBar();
@@ -307,14 +307,14 @@ namespace CityHighways.Presentation
 
         static readonly (Layer layer, string title, string hint)[] LayerItems =
         {
-            (Layer.StationNames, "Названия станций", "Подписи под станциями"),
-            (Layer.DistrictNames, "Названия районов", "Крупные подписи районов"),
-            (Layer.Cargo, "Грузы", "Квадратики грузов над хабами"),
-            (Layer.Trucks, "Фуры", "Фуры компаний на карте"),
-            (Layer.Traffic, "Загрузка дорог", "Цвет по прошлому раунду: зелёный — свободно, жёлтый — почти полно, красный — пробка"),
-            (Layer.FreeRoads, "Свободные дороги", "Ничьи дороги. В фазе маршрутов они бледные: фуры по ним не ездят"),
-            (Layer.Focus, "Фокус под курсором", "Вдали от курсора карта тускнеет"),
-            (Layer.RoadCost, "Цены дорог", "В свою стройку: сколько очков стройки стоит свободная улица (серая — пока не хватает очков)"),
+            (Layer.StationNames, LocalizationService.Get("magnate.ui.006"), LocalizationService.Get("magnate.ui.007")),
+            (Layer.DistrictNames, LocalizationService.Get("magnate.ui.008"), LocalizationService.Get("magnate.ui.009")),
+            (Layer.Cargo, LocalizationService.Get("magnate.ui.010"), LocalizationService.Get("magnate.ui.011")),
+            (Layer.Trucks, LocalizationService.Get("magnate.ui.012"), LocalizationService.Get("magnate.ui.013")),
+            (Layer.Traffic, LocalizationService.Get("magnate.ui.014"), LocalizationService.Get("magnate.ui.015")),
+            (Layer.FreeRoads, LocalizationService.Get("magnate.ui.016"), LocalizationService.Get("magnate.ui.017")),
+            (Layer.Focus, LocalizationService.Get("magnate.ui.018"), LocalizationService.Get("magnate.ui.019")),
+            (Layer.RoadCost, LocalizationService.Get("magnate.ui.020"), LocalizationService.Get("magnate.ui.021")),
         };
 
         bool Has(Layer layer)
@@ -326,7 +326,7 @@ namespace CityHighways.Presentation
         void BuildLayersList()
         {
             _layersList.Clear();
-            var caption = Ui.Text("Что показывать на карте", 12f, Theme.TextDim, true);
+            var caption = Ui.Text(LocalizationService.Get("magnate.ui.022"), 12f, Theme.TextDim, true);
             caption.style.marginBottom = 6f;
             _layersList.Add(caption);
             foreach (var item in LayerItems)
@@ -566,13 +566,13 @@ namespace CityHighways.Presentation
         {
             switch (kind)
             {
-                case CargoKind.Perishable: return "С";
-                case CargoKind.Heavy: return "Т";
+                case CargoKind.Perishable: return LocalizationService.Get("magnate.ui.023");
+                case CargoKind.Heavy: return LocalizationService.Get("magnate.ui.024");
                 case CargoKind.Hazard: return "!";
-                case CargoKind.Fragile: return "Х";
-                case CargoKind.Valuable: return "Ц";
-                case CargoKind.Oversized: return "Н";
-                default: return "О";
+                case CargoKind.Fragile: return LocalizationService.Get("magnate.ui.025");
+                case CargoKind.Valuable: return LocalizationService.Get("magnate.ui.026");
+                case CargoKind.Oversized: return LocalizationService.Get("magnate.ui.027");
+                default: return LocalizationService.Get("magnate.ui.028");
             }
         }
 
@@ -799,18 +799,18 @@ namespace CityHighways.Presentation
         {
             if (road == null) { Ui.Show(_tooltip, false); return; }
             var owner = _game.Board.GetRoadOwner(road.Id);
-            string who = !owner.HasValue ? "свободна — можно купить" : owner == _game.PublicOwner ? "городская (общая, бесплатно)"
-                : $"компания {_game.Players[owner.Value].Name}" + (owner == _game.CurrentPlayerIndex ? " (ваша)" : $" · проезд −{_game.Config.TollPerRoad}");
-            string kind = _game.IsHighway(road.Id) ? "магистраль" : road.IsBridge ? "мост" : _game.IsWide(road) ? "широкая (бетон)" : "улица";
+            string who = !owner.HasValue ? LocalizationService.Get("magnate.ui.029") : owner == _game.PublicOwner ? LocalizationService.Get("magnate.ui.030")
+                : $"компания {_game.Players[owner.Value].Name}" + (owner == _game.CurrentPlayerIndex ? LocalizationService.Get("magnate.ui.031") : $" · проезд −{_game.Config.TollPerRoad}");
+            string kind = _game.IsHighway(road.Id) ? LocalizationService.Get("magnate.ui.032") : road.IsBridge ? LocalizationService.Get("magnate.ui.033") : _game.IsWide(road) ? LocalizationService.Get("magnate.ui.034") : LocalizationService.Get("magnate.ui.035");
             string text = $"{_game.Map.LocationName(road.A)} — {_game.Map.LocationName(road.B)}\n{kind}, длина {road.Length} · {who}\n" +
                           $"Пропускает {_game.Capacity(road)} фур за раунд · в прошлом раунде: {_game.LastTraffic(road.Id)}" +
-                          (_game.IsWide(road) ? "\nТяжеловес и крупногабарит — можно" : "\nТяжеловес и крупногабарит — нельзя");
+                          (_game.IsWide(road) ? LocalizationService.Get("magnate.ui.040") : LocalizationService.Get("magnate.ui.041"));
             var closing = _game.Events.FirstOrDefault(e => e.Road == road.Id);
             if (_game.IsClosed(road.Id)) text += $"\nЗакрыта: {closing?.Title ?? "событие"}";
             if (HumanTurn && _game.Phase == MagnatePhase.Build)
             {
                 if (!owner.HasValue)
-                    text += _game.OpeningRoadsLeft > 0 ? $"\nКупить: {_game.BuildCost(road)} очков стройки" : "\nВ раунде стройки — одна дорога на компанию";
+                    text += _game.OpeningRoadsLeft > 0 ? $"\nКупить: {_game.BuildCost(road)} очков стройки" : LocalizationService.Get("magnate.ui.042");
                 else if (owner == _game.CurrentPlayerIndex && !_game.IsHighway(road.Id) && !_game.IsOpeningRound)
                     text += $"\nУлучшить до магистрали: {_game.UpgradeCost(road)}";
             }
@@ -830,8 +830,8 @@ namespace CityHighways.Presentation
             string text = location.Name + " · " + _game.Map.DistrictName(location.DistrictId);
             if (hub != null)
             {
-                text += "\n" + (hub.Kind == HubKind.Airport ? "Аэропорт" : hub.Kind == HubKind.Port ? "Порт" : "Вокзал") +
-                        $" · уровень {hub.Level}" + (hub.Owner >= 0 ? $" · владелец {_game.Players[hub.Owner].Name} (вложено {_game.HubInvestment(location.Id, hub.Owner)})" : " · городской");
+                text += "\n" + (hub.Kind == HubKind.Airport ? LocalizationService.Get("magnate.ui.036") : hub.Kind == HubKind.Port ? LocalizationService.Get("magnate.ui.037") : LocalizationService.Get("magnate.ui.038")) +
+                        $" · уровень {hub.Level}" + (hub.Owner >= 0 ? $" · владелец {_game.Players[hub.Owner].Name} (вложено {_game.HubInvestment(location.Id, hub.Owner)})" : LocalizationService.Get("magnate.ui.039"));
                 foreach (var cargo in _game.WaitingAt(location.Id))
                     text += $"\n• {LogisticsGame.KindTitle(cargo.Kind)} → {_game.Map.LocationName(cargo.To)}: {cargo.Value} очк.";
                 if (HumanTurn && _game.Phase == MagnatePhase.Build && !_game.IsOpeningRound && hub.Level < 5)
@@ -860,7 +860,7 @@ namespace CityHighways.Presentation
                         text += $"\nМаршрут: {_game.RouteLength(route)} участков, ~{_game.RouteRounds(route)} р." +
                                 $" · проезд −{_game.RouteTolls(truck.Owner, route)} · забитых дорог: {_game.RouteRisk(route)}\nКлик — ехать сюда";
                     }
-                    else text += "\nТуда сейчас не проехать";
+                    else text += LocalizationService.Get("magnate.ui.043");
                 }
             }
             RefreshHighlights();
@@ -896,7 +896,7 @@ namespace CityHighways.Presentation
                 OnLocationHover(location, position);
                 return;
             }
-            if (_selectedTruck < 0) { Toast("Сначала выберите фуру в разделе «Маршруты фур» внизу."); return; }
+            if (_selectedTruck < 0) { Toast(LocalizationService.Get("magnate.ui.044")); return; }
             var plan = _game.PlanTruck(_selectedTruck, null, location.Id);
             if (plan != null) { Toast(plan); _app.Sound.Play(Sfx.Error, 0.5f); }
             else _app.Sound.Play(Sfx.Click, 0.6f);
@@ -959,10 +959,10 @@ namespace CityHighways.Presentation
             }
             var buttons = Ui.Row();
             buttons.style.marginTop = 18f;
-            var again = Ui.Button("Новый город", () => _app.StartGame(_setup), ButtonKind.Primary, 16f);
+            var again = Ui.Button(LocalizationService.Get("magnate.ui.045"), () => _app.StartGame(_setup), ButtonKind.Primary, 16f);
             again.style.marginRight = 10f;
             buttons.Add(again);
-            buttons.Add(Ui.Button("В меню", () => _app.ShowMenu(), ButtonKind.Secondary, 16f));
+            buttons.Add(Ui.Button(LocalizationService.Get("magnate.ui.046"), () => _app.ShowMenu(), ButtonKind.Secondary, 16f));
             card.Add(buttons);
             _results.Add(card);
             Ui.Show(_results, true);
