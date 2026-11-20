@@ -1115,7 +1115,8 @@ namespace CityHighways.Presentation
             }
             Picture(s, meter, $"Кризис: старт {coop.CoopCrisisStart}, предел {coop.CoopCrisisMax}. На картинке — {coop.CoopCrisisStart + 3} из {coop.CoopCrisisMax}.");
 
-            Paragraph(s, $"На столе всегда {coop.CoopOpenOrders} заказа города — это контракты, общие для всей команды. Заказ выполнен, когда общая сеть связывает его районы: очки получает тот, чья дорога замкнула путь, а кризис падает на {coop.CoopCrisisReliefPerOrder}. На каждый заказ — {coop.CoopOrderRounds} кругов; просроченный поднимает кризис на {coop.CoopCrisisPerFailedOrder}.");
+            Paragraph(s, $"На столе — заказы города: вдвоём и втроём по {coop.CoopOpenOrdersFor(2)}, вчетвером и впятером по {coop.CoopOpenOrdersFor(4)}. Это контракты, общие для всей команды. Заказ выполнен, когда общая сеть связывает его районы: очки получает тот, чья дорога замкнула путь, а кризис падает на {coop.CoopCrisisReliefPerOrder}. Просроченный заказ поднимает кризис на {coop.CoopCrisisPerFailedOrder}.");
+            Paragraph(s, $"Срок заказа зависит от его длины и числа игроков: вдвоём на заказ в 10 очков — {coop.CoopOrderRoundsFor(10, 2)} кругов, вчетвером — {coop.CoopOrderRoundsFor(10, 4)} (ходов в круге больше). Стартовые заказы открываются в очередь: у каждого следующего срок на {coop.CoopStartStagger} круга больше, чтобы они не сгорели разом.");
             Paragraph(s, $"Город растёт сам: кризис +1 каждые {coop.CoopCrisisEveryRounds} круга, а ремонт, снегопад и парад добавляют ещё +{coop.CoopCrisisPerBadEvent}.");
             var outcomes = Ui.Row();
             outcomes.style.marginTop = 10f;

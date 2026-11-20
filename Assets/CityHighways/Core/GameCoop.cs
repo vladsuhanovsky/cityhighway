@@ -21,9 +21,10 @@ namespace CityHighways.Core
     /// Кооператив «Город против всех». Все компании — одна команда:
     /// <list type="bullet">
     /// <item>сеть общая — дорога любого союзника засчитывается в контракты, проезд между союзниками бесплатный;</item>
-    /// <item>на столе открыто CoopOpenOrders заказов города; заказ выполнен, когда общая сеть связывает его районы
-    /// (очки получает тот, чья дорога замкнула путь, кризис снижается);</item>
-    /// <item>у заказа таймер в кругах; просроченный заказ поднимает кризис;</item>
+    /// <item>на столе открыто CoopOpenOrdersFor(игроков) заказов города; заказ выполнен, когда общая сеть связывает его
+    /// районы (очки получает тот, чья дорога замкнула путь, кризис снижается);</item>
+    /// <item>у заказа таймер в кругах — чем длиннее заказ и чем меньше игроков, тем больше срок; стартовые заказы
+    /// открываются в очередь (CoopStartStagger), чтобы не сгорать разом; просроченный заказ поднимает кризис;</item>
     /// <item>город растёт: кризис +1 каждые CoopCrisisEveryRounds кругов, ремонт, снегопад и парад добавляют ещё;</item>
     /// <item>победа — выполнить CoopOrdersToWin заказов; поражение — кризис дошёл до CoopCrisisMax
     /// или участки кончились раньше.</item>
@@ -75,10 +76,14 @@ namespace CityHighways.Core
             RefillCityOrders(true);
         }
 
+        /// <summary>Срок заказа в кругах для этой партии.</summary>
+        int OrderRounds(Contract contract) => Config.CoopOrderRoundsFor(contract.Points, _players.Count);
+
         void RefillCityOrders(bool quiet)
         {
             int guard = 0;
-            while (_cityOrders.Count < Config.CoopOpenOrders && _contractDeck.Count > 0 && guard++ < 60)
+            int opened = 0;
+            while (_cityOrders.Count < Config.CoopOpenOrdersFor(_players.Count) && _contractDeck.Count > 0 && guard++ < 60)
             {
                 var contract = _contractDeck.Draw(1).FirstOrDefault();
                 if (contract == null) break;
@@ -88,8 +93,11 @@ namespace CityHighways.Core
                     _contractDeck.ReturnToBottom(new[] { contract });
                     continue;
                 }
-                _cityOrders.Add(new CityOrder(contract, Config.CoopOrderRounds));
-                if (!quiet) Emit($"Новый заказ города: {DescribeOrder(contract)} — {contract.Points} очк., срок {Config.CoopOrderRounds} кругов.");
+                // На старте заказы встают в очередь: второй — позже на CoopStartStagger кругов, третий — ещё позже.
+                int rounds = OrderRounds(contract) + (quiet ? opened * Math.Max(0, Config.CoopStartStagger) : 0);
+                opened++;
+                _cityOrders.Add(new CityOrder(contract, rounds));
+                if (!quiet) Emit($"Новый заказ города: {DescribeOrder(contract)} — {contract.Points} очк., срок {rounds} кругов.");
             }
         }
 
@@ -220,7 +228,7 @@ namespace CityHighways.Core
             {
                 var contract = Map.GetContract(ids[i]);
                 if (contract == null) continue;
-                int left = data.coopRoundsLeft != null && i < data.coopRoundsLeft.Length ? data.coopRoundsLeft[i] : Config.CoopOrderRounds;
+                int left = data.coopRoundsLeft != null && i < data.coopRoundsLeft.Length ? data.coopRoundsLeft[i] : OrderRounds(contract);
                 _cityOrders.Add(new CityOrder(contract, Math.Max(1, left)));
             }
             Crisis = data.coopCrisis;

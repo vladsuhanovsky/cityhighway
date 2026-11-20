@@ -352,14 +352,29 @@ namespace CityHighways.Core
             public int LongestAnyNeed;
         }
 
+        /// <summary>Дороги, которые нужно построить под эти контракты (и на которые хватит участков).</summary>
+        List<Road> Desire(Game game, PlayerState me, IEnumerable<Contract> targets)
+        {
+            var plan = new BotPlanner(game, me.Index, ForeignCost).BuildPlan(targets);
+            return plan.RoadsToBuild.Where(r => r.Length <= me.RoadPieces).ToList();
+        }
+
         Analysis Analyze(Game game, int? who = null)
         {
             var me = who.HasValue ? game.Players[who.Value] : game.CurrentPlayer;
-            // В кооперативе бот строит и под общие заказы города — их срок горит, поэтому они первыми в плане.
-            var targets = game.IsCooperative ? game.CityOrderContracts.Concat(me.Contracts) : me.Contracts;
-            var plan = new BotPlanner(game, me.Index, ForeignCost).BuildPlan(targets);
+            // В кооперативе бот работает на команду: сначала самые срочные заказы города (не распыляясь на все сразу),
+            // потом остальные заказы, и только когда под заказы строить нечего — свои контракты.
+            List<Road> desired = null;
+            if (game.IsCooperative)
+            {
+                var urgent = game.CityOrders.OrderBy(o => o.RoundsLeft).ThenBy(o => o.Contract.Points)
+                    .Take(2).Select(o => o.Contract).ToList();
+                desired = Desire(game, me, urgent);
+                if (desired.Count == 0) desired = Desire(game, me, game.CityOrderContracts);
+            }
+            if (desired == null || desired.Count == 0) desired = Desire(game, me, me.Contracts);
             var a = new Analysis { Me = me };
-            a.Desired = plan.RoadsToBuild.Where(r => r.Length <= me.RoadPieces).ToList();
+            a.Desired = desired;
             a.HasGoals = a.Desired.Count > 0;
 
             if (!a.HasGoals)

@@ -104,7 +104,7 @@ namespace CityHighways.Tests
         {
             var game = TestCities.Started(TestCities.Moscow(), 3, Coop());
             Assert.IsTrue(game.IsCooperative);
-            Assert.AreEqual(game.Config.CoopOpenOrders, game.CityOrders.Count);
+            Assert.AreEqual(game.Config.CoopOpenOrdersFor(3), game.CityOrders.Count);
             Assert.AreEqual(game.Config.CoopCrisisStart, game.Crisis);
             Assert.AreEqual(game.Config.CoopOrdersToWin(3), game.OrdersTarget);
             Assert.IsFalse(game.Config.BribesEnabled);
@@ -118,7 +118,7 @@ namespace CityHighways.Tests
         public void Coop_CrisisAtLimit_LosesForEveryone()
         {
             var game = TestCities.Started(TestCities.Moscow(), 2, Coop());
-            game.Debug_SetCrisis(8);
+            game.Debug_SetCrisis(game.CrisisMax - 2);
             game.Debug_SetOrderRounds(1); // в начале следующего круга все заказы просрочатся
             var bot = new RandomBot(3);
             int guard = 0;
@@ -136,6 +136,7 @@ namespace CityHighways.Tests
         public void Coop_SmartBotTeams_FinishWithoutTolls([Values(2, 3, 4)] int players)
         {
             int won = 0;
+            float rounds = 0f;
             for (int seed = 0; seed < 4; seed++)
             {
                 var names = Enumerable.Range(1, players).Select(i => "Бот " + i).ToList();
@@ -154,8 +155,24 @@ namespace CityHighways.Tests
                 Assert.AreEqual(0, game.Result.Ranking.Sum(s => s.TollsPaid), "союзники ездят бесплатно");
                 Assert.IsNotNull(game.CoopOutcome);
                 if (game.Result.TeamWon) won++;
+                rounds += game.TurnNumber / (float)players;
             }
-            Debug.Log($"Кооператив, {players} бота(ов): побед {won} из 4.");
+            Debug.Log($"Кооператив, {players} бота(ов): побед {won} из 4, в среднем {rounds / 4f:0.#} кругов.");
+            // Баланс: город не должен побеждать команду за пару кругов (раньше партия кончалась на 5–6-м круге).
+            Assert.GreaterOrEqual(rounds / 4f, 8f, "кооператив кончается слишком быстро");
+        }
+
+        [Test]
+        public void Coop_StartOrders_AreStaggered_AndLongerOrdersGetMoreTime()
+        {
+            var config = Coop();
+            Assert.Greater(config.CoopOrderRoundsFor(20, 2), config.CoopOrderRoundsFor(8, 2));
+            Assert.GreaterOrEqual(config.CoopOrderRoundsFor(10, 2), config.CoopOrderRoundsFor(10, 4));
+            var game = TestCities.Started(TestCities.Moscow(), 2, config);
+            var orders = game.CityOrders;
+            Assert.AreEqual(config.CoopOpenOrdersFor(2), orders.Count);
+            for (int i = 0; i < orders.Count; i++)
+                Assert.AreEqual(config.CoopOrderRoundsFor(orders[i].Contract.Points, 2) + i * config.CoopStartStagger, orders[i].RoundsLeft);
         }
 
         [Test]

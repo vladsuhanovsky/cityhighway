@@ -213,15 +213,28 @@ namespace CityHighways.Core
         /// поражение — кризис дошёл до предела или участки кончились раньше. Взяток, аукциона и пропусков нет.
         /// </summary>
         public bool Cooperative;
-        /// <summary>Сколько заказов города открыто одновременно.</summary>
-        public int CoopOpenOrders = 3;
-        /// <summary>За сколько кругов нужно выполнить заказ.</summary>
-        public int CoopOrderRounds = 5;
+        /// <summary>
+        /// Сколько заказов города открыто одновременно (по числу игроков). Вдвоём за круг всего 2 хода —
+        /// три заказа сразу команда не тянет, поэтому на двоих и троих — два.
+        /// </summary>
+        public int[] CoopOpenOrdersByPlayers = { 0, 0, 2, 2, 3, 3 };
+        /// <summary>Срок заказа: базовые круги…</summary>
+        public int CoopOrderRoundsBase = 4;
+        /// <summary>
+        /// …плюс круги за очки заказа (≈ участки пути). Считается на двоих: на заказ в 10 очков — 4 + 6 = 10 кругов;
+        /// чем больше игроков, тем больше ходов в круге и тем короче срок в кругах (вчетвером — 4 + 3 = 7).
+        /// </summary>
+        public float CoopOrderRoundsPerPoint = 0.6f;
+        /// <summary>
+        /// Стартовые заказы открываются «в очередь»: второй получает +столько кругов к сроку, третий — вдвое больше,
+        /// чтобы они не сгорали все разом.
+        /// </summary>
+        public int CoopStartStagger = 2;
         /// <summary>Шкала кризиса: на этом значении город проигрывает.</summary>
-        public int CoopCrisisMax = 10;
-        public int CoopCrisisStart = 2;
+        public int CoopCrisisMax = 12;
+        public int CoopCrisisStart = 1;
         /// <summary>Город растёт: кризис +1 каждые столько кругов.</summary>
-        public int CoopCrisisEveryRounds = 2;
+        public int CoopCrisisEveryRounds = 3;
         /// <summary>Просроченный заказ поднимает кризис на столько.</summary>
         public int CoopCrisisPerFailedOrder = 2;
         /// <summary>Выполненный заказ снижает кризис на столько.</summary>
@@ -229,10 +242,23 @@ namespace CityHighways.Core
         /// <summary>Ремонт, снегопад или парад поднимают кризис на столько.</summary>
         public int CoopCrisisPerBadEvent = 1;
         /// <summary>Сколько заказов нужно выполнить для победы (по числу игроков).</summary>
-        public int[] CoopOrdersToWinByPlayers = { 0, 0, 5, 6, 7, 8 };
+        public int[] CoopOrdersToWinByPlayers = { 0, 0, 4, 5, 6, 7 };
 
         public int CoopOrdersToWin(int players) =>
             CoopOrdersToWinByPlayers[Math.Max(0, Math.Min(players, CoopOrdersToWinByPlayers.Length - 1))];
+
+        public int CoopOpenOrdersFor(int players) =>
+            Math.Max(1, CoopOpenOrdersByPlayers[Math.Max(0, Math.Min(players, CoopOpenOrdersByPlayers.Length - 1))]);
+
+        /// <summary>Срок заказа в кругах: база + очки заказа × CoopOrderRoundsPerPoint × 2 / игроков.</summary>
+        public int CoopOrderRoundsFor(int points, int players)
+        {
+            float perPoint = CoopOrderRoundsPerPoint * 2f / Math.Max(2, players);
+            return Math.Max(2, CoopOrderRoundsBase + (int)Math.Ceiling(Math.Max(0, points) * perPoint));
+        }
+
+        /// <summary>Самый короткий срок заказа (для подсказок в правилах): заказ в 5 очков.</summary>
+        public int CoopShortestOrderRounds(int players) => CoopOrderRoundsFor(5, players);
 
         /// <summary>Включить кооператив: соревновательные механики (взятки, аукцион, пропуска) выключаются.</summary>
         public GameConfig MakeCooperative()
