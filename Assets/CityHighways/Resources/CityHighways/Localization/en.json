@@ -47,6 +47,58 @@
     {
       "key": "menu.home.language_switch",
       "value": "Language: English / Switch to Russian"
+    },
+    {
+      "key": "menu.new_game.title",
+      "value": "New Game"
+    },
+    {
+      "key": "menu.new_game.players",
+      "value": "Players"
+    },
+    {
+      "key": "menu.new_game.add_player",
+      "value": "+ Add Player"
+    },
+    {
+      "key": "menu.new_game.options",
+      "value": "Game Options"
+    },
+    {
+      "key": "menu.new_game.mode",
+      "value": "Mode"
+    },
+    {
+      "key": "menu.new_game.map",
+      "value": "Map"
+    },
+    {
+      "key": "menu.new_game.scenario",
+      "value": "Scenario"
+    },
+    {
+      "key": "menu.new_game.road_pieces",
+      "value": "Road Pieces"
+    },
+    {
+      "key": "menu.new_game.hide_cards",
+      "value": "Hide cards between turns"
+    },
+    {
+      "key": "menu.new_game.turn_timer",
+      "value": "Turn Timer"
+    },
+    {
+      "key": "menu.new_game.difficulty",
+      "value": "Difficulty"
+    },
+    {
+      "key": "menu.new_game.start_replace",
+      "value": "Start New Game (delete saved game)"
+    },
+    {
+      "key": "menu.new_game.start",
+      "value": "Start Game"
     }
   ]
 }

@@ -47,6 +47,58 @@
     {
       "key": "menu.home.language_switch",
       "value": "Язык: Русский / Switch to English"
+    },
+    {
+      "key": "menu.new_game.title",
+      "value": "Новая игра"
+    },
+    {
+      "key": "menu.new_game.players",
+      "value": "Игроки"
+    },
+    {
+      "key": "menu.new_game.add_player",
+      "value": "+ Добавить игрока"
+    },
+    {
+      "key": "menu.new_game.options",
+      "value": "Параметры партии"
+    },
+    {
+      "key": "menu.new_game.mode",
+      "value": "Режим"
+    },
+    {
+      "key": "menu.new_game.map",
+      "value": "Карта"
+    },
+    {
+      "key": "menu.new_game.scenario",
+      "value": "Сценарий"
+    },
+    {
+      "key": "menu.new_game.road_pieces",
+      "value": "Участков дороги"
+    },
+    {
+      "key": "menu.new_game.hide_cards",
+      "value": "Скрывать карты при передаче хода"
+    },
+    {
+      "key": "menu.new_game.turn_timer",
+      "value": "Таймер хода"
+    },
+    {
+      "key": "menu.new_game.difficulty",
+      "value": "Сложность"
+    },
+    {
+      "key": "menu.new_game.start_replace",
+      "value": "Начать новую партию (сохранение удалится)"
+    },
+    {
+      "key": "menu.new_game.start",
+      "value": "Начать игру"
     }
   ]
 }

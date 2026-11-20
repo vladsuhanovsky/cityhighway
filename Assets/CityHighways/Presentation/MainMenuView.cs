@@ -841,7 +841,7 @@ namespace CityHighways.Presentation
             out UnityEngine.UIElements.Button timer, out Label hint)
         {
             var page = Ui.Column();
-            page.Add(PageTitle("Новая игра", () => ShowPage(Page.Home)));
+            page.Add(PageTitle(LocalizationService.Get("menu.new_game.title"), () => ShowPage(Page.Home)));
 
             // Высота карточек постоянная (по самому длинному режиму — соревнованию): при смене режима и числа
             // игроков страница не прыгает вверх-вниз (она отцентрована по высоте экрана).
@@ -854,10 +854,10 @@ namespace CityHighways.Presentation
             playersCard.style.backgroundColor = Theme.Panel;
             playersCard.style.flexGrow = 1f;
             playersCard.style.marginRight = 14f;
-            playersCard.Add(Ui.SectionTitle("Игроки"));
+            playersCard.Add(Ui.SectionTitle(LocalizationService.Get("menu.new_game.players")));
             playersList = Ui.Column();
             playersCard.Add(playersList);
-            addPlayer = Ui.Button("+ Добавить игрока", AddPlayer, ButtonKind.Ghost, 14f);
+            addPlayer = Ui.Button(LocalizationService.Get("menu.new_game.add_player"), AddPlayer, ButtonKind.Ghost, 14f);
             addPlayer.style.marginTop = 6f;
             addPlayer.style.alignSelf = Align.FlexStart;
             playersCard.Add(addPlayer);
@@ -872,9 +872,9 @@ namespace CityHighways.Presentation
             var gameCard = Ui.Card(20f);
             gameCard.style.backgroundColor = Theme.Panel;
             gameCard.style.width = 360f;
-            gameCard.Add(Ui.SectionTitle("Параметры партии"));
+            gameCard.Add(Ui.SectionTitle(LocalizationService.Get("menu.new_game.options")));
 
-            var modeRow = SettingRow("Режим");
+            var modeRow = SettingRow(LocalizationService.Get("menu.new_game.mode"));
             // Режимы по кругу: Магнат → Соревнование → Кооператив.
             _modeButton = Ui.Button("", () =>
             {
@@ -891,7 +891,7 @@ namespace CityHighways.Presentation
 
             // Карта — под режимом: от режима зависит, есть ли выбор карты (в магнате город генерируется), и при
             // переключении режимов строка «Режим» остаётся на месте.
-            var mapRow = SettingRow("Карта");
+            var mapRow = SettingRow(LocalizationService.Get("menu.new_game.map"));
             _mapRow = mapRow;
             _mapButton = Ui.Button("", NextMap, ButtonKind.Secondary, 14f);
             _mapButton.style.width = 170f;
@@ -900,7 +900,7 @@ namespace CityHighways.Presentation
             _mapHint = Hint();
             gameCard.Add(_mapHint);
 
-            var scenarioRow = SettingRow("Сценарий");
+            var scenarioRow = SettingRow(LocalizationService.Get("menu.new_game.scenario"));
             _scenarioButton = Ui.Button("", NextScenario, ButtonKind.Secondary, 14f);
             _scenarioButton.style.width = 170f;
             scenarioRow.Add(_scenarioButton);
@@ -912,7 +912,7 @@ namespace CityHighways.Presentation
             _scenarioHint.style.marginBottom = 12f;
             gameCard.Add(_scenarioHint);
 
-            var piecesRow = SettingRow("Участков дороги");
+            var piecesRow = SettingRow(LocalizationService.Get("menu.new_game.road_pieces"));
             var minus = Ui.Button("–", () => ChangePieces(-1), ButtonKind.Secondary, 18f);
             minus.style.width = 40f;
             piecesRow.Add(minus);
@@ -926,14 +926,14 @@ namespace CityHighways.Presentation
             gameCard.Add(piecesRow);
             _piecesRow = piecesRow;
 
-            var hideRow = SettingRow("Скрывать карты при передаче хода");
+            var hideRow = SettingRow(LocalizationService.Get("menu.new_game.hide_cards"));
             hideCards = Ui.Button("", ToggleHideCards, ButtonKind.Secondary, 14f);
             hideCards.style.width = 120f;
             hideRow.Add(hideCards);
             gameCard.Add(hideRow);
             _hideRow = hideRow;
 
-            var timerRow = SettingRow("Таймер хода");
+            var timerRow = SettingRow(LocalizationService.Get("menu.new_game.turn_timer"));
             timer = Ui.Button("", NextTimer, ButtonKind.Secondary, 14f);
             timer.style.width = 120f;
             timerRow.Add(timer);
@@ -941,7 +941,7 @@ namespace CityHighways.Presentation
             _timerRow = timerRow;
 
             // Сложность магната: частота грузов, награды, события, штрафы за пробки и стартовые очки стройки.
-            var difficultyRow = SettingRow("Сложность");
+            var difficultyRow = SettingRow(LocalizationService.Get("menu.new_game.difficulty"));
             _difficultyButton = Ui.Button("", NextDifficulty, ButtonKind.Secondary, 14f);
             _difficultyButton.style.width = 150f;
             difficultyRow.Add(_difficultyButton);
@@ -960,7 +960,7 @@ namespace CityHighways.Presentation
             cards.Add(gameCard);
 
             page.Add(BuildGhostBanner());
-            var start = Ui.Button(saved != null ? "Начать новую партию (сохранение удалится)" : "Начать игру", StartGame, ButtonKind.Primary, 22f);
+            var start = Ui.Button(LocalizationService.Get(saved != null ? "menu.new_game.start_replace" : "menu.new_game.start"), StartGame, ButtonKind.Primary, 22f);
             start.style.marginTop = 20f;
             start.style.height = 58f;
             page.Add(start);
