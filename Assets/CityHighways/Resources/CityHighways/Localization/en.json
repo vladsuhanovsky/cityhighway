@@ -1115,6 +1115,74 @@
     {
       "key": "menu.online.052",
       "value": "← Back"
+    },
+    {
+      "key": "game.notice.city_event",
+      "value": "Event: {0}"
+    },
+    {
+      "key": "game.notice.bribe_exposed",
+      "value": "{0} exposes {1}: bribery! −{2}"
+    },
+    {
+      "key": "game.notice.false_accusation",
+      "value": "{0} was wrong: {1} is innocent. Accuser loses {2}"
+    },
+    {
+      "key": "game.notice.auction_open",
+      "value": "City Auction: {0}"
+    },
+    {
+      "key": "game.notice.auction_won",
+      "value": "Auction: {0} wins the contract for {1} influence"
+    },
+    {
+      "key": "game.notice.auction_empty",
+      "value": "Auction: no bids; contract returned to the bottom of the deck"
+    },
+    {
+      "key": "game.notice.trade_accepted",
+      "value": "accepted"
+    },
+    {
+      "key": "game.notice.trade_declined",
+      "value": "declined"
+    },
+    {
+      "key": "game.notice.trade_result",
+      "value": "Trade: {0} {1}"
+    },
+    {
+      "key": "game.notice.goal_claimed",
+      "value": "City Goal “{0}”: {1} completed it first, +{2}"
+    },
+    {
+      "key": "game.notice.toll_earned",
+      "value": "An opponent used your roads: +{0} points"
+    },
+    {
+      "key": "game.notice.traffic_jam",
+      "value": "Traffic jam: {0} — {1}"
+    },
+    {
+      "key": "game.notice.jam_upgrade",
+      "value": ". Upgrade this road to a highway to ease congestion"
+    },
+    {
+      "key": "game.notice.jam_fee",
+      "value": " — crossing costs {0} extra"
+    },
+    {
+      "key": "game.notice.contract_toll",
+      "value": "  (tolls −{0}{1})"
+    },
+    {
+      "key": "game.notice.contract_toll_jam",
+      "value": ", including congestion"
+    },
+    {
+      "key": "game.notice.contract_completed",
+      "value": "Contract completed: {0}  +{1}{2}"
     }
   ]
 }

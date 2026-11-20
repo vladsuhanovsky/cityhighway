@@ -1115,6 +1115,74 @@
     {
       "key": "menu.online.052",
       "value": "← Назад"
+    },
+    {
+      "key": "game.notice.city_event",
+      "value": "Событие: {0}"
+    },
+    {
+      "key": "game.notice.bribe_exposed",
+      "value": "{0} разоблачает {1}: взятка! −{2}"
+    },
+    {
+      "key": "game.notice.false_accusation",
+      "value": "{0} ошибся: {1} чист. −{2} обвинителю"
+    },
+    {
+      "key": "game.notice.auction_open",
+      "value": "Аукцион мэрии: {0}"
+    },
+    {
+      "key": "game.notice.auction_won",
+      "value": "Аукцион: {0} забирает контракт за {1} вл."
+    },
+    {
+      "key": "game.notice.auction_empty",
+      "value": "Аукцион: ставок нет, контракт ушёл под колоду"
+    },
+    {
+      "key": "game.notice.trade_accepted",
+      "value": "согласился"
+    },
+    {
+      "key": "game.notice.trade_declined",
+      "value": "отказался"
+    },
+    {
+      "key": "game.notice.trade_result",
+      "value": "Сделка: {0} {1}"
+    },
+    {
+      "key": "game.notice.goal_claimed",
+      "value": "Цель мэрии «{0}»: {1} первым, +{2}"
+    },
+    {
+      "key": "game.notice.toll_earned",
+      "value": "Соперник проехал по вашим дорогам: +{0} очк."
+    },
+    {
+      "key": "game.notice.traffic_jam",
+      "value": "Пробка: {0} — {1}"
+    },
+    {
+      "key": "game.notice.jam_upgrade",
+      "value": ". Улучшите дорогу до магистрали, чтобы её разгрузить"
+    },
+    {
+      "key": "game.notice.jam_fee",
+      "value": " — проезд дороже на {0}"
+    },
+    {
+      "key": "game.notice.contract_toll",
+      "value": "  (проезд −{0}{1})"
+    },
+    {
+      "key": "game.notice.contract_toll_jam",
+      "value": ", с пробкой"
+    },
+    {
+      "key": "game.notice.contract_completed",
+      "value": "Контракт выполнен: {0}  +{1}{2}"
     }
   ]
 }

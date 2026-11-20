@@ -1726,7 +1726,7 @@ namespace CityHighways.Presentation
                 {
                     // Спокойная подача: тост, тихий звук, мягкое свечение краёв карты и плавная подсветка карточки события.
                     var color = EventColor(cityEvent.Kind);
-                    Toast("Событие: " + cityEvent.Title, color);
+                    Toast(string.Format(LocalizationService.Get("game.notice.city_event"), cityEvent.Title), color);
                     _app.Sound.Play(cityEvent.Kind == CityEventKind.NewDistrict ? Sfx.Fanfare : Sfx.Swish, 0.3f);
                     _map.Flash(color);
                     _map.Repaint();
@@ -1775,8 +1775,8 @@ namespace CityHighways.Presentation
                 var a = _game.LastAccusation;
                 string accuser = _game.Players[a.Accuser].Name, accused = _game.Players[a.Accused].Name;
                 Toast(a.Correct
-                        ? $"{accuser} разоблачает {accused}: взятка! −{_game.Config.BribeFineFor(_game.Players.Count) * a.Exposed}"
-                        : $"{accuser} ошибся: {accused} чист. −{_game.Config.FalseAccusationFine} обвинителю",
+                        ? string.Format(LocalizationService.Get("game.notice.bribe_exposed"), accuser, accused, _game.Config.BribeFineFor(_game.Players.Count) * a.Exposed)
+                        : string.Format(LocalizationService.Get("game.notice.false_accusation"), accuser, accused, _game.Config.FalseAccusationFine),
                     a.Correct ? Theme.Danger : Theme.TextDim);
                 _app.Sound.Play(a.Correct ? Sfx.Horn : Sfx.Swish, 0.35f);
             }
@@ -1787,15 +1787,15 @@ namespace CityHighways.Presentation
                 _lastAuctionShown = _game.AuctionNumber;
                 if (_game.Phase == GamePhase.Bidding && _game.AuctionContract != null)
                 {
-                    Toast("Аукцион мэрии: " + ContractTitle(_game.AuctionContract), Theme.Gold);
+                    Toast(string.Format(LocalizationService.Get("game.notice.auction_open"), ContractTitle(_game.AuctionContract)), Theme.Gold);
                     _app.Sound.Play(Sfx.Fanfare, 0.3f);
                 }
                 else if (_game.LastAuction != null)
                 {
                     var auction = _game.LastAuction;
                     Toast(auction.Winner >= 0
-                        ? $"Аукцион: {_game.Players[auction.Winner].Name} забирает контракт за {auction.Price} вл."
-                        : "Аукцион: ставок нет, контракт ушёл под колоду", auction.Winner >= 0 ? Theme.Success : Theme.TextDim);
+                        ? string.Format(LocalizationService.Get("game.notice.auction_won"), _game.Players[auction.Winner].Name, auction.Price)
+                        : LocalizationService.Get("game.notice.auction_empty"), auction.Winner >= 0 ? Theme.Success : Theme.TextDim);
                 }
             }
 
@@ -1804,8 +1804,8 @@ namespace CityHighways.Presentation
             {
                 _lastTradeShown = _game.TradeNumber;
                 var trade = _game.LastTrade;
-                string answer = _game.LastTradeAccepted ? "согласился" : "отказался";
-                Toast($"Сделка: {_game.Players[trade.To].Name} {answer}", _game.LastTradeAccepted ? Theme.Success : Theme.TextDim);
+                string answer = LocalizationService.Get(_game.LastTradeAccepted ? "game.notice.trade_accepted" : "game.notice.trade_declined");
+                Toast(string.Format(LocalizationService.Get("game.notice.trade_result"), _game.Players[trade.To].Name, answer), _game.LastTradeAccepted ? Theme.Success : Theme.TextDim);
             }
 
             // Открытая карта удачи.
@@ -1822,7 +1822,7 @@ namespace CityHighways.Presentation
                 string who = _game.Players[pair.Value].Name;
                 _app.Tweener.After(claimDuration + 0.15f, () =>
                 {
-                    Toast($"Цель мэрии «{goal.Name}»: {who} первым, +{goal.Points}", Theme.Gold);
+                    Toast(string.Format(LocalizationService.Get("game.notice.goal_claimed"), goal.Name, who, goal.Points), Theme.Gold);
                     // Салют над серединой карты — цветом компании, взявшей цель.
                     _map.Fireworks(_map.contentRect.center + new Vector2(-80f, -40f), Palette.PlayerColor(pair.Value), 48);
                     _map.Fireworks(_map.contentRect.center + new Vector2(90f, 10f), Theme.Gold, 40);
@@ -1837,7 +1837,7 @@ namespace CityHighways.Presentation
             {
                 int gain = now.Earned[me] - before.Earned[me];
                 _app.Tweener.After(claimDuration + 0.3f, () =>
-                    Toast($"Соперник проехал по вашим дорогам: +{gain} очк.", Theme.Gold));
+                    Toast(string.Format(LocalizationService.Get("game.notice.toll_earned"), gain), Theme.Gold));
             }
             foreach (var roadId in now.Jammed)
             {
@@ -1845,8 +1845,8 @@ namespace CityHighways.Presentation
                 var jammedRoad = _game.Map.GetRoad(roadId);
                 if (jammedRoad == null) continue;
                 bool mine = now.Owners.TryGetValue(roadId, out var jamOwner) && jamOwner == me && !IsBot(me);
-                string text = $"Пробка: {LocationName(jammedRoad.A)} — {LocationName(jammedRoad.B)}" +
-                              (mine ? ". Улучшите дорогу до магистрали, чтобы её разгрузить" : $" — проезд дороже на {_game.Config.JamFee}");
+                string text = string.Format(LocalizationService.Get("game.notice.traffic_jam"), LocationName(jammedRoad.A), LocationName(jammedRoad.B)) +
+                              (mine ? LocalizationService.Get("game.notice.jam_upgrade") : string.Format(LocalizationService.Get("game.notice.jam_fee"), _game.Config.JamFee));
                 _app.Tweener.After(claimDuration + 0.5f, () => Toast(text, Theme.Danger));
             }
 
@@ -1894,8 +1894,8 @@ namespace CityHighways.Presentation
                 int contractToll = paidCheck.Toll + paidCheck.JamFee;
                 _app.Tweener.After(claimDuration, () =>
                 {
-                    string toll = contractToll > 0 ? $"  (проезд −{contractToll}{(paidCheck.JamFee > 0 ? ", с пробкой" : "")})" : "";
-                    Toast($"Контракт выполнен: {ContractTitle(contract)}  +{contract.Points}{toll}", Theme.Success);
+                    string toll = contractToll > 0 ? string.Format(LocalizationService.Get("game.notice.contract_toll"), contractToll, paidCheck.JamFee > 0 ? LocalizationService.Get("game.notice.contract_toll_jam") : "") : "";
+                    Toast(string.Format(LocalizationService.Get("game.notice.contract_completed"), ContractTitle(contract), contract.Points, toll), Theme.Success);
                     // Салют над районами контракта.
                     foreach (var district in contract.Districts)
                         _map.Fireworks(_map.DistrictScreenCenter(district), Palette.PlayerColor(playerIndex), 30);
