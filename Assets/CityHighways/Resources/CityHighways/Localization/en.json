@@ -4155,6 +4155,38 @@
     {
       "key": "menu.characters.dynamic.record",
       "value": "Played: {0}  |  Wins: {1} ({2}%)"
+    },
+    {
+      "key": "menu.tutorial.dynamic.magnate",
+      "value": "Tutorial map: a small city with an airport, train station and port. You and one bot, easy difficulty, {0} rounds. The coach will guide you through round one."
+    },
+    {
+      "key": "menu.tutorial.dynamic.orders_start",
+      "value": "There are {0}–{1} shared city orders, depending on player count. "
+    },
+    {
+      "key": "menu.tutorial.dynamic.orders_middle",
+      "value": "An order is completed when the shared road network connects its districts. Deadline depends on distance: a 10-point order with two players lasts "
+    },
+    {
+      "key": "menu.tutorial.dynamic.orders_end",
+      "value": "{0} rounds. An expired order increases crisis by {1}. The order panel is at the top right."
+    },
+    {
+      "key": "menu.tutorial.dynamic.crisis_start",
+      "value": "Crisis starts at {0} and rises by 1 every {1} rounds. Repairs, snowstorms and parades add another "
+    },
+    {
+      "key": "menu.tutorial.dynamic.crisis_end",
+      "value": "+{0}. Each completed order reduces crisis by {1}."
+    },
+    {
+      "key": "menu.tutorial.dynamic.victory_start",
+      "value": "The team wins by completing city orders: {0} with two players, {1} with three, {2} with four. "
+    },
+    {
+      "key": "menu.tutorial.dynamic.victory_end",
+      "value": "The city wins if crisis reaches {0} or the team runs out of road pieces before completing enough orders."
     }
   ]
 }

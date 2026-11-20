@@ -45,7 +45,7 @@ namespace CityHighways.Presentation
             var profileName = Profiles.Active?.name;
 
             _tutorialCards.Add(TutorialCard(GameMode.Magnate, MagnateTutorialDone,
-                $"Учебная карта: небольшой город с аэропортом, вокзалом и портом. Вы и один бот, лёгкая сложность, {GameSetup.TutorialMagnateRounds} раундов. Наставник проведёт по первому раунду.",
+                string.Format(LocalizationService.Get("menu.tutorial.dynamic.magnate"), GameSetup.TutorialMagnateRounds),
                 new[] { LocalizationService.Get("menu.tutorial.003"), LocalizationService.Get("menu.tutorial.004"), LocalizationService.Get("menu.tutorial.005"), LocalizationService.Get("menu.tutorial.006") },
                 LocalizationService.Get("menu.tutorial.007"), () =>
                 {
@@ -161,15 +161,15 @@ namespace CityHighways.Presentation
                     LocalizationService.Get("menu.tutorial.029") +
                     LocalizationService.Get("menu.tutorial.030")),
                 (MenuIcon.Glyph.Document, LocalizationService.Get("menu.tutorial.031"),
-                    $"На столе — {c.CoopOpenOrdersFor(2)}–{c.CoopOpenOrdersFor(4)} заказа города (зависит от числа игроков) — общие контракты команды. " +
-                    "Заказ выполнен, когда общая сеть связала его районы. Срок зависит от длины заказа: вдвоём на заказ в 10 очков — " +
-                    $"{c.CoopOrderRoundsFor(10, 2)} кругов; просроченный поднимает кризис на {c.CoopCrisisPerFailedOrder}. Панель заказов — в правом верхнем углу поля."),
+                    string.Format(LocalizationService.Get("menu.tutorial.dynamic.orders_start"), c.CoopOpenOrdersFor(2), c.CoopOpenOrdersFor(4)) +
+                    LocalizationService.Get("menu.tutorial.dynamic.orders_middle") +
+                    string.Format(LocalizationService.Get("menu.tutorial.dynamic.orders_end"), c.CoopOrderRoundsFor(10, 2), c.CoopCrisisPerFailedOrder)),
                 (MenuIcon.Glyph.Flame, LocalizationService.Get("menu.tutorial.032"),
-                    $"Кризис начинается с {c.CoopCrisisStart} и растёт сам: +1 каждые {c.CoopCrisisEveryRounds} круга, а ремонт, снегопад и парад добавляют ещё " +
-                    $"+{c.CoopCrisisPerBadEvent}. Каждый выполненный заказ снижает кризис на {c.CoopCrisisReliefPerOrder}."),
+                    string.Format(LocalizationService.Get("menu.tutorial.dynamic.crisis_start"), c.CoopCrisisStart, c.CoopCrisisEveryRounds) +
+                    string.Format(LocalizationService.Get("menu.tutorial.dynamic.crisis_end"), c.CoopCrisisPerBadEvent, c.CoopCrisisReliefPerOrder)),
                 (MenuIcon.Glyph.Trophy, LocalizationService.Get("menu.tutorial.033"),
-                    $"Команда побеждает, выполнив заказы города: на двоих — {c.CoopOrdersToWin(2)}, на троих — {c.CoopOrdersToWin(3)}, на четверых — {c.CoopOrdersToWin(4)}. " +
-                    $"Город побеждает, если кризис дошёл до {c.CoopCrisisMax} или участки кончились раньше, чем набралось заказов."),
+                    string.Format(LocalizationService.Get("menu.tutorial.dynamic.victory_start"), c.CoopOrdersToWin(2), c.CoopOrdersToWin(3), c.CoopOrdersToWin(4)) +
+                    string.Format(LocalizationService.Get("menu.tutorial.dynamic.victory_end"), c.CoopCrisisMax)),
             };
         }
 
