@@ -61,11 +61,13 @@ jobs:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Audit localization coverage
         if: always()
-        run: python3 Tools/localization_audit.py --output artifacts/localization-audit.json
+        run: python3 Tools/localization_audit.py --output "${RUNNER_TEMP}/localization-audit.json"
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unity-editmode-results
-          path: artifacts/
+          path: |
+            artifacts/
+            ${{ runner.temp }}/localization-audit.json
           if-no-files-found: warn
