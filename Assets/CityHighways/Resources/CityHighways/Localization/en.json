@@ -1439,6 +1439,426 @@
     {
       "key": "menu.clubs.064",
       "value": "less than an hour left this week"
+    },
+    {
+      "key": "menu.stats.001",
+      "value": "← Back"
+    },
+    {
+      "key": "menu.stats.002",
+      "value": "Game Statistics"
+    },
+    {
+      "key": "menu.stats.003",
+      "value": "no games yet"
+    },
+    {
+      "key": "menu.stats.004",
+      "value": "game"
+    },
+    {
+      "key": "menu.stats.005",
+      "value": "games"
+    },
+    {
+      "key": "menu.stats.006",
+      "value": "games"
+    },
+    {
+      "key": "menu.stats.007",
+      "value": "Finish a Magnate match to see scores, deliveries, city orders, jams and reputation."
+    },
+    {
+      "key": "menu.stats.008",
+      "value": "Finish a co-op match to see team wins, scores and individual contributions."
+    },
+    {
+      "key": "menu.stats.009",
+      "value": "Finish a match to unlock charts, win streaks, records and favorite characters."
+    },
+    {
+      "key": "menu.stats.010",
+      "value": "Statistics for:"
+    },
+    {
+      "key": "menu.stats.011",
+      "value": "Player"
+    },
+    {
+      "key": "menu.stats.012",
+      "value": "No streaks yet"
+    },
+    {
+      "key": "menu.stats.013",
+      "value": "Hot streak — keep it up!"
+    },
+    {
+      "key": "menu.stats.014",
+      "value": "One more win will start a streak"
+    },
+    {
+      "key": "menu.stats.015",
+      "value": "losses"
+    },
+    {
+      "key": "menu.stats.016",
+      "value": "losses"
+    },
+    {
+      "key": "menu.stats.017",
+      "value": "One win will break the cold streak"
+    },
+    {
+      "key": "menu.stats.018",
+      "value": "Scores in the Last 10 Games"
+    },
+    {
+      "key": "menu.stats.019",
+      "value": "Play a match to unlock this chart."
+    },
+    {
+      "key": "menu.stats.020",
+      "value": "Stable: your average score remains unchanged."
+    },
+    {
+      "key": "menu.stats.021",
+      "value": "Each dot is a game: green is a win, red a loss; dashed line shows the average."
+    },
+    {
+      "key": "menu.stats.022",
+      "value": "Wins by Character"
+    },
+    {
+      "key": "menu.stats.023",
+      "value": "Wins and Losses"
+    },
+    {
+      "key": "menu.stats.024",
+      "value": "Result"
+    },
+    {
+      "key": "menu.stats.025",
+      "value": "Characters"
+    },
+    {
+      "key": "menu.stats.026",
+      "value": "wins"
+    },
+    {
+      "key": "menu.stats.027",
+      "value": "Wins"
+    },
+    {
+      "key": "menu.stats.028",
+      "value": "Losses"
+    },
+    {
+      "key": "menu.stats.029",
+      "value": "No wins with characters yet."
+    },
+    {
+      "key": "menu.stats.030",
+      "value": "Beginner"
+    },
+    {
+      "key": "menu.stats.031",
+      "value": "Amateur"
+    },
+    {
+      "key": "menu.stats.032",
+      "value": "Pro"
+    },
+    {
+      "key": "menu.stats.033",
+      "value": "Master"
+    },
+    {
+      "key": "menu.stats.034",
+      "value": "Legend"
+    },
+    {
+      "key": "menu.stats.035",
+      "value": "Easy"
+    },
+    {
+      "key": "menu.stats.036",
+      "value": "Normal"
+    },
+    {
+      "key": "menu.stats.037",
+      "value": "Hard"
+    },
+    {
+      "key": "menu.stats.038",
+      "value": "Expert"
+    },
+    {
+      "key": "menu.stats.039",
+      "value": "Deliveries & Reputation"
+    },
+    {
+      "key": "menu.stats.040",
+      "value": "No games for the selected player."
+    },
+    {
+      "key": "menu.stats.041",
+      "value": "Deliveries per Game"
+    },
+    {
+      "key": "menu.stats.042",
+      "value": "City Orders"
+    },
+    {
+      "key": "menu.stats.043",
+      "value": "Traffic Jams per Game"
+    },
+    {
+      "key": "menu.stats.044",
+      "value": "Tolls per Game"
+    },
+    {
+      "key": "menu.stats.045",
+      "value": "Hub Fees"
+    },
+    {
+      "key": "menu.stats.046",
+      "value": "per game"
+    },
+    {
+      "key": "menu.stats.047",
+      "value": "Perishables Delivered on Time"
+    },
+    {
+      "key": "menu.stats.048",
+      "value": "Wins by Difficulty"
+    },
+    {
+      "key": "menu.stats.049",
+      "value": "Where You Build Most Often"
+    },
+    {
+      "key": "menu.stats.050",
+      "value": "The heat map will appear after your next match. Road statistics are recorded from this version onward."
+    },
+    {
+      "key": "menu.stats.051",
+      "value": "Could not load the heat map."
+    },
+    {
+      "key": "menu.stats.052",
+      "value": "less often"
+    },
+    {
+      "key": "menu.stats.053",
+      "value": "more often"
+    },
+    {
+      "key": "menu.stats.054",
+      "value": "Favorite districts: "
+    },
+    {
+      "key": "menu.stats.055",
+      "value": "Comparison with Opponents"
+    },
+    {
+      "key": "menu.stats.056",
+      "value": "No games available for comparison."
+    },
+    {
+      "key": "menu.stats.057",
+      "value": "even"
+    },
+    {
+      "key": "menu.stats.058",
+      "value": "Compares your average score with opponents in the game log (bots grouped by difficulty)."
+    },
+    {
+      "key": "menu.stats.059",
+      "value": "Total Games"
+    },
+    {
+      "key": "menu.stats.060",
+      "value": "Time Played"
+    },
+    {
+      "key": "menu.stats.061",
+      "value": "Record"
+    },
+    {
+      "key": "menu.stats.062",
+      "value": "Game History"
+    },
+    {
+      "key": "menu.stats.063",
+      "value": "All"
+    },
+    {
+      "key": "menu.stats.064",
+      "value": "Wins Only"
+    },
+    {
+      "key": "menu.stats.065",
+      "value": "Online Only"
+    },
+    {
+      "key": "menu.stats.066",
+      "value": "Last Week"
+    },
+    {
+      "key": "menu.stats.067",
+      "value": "▶ Watch Replay"
+    },
+    {
+      "key": "menu.stats.068",
+      "value": "No online games in history (online tracking starts with this version)."
+    },
+    {
+      "key": "menu.stats.069",
+      "value": "No games match this filter."
+    },
+    {
+      "key": "menu.stats.070",
+      "value": "Select a match for its breakdown and highlights. A ▶ icon indicates a replay: "
+    },
+    {
+      "key": "menu.stats.071",
+      "value": "watch it turn by turn with every player's cards."
+    },
+    {
+      "key": "menu.stats.072",
+      "value": "online"
+    },
+    {
+      "key": "menu.stats.073",
+      "value": "Replay available"
+    },
+    {
+      "key": "menu.stats.074",
+      "value": "Close"
+    },
+    {
+      "key": "menu.stats.075",
+      "value": "online"
+    },
+    {
+      "key": "menu.stats.076",
+      "value": "cooperative"
+    },
+    {
+      "key": "menu.stats.077",
+      "value": "The city defeated the team"
+    },
+    {
+      "key": "menu.stats.078",
+      "value": "Deliveries"
+    },
+    {
+      "key": "menu.stats.079",
+      "value": "City Orders"
+    },
+    {
+      "key": "menu.stats.080",
+      "value": "Tolls"
+    },
+    {
+      "key": "menu.stats.081",
+      "value": "Hubs"
+    },
+    {
+      "key": "menu.stats.082",
+      "value": "Traffic Jams"
+    },
+    {
+      "key": "menu.stats.083",
+      "value": "Losses"
+    },
+    {
+      "key": "menu.stats.084",
+      "value": "Roads"
+    },
+    {
+      "key": "menu.stats.085",
+      "value": "Contracts"
+    },
+    {
+      "key": "menu.stats.086",
+      "value": "Goals"
+    },
+    {
+      "key": "menu.stats.087",
+      "value": "Luck"
+    },
+    {
+      "key": "menu.stats.088",
+      "value": "Character"
+    },
+    {
+      "key": "menu.stats.089",
+      "value": "Total"
+    },
+    {
+      "key": "menu.stats.090",
+      "value": "times"
+    },
+    {
+      "key": "menu.stats.091",
+      "value": "times"
+    },
+    {
+      "key": "menu.stats.092",
+      "value": "districts"
+    },
+    {
+      "key": "menu.stats.093",
+      "value": "districts"
+    },
+    {
+      "key": "menu.stats.094",
+      "value": "Highlights"
+    },
+    {
+      "key": "menu.stats.095",
+      "value": "Random Bot"
+    },
+    {
+      "key": "menu.stats.096",
+      "value": "Smart Bot"
+    },
+    {
+      "key": "menu.stats.097",
+      "value": "Players"
+    },
+    {
+      "key": "menu.stats.098",
+      "value": "Games"
+    },
+    {
+      "key": "menu.stats.099",
+      "value": "Avg. Score"
+    },
+    {
+      "key": "menu.stats.100",
+      "value": "Best"
+    },
+    {
+      "key": "menu.stats.101",
+      "value": "Deliveries / Orders"
+    },
+    {
+      "key": "menu.stats.102",
+      "value": "No games with characters yet."
+    },
+    {
+      "key": "menu.stats.103",
+      "value": "All companies, including bots, are counted."
+    },
+    {
+      "key": "menu.stats.104",
+      "value": "Reset Statistics"
+    },
+    {
+      "key": "menu.stats.105",
+      "value": "Are you sure? Click again"
     }
   ]
 }

@@ -47,10 +47,10 @@ namespace CityHighways.Presentation
             var header = Ui.Row();
             header.style.alignItems = Align.Center;
             header.style.marginBottom = 14f;
-            var backButton = Ui.Button("← Назад", back, ButtonKind.Ghost, 15f);
+            var backButton = Ui.Button(LocalizationService.Get("menu.stats.001"), back, ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             header.Add(backButton);
-            var title = Ui.Text("Счётчик партий", 34f, Theme.Gold, true);
+            var title = Ui.Text(LocalizationService.Get("menu.stats.002"), 34f, Theme.Gold, true);
             title.style.flexGrow = 1f;
             header.Add(title);
             if (_all.Count > 0) header.Add(ResetButton());
@@ -85,7 +85,7 @@ namespace CityHighways.Presentation
         string ModeNote(GameMode mode)
         {
             int count = _all.Count(g => ModeTabs.Of(g) == mode);
-            return count == 0 ? "партий пока нет" : $"{count} {Plural(count, "партия", "партии", "партий")}";
+            return count == 0 ? LocalizationService.Get("menu.stats.003") : $"{count} {Plural(count, LocalizationService.Get("menu.stats.004"), LocalizationService.Get("menu.stats.005"), LocalizationService.Get("menu.stats.006"))}";
         }
 
         VisualElement EmptyCard()
@@ -96,10 +96,10 @@ namespace CityHighways.Presentation
             empty.Add(new MenuIcon(ModeTabs.Glyph(s_mode), 48f, Theme.Gold));
             empty.Add(Ui.Text($"В режиме «{ModeTabs.Title(s_mode)}» ещё ни одной партии", 22f, Theme.Text, true));
             string hint = s_mode == GameMode.Magnate
-                ? "Доиграйте партию магната до конца — здесь появятся очки, доставки, заказы мэрии, пробки и репутация."
+                ? LocalizationService.Get("menu.stats.007")
                 : s_mode == GameMode.Coop
-                ? "Доиграйте кооператив до конца — здесь появятся победы команды, очки и вклад каждого."
-                : "Доиграйте партию до конца — здесь появятся графики, серии побед, рекорды и любимые персонажи.";
+                ? LocalizationService.Get("menu.stats.008")
+                : LocalizationService.Get("menu.stats.009");
             var label = Ui.Text(hint, 14f, Theme.TextDim);
             label.style.marginTop = 8f;
             label.style.whiteSpace = WhiteSpace.Normal;
@@ -133,7 +133,7 @@ namespace CityHighways.Presentation
                 chooser.style.alignItems = Align.Center;
                 chooser.style.flexWrap = Wrap.Wrap;
                 chooser.style.marginBottom = 10f;
-                chooser.Add(Ui.Text("Чья статистика:", 14f, Theme.TextDim, true));
+                chooser.Add(Ui.Text(LocalizationService.Get("menu.stats.010"), 14f, Theme.TextDim, true));
                 foreach (var name in _humans.Take(8))
                 {
                     string chosen = name;
@@ -207,7 +207,7 @@ namespace CityHighways.Presentation
 
         VisualElement PlayerCard(List<(GameStat game, PlayerStat me)> mine)
         {
-            var card = Widget("Игрок", 300f);
+            var card = Widget(LocalizationService.Get("menu.stats.011"), 300f);
             card.style.marginRight = 12f;
             card.Add(Ui.Text(_player ?? "—", 24f, Theme.Text, true));
             int wins = mine.Count(x => x.me.winner);
@@ -235,16 +235,16 @@ namespace CityHighways.Presentation
             icon.style.marginRight = 12f;
             streak.Add(icon);
             var texts = Ui.Column();
-            if (mine.Count == 0) texts.Add(Ui.Text("Серий пока нет", 16f, Theme.Text, true));
+            if (mine.Count == 0) texts.Add(Ui.Text(LocalizationService.Get("menu.stats.012"), 16f, Theme.Text, true));
             else if (currentWins)
             {
                 texts.Add(Ui.Text($"Серия побед: {current}", 18f, new Color(1f, 0.65f, 0.30f), true));
-                texts.Add(Ui.Text(current >= 3 ? "Горячая серия — так держать!" : "Ещё победа — и серия разгорится", 12f, Theme.TextDim));
+                texts.Add(Ui.Text(current >= 3 ? LocalizationService.Get("menu.stats.013") : LocalizationService.Get("menu.stats.014"), 12f, Theme.TextDim));
             }
             else
             {
-                texts.Add(Ui.Text($"Холодная серия: {current} {Plural(current, "поражение", "поражения", "поражений")}", 16f, new Color(0.60f, 0.82f, 1f), true));
-                texts.Add(Ui.Text("Одна победа растопит лёд", 12f, Theme.TextDim));
+                texts.Add(Ui.Text($"Холодная серия: {current} {Plural(current, "поражение", LocalizationService.Get("menu.stats.015"), LocalizationService.Get("menu.stats.016"))}", 16f, new Color(0.60f, 0.82f, 1f), true));
+                texts.Add(Ui.Text(LocalizationService.Get("menu.stats.017"), 12f, Theme.TextDim));
             }
             streak.Add(texts);
             card.Add(streak);
@@ -260,12 +260,12 @@ namespace CityHighways.Presentation
 
         VisualElement ScoreCard(List<(GameStat game, PlayerStat me)> mine)
         {
-            var card = Widget("Очки за последние 10 партий");
+            var card = Widget(LocalizationService.Get("menu.stats.018"));
             card.style.marginRight = 12f;
             var last = mine.Skip(Mathf.Max(0, mine.Count - 10)).ToList();
             if (last.Count == 0)
             {
-                card.Add(Caption("Сыграйте партию — здесь появится график.", 13f, Theme.TextDim, 4f));
+                card.Add(Caption(LocalizationService.Get("menu.stats.019"), 13f, Theme.TextDim, 4f));
                 return card;
             }
             var chart = new ScoreLineChart(170f);
@@ -277,25 +277,25 @@ namespace CityHighways.Presentation
                 float early = (float)last.Take(half).Average(x => x.me.total);
                 float late = (float)last.Skip(half).Average(x => x.me.total);
                 float delta = late - early;
-                card.Add(Caption(Mathf.Abs(delta) < 2f ? "Стабильно: средний счёт держится на одном уровне."
+                card.Add(Caption(Mathf.Abs(delta) < 2f ? LocalizationService.Get("menu.stats.020")
                     : delta > 0 ? $"Растёте: последние партии в среднем на {delta:0} очк. выше прежних."
                     : $"Спад: последние партии в среднем на {-delta:0} очк. ниже прежних.",
                     13f, Mathf.Abs(delta) < 2f ? Theme.TextDim : delta > 0 ? GameColors.Success : GameColors.Danger, 6f));
             }
-            card.Add(Caption("Точка — партия: зелёная — победа, красная — поражение. Пунктир — средний счёт.", 11f, Theme.TextDim, 4f));
+            card.Add(Caption(LocalizationService.Get("menu.stats.021"), 11f, Theme.TextDim, 4f));
             return card;
         }
 
         VisualElement PieCard(List<(GameStat game, PlayerStat me)> mine)
         {
-            var card = Widget(_pieByCharacter ? "Победы по персонажам" : "Победы и поражения", 300f);
+            var card = Widget(_pieByCharacter ? LocalizationService.Get("menu.stats.022") : LocalizationService.Get("menu.stats.023"), 300f);
             card.style.alignItems = Align.Center;
             if (s_mode != GameMode.Magnate)
             {
                 var toggle = Ui.Row();
                 toggle.style.marginBottom = 8f;
-                toggle.Add(Chip("Итог", !_pieByCharacter, () => { _pieByCharacter = false; Rebuild(); }));
-                toggle.Add(Chip("Персонажи", _pieByCharacter, () => { _pieByCharacter = true; Rebuild(); }));
+                toggle.Add(Chip(LocalizationService.Get("menu.stats.024"), !_pieByCharacter, () => { _pieByCharacter = false; Rebuild(); }));
+                toggle.Add(Chip(LocalizationService.Get("menu.stats.025"), _pieByCharacter, () => { _pieByCharacter = true; Rebuild(); }));
                 card.Add(toggle);
             }
             else _pieByCharacter = false;
@@ -308,9 +308,9 @@ namespace CityHighways.Presentation
             if (!_pieByCharacter)
             {
                 donut.Set(new[] { ((float)wins, GameColors.Success), ((float)(mine.Count - wins), GameColors.Danger) },
-                    mine.Count > 0 ? $"{Mathf.RoundToInt(100f * wins / mine.Count)}%" : "—", "побед");
-                legend.Add(LegendLine(GameColors.Success, "Победы", wins.ToString()));
-                legend.Add(LegendLine(GameColors.Danger, "Поражения", (mine.Count - wins).ToString()));
+                    mine.Count > 0 ? $"{Mathf.RoundToInt(100f * wins / mine.Count)}%" : "—", LocalizationService.Get("menu.stats.026"));
+                legend.Add(LegendLine(GameColors.Success, LocalizationService.Get("menu.stats.027"), wins.ToString()));
+                legend.Add(LegendLine(GameColors.Danger, LocalizationService.Get("menu.stats.028"), (mine.Count - wins).ToString()));
             }
             else
             {
@@ -323,8 +323,8 @@ namespace CityHighways.Presentation
                     slices.Add((byCharacter[i].count, color));
                     legend.Add(LegendLine(color, byCharacter[i].name, byCharacter[i].count.ToString()));
                 }
-                donut.Set(slices, wins.ToString(), "побед");
-                if (byCharacter.Count == 0) legend.Add(Caption("Побед с персонажами пока нет.", 12f, Theme.TextDim, 0f));
+                donut.Set(slices, wins.ToString(), LocalizationService.Get("menu.stats.026"));
+                if (byCharacter.Count == 0) legend.Add(Caption(LocalizationService.Get("menu.stats.029"), 12f, Theme.TextDim, 0f));
             }
             card.Add(legend);
             return card;
@@ -349,17 +349,17 @@ namespace CityHighways.Presentation
             return row;
         }
 
-        static readonly string[] ReputationOrder = { "Новичок", "Любитель", "Профи", "Мастер", "Легенда" };
-        static readonly string[] DifficultyOrder = { "Лёгкая", "Обычная", "Сложная", "Эксперт" };
+        static readonly string[] ReputationOrder = { LocalizationService.Get("menu.stats.030"), LocalizationService.Get("menu.stats.031"), LocalizationService.Get("menu.stats.032"), LocalizationService.Get("menu.stats.033"), LocalizationService.Get("menu.stats.034") };
+        static readonly string[] DifficultyOrder = { LocalizationService.Get("menu.stats.035"), LocalizationService.Get("menu.stats.036"), LocalizationService.Get("menu.stats.037"), LocalizationService.Get("menu.stats.038") };
 
         /// <summary>Магнат: средние за партию (доставки, заказы мэрии, пробки, проезд, хабы, потери), лучшая репутация, победы по сложности.</summary>
         VisualElement MagnateCard(List<(GameStat game, PlayerStat me)> mine)
         {
-            var card = Widget("Доставки и репутация", 520f);
+            var card = Widget(LocalizationService.Get("menu.stats.039"), 520f);
             card.style.marginRight = 12f;
             if (mine.Count == 0)
             {
-                card.Add(Caption("Нет партий выбранного игрока.", 13f, Theme.TextDim, 4f));
+                card.Add(Caption(LocalizationService.Get("menu.stats.040"), 13f, Theme.TextDim, 4f));
                 return card;
             }
             var grid = Ui.Row();
@@ -380,12 +380,12 @@ namespace CityHighways.Presentation
                 grid.Add(tile);
             }
             float Avg(Func<PlayerStat, int> f) => (float)mine.Average(x => f(x.me));
-            Stat("Доставок за партию", $"{Avg(r => r.delivered):0.#}", $"всего {mine.Sum(x => x.me.delivered)}", Theme.Text);
-            Stat("Заказов мэрии", $"{Avg(r => r.mayorOrders):0.#}", $"всего {mine.Sum(x => x.me.mayorOrders)}", Theme.Gold);
-            Stat("Пробок за партию", $"{Avg(r => r.jams):0.#}", null, Avg(r => r.jams) > 3f ? GameColors.Danger : Theme.Text);
-            Stat("Проезд за партию", $"{Avg(r => r.tollsEarned - r.tollsPaid):+0.#;−0.#;0}", $"+{mine.Sum(x => x.me.tollsEarned)} / −{mine.Sum(x => x.me.tollsPaid)}", Theme.Text);
-            Stat("Плата с хабов", $"{Avg(r => r.hubFees):0.#}", "за партию", Theme.Text);
-            Stat("Скоропорт вовремя", $"{mine.Sum(x => x.me.perishableOnTime)}", $"потерь грузов: {mine.Sum(x => x.me.losses)}", GameColors.Success);
+            Stat(LocalizationService.Get("menu.stats.041"), $"{Avg(r => r.delivered):0.#}", $"всего {mine.Sum(x => x.me.delivered)}", Theme.Text);
+            Stat(LocalizationService.Get("menu.stats.042"), $"{Avg(r => r.mayorOrders):0.#}", $"всего {mine.Sum(x => x.me.mayorOrders)}", Theme.Gold);
+            Stat(LocalizationService.Get("menu.stats.043"), $"{Avg(r => r.jams):0.#}", null, Avg(r => r.jams) > 3f ? GameColors.Danger : Theme.Text);
+            Stat(LocalizationService.Get("menu.stats.044"), $"{Avg(r => r.tollsEarned - r.tollsPaid):+0.#;−0.#;0}", $"+{mine.Sum(x => x.me.tollsEarned)} / −{mine.Sum(x => x.me.tollsPaid)}", Theme.Text);
+            Stat(LocalizationService.Get("menu.stats.045"), $"{Avg(r => r.hubFees):0.#}", LocalizationService.Get("menu.stats.046"), Theme.Text);
+            Stat(LocalizationService.Get("menu.stats.047"), $"{mine.Sum(x => x.me.perishableOnTime)}", $"потерь грузов: {mine.Sum(x => x.me.losses)}", GameColors.Success);
             card.Add(grid);
 
             int bestRank = mine.Select(x => Array.IndexOf(ReputationOrder, x.me.reputation ?? "")).DefaultIfEmpty(-1).Max();
@@ -394,7 +394,7 @@ namespace CityHighways.Presentation
 
             var byDifficulty = Ui.Column();
             byDifficulty.style.marginTop = 8f;
-            byDifficulty.Add(Ui.Text("Победы по сложности", 12f, Theme.TextDim, true));
+            byDifficulty.Add(Ui.Text(LocalizationService.Get("menu.stats.048"), 12f, Theme.TextDim, true));
             foreach (var level in DifficultyOrder)
             {
                 var games = mine.Where(x => x.game.difficulty == level).ToList();
@@ -416,13 +416,13 @@ namespace CityHighways.Presentation
 
         VisualElement HeatCard(List<(GameStat game, PlayerStat me)> mine)
         {
-            var card = Widget("Где вы строите чаще всего", 520f);
+            var card = Widget(LocalizationService.Get("menu.stats.049"), 520f);
             card.style.marginRight = 12f;
             // Карта — последней партии с записанными дорогами.
             var withRoads = mine.Where(x => x.me.roads != null && x.me.roads.Length > 0).ToList();
             if (withRoads.Count == 0)
             {
-                card.Add(Caption("Тепловая карта появится после следующей партии: дороги записываются в статистику начиная с этой версии.", 13f, Theme.TextDim, 4f));
+                card.Add(Caption(LocalizationService.Get("menu.stats.050"), 13f, Theme.TextDim, 4f));
                 return card;
             }
             string path = withRoads.Last().game.mapPath;
@@ -430,7 +430,7 @@ namespace CityHighways.Presentation
             var map = MapFor(path);
             if (map == null)
             {
-                card.Add(Caption("Не удалось загрузить карту для тепловой карты.", 13f, Theme.TextDim, 4f));
+                card.Add(Caption(LocalizationService.Get("menu.stats.051"), 13f, Theme.TextDim, 4f));
                 return card;
             }
             var counts = new Dictionary<string, int>();
@@ -446,7 +446,7 @@ namespace CityHighways.Presentation
             var legend = Ui.Row();
             legend.style.alignItems = Align.Center;
             legend.style.marginTop = 8f;
-            legend.Add(Ui.Text("реже", 11f, Theme.TextDim));
+            legend.Add(Ui.Text(LocalizationService.Get("menu.stats.052"), 11f, Theme.TextDim));
             for (int i = 0; i <= 8; i++)
             {
                 var swatch = Ui.Box();
@@ -456,7 +456,7 @@ namespace CityHighways.Presentation
                 swatch.style.backgroundColor = RoadHeatMap.Heat(i / 8f);
                 legend.Add(swatch);
             }
-            var often = Ui.Text("чаще", 11f, Theme.TextDim);
+            var often = Ui.Text(LocalizationService.Get("menu.stats.053"), 11f, Theme.TextDim);
             often.style.marginLeft = 6f;
             legend.Add(often);
             var space = Ui.Box();
@@ -470,7 +470,7 @@ namespace CityHighways.Presentation
                 .Select(id => map.Locations.FirstOrDefault(l => l.Id == id)?.DistrictId).Where(d => d != null)
                 .GroupBy(d => d).OrderByDescending(g => g.Count()).Take(3)
                 .Select(g => map.Districts.FirstOrDefault(d => d.Id == g.Key)?.Name).Where(n => n != null).ToList();
-            if (districts.Count > 0) card.Add(Caption("Любимые районы: " + string.Join(", ", districts), 13f, Theme.Text, 6f));
+            if (districts.Count > 0) card.Add(Caption(LocalizationService.Get("menu.stats.054") + string.Join(", ", districts), 13f, Theme.Text, 6f));
             return card;
         }
 
@@ -485,10 +485,10 @@ namespace CityHighways.Presentation
 
         VisualElement CompareCard(List<(GameStat game, PlayerStat me)> mine)
         {
-            var card = Widget("Сравнение с соперниками");
+            var card = Widget(LocalizationService.Get("menu.stats.055"));
             if (mine.Count == 0)
             {
-                card.Add(Caption("Нет партий для сравнения.", 13f, Theme.TextDim, 4f));
+                card.Add(Caption(LocalizationService.Get("menu.stats.056"), 13f, Theme.TextDim, 4f));
                 return card;
             }
             float myAverage = (float)mine.Average(x => x.me.total);
@@ -546,13 +546,13 @@ namespace CityHighways.Presentation
                 middle.style.backgroundColor = Theme.TextDim;
                 track.Add(middle);
                 row.Add(track);
-                var text = Ui.Text(Mathf.Abs(delta) < 1f ? "наравне"
+                var text = Ui.Text(Mathf.Abs(delta) < 1f ? LocalizationService.Get("menu.stats.057")
                     : delta > 0 ? $"вы выше на {delta:0}%" : $"вы ниже на {-delta:0}%", 13f, delta >= 0 ? GameColors.Success : GameColors.Danger, true);
                 text.style.marginLeft = 10f;
                 row.Add(text);
                 card.Add(row);
             }
-            card.Add(Caption("Сравнивается средний счёт за все партии журнала: ваш и каждого соперника (боты — по уровню).", 11f, Theme.TextDim, 10f));
+            card.Add(Caption(LocalizationService.Get("menu.stats.058"), 11f, Theme.TextDim, 10f));
             return card;
         }
 
@@ -582,9 +582,9 @@ namespace CityHighways.Presentation
                 tile.Add(texts);
                 row.Add(tile);
             }
-            Tile(MenuIcon.Glyph.Gamepad, "Всего партий", _games.Count.ToString(), _games.Any(g => g.online) ? $"сетевых: {_games.Count(g => g.online)}" : null);
-            Tile(MenuIcon.Glyph.Clock, "Время в игре", Duration(seconds), $"в среднем {Duration(seconds / Math.Max(1, _games.Count))}");
-            Tile(MenuIcon.Glyph.Trophy, "Рекорд", best.result.total.ToString(), $"{best.result.name}, {ShortDate(best.game.date)}");
+            Tile(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.stats.059"), _games.Count.ToString(), _games.Any(g => g.online) ? $"сетевых: {_games.Count(g => g.online)}" : null);
+            Tile(MenuIcon.Glyph.Clock, LocalizationService.Get("menu.stats.060"), Duration(seconds), $"в среднем {Duration(seconds / Math.Max(1, _games.Count))}");
+            Tile(MenuIcon.Glyph.Trophy, LocalizationService.Get("menu.stats.061"), best.result.total.ToString(), $"{best.result.name}, {ShortDate(best.game.date)}");
             return row;
         }
 
@@ -598,14 +598,14 @@ namespace CityHighways.Presentation
             var head = Ui.Row();
             head.style.alignItems = Align.Center;
             head.style.marginBottom = 8f;
-            var title = Ui.SectionTitle("История партий");
+            var title = Ui.SectionTitle(LocalizationService.Get("menu.stats.062"));
             title.style.flexGrow = 1f;
             title.style.marginBottom = 0f;
             head.Add(title);
-            head.Add(Chip("Все", _filter == HistoryFilter.All, () => { _filter = HistoryFilter.All; Rebuild(); }));
-            head.Add(Chip("Только победы", _filter == HistoryFilter.Wins, () => { _filter = HistoryFilter.Wins; Rebuild(); }));
-            head.Add(Chip("Только сетевые", _filter == HistoryFilter.Online, () => { _filter = HistoryFilter.Online; Rebuild(); }));
-            head.Add(Chip("Последняя неделя", _filter == HistoryFilter.Week, () => { _filter = HistoryFilter.Week; Rebuild(); }));
+            head.Add(Chip(LocalizationService.Get("menu.stats.063"), _filter == HistoryFilter.All, () => { _filter = HistoryFilter.All; Rebuild(); }));
+            head.Add(Chip(LocalizationService.Get("menu.stats.064"), _filter == HistoryFilter.Wins, () => { _filter = HistoryFilter.Wins; Rebuild(); }));
+            head.Add(Chip(LocalizationService.Get("menu.stats.065"), _filter == HistoryFilter.Online, () => { _filter = HistoryFilter.Online; Rebuild(); }));
+            head.Add(Chip(LocalizationService.Get("menu.stats.066"), _filter == HistoryFilter.Week, () => { _filter = HistoryFilter.Week; Rebuild(); }));
             card.Add(head);
 
             // Повтор лучшей партии выбранного игрока в этом режиме (если повтор сохранился).
@@ -619,7 +619,7 @@ namespace CityHighways.Presentation
                 var bestText = Ui.Text($"Лучшая партия: {Mine(best).total} очк. · {best.map} · {ShortDate(best.date)}", 13f, Theme.Gold, true);
                 bestText.style.flexGrow = 1f;
                 bestRow.Add(bestText);
-                var watch = Ui.Button("▶ Смотреть повтор", () => Replays.Open(best.replay), ButtonKind.Secondary, 13f);
+                var watch = Ui.Button(LocalizationService.Get("menu.stats.067"), () => Replays.Open(best.replay), ButtonKind.Secondary, 13f);
                 watch.style.minWidth = 170f;
                 bestRow.Add(watch);
                 card.Add(bestRow);
@@ -638,10 +638,10 @@ namespace CityHighways.Presentation
                 }
             }).Take(15).ToList();
             if (list.Count == 0)
-                card.Add(Caption(_filter == HistoryFilter.Online ? "Сетевых партий в журнале нет (отметка «сетевая» пишется с этой версии)." : "Под этот фильтр партий нет.", 13f, Theme.TextDim, 4f));
+                card.Add(Caption(_filter == HistoryFilter.Online ? LocalizationService.Get("menu.stats.068") : LocalizationService.Get("menu.stats.069"), 13f, Theme.TextDim, 4f));
             foreach (var game in list) card.Add(HistoryRow(game));
-            card.Add(Caption("Нажмите на партию — откроется её обзор: итог по категориям и ключевые моменты. Значок ▶ — у партии есть повтор: " +
-                             "его можно посмотреть ход за ходом, с картами всех игроков.", 11f, Theme.TextDim, 8f));
+            card.Add(Caption(LocalizationService.Get("menu.stats.070") +
+                             LocalizationService.Get("menu.stats.071"), 11f, Theme.TextDim, 8f));
             return card;
         }
 
@@ -670,7 +670,7 @@ namespace CityHighways.Presentation
             when.style.width = 130f;
             when.Add(Ui.Number(ShortDate(game.date), 13f, Theme.Text, true));
             var tags = new List<string>();
-            if (game.online) tags.Add("сеть");
+            if (game.online) tags.Add(LocalizationService.Get("menu.stats.072"));
             if (!string.IsNullOrEmpty(game.difficulty)) tags.Add(game.difficulty);
             if (!string.IsNullOrEmpty(game.scenario) && game.scenario != Scenarios.Title(ScenarioKind.Standard)) tags.Add(game.scenario);
             when.Add(Ui.Text(tags.Count > 0 ? string.Join(" · ", tags) : Duration(game.seconds), 11f, Theme.TextDim));
@@ -712,7 +712,7 @@ namespace CityHighways.Presentation
             {
                 var play = new MenuIcon(MenuIcon.Glyph.Play, 16f, Theme.Gold);
                 play.style.marginLeft = 10f;
-                play.tooltip = "Есть повтор партии";
+                play.tooltip = LocalizationService.Get("menu.stats.073");
                 row.Add(play);
             }
             var arrow = new MenuIcon(MenuIcon.Glyph.Chevron, 16f, Theme.TextDim);
@@ -768,7 +768,7 @@ namespace CityHighways.Presentation
             head.Add(title);
             if (Replays.Exists(game.replay))
             {
-                var watch = Ui.Button("▶ Смотреть повтор", () =>
+                var watch = Ui.Button(LocalizationService.Get("menu.stats.067"), () =>
                 {
                     CloseSummary();
                     Replays.Open(game.replay);
@@ -776,7 +776,7 @@ namespace CityHighways.Presentation
                 watch.style.marginRight = 8f;
                 head.Add(watch);
             }
-            head.Add(Ui.Button("Закрыть", CloseSummary, ButtonKind.Ghost, 14f));
+            head.Add(Ui.Button(LocalizationService.Get("menu.stats.074"), CloseSummary, ButtonKind.Ghost, 14f));
             window.Add(head);
             var facts = new List<string>();
             if (!string.IsNullOrEmpty(game.map)) facts.Add(game.map);
@@ -785,8 +785,8 @@ namespace CityHighways.Presentation
             if (!string.IsNullOrEmpty(game.difficulty)) facts.Add($"сложность «{game.difficulty}»");
             if (game.turns > 0) facts.Add(magnateGame ? $"{game.turns} раундов" : $"{game.turns} ходов");
             if (game.seconds > 0) facts.Add(Duration(game.seconds));
-            if (game.online) facts.Add("сетевая");
-            if (game.coop) facts.Add("кооператив");
+            if (game.online) facts.Add(LocalizationService.Get("menu.stats.075"));
+            if (game.coop) facts.Add(LocalizationService.Get("menu.stats.076"));
             window.Add(Caption(string.Join(" · ", facts), 13f, Theme.TextDim, 2f));
 
             var ordered = game.results.OrderByDescending(r => r.total).ToList();
@@ -803,7 +803,7 @@ namespace CityHighways.Presentation
             var heroTexts = Ui.Column();
             bool teamWon = game.results.Any(r => r.winner);
             heroTexts.Add(Ui.Text(game.coop
-                ? (teamWon ? $"Команда спасла город — {game.results.Sum(r => r.total)} очк. на всех" : "Город победил команду")
+                ? (teamWon ? $"Команда спасла город — {game.results.Sum(r => r.total)} очк. на всех" : LocalizationService.Get("menu.stats.077"))
                 : $"Победил {winner.name} — {winner.total} очк.", 18f, Theme.Text, true));
             if (ordered.Count > 1 && !game.coop) heroTexts.Add(Ui.Text($"Отрыв от второго места: {winner.total - ordered[1].total} очк." +
                                                         (string.IsNullOrEmpty(winner.character) ? "" : $" Персонаж: {winner.character}."), 13f, Theme.TextDim));
@@ -813,20 +813,20 @@ namespace CityHighways.Presentation
             // Итог по категориям: у каждого игрока строка цветных столбиков.
             var categories = magnateGame ? new (string title, Func<PlayerStat, int> value, Color color)[]
             {
-                ("Доставки", r => r.delivered, new Color(0.45f, 0.70f, 1f)),
-                ("Заказы мэрии", r => r.mayorOrders, Theme.Gold),
-                ("Проезд", r => r.tollsEarned - r.tollsPaid, new Color(0.75f, 0.60f, 0.98f)),
-                ("Хабы", r => r.hubFees, GameColors.Success),
-                ("Пробки", r => -r.jams, new Color(0.95f, 0.75f, 0.30f)),
-                ("Потери", r => -r.losses, new Color(0.55f, 0.80f, 0.85f))
+                (LocalizationService.Get("menu.stats.078"), r => r.delivered, new Color(0.45f, 0.70f, 1f)),
+                (LocalizationService.Get("menu.stats.079"), r => r.mayorOrders, Theme.Gold),
+                (LocalizationService.Get("menu.stats.080"), r => r.tollsEarned - r.tollsPaid, new Color(0.75f, 0.60f, 0.98f)),
+                (LocalizationService.Get("menu.stats.081"), r => r.hubFees, GameColors.Success),
+                (LocalizationService.Get("menu.stats.082"), r => -r.jams, new Color(0.95f, 0.75f, 0.30f)),
+                (LocalizationService.Get("menu.stats.083"), r => -r.losses, new Color(0.55f, 0.80f, 0.85f))
             } : new (string title, Func<PlayerStat, int> value, Color color)[]
             {
-                ("Дороги", r => r.roadPoints, new Color(0.45f, 0.70f, 1f)),
-                ("Контракты", r => r.contractPoints, Theme.Gold),
-                ("Проезд", r => r.tollsEarned - r.tollsPaid - r.jamFees, new Color(0.75f, 0.60f, 0.98f)),
-                ("Цели", r => r.goalPoints, GameColors.Success),
-                ("Удача", r => r.luckPoints, new Color(0.95f, 0.75f, 0.30f)),
-                ("Персонаж", r => r.characterPoints, new Color(0.55f, 0.80f, 0.85f))
+                (LocalizationService.Get("menu.stats.084"), r => r.roadPoints, new Color(0.45f, 0.70f, 1f)),
+                (LocalizationService.Get("menu.stats.085"), r => r.contractPoints, Theme.Gold),
+                (LocalizationService.Get("menu.stats.080"), r => r.tollsEarned - r.tollsPaid - r.jamFees, new Color(0.75f, 0.60f, 0.98f)),
+                (LocalizationService.Get("menu.stats.086"), r => r.goalPoints, GameColors.Success),
+                (LocalizationService.Get("menu.stats.087"), r => r.luckPoints, new Color(0.95f, 0.75f, 0.30f)),
+                (LocalizationService.Get("menu.stats.088"), r => r.characterPoints, new Color(0.55f, 0.80f, 0.85f))
             };
             var table = Ui.Column();
             table.style.marginTop = 12f;
@@ -840,7 +840,7 @@ namespace CityHighways.Presentation
                 cell.style.width = 92f;
                 headRow.Add(cell);
             }
-            var totalHead = Ui.Text("Итого", 11f, Theme.TextDim, true);
+            var totalHead = Ui.Text(LocalizationService.Get("menu.stats.089"), 11f, Theme.TextDim, true);
             totalHead.style.width = 60f;
             headRow.Add(totalHead);
             table.Add(headRow);
@@ -888,12 +888,12 @@ namespace CityHighways.Presentation
                 var famous = game.results.OrderByDescending(r => Array.IndexOf(ReputationOrder, r.reputation ?? "")).First();
                 if (!string.IsNullOrEmpty(famous.reputation)) moments.Add($"Лучшая репутация — у {famous.name}: {famous.reputation}.");
                 var stuck = game.results.Where(r => r.jams > 0).OrderByDescending(r => r.jams).FirstOrDefault();
-                if (stuck != null) moments.Add($"Чаще всех стоял в пробках {stuck.name}: {stuck.jams} {Plural(stuck.jams, "раз", "раза", "раз")}.");
+                if (stuck != null) moments.Add($"Чаще всех стоял в пробках {stuck.name}: {stuck.jams} {Plural(stuck.jams, LocalizationService.Get("menu.stats.091"), LocalizationService.Get("menu.stats.090"), LocalizationService.Get("menu.stats.091"))}.");
             }
             var tollKing = game.results.OrderByDescending(r => r.tollsEarned).First();
             if (tollKing.tollsEarned > 0) moments.Add($"Больше всех за проезд получил {tollKing.name}: +{tollKing.tollsEarned}.");
             var network = game.results.OrderByDescending(r => r.networkDistricts).First();
-            if (network.networkDistricts > 0) moments.Add($"Самая большая сеть — у {network.name}: {network.networkDistricts} {Plural(network.networkDistricts, "район", "района", "районов")}.");
+            if (network.networkDistricts > 0) moments.Add($"Самая большая сеть — у {network.name}: {network.networkDistricts} {Plural(network.networkDistricts, "район", LocalizationService.Get("menu.stats.092"), LocalizationService.Get("menu.stats.093"))}.");
             var contracts = game.results.OrderByDescending(r => r.completedContracts).First();
             if (contracts.completedContracts > 0) moments.Add($"Больше всех контрактов выполнил {contracts.name}: {contracts.completedContracts}.");
             var failed = game.results.Where(r => r.failedContracts > 0).OrderByDescending(r => r.failedContracts).FirstOrDefault();
@@ -904,7 +904,7 @@ namespace CityHighways.Presentation
                 moments.Add($"{r.name} открыл достижени{(r.achievements.Length == 1 ? "е" : "я")}: {string.Join(", ", r.achievements)}.");
             if (moments.Count > 0)
             {
-                var momentsTitle = Ui.SectionTitle("Ключевые моменты");
+                var momentsTitle = Ui.SectionTitle(LocalizationService.Get("menu.stats.094"));
                 momentsTitle.style.marginTop = 14f;
                 window.Add(momentsTitle);
                 foreach (var moment in moments)
@@ -932,11 +932,11 @@ namespace CityHighways.Presentation
 
         // ================================================================== Таблицы
 
-        static string Key(PlayerStat r) => r.kind == "human" ? r.name : r.kind == "random" ? "Случайный бот" : "Умный бот";
+        static string Key(PlayerStat r) => r.kind == "human" ? r.name : r.kind == "random" ? LocalizationService.Get("menu.stats.095") : LocalizationService.Get("menu.stats.096");
 
         VisualElement Players()
         {
-            var card = Block("Игроки");
+            var card = Block(LocalizationService.Get("menu.stats.097"));
             var rows = _games.SelectMany(g => g.results).GroupBy(Key)
                 .Select(group => new
                 {
@@ -954,7 +954,7 @@ namespace CityHighways.Presentation
                 .OrderByDescending(x => x.Human).ThenByDescending(x => x.Games).ToList();
             bool magnate = s_mode == GameMode.Magnate;
             float[] widths = { 170f, 60f, 130f, 70f, 70f, 120f };
-            card.Add(TableRow(new[] { "Игрок", "Партий", "Побед", "Ср. очки", "Лучший", magnate ? "Доставки / заказы" : "Контракты" }, widths, Theme.TextDim, true));
+            card.Add(TableRow(new[] { LocalizationService.Get("menu.stats.011"), LocalizationService.Get("menu.stats.098"), "Побед", LocalizationService.Get("menu.stats.099"), LocalizationService.Get("menu.stats.100"), magnate ? LocalizationService.Get("menu.stats.101") : LocalizationService.Get("menu.stats.085") }, widths, Theme.TextDim, true));
             foreach (var r in rows)
             {
                 int percent = Mathf.RoundToInt(100f * r.Wins / Math.Max(1, r.Games));
@@ -973,13 +973,13 @@ namespace CityHighways.Presentation
 
         VisualElement CharactersBlock()
         {
-            var card = Block("Персонажи");
+            var card = Block(LocalizationService.Get("menu.stats.025"));
             var rows = _games.SelectMany(g => g.results).Where(r => !string.IsNullOrEmpty(r.character)).GroupBy(r => r.character)
                 .Select(group => new { Name = group.Key, Games = group.Count(), Wins = group.Count(r => r.winner), Average = group.Average(r => r.total) })
                 .OrderByDescending(x => (float)x.Wins / Math.Max(1, x.Games)).ThenByDescending(x => x.Games).ToList();
             if (rows.Count == 0)
             {
-                card.Add(Caption("Партий с персонажами пока не было.", 13f, Theme.TextDim, 0f));
+                card.Add(Caption(LocalizationService.Get("menu.stats.102"), 13f, Theme.TextDim, 0f));
                 return card;
             }
             int index = 0;
@@ -999,7 +999,7 @@ namespace CityHighways.Presentation
                 var texts = Ui.Column();
                 texts.style.flexGrow = 1f;
                 texts.Add(Ui.Text(r.Name, 14f, Theme.Text, true));
-                texts.Add(Ui.Text($"{r.Games} {Plural(r.Games, "партия", "партии", "партий")} · средний счёт {r.Average:0}", 11f, Theme.TextDim));
+                texts.Add(Ui.Text($"{r.Games} {Plural(r.Games, LocalizationService.Get("menu.stats.004"), LocalizationService.Get("menu.stats.005"), LocalizationService.Get("menu.stats.006"))} · средний счёт {r.Average:0}", 11f, Theme.TextDim));
                 var bar = new ProgressBar(180f, 6f, percent >= 50 ? GameColors.Success : Theme.Gold);
                 bar.Set(percent / 100f);
                 bar.style.marginTop = 4f;
@@ -1008,12 +1008,12 @@ namespace CityHighways.Presentation
                 var rate = Ui.Column();
                 rate.style.alignItems = Align.FlexEnd;
                 rate.Add(Ui.Number($"{percent}%", 18f, percent >= 50 ? GameColors.Success : Theme.Text, true));
-                rate.Add(Ui.Text("побед", 10f, Theme.TextDim));
+                rate.Add(Ui.Text(LocalizationService.Get("menu.stats.026"), 10f, Theme.TextDim));
                 row.Add(rate);
                 card.Add(row);
                 index++;
             }
-            card.Add(Caption("Считаются все компании, включая ботов.", 11f, Theme.TextDim, 6f));
+            card.Add(Caption(LocalizationService.Get("menu.stats.103"), 11f, Theme.TextDim, 6f));
             return card;
         }
 
@@ -1114,12 +1114,12 @@ namespace CityHighways.Presentation
         {
             bool armed = false;
             UnityEngine.UIElements.Button button = null;
-            button = Ui.Button("Сбросить статистику", () =>
+            button = Ui.Button(LocalizationService.Get("menu.stats.104"), () =>
             {
                 if (!armed)
                 {
                     armed = true;
-                    button.text = "Точно сбросить? Нажмите ещё раз";
+                    button.text = LocalizationService.Get("menu.stats.105");
                     return;
                 }
                 StatsLog.Clear();
