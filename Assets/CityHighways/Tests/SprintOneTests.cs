@@ -145,6 +145,52 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void EnglishContent_UsesTranslatedTitlesWithoutChangingStableIds()
+        {
+            string previous = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                var achievement = Achievements.All.First(a => a.Id == "first_contract");
+                Assert.AreEqual("First Contract", achievement.Title);
+                Assert.AreEqual("Complete a contract.", achievement.Description);
+                var challenge = Achievements.DailyTasks.First(a => a.Id == "d_bridges2");
+                Assert.AreEqual("Build 2 bridges", challenge.Title);
+                Assert.AreEqual("Star", Profiles.Item("emblem_star").DisplayName);
+                Assert.AreEqual("Foreman's Crate", Containers.Kinds.First(k => k.Id == "box_foreman").DisplayName);
+                Assert.AreEqual("Safety Vest", CharacterCatalog.Item("top_vest").DisplayName);
+                Assert.AreEqual("Bridge Builder", CharacterLocalization.Title(CharacterKind.Bridger));
+                Assert.AreEqual("Rare", Rarity.Title(Rarity.Level.Rare));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Первый подряд", achievement.Title);
+                Assert.AreEqual("Звезда", Profiles.Item("emblem_star").DisplayName);
+                Assert.AreEqual("Сигнальный жилет", CharacterCatalog.Item("top_vest").DisplayName);
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(previous);
+            }
+        }
+
+        [Test]
+        public void GameRuleContent_HasTranslationsForEveryCargoKind()
+        {
+            var russian = LoadCatalog("ru").entries.ToDictionary(x => x.key, x => x.value);
+            var english = LoadCatalog("en").entries.ToDictionary(x => x.key, x => x.value);
+            foreach (CargoKind kind in Enum.GetValues(typeof(CargoKind)))
+                foreach (string suffix in new[] { ".name", ".rule" })
+                {
+                    string key = "rules.magnate.cargo." + kind + suffix;
+                    Assert.IsTrue(russian.ContainsKey(key), "Missing RU cargo text: " + key);
+                    Assert.IsTrue(english.ContainsKey(key), "Missing EN cargo text: " + key);
+                }
+            foreach (string key in new[] { "rules.coop.meter", "rules.coop.orders", "rules.coop.deadlines",
+                                           "rules.coop.crisis", "rules.coop.win", "rules.coop.lose" })
+                Assert.IsTrue(english.ContainsKey(key), "Missing co-op rules: " + key);
+        }
+
+        [Test]
         public void EnglishCatalog_HasHomeKeys()
         {
             var asset = Resources.Load<TextAsset>("CityHighways/Localization/en");
