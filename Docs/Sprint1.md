@@ -35,3 +35,9 @@ For a supported Unity licensing method, add the required credentials as GitHub
 Actions repository secrets (never commit them). Then trigger the workflow with a
 new commit on this PR branch. This documentation-only change also triggers a fresh
 PR workflow run; its outcome still depends on valid license activation.
+
+## Follow-up: language settings and catalog integrity
+The Screen settings panel now includes a Russian/English selector, matching the
+home page toggle. Language selection remains saved via PlayerPrefs. The Edit Mode
+suite validates that both catalogs have identical, unique, nonempty keys and values.
+UI beyond the migrated home labels remains untranslated until subsequent slices.
