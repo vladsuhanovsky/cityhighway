@@ -4381,17 +4381,17 @@ namespace CityHighways.Presentation
             void Toggle(string caption, Func<bool> get, Action<bool> set)
             {
                 var row = Row(caption);
-                var button = Ui.Button(get() ? "Включено" : "Выключено", () => { }, ButtonKind.Secondary, 14f);
+                var button = Ui.Button(LocalizationService.Get(get() ? "common.enabled" : "common.disabled"), () => { }, ButtonKind.Secondary, 14f);
                 button.style.width = 170f;
                 button.clicked += () =>
                 {
                     set(!get());
-                    button.text = get() ? "Включено" : "Выключено";
+                    button.text = LocalizationService.Get(get() ? "common.enabled" : "common.disabled");
                 };
                 row.Add(button);
             }
 
-            Toggle("Звук", () => _app.Sound.Enabled, on =>
+            Toggle(LocalizationService.Get("game.settings.sound"), () => _app.Sound.Enabled, on =>
             {
                 _app.Sound.Enabled = on;
                 _setup.sound = on;
@@ -4407,7 +4407,7 @@ namespace CityHighways.Presentation
 
             if (display != null)
             {
-                var volumeRow = Row("Громкость");
+                var volumeRow = Row(LocalizationService.Get("game.settings.volume"));
                 var controls = Ui.Row();
                 var value = Ui.Number($"{Mathf.RoundToInt(display.volume * 100f)}%", 16f, Theme.Text, true);
                 value.style.width = 70f;
@@ -4429,13 +4429,13 @@ namespace CityHighways.Presentation
                 controls.Add(louder);
                 volumeRow.Add(controls);
 
-                Toggle("Наклон поля (2.5D)", () => display.tiltedBoard, on =>
+                Toggle(LocalizationService.Get("game.settings.board_tilt"), () => display.tiltedBoard, on =>
                 {
                     display.tiltedBoard = on;
                     display.Save();
                     _map.TiltEnabled = on;
                 });
-                Toggle("3D-город", () => display.city3D, on =>
+                Toggle(LocalizationService.Get("game.settings.city_3d"), () => display.city3D, on =>
                 {
                     display.city3D = on;
                     display.Save();
@@ -4444,7 +4444,7 @@ namespace CityHighways.Presentation
                 });
 
                 // Угол камеры 3D-города: 30° — почти сверху, 45° — панорама.
-                var angleRow = Row("Угол камеры");
+                var angleRow = Row(LocalizationService.Get("game.settings.camera_angle"));
                 var angles = Ui.Row();
                 var angleButtons = new List<Button>();
                 foreach (var degrees in DisplaySettings.TiltOptions)
@@ -4468,7 +4468,7 @@ namespace CityHighways.Presentation
                     angles.Add(button);
                 }
                 angleRow.Add(angles);
-                Toggle("Мини-карта", () => display.showMinimap, on =>
+                Toggle(LocalizationService.Get("game.settings.minimap"), () => display.showMinimap, on =>
                 {
                     display.showMinimap = on;
                     display.Save();
@@ -4476,7 +4476,7 @@ namespace CityHighways.Presentation
                 });
             }
 
-            var hint = Ui.Text("Режим экрана и разрешение — в главном меню, раздел «Настройки».", 13f, Theme.TextDim);
+            var hint = Ui.Text(LocalizationService.Get("game.settings.display_hint"), 13f, Theme.TextDim);
             hint.style.marginTop = 4f;
             _settingsBody.Add(hint);
         }

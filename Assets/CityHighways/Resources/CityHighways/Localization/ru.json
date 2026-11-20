@@ -375,6 +375,42 @@
     {
       "key": "menu.scenario.elections_change_4",
       "value": "«Друг мэра»: кто за партию потратил больше всех влияния, получает +{0} очков."
+    },
+    {
+      "key": "common.enabled",
+      "value": "Включено"
+    },
+    {
+      "key": "common.disabled",
+      "value": "Выключено"
+    },
+    {
+      "key": "game.settings.sound",
+      "value": "Звук"
+    },
+    {
+      "key": "game.settings.volume",
+      "value": "Громкость"
+    },
+    {
+      "key": "game.settings.board_tilt",
+      "value": "Наклон поля (2.5D)"
+    },
+    {
+      "key": "game.settings.city_3d",
+      "value": "3D-город"
+    },
+    {
+      "key": "game.settings.camera_angle",
+      "value": "Угол камеры"
+    },
+    {
+      "key": "game.settings.minimap",
+      "value": "Мини-карта"
+    },
+    {
+      "key": "game.settings.display_hint",
+      "value": "Режим экрана и разрешение — в главном меню, раздел «Настройки»."
     }
   ]
 }

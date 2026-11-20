@@ -99,6 +99,20 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void EnglishCatalog_HasInGameSettingsKeys()
+        {
+            var english = LoadCatalog("en").entries.Select(entry => entry.key).ToArray();
+            var required = new[]
+            {
+                "common.enabled", "common.disabled", "game.settings.sound",
+                "game.settings.volume", "game.settings.board_tilt", "game.settings.city_3d",
+                "game.settings.camera_angle", "game.settings.minimap", "game.settings.display_hint"
+            };
+            foreach (var key in required)
+                CollectionAssert.Contains(english, key);
+        }
+
+        [Test]
         public void EnglishCatalog_HasHomeKeys()
         {
             var asset = Resources.Load<TextAsset>("CityHighways/Localization/en");

@@ -375,6 +375,42 @@
     {
       "key": "menu.scenario.elections_change_4",
       "value": "Mayor's Friend: the player who spent the most influence gains +{0} points."
+    },
+    {
+      "key": "common.enabled",
+      "value": "Enabled"
+    },
+    {
+      "key": "common.disabled",
+      "value": "Disabled"
+    },
+    {
+      "key": "game.settings.sound",
+      "value": "Sound"
+    },
+    {
+      "key": "game.settings.volume",
+      "value": "Volume"
+    },
+    {
+      "key": "game.settings.board_tilt",
+      "value": "Board Tilt (2.5D)"
+    },
+    {
+      "key": "game.settings.city_3d",
+      "value": "3D City"
+    },
+    {
+      "key": "game.settings.camera_angle",
+      "value": "Camera Angle"
+    },
+    {
+      "key": "game.settings.minimap",
+      "value": "Minimap"
+    },
+    {
+      "key": "game.settings.display_hint",
+      "value": "Screen mode and resolution are available from the main menu under Settings."
     }
   ]
 }
