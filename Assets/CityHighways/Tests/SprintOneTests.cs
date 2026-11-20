@@ -58,6 +58,46 @@ namespace CityHighways.Tests
             Assert.AreEqual(5, Enumerable.Range(0, 5).Select(VisualIdentity.PlayerPattern).Distinct().Count());
         }
 
+        [Serializable]
+        sealed class TranslationEntry
+        {
+            public string key;
+            public string value;
+        }
+
+        [Serializable]
+        sealed class TranslationCatalog
+        {
+            public TranslationEntry[] entries;
+        }
+
+        static TranslationCatalog LoadCatalog(string language)
+        {
+            var asset = Resources.Load<TextAsset>("CityHighways/Localization/" + language);
+            Assert.IsNotNull(asset, "Missing translation catalog: " + language);
+            var table = JsonUtility.FromJson<TranslationCatalog>(asset.text);
+            Assert.IsNotNull(table, "Cannot parse translation catalog: " + language);
+            Assert.IsNotNull(table.entries, "Missing entries in: " + language);
+            return table;
+        }
+
+        [Test]
+        public void TranslationCatalogs_HaveMatchingUniqueNonEmptyKeys()
+        {
+            var english = LoadCatalog("en").entries;
+            var russian = LoadCatalog("ru").entries;
+            foreach (var item in english.Concat(russian))
+            {
+                Assert.IsNotNull(item);
+                Assert.IsFalse(string.IsNullOrWhiteSpace(item.key), "Empty translation key");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(item.value), "Empty translation value for " + item.key);
+            }
+            Assert.AreEqual(english.Length, english.Select(item => item.key).Distinct().Count(), "Duplicate en keys");
+            Assert.AreEqual(russian.Length, russian.Select(item => item.key).Distinct().Count(), "Duplicate ru keys");
+            CollectionAssert.AreEquivalent(english.Select(item => item.key).ToArray(),
+                russian.Select(item => item.key).ToArray(), "Translation catalogs have different keys");
+        }
+
         [Test]
         public void EnglishCatalog_HasHomeKeys()
         {
