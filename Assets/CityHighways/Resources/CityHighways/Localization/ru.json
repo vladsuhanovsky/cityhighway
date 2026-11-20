@@ -5395,6 +5395,302 @@
     {
       "key": "mastery.stat.wins",
       "value": "побед"
+    },
+    {
+      "key": "rules.magnate.label.001",
+      "value": "Основы"
+    },
+    {
+      "key": "rules.magnate.label.002",
+      "value": "Цель и раунд"
+    },
+    {
+      "key": "rules.magnate.label.003",
+      "value": "Грузы"
+    },
+    {
+      "key": "rules.magnate.label.004",
+      "value": "Дороги и пробки"
+    },
+    {
+      "key": "rules.magnate.label.005",
+      "value": "Город"
+    },
+    {
+      "key": "rules.magnate.label.006",
+      "value": "Хабы"
+    },
+    {
+      "key": "rules.magnate.label.007",
+      "value": "Заказы мэрии и репутация"
+    },
+    {
+      "key": "rules.magnate.label.008",
+      "value": "События"
+    },
+    {
+      "key": "rules.magnate.label.009",
+      "value": "Партия"
+    },
+    {
+      "key": "rules.magnate.label.010",
+      "value": "Сложность"
+    },
+    {
+      "key": "rules.magnate.label.011",
+      "value": "Панель и карта"
+    },
+    {
+      "key": "rules.magnate.label.012",
+      "value": "1. Стройка"
+    },
+    {
+      "key": "rules.magnate.label.013",
+      "value": "2. Маршруты"
+    },
+    {
+      "key": "rules.magnate.label.014",
+      "value": "3. Движение"
+    },
+    {
+      "key": "rules.magnate.label.015",
+      "value": "4. Новый раунд"
+    },
+    {
+      "key": "rules.magnate.label.016",
+      "value": "Улица"
+    },
+    {
+      "key": "rules.magnate.label.017",
+      "value": "Широкая дорога и мост"
+    },
+    {
+      "key": "rules.magnate.label.018",
+      "value": "Магистраль"
+    },
+    {
+      "key": "rules.magnate.label.019",
+      "value": "Пробка"
+    },
+    {
+      "key": "rules.magnate.label.020",
+      "value": "Владелец хаба"
+    },
+    {
+      "key": "rules.magnate.label.021",
+      "value": "ДТП"
+    },
+    {
+      "key": "rules.magnate.label.022",
+      "value": "Ремонт дороги"
+    },
+    {
+      "key": "rules.magnate.label.023",
+      "value": "Нехватка топлива"
+    },
+    {
+      "key": "rules.magnate.label.024",
+      "value": "Таможенная проверка"
+    },
+    {
+      "key": "rules.magnate.label.025",
+      "value": "Штормовое предупреждение"
+    },
+    {
+      "key": "rules.magnate.label.026",
+      "value": "Фестиваль"
+    },
+    {
+      "key": "rules.magnate.label.027",
+      "value": "Нижняя панель"
+    },
+    {
+      "key": "rules.magnate.label.028",
+      "value": "Грузы и фуры"
+    },
+    {
+      "key": "rules.magnate.label.029",
+      "value": "Карта"
+    },
+    {
+      "key": "rules.magnate.label.030",
+      "value": "Обучение"
+    },
+    {
+      "key": "rules.magnate.label.031",
+      "value": "терминал"
+    },
+    {
+      "key": "rules.magnate.label.032",
+      "value": "склады"
+    },
+    {
+      "key": "rules.magnate.label.033",
+      "value": "кран"
+    },
+    {
+      "key": "rules.magnate.label.034",
+      "value": "ещё склады"
+    },
+    {
+      "key": "rules.magnate.label.035",
+      "value": "комплекс"
+    },
+    {
+      "key": "rules.magnate.label.036",
+      "value": "с начала"
+    },
+    {
+      "key": "rules.magnate.text.001",
+      "value": "Старт равный: у каждой компании одна фура в аэропорту, одна на вокзале и одна в порту. "
+    },
+    {
+      "key": "rules.magnate.text.002",
+      "value": "Дальше каждый раунд первыми ходят компании с меньшим счётом: они раньше выбирают и раньше грузятся, "
+    },
+    {
+      "key": "rules.magnate.text.003",
+      "value": "если на один груз метят двое. Компания с наименьшим счётом получает от мэрии +1 очко стройки за раунд. "
+    },
+    {
+      "key": "rules.magnate.text.004",
+      "value": "Если груз всё же забрал соперник, фура сама возьмёт другой груз с того же хаба, если он есть."
+    },
+    {
+      "key": "rules.magnate.text.005",
+      "value": "Город каждый раз новый: реки, мосты, районы и хабы создаются при запуске партии. Серые городские дороги есть с начала — "
+    },
+    {
+      "key": "rules.magnate.text.006",
+      "value": "они общие и бесплатные для всех. Пунктиром на карте показаны дороги, которые ещё можно построить."
+    },
+    {
+      "key": "rules.magnate.text.007",
+      "value": "Широкие дороги — бетонные, мосты и магистрали. Тяжеловес и крупногабарит едут только по ним. Крупногабарит к тому же перекрывает участок "
+    },
+    {
+      "key": "rules.magnate.text.008",
+      "value": "для всех, кто въезжает туда следом в том же раунде."
+    },
+    {
+      "key": "rules.magnate.text.009",
+      "value": "Совет: наведите курсор на дорогу — подсказка покажет владельца, пропускную способность и сколько фур проехало по ней в прошлом раунде. "
+    },
+    {
+      "key": "rules.magnate.text.010",
+      "value": "Слой «Загрузка дорог» раскрашивает дороги по этой загрузке."
+    },
+    {
+      "key": "rules.magnate.text.011",
+      "value": "Хабы — аэропорты, вокзалы и порты. Только на них появляются грузы. В фазе стройки хаб можно развить: кликните по нему на карте."
+    },
+    {
+      "key": "rules.magnate.text.012",
+      "value": "Чем выше уровень, тем больше грузов может ждать на хабе (уровень + 1), тем чаще они появляются и тем дороже стоят."
+    },
+    {
+      "key": "rules.magnate.text.013",
+      "value": "В 3D-городе рядом со станцией растёт комплекс: склады, кран, у аэропорта на пятом уровне — вертолётная площадка. "
+    },
+    {
+      "key": "rules.magnate.text.014",
+      "value": "На карте видно кольцо цвета владельца и точки уровня."
+    },
+    {
+      "key": "rules.magnate.text.015",
+      "value": "Репутация растёт за доставки вовремя (+3) и заказы мэрии (+5), падает за пробки (−1) и потерянные грузы (−4). "
+    },
+    {
+      "key": "rules.magnate.text.016",
+      "value": "Уровень репутации умножает очки за каждую доставку:"
+    },
+    {
+      "key": "rules.magnate.text.017",
+      "value": "Звёзды рядом с именем компании в верхней строке — её уровень репутации."
+    },
+    {
+      "key": "rules.magnate.text.018",
+      "value": "Фура сломалась на одной из самых загруженных дорог: дорога закрыта на раунд. На карте — шлагбаум и гаечный ключ."
+    },
+    {
+      "key": "rules.magnate.text.019",
+      "value": "Одна из построенных дорог закрыта на 2 раунда."
+    },
+    {
+      "key": "rules.magnate.text.020",
+      "value": "Все фуры проезжают на 2 участка меньше."
+    },
+    {
+      "key": "rules.magnate.text.021",
+      "value": "Мосты пропускают на одну фуру меньше, тяжеловесы и крупногабарит по мостам не едут."
+    },
+    {
+      "key": "rules.magnate.text.022",
+      "value": "Улицы Центра перекрыты на раунд."
+    },
+    {
+      "key": "rules.magnate.text.023",
+      "value": "За победу на сложности «Эксперт» — отдельное достижение."
+    },
+    {
+      "key": "rules.magnate.text.024",
+      "value": "Сложность выбирается в «Новой игре» (строка «Сложность» видна только у магната). Она меняет частоту грузов, награды, события и штрафы:"
+    },
+    {
+      "key": "rules.magnate.cargo.Ordinary.name",
+      "value": "Обычный груз"
+    },
+    {
+      "key": "rules.magnate.cargo.Ordinary.rule",
+      "value": "Без особых условий."
+    },
+    {
+      "key": "rules.magnate.cargo.Perishable.name",
+      "value": "Скоропорт"
+    },
+    {
+      "key": "rules.magnate.cargo.Perishable.rule",
+      "value": "Едет быстрее (+1 участок), но за каждый раунд сверх нормы −{0}."
+    },
+    {
+      "key": "rules.magnate.cargo.Heavy.name",
+      "value": "Тяжеловес"
+    },
+    {
+      "key": "rules.magnate.cargo.Heavy.rule",
+      "value": "Только широкие дороги: бетон, мосты, магистрали; едет медленнее (−1)."
+    },
+    {
+      "key": "rules.magnate.cargo.Hazard.name",
+      "value": "Опасный груз"
+    },
+    {
+      "key": "rules.magnate.cargo.Hazard.rule",
+      "value": "Въезд в Центр — взятка {0} влияния, иначе конфискация (−{1}). За доставку — новая фура (до {2})."
+    },
+    {
+      "key": "rules.magnate.cargo.Fragile.name",
+      "value": "Хрупкий груз"
+    },
+    {
+      "key": "rules.magnate.cargo.Fragile.rule",
+      "value": "Каждая пробка на пути — груз дешевеет на {0}."
+    },
+    {
+      "key": "rules.magnate.cargo.Valuable.name",
+      "value": "Ценный груз"
+    },
+    {
+      "key": "rules.magnate.cargo.Valuable.rule",
+      "value": "Охрана — {0} влияния при погрузке (берётся сама, если хватает); без охраны каждый раунд риск кражи."
+    },
+    {
+      "key": "rules.magnate.cargo.Oversized.name",
+      "value": "Крупногабарит"
+    },
+    {
+      "key": "rules.magnate.cargo.Oversized.rule",
+      "value": "Только широкие дороги, медленно; на его дороге другие фуры в этот раунд стоят."
     }
   ]
 }

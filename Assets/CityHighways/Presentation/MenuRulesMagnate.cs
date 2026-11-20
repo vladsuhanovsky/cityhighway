@@ -17,17 +17,17 @@ namespace CityHighways.Presentation
 
         void AddMagnateSections()
         {
-            AddGroup("Основы", MenuIcon.Glyph.Book);
-            AddSection("Основы", "Цель и раунд", MenuIcon.Glyph.Play, MagnateBasics);
-            AddSection("Основы", "Грузы", MenuIcon.Glyph.Coins, MagnateCargo);
-            AddSection("Основы", "Дороги и пробки", MenuIcon.Glyph.Road, MagnateRoads);
-            AddGroup("Город", MenuIcon.Glyph.Skyline);
-            AddSection("Город", "Хабы", MenuIcon.Glyph.Pin, MagnateHubs);
-            AddSection("Город", "Заказы мэрии и репутация", MenuIcon.Glyph.Star, MagnateContracts);
-            AddSection("Город", "События", MenuIcon.Glyph.Bell, MagnateEvents);
-            AddGroup("Партия", MenuIcon.Glyph.Gamepad);
-            AddSection("Партия", "Сложность", MenuIcon.Glyph.Gear, MagnateDifficultySection);
-            AddSection("Партия", "Панель и карта", MenuIcon.Glyph.Monitor, MagnateInterface);
+            AddGroup(LocalizationService.Get("rules.magnate.label.001"), MenuIcon.Glyph.Book);
+            AddSection(LocalizationService.Get("rules.magnate.label.001"), LocalizationService.Get("rules.magnate.label.002"), MenuIcon.Glyph.Play, MagnateBasics);
+            AddSection(LocalizationService.Get("rules.magnate.label.001"), LocalizationService.Get("rules.magnate.label.003"), MenuIcon.Glyph.Coins, MagnateCargo);
+            AddSection(LocalizationService.Get("rules.magnate.label.001"), LocalizationService.Get("rules.magnate.label.004"), MenuIcon.Glyph.Road, MagnateRoads);
+            AddGroup(LocalizationService.Get("rules.magnate.label.005"), MenuIcon.Glyph.Skyline);
+            AddSection(LocalizationService.Get("rules.magnate.label.005"), LocalizationService.Get("rules.magnate.label.006"), MenuIcon.Glyph.Pin, MagnateHubs);
+            AddSection(LocalizationService.Get("rules.magnate.label.005"), LocalizationService.Get("rules.magnate.label.007"), MenuIcon.Glyph.Star, MagnateContracts);
+            AddSection(LocalizationService.Get("rules.magnate.label.005"), LocalizationService.Get("rules.magnate.label.008"), MenuIcon.Glyph.Bell, MagnateEvents);
+            AddGroup(LocalizationService.Get("rules.magnate.label.009"), MenuIcon.Glyph.Gamepad);
+            AddSection(LocalizationService.Get("rules.magnate.label.009"), LocalizationService.Get("rules.magnate.label.010"), MenuIcon.Glyph.Gear, MagnateDifficultySection);
+            AddSection(LocalizationService.Get("rules.magnate.label.009"), LocalizationService.Get("rules.magnate.label.011"), MenuIcon.Glyph.Monitor, MagnateInterface);
         }
 
         void Para(VisualElement parent, string text)
@@ -73,28 +73,28 @@ namespace CityHighways.Presentation
 
         VisualElement MagnateBasics()
         {
-            var s = Section("Цель и раунд");
+            var s = Section(LocalizationService.Get("rules.magnate.label.002"));
             Para(s, $"Вы — владелец транспортной компании. У вас {Magnate.TrucksPerPlayer} фуры: они забирают грузы на хабах — в аэропортах, на вокзалах и в портах — " +
                      $"и везут получателям. За каждую доставку дают очки. После {Magnate.Rounds} раундов перевозок побеждает компания с наибольшим счётом.");
             Para(s, $"Первый раунд — раунд стройки: каждая компания по очереди строит {(Magnate.OpeningRoads == 1 ? "одну дорогу" : Magnate.OpeningRoads + " дороги")} " +
                      "(магистрали и хабы — позже), фуры стоят. Грузы на хабах уже видны — по ним и выбирают, куда тянуть дорогу. " +
                      "Маршруты фур — со второго раунда, тогда же появляются заказы мэрии.");
-            Para(s, "Старт равный: у каждой компании одна фура в аэропорту, одна на вокзале и одна в порту. " +
-                     "Дальше каждый раунд первыми ходят компании с меньшим счётом: они раньше выбирают и раньше грузятся, " +
-                     "если на один груз метят двое. Компания с наименьшим счётом получает от мэрии +1 очко стройки за раунд. " +
-                     "Если груз всё же забрал соперник, фура сама возьмёт другой груз с того же хаба, если он есть.");
-            Para(s, "Город каждый раз новый: реки, мосты, районы и хабы создаются при запуске партии. Серые городские дороги есть с начала — " +
-                     "они общие и бесплатные для всех. Пунктиром на карте показаны дороги, которые ещё можно построить.");
+            Para(s, LocalizationService.Get("rules.magnate.text.001") +
+                     LocalizationService.Get("rules.magnate.text.002") +
+                     LocalizationService.Get("rules.magnate.text.003") +
+                     LocalizationService.Get("rules.magnate.text.004"));
+            Para(s, LocalizationService.Get("rules.magnate.text.005") +
+                     LocalizationService.Get("rules.magnate.text.006"));
 
             // Схема раунда: четыре шага.
             var flow = Ui.Row();
             flow.style.marginTop = 14f;
             var steps = new[]
             {
-                ("1. Стройка", $"По очереди, первыми — отстающие. +{Magnate.BuildPointsPerRound} очков стройки (копятся до {Magnate.MaxBuildPoints}): купить дорогу, сделать свою магистралью, развить хаб.", Theme.Gold),
-                ("2. Маршруты", "По очереди и тайно: каждая фура берёт груз на своём хабе или едет к станции.", new Color(0.45f, 0.70f, 1f)),
-                ("3. Движение", $"Все фуры едут одновременно, до {Magnate.TruckSpeed} участков за раунд. Пробки, доставки, оплата проезда.", GameColors.Success),
-                ("4. Новый раунд", $"Новые грузы на хабах, +{Magnate.InfluencePerRound} влияния, иногда — событие города.", new Color(0.75f, 0.60f, 0.98f)),
+                (LocalizationService.Get("rules.magnate.label.012"), $"По очереди, первыми — отстающие. +{Magnate.BuildPointsPerRound} очков стройки (копятся до {Magnate.MaxBuildPoints}): купить дорогу, сделать свою магистралью, развить хаб.", Theme.Gold),
+                (LocalizationService.Get("rules.magnate.label.013"), "По очереди и тайно: каждая фура берёт груз на своём хабе или едет к станции.", new Color(0.45f, 0.70f, 1f)),
+                (LocalizationService.Get("rules.magnate.label.014"), $"Все фуры едут одновременно, до {Magnate.TruckSpeed} участков за раунд. Пробки, доставки, оплата проезда.", GameColors.Success),
+                (LocalizationService.Get("rules.magnate.label.015"), $"Новые грузы на хабах, +{Magnate.InfluencePerRound} влияния, иногда — событие города.", new Color(0.75f, 0.60f, 0.98f)),
             };
             foreach (var (title, text, color) in steps)
             {
@@ -115,20 +115,34 @@ namespace CityHighways.Presentation
             return s;
         }
 
+
+        static string MagnateCargoRule(CargoKind kind)
+        {
+            string key = "rules.magnate.cargo." + kind + ".rule";
+            switch (kind)
+            {
+                case CargoKind.Perishable: return string.Format(LocalizationService.Get(key), Magnate.PerishableLatePenalty);
+                case CargoKind.Hazard: return string.Format(LocalizationService.Get(key), Magnate.HazardBribe, Magnate.ConfiscationPenalty, Magnate.MaxTrucksPerPlayer);
+                case CargoKind.Fragile: return string.Format(LocalizationService.Get(key), Magnate.FragileJamPenalty);
+                case CargoKind.Valuable: return string.Format(LocalizationService.Get(key), Magnate.EscortCost);
+                default: return LocalizationService.Get(key);
+            }
+        }
+
         VisualElement MagnateCargo()
         {
-            var s = Section("Грузы");
+            var s = Section(LocalizationService.Get("rules.magnate.label.003"));
             Para(s, $"Грузы появляются на хабах. Над хабом на карте — квадратики цвета груза. Невывезенный груз исчезает через {Magnate.CargoLifetime} раундов. " +
                      "Цена груза зависит от расстояния и вида, а репутация компании умножает очки за доставку.");
             foreach (CargoKind kind in Enum.GetValues(typeof(CargoKind)))
-                s.Add(PlainTile(LogisticsGame.KindTitle(kind), LogisticsGame.KindRule(kind, Magnate), MagnateView.KindColor(kind), KindChip(kind, 30f)));
+                s.Add(PlainTile(LocalizationService.Get("rules.magnate.cargo." + kind + ".name"), MagnateCargoRule(kind), MagnateView.KindColor(kind), KindChip(kind, 30f)));
             Para(s, $"Скорость: обычная фура проезжает {Magnate.TruckSpeed} участков за раунд, со скоропортом — на 1 больше, с тяжеловесом и крупногабаритом — на 1 меньше.");
             return s;
         }
 
         VisualElement MagnateRoads()
         {
-            var s = Section("Дороги и пробки");
+            var s = Section(LocalizationService.Get("rules.magnate.label.004"));
             Para(s, $"Купить свободную дорогу стоит столько очков стройки, какова её длина; мост — на {Magnate.BridgeExtraCost} дороже. Свою дорогу можно сделать " +
                      "магистралью — она пропускает больше фур.");
             Para(s, $"По своим дорогам ваши фуры ездят бесплатно, по чужим — платят владельцу {Magnate.TollPerRoad} очко за каждую дорогу маршрута. " +
@@ -139,9 +153,9 @@ namespace CityHighways.Presentation
             capacity.style.marginTop = 6f;
             foreach (var (title, value, color) in new[]
             {
-                ("Улица", Magnate.CapacityStreet, new Color(0.80f, 0.82f, 0.86f)),
-                ("Широкая дорога и мост", Magnate.CapacityWide, new Color(0.45f, 0.70f, 1f)),
-                ("Магистраль", Magnate.CapacityHighway, Theme.Gold),
+                (LocalizationService.Get("rules.magnate.label.016"), Magnate.CapacityStreet, new Color(0.80f, 0.82f, 0.86f)),
+                (LocalizationService.Get("rules.magnate.label.017"), Magnate.CapacityWide, new Color(0.45f, 0.70f, 1f)),
+                (LocalizationService.Get("rules.magnate.label.018"), Magnate.CapacityHighway, Theme.Gold),
             })
             {
                 var tile = PlainTile(title, $"пропускает {value} фуры за раунд", color);
@@ -151,20 +165,20 @@ namespace CityHighways.Presentation
                 capacity.Add(tile);
             }
             s.Add(capacity);
-            s.Add(PlainTile("Пробка", $"Если за раунд на дорогу заехало больше фур, чем она пропускает, — все эти фуры стоят до следующего раунда. " +
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.019"), $"Если за раунд на дорогу заехало больше фур, чем она пропускает, — все эти фуры стоят до следующего раунда. " +
                                        $"Каждая теряет {Magnate.JamPenalty} очко и немного репутации, хрупкий груз дешевеет на {Magnate.FragileJamPenalty}. " +
                                        "Над очередью на карте крутятся часы.", GameColors.Danger, new MenuIcon(MenuIcon.Glyph.Clock, 26f, GameColors.Danger)));
-            Para(s, "Широкие дороги — бетонные, мосты и магистрали. Тяжеловес и крупногабарит едут только по ним. Крупногабарит к тому же перекрывает участок " +
-                     "для всех, кто въезжает туда следом в том же раунде.");
-            Para(s, "Совет: наведите курсор на дорогу — подсказка покажет владельца, пропускную способность и сколько фур проехало по ней в прошлом раунде. " +
-                     "Слой «Загрузка дорог» раскрашивает дороги по этой загрузке.");
+            Para(s, LocalizationService.Get("rules.magnate.text.007") +
+                     LocalizationService.Get("rules.magnate.text.008"));
+            Para(s, LocalizationService.Get("rules.magnate.text.009") +
+                     LocalizationService.Get("rules.magnate.text.010"));
             return s;
         }
 
         VisualElement MagnateHubs()
         {
-            var s = Section("Хабы");
-            Para(s, "Хабы — аэропорты, вокзалы и порты. Только на них появляются грузы. В фазе стройки хаб можно развить: кликните по нему на карте.");
+            var s = Section(LocalizationService.Get("rules.magnate.label.006"));
+            Para(s, LocalizationService.Get("rules.magnate.text.011"));
             if (HubEventIcons.Hub(HubKind.Airport, 40f) != null)
             {
                 var kinds = Ui.Row();
@@ -199,29 +213,29 @@ namespace CityHighways.Presentation
                 Ui.Padding(tile, 10f, 8f);
                 tile.Add(Ui.Text($"Уровень {level}", 14f, level == 1 ? Theme.Text : Theme.Gold, true));
                 tile.Add(Ui.Text(new string('●', level), 12f, Theme.Gold));
-                tile.Add(Ui.Text(level == 1 ? "с начала" : $"{Magnate.HubUpgradeCost[level]} очков", 12f, Theme.TextDim));
-                string look = level == 1 ? "терминал" : level == 2 ? "склады" : level == 3 ? "кран" : level == 4 ? "ещё склады" : "комплекс";
+                tile.Add(Ui.Text(level == 1 ? LocalizationService.Get("rules.magnate.label.036") : $"{Magnate.HubUpgradeCost[level]} очков", 12f, Theme.TextDim));
+                string look = level == 1 ? LocalizationService.Get("rules.magnate.label.031") : level == 2 ? LocalizationService.Get("rules.magnate.label.032") : level == 3 ? LocalizationService.Get("rules.magnate.label.033") : level == 4 ? LocalizationService.Get("rules.magnate.label.034") : LocalizationService.Get("rules.magnate.label.035");
                 tile.Add(Ui.Text(look, 11f, Theme.TextDim));
                 levels.Add(tile);
             }
             s.Add(levels);
-            Para(s, "Чем выше уровень, тем больше грузов может ждать на хабе (уровень + 1), тем чаще они появляются и тем дороже стоят.");
-            s.Add(PlainTile("Владелец хаба", $"Развивать хаб может любая компания. Владеет им та, что вложила больше очков стройки " +
+            Para(s, LocalizationService.Get("rules.magnate.text.012"));
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.020"), $"Развивать хаб может любая компания. Владеет им та, что вложила больше очков стройки " +
                                               "(при равенстве хаб остаётся у прежнего владельца) — хаб можно перехватить. Фуры владельца грузятся первыми, " +
                                               $"а с каждой погрузки чужой фуры он получает {Magnate.HubFee} очко.", Theme.Gold,
                 new MenuIcon(MenuIcon.Glyph.Pin, 26f, Theme.Gold)));
-            Para(s, "В 3D-городе рядом со станцией растёт комплекс: склады, кран, у аэропорта на пятом уровне — вертолётная площадка. " +
-                     "На карте видно кольцо цвета владельца и точки уровня.");
+            Para(s, LocalizationService.Get("rules.magnate.text.013") +
+                     LocalizationService.Get("rules.magnate.text.014"));
             return s;
         }
 
         VisualElement MagnateContracts()
         {
-            var s = Section("Заказы мэрии и репутация");
+            var s = Section(LocalizationService.Get("rules.magnate.label.007"));
             Para(s, $"Одновременно действуют {Magnate.ActiveContracts} заказа мэрии, например «доставьте 3 скоропорта до раунда N». Прогресс всех компаний виден " +
                      "в разделе «Заказы мэрии» внизу экрана. Первая выполнившая компания получает очки, влияние и репутацию, вторая — половину очков и влияния; после второй заказ закрывается.");
-            Para(s, "Репутация растёт за доставки вовремя (+3) и заказы мэрии (+5), падает за пробки (−1) и потерянные грузы (−4). " +
-                     "Уровень репутации умножает очки за каждую доставку:");
+            Para(s, LocalizationService.Get("rules.magnate.text.015") +
+                     LocalizationService.Get("rules.magnate.text.016"));
             var ranks = new[] { ReputationLevel.Novice, ReputationLevel.Amateur, ReputationLevel.Professional, ReputationLevel.Master, ReputationLevel.Legendary };
             int[] thresholds = { 0, 25, 50, 75, 100 };
             var row = Ui.Row();
@@ -243,35 +257,35 @@ namespace CityHighways.Presentation
                 row.Add(tile);
             }
             s.Add(row);
-            Para(s, "Звёзды рядом с именем компании в верхней строке — её уровень репутации.");
+            Para(s, LocalizationService.Get("rules.magnate.text.017"));
             return s;
         }
 
         VisualElement MagnateEvents()
         {
-            var s = Section("События");
+            var s = Section(LocalizationService.Get("rules.magnate.label.008"));
             Para(s, $"В начале раунда с шансом {Mathf.RoundToInt((float)Magnate.EventChance * 100f)}% (на обычной сложности) происходит событие города. " +
                      "Оно видно баннером и плашкой в верхней строке. Фуры, чей маршрут шёл через закрытую дорогу, сами ищут объезд.");
             var red = GameColors.Danger;
-            s.Add(PlainTile("ДТП", "Фура сломалась на одной из самых загруженных дорог: дорога закрыта на раунд. На карте — шлагбаум и гаечный ключ.", red,
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.021"), LocalizationService.Get("rules.magnate.text.018"), red,
                 EventIcon(LogisticsEventKind.Accident, new MenuIcon(MenuIcon.Glyph.Flame, 24f, red))));
-            s.Add(PlainTile("Ремонт дороги", "Одна из построенных дорог закрыта на 2 раунда.", new Color(1f, 0.6f, 0.2f),
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.022"), LocalizationService.Get("rules.magnate.text.019"), new Color(1f, 0.6f, 0.2f),
                 EventIcon(LogisticsEventKind.RoadRepair, new MenuIcon(MenuIcon.Glyph.Road, 24f, new Color(1f, 0.6f, 0.2f)))));
-            s.Add(PlainTile("Нехватка топлива", "Все фуры проезжают на 2 участка меньше.", new Color(0.95f, 0.75f, 0.3f),
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.023"), LocalizationService.Get("rules.magnate.text.020"), new Color(0.95f, 0.75f, 0.3f),
                 EventIcon(LogisticsEventKind.FuelShortage, new MenuIcon(MenuIcon.Glyph.Clock, 24f, new Color(0.95f, 0.75f, 0.3f)))));
-            s.Add(PlainTile("Таможенная проверка", $"Опасные и ценные грузы в пути платят {Magnate.CustomsBribe} влияния — иначе стоят раунд.", new Color(0.75f, 0.60f, 0.98f),
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.024"), $"Опасные и ценные грузы в пути платят {Magnate.CustomsBribe} влияния — иначе стоят раунд.", new Color(0.75f, 0.60f, 0.98f),
                 EventIcon(LogisticsEventKind.CustomsCheck, new MenuIcon(MenuIcon.Glyph.Document, 24f, new Color(0.75f, 0.60f, 0.98f)))));
-            s.Add(PlainTile("Штормовое предупреждение", "Мосты пропускают на одну фуру меньше, тяжеловесы и крупногабарит по мостам не едут.", new Color(0.45f, 0.70f, 1f),
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.025"), LocalizationService.Get("rules.magnate.text.021"), new Color(0.45f, 0.70f, 1f),
                 EventIcon(LogisticsEventKind.Storm, new MenuIcon(MenuIcon.Glyph.Snow, 24f, new Color(0.45f, 0.70f, 1f)))));
-            s.Add(PlainTile("Фестиваль", "Улицы Центра перекрыты на раунд.", GameColors.Success,
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.026"), LocalizationService.Get("rules.magnate.text.022"), GameColors.Success,
                 EventIcon(LogisticsEventKind.Festival, new MenuIcon(MenuIcon.Glyph.Star, 24f, GameColors.Success))));
             return s;
         }
 
         VisualElement MagnateDifficultySection()
         {
-            var s = Section("Сложность");
-            Para(s, "Сложность выбирается в «Новой игре» (строка «Сложность» видна только у магната). Она меняет частоту грузов, награды, события и штрафы:");
+            var s = Section(LocalizationService.Get("rules.magnate.label.010"));
+            Para(s, LocalizationService.Get("rules.magnate.text.024"));
             foreach (MagnateDifficulty level in Enum.GetValues(typeof(MagnateDifficulty)))
             {
                 var c = MagnateConfig.For(level);
@@ -282,23 +296,23 @@ namespace CityHighways.Presentation
                     $"события {Mathf.RoundToInt((float)c.EventChance * 100f)}% · кража ценного груза {Mathf.RoundToInt((float)c.TheftChance * 100f)}% · " +
                     $"пробка −{c.JamPenalty} · стройка: {c.StartBuildPoints} на старте, +{c.BuildPointsPerRound} за раунд", color));
             }
-            Para(s, "За победу на сложности «Эксперт» — отдельное достижение.");
+            Para(s, LocalizationService.Get("rules.magnate.text.023"));
             return s;
         }
 
         VisualElement MagnateInterface()
         {
-            var s = Section("Панель и карта");
-            s.Add(PlainTile("Нижняя панель", "Слева — что делать сейчас: стройка с кнопкой «Дальше», маршруты фур с кнопкой «Готово», ход соперника. " +
+            var s = Section(LocalizationService.Get("rules.magnate.label.011"));
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.027"), "Слева — что делать сейчас: стройка с кнопкой «Дальше», маршруты фур с кнопкой «Готово», ход соперника. " +
                                             "Дальше — «Грузы [N]» и «Заказы мэрии [N]»: клик по разделу открывает окно над панелью. «Правила» и «Журнал» — кнопки в верхней строке.",
                 Theme.Gold, new MenuIcon(MenuIcon.Glyph.Monitor, 24f, Theme.Gold)));
-            s.Add(PlainTile("Грузы и фуры", "В окне «Грузы» кнопка «Выбрать» назначает груз ближайшей свободной фуре. Клик по строке груза — карточка: правило, путь на карте, " +
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.028"), "В окне «Грузы» кнопка «Выбрать» назначает груз ближайшей свободной фуре. Клик по строке груза — карточка: правило, путь на карте, " +
                                            "время, плата, сколько очков принесёт. Клик по фуре внизу — её карточка с грузами на её хабе.",
                 new Color(0.45f, 0.70f, 1f), new MenuIcon(MenuIcon.Glyph.Road, 24f, new Color(0.45f, 0.70f, 1f))));
-            s.Add(PlainTile("Карта", "Наведите на станцию — увидите хаб, грузы и (если выбрана фура) путь туда со временем и платой; клик — ехать. " +
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.029"), "Наведите на станцию — увидите хаб, грузы и (если выбрана фура) путь туда со временем и платой; клик — ехать. " +
                                     "Вдали от курсора карта тускнеет. «Слои карты» справа вверху прячут подписи, грузы, фуры и свободные дороги или включают загрузку дорог.",
                 GameColors.Success, new MenuIcon(MenuIcon.Glyph.Pin, 24f, GameColors.Success)));
-            s.Add(PlainTile("Обучение", "В первой партии наставник ведёт по первому раунду. Открыть его снова — «Меню» → «? Обучение» в правом верхнем углу партии или раздел «Обучение» в главном меню.",
+            s.Add(PlainTile(LocalizationService.Get("rules.magnate.label.030"), "В первой партии наставник ведёт по первому раунду. Открыть его снова — «Меню» → «? Обучение» в правом верхнем углу партии или раздел «Обучение» в главном меню.",
                 new Color(0.75f, 0.60f, 0.98f), new MenuIcon(MenuIcon.Glyph.Cap, 24f, new Color(0.75f, 0.60f, 0.98f))));
             return s;
         }

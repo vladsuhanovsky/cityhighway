@@ -5395,6 +5395,302 @@
     {
       "key": "mastery.stat.wins",
       "value": "wins"
+    },
+    {
+      "key": "rules.magnate.label.001",
+      "value": "Basics"
+    },
+    {
+      "key": "rules.magnate.label.002",
+      "value": "Goal & Round"
+    },
+    {
+      "key": "rules.magnate.label.003",
+      "value": "Cargo"
+    },
+    {
+      "key": "rules.magnate.label.004",
+      "value": "Roads & Traffic"
+    },
+    {
+      "key": "rules.magnate.label.005",
+      "value": "City"
+    },
+    {
+      "key": "rules.magnate.label.006",
+      "value": "Hubs"
+    },
+    {
+      "key": "rules.magnate.label.007",
+      "value": "City Orders & Reputation"
+    },
+    {
+      "key": "rules.magnate.label.008",
+      "value": "Events"
+    },
+    {
+      "key": "rules.magnate.label.009",
+      "value": "Game"
+    },
+    {
+      "key": "rules.magnate.label.010",
+      "value": "Difficulty"
+    },
+    {
+      "key": "rules.magnate.label.011",
+      "value": "Panel & Map"
+    },
+    {
+      "key": "rules.magnate.label.012",
+      "value": "1. Construction"
+    },
+    {
+      "key": "rules.magnate.label.013",
+      "value": "2. Routes"
+    },
+    {
+      "key": "rules.magnate.label.014",
+      "value": "3. Movement"
+    },
+    {
+      "key": "rules.magnate.label.015",
+      "value": "4. New Round"
+    },
+    {
+      "key": "rules.magnate.label.016",
+      "value": "Street"
+    },
+    {
+      "key": "rules.magnate.label.017",
+      "value": "Wide Road & Bridge"
+    },
+    {
+      "key": "rules.magnate.label.018",
+      "value": "Highway"
+    },
+    {
+      "key": "rules.magnate.label.019",
+      "value": "Traffic Jam"
+    },
+    {
+      "key": "rules.magnate.label.020",
+      "value": "Hub Owner"
+    },
+    {
+      "key": "rules.magnate.label.021",
+      "value": "Accident"
+    },
+    {
+      "key": "rules.magnate.label.022",
+      "value": "Road Repairs"
+    },
+    {
+      "key": "rules.magnate.label.023",
+      "value": "Fuel Shortage"
+    },
+    {
+      "key": "rules.magnate.label.024",
+      "value": "Customs Inspection"
+    },
+    {
+      "key": "rules.magnate.label.025",
+      "value": "Storm Warning"
+    },
+    {
+      "key": "rules.magnate.label.026",
+      "value": "Festival"
+    },
+    {
+      "key": "rules.magnate.label.027",
+      "value": "Bottom Panel"
+    },
+    {
+      "key": "rules.magnate.label.028",
+      "value": "Cargo & Trucks"
+    },
+    {
+      "key": "rules.magnate.label.029",
+      "value": "Map"
+    },
+    {
+      "key": "rules.magnate.label.030",
+      "value": "Tutorial"
+    },
+    {
+      "key": "rules.magnate.label.031",
+      "value": "terminal"
+    },
+    {
+      "key": "rules.magnate.label.032",
+      "value": "warehouses"
+    },
+    {
+      "key": "rules.magnate.label.033",
+      "value": "crane"
+    },
+    {
+      "key": "rules.magnate.label.034",
+      "value": "more warehouses"
+    },
+    {
+      "key": "rules.magnate.label.035",
+      "value": "complex"
+    },
+    {
+      "key": "rules.magnate.label.036",
+      "value": "from start"
+    },
+    {
+      "key": "rules.magnate.text.001",
+      "value": "Each company starts with one truck at an airport, one at a station and one at a port. "
+    },
+    {
+      "key": "rules.magnate.text.002",
+      "value": "In each subsequent round, lower-scoring companies act first and pick up cargo earlier. "
+    },
+    {
+      "key": "rules.magnate.text.003",
+      "value": "If two players target one shipment, the lower-scoring company gets priority. Last place gains +1 construction point per round. "
+    },
+    {
+      "key": "rules.magnate.text.004",
+      "value": "If a rival takes the shipment, the truck automatically collects another one at that hub if available."
+    },
+    {
+      "key": "rules.magnate.text.005",
+      "value": "Each game generates a new city with rivers, bridges, districts and hubs. Gray public roads exist from the beginning — "
+    },
+    {
+      "key": "rules.magnate.text.006",
+      "value": "they are shared and free to use. Dashed roads show where construction is possible."
+    },
+    {
+      "key": "rules.magnate.text.007",
+      "value": "Wide roads include concrete roads, bridges and highways. Heavy and oversized cargo can only travel on these. Oversized loads also block a road "
+    },
+    {
+      "key": "rules.magnate.text.008",
+      "value": "for any trucks entering after them in the same round."
+    },
+    {
+      "key": "rules.magnate.text.009",
+      "value": "Tip: hover over a road to see its owner, capacity and how many trucks used it in the previous round. "
+    },
+    {
+      "key": "rules.magnate.text.010",
+      "value": "The Road Traffic layer colors roads according to their recent traffic."
+    },
+    {
+      "key": "rules.magnate.text.011",
+      "value": "Hubs are airports, train stations and ports. Cargo spawns only at hubs. Click a hub during construction to upgrade it."
+    },
+    {
+      "key": "rules.magnate.text.012",
+      "value": "Higher-level hubs hold more cargo (level + 1), generate cargo more often and offer more valuable shipments."
+    },
+    {
+      "key": "rules.magnate.text.013",
+      "value": "In the 3D city, hubs grow to include warehouses, cranes and, at level five, airport helipads. "
+    },
+    {
+      "key": "rules.magnate.text.014",
+      "value": "A colored ownership ring and level markers appear on the map."
+    },
+    {
+      "key": "rules.magnate.text.015",
+      "value": "Reputation increases for on-time deliveries (+3) and city orders (+5), and decreases for traffic jams (−1) and lost cargo (−4). "
+    },
+    {
+      "key": "rules.magnate.text.016",
+      "value": "Reputation level multiplies points earned per delivery:"
+    },
+    {
+      "key": "rules.magnate.text.017",
+      "value": "Stars beside a company name in the top bar indicate its reputation."
+    },
+    {
+      "key": "rules.magnate.text.018",
+      "value": "A truck breaks down on a busy road, closing it for one round. A barrier and wrench mark it on the map."
+    },
+    {
+      "key": "rules.magnate.text.019",
+      "value": "A built road closes for two rounds."
+    },
+    {
+      "key": "rules.magnate.text.020",
+      "value": "All trucks travel two fewer road segments."
+    },
+    {
+      "key": "rules.magnate.text.021",
+      "value": "Bridge capacity drops by one truck; heavy and oversized shipments cannot cross bridges."
+    },
+    {
+      "key": "rules.magnate.text.022",
+      "value": "City center streets are closed for one round."
+    },
+    {
+      "key": "rules.magnate.text.023",
+      "value": "Winning on Expert difficulty unlocks a separate achievement."
+    },
+    {
+      "key": "rules.magnate.text.024",
+      "value": "Choose difficulty in New Game when playing Magnate. It changes cargo spawn rates, rewards, events and penalties:"
+    },
+    {
+      "key": "rules.magnate.cargo.Ordinary.name",
+      "value": "Ordinary Cargo"
+    },
+    {
+      "key": "rules.magnate.cargo.Ordinary.rule",
+      "value": "No special conditions."
+    },
+    {
+      "key": "rules.magnate.cargo.Perishable.name",
+      "value": "Perishables"
+    },
+    {
+      "key": "rules.magnate.cargo.Perishable.rule",
+      "value": "Moves faster (+1 segment), but loses {0} points per late round."
+    },
+    {
+      "key": "rules.magnate.cargo.Heavy.name",
+      "value": "Heavy Cargo"
+    },
+    {
+      "key": "rules.magnate.cargo.Heavy.rule",
+      "value": "Only wide roads (concrete, bridges and highways); moves one segment slower."
+    },
+    {
+      "key": "rules.magnate.cargo.Hazard.name",
+      "value": "Hazardous Cargo"
+    },
+    {
+      "key": "rules.magnate.cargo.Hazard.rule",
+      "value": "Entering the city center costs {0} influence or cargo is confiscated (−{1}). Delivering grants a new truck (up to {2})."
+    },
+    {
+      "key": "rules.magnate.cargo.Fragile.name",
+      "value": "Fragile Cargo"
+    },
+    {
+      "key": "rules.magnate.cargo.Fragile.rule",
+      "value": "Each traffic jam reduces cargo value by {0}."
+    },
+    {
+      "key": "rules.magnate.cargo.Valuable.name",
+      "value": "Valuable Cargo"
+    },
+    {
+      "key": "rules.magnate.cargo.Valuable.rule",
+      "value": "Escort costs {0} influence at pickup (paid automatically when affordable). Without escort there is a theft risk each round."
+    },
+    {
+      "key": "rules.magnate.cargo.Oversized.name",
+      "value": "Oversized Cargo"
+    },
+    {
+      "key": "rules.magnate.cargo.Oversized.rule",
+      "value": "Only wide roads; moves slowly and blocks following trucks on that segment this round."
     }
   ]
 }
