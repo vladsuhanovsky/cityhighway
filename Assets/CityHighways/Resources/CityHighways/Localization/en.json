@@ -5787,6 +5787,26 @@
     {
       "key": "profile.containers.exclusive",
       "value": "Container Exclusive"
+    },
+    {
+      "key": "profile.history.game",
+      "value": "Influence remaining after game"
+    },
+    {
+      "key": "profile.history.game_win",
+      "value": "Influence remaining after game · victory"
+    },
+    {
+      "key": "profile.history.magnate",
+      "value": "Influence remaining after Magnate game"
+    },
+    {
+      "key": "profile.history.magnate_win",
+      "value": "Influence remaining after Magnate game · victory"
+    },
+    {
+      "key": "profile.history.mastery",
+      "value": "Mastery · {0} · {1}"
     }
   ]
 }

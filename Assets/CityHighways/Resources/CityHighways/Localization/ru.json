@@ -5787,6 +5787,26 @@
     {
       "key": "profile.containers.exclusive",
       "value": "Только из контейнеров"
+    },
+    {
+      "key": "profile.history.game",
+      "value": "Остаток влияния с партии"
+    },
+    {
+      "key": "profile.history.game_win",
+      "value": "Остаток влияния с партии · победа"
+    },
+    {
+      "key": "profile.history.magnate",
+      "value": "Остаток влияния с партии магната"
+    },
+    {
+      "key": "profile.history.magnate_win",
+      "value": "Остаток влияния с партии магната · победа"
+    },
+    {
+      "key": "profile.history.mastery",
+      "value": "Мастерство · {0} · {1}"
     }
   ]
 }

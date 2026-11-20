@@ -816,6 +816,63 @@ namespace CityHighways.Presentation
             }
         }
 
+        /// <summary>
+        /// Old wallet records store Russian free-text notes. Translate only when rendering:
+        /// never rewrite historical profile JSON or IDs.
+        /// </summary>
+        static string WalletNote(WalletEntry entry)
+        {
+            string note = entry.note ?? "";
+            if (LocalizationService.Language != "en" || note.Length == 0) return note;
+            switch (note)
+            {
+                case "Остаток влияния с партии": return LocalizationService.Get("profile.history.game");
+                case "Остаток влияния с партии · победа": return LocalizationService.Get("profile.history.game_win");
+                case "Остаток влияния с партии магната": return LocalizationService.Get("profile.history.magnate");
+                case "Остаток влияния с партии магната · победа": return LocalizationService.Get("profile.history.magnate_win");
+            }
+            if (entry.source == "achievement")
+            {
+                var achievement = Achievements.All.FirstOrDefault(a => a.OriginalTitle == note || a.Title == note);
+                if (achievement != null) return achievement.Title;
+            }
+            if (entry.source == "daily")
+            {
+                var task = Achievements.DailyTasks.FirstOrDefault(a => a.OriginalTitle == note || a.Title == note);
+                if (task != null) return task.Title;
+            }
+            if (entry.source == "shop" || entry.source == "container")
+            {
+                var item = Profiles.Catalog.FirstOrDefault(a => a.Name == note || a.DisplayName == note);
+                if (item != null) return item.DisplayName;
+                var container = Containers.Kinds.FirstOrDefault(a => a.Name == note || a.DisplayName == note);
+                if (container != null) return container.DisplayName;
+            }
+            if (entry.source == "clothing")
+            {
+                foreach (var slot in CharacterCatalog.Slots)
+                {
+                    var item = CharacterCatalog.ItemsIn(slot).FirstOrDefault(a => a.name == note || a.DisplayName == note);
+                    if (item != null) return item.DisplayName;
+                }
+            }
+            if (entry.source == "mastery" && note.StartsWith("Мастерство · ", StringComparison.Ordinal))
+            {
+                foreach (var character in CityHighways.Core.Characters.All)
+                {
+                    var prefix = "Мастерство · " + CityHighways.Core.Characters.Title(character) + " · ";
+                    if (!note.StartsWith(prefix, StringComparison.Ordinal)) continue;
+                    var suffix = note.Substring(prefix.Length);
+                    var names = new[] { "Знакомство", "Ученик", "Подмастерье", "Победитель", "Мастер" };
+                    for (int i = 0; i < names.Length; i++)
+                        if (suffix == names[i])
+                            return string.Format(LocalizationService.Get("profile.history.mastery"),
+                                CharacterLocalization.Title(character), LocalizationService.Get("mastery.node." + (i + 1) + ".title"));
+                }
+            }
+            return note;
+        }
+
         void WalletTab(PlayerProfile profile)
         {
             var history = profile.history ?? new List<WalletEntry>();
@@ -950,7 +1007,7 @@ namespace CityHighways.Presentation
                 var kind = Ui.Text(SourceTitle(entry.source), 12f, Theme.TextDim, true);
                 kind.style.width = 100f;
                 line.Add(kind);
-                var note = Ui.Text(entry.note ?? "", 13f, Theme.Text);
+                var note = Ui.Text(WalletNote(entry), 13f, Theme.Text);
                 note.style.flexGrow = 1f;
                 note.style.flexShrink = 1f;
                 line.Add(note);

@@ -111,6 +111,7 @@ namespace CityHighways.Presentation
             get => LocalizationService.GetOrFallback("achievement." + Id + ".description", _description);
             set => _description = value;
         }
+        public string OriginalTitle => _title;
         public int Reward;
         public Func<GameFacts, bool> Check;
         public Func<PlayerProfile, int> Progress;
@@ -128,6 +129,7 @@ namespace CityHighways.Presentation
             get => LocalizationService.GetOrFallback("daily." + Id + ".title", _title);
             set => _title = value;
         }
+        public string OriginalTitle => _title;
         public Func<GameFacts, bool> Check;
     }
 
