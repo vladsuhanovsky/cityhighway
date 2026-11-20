@@ -1,0 +1,52 @@
+{
+  "entries": [
+    {
+      "key": "menu.home.subtitle",
+      "value": "Стройте дороги, выполняйте контракты мэрии и берите плату за проезд"
+    },
+    {
+      "key": "menu.home.news",
+      "value": "Новости:"
+    },
+    {
+      "key": "menu.home.new_game",
+      "value": "Новая игра"
+    },
+    {
+      "key": "menu.home.quick_start",
+      "value": "Быстрый старт"
+    },
+    {
+      "key": "menu.home.tutorial",
+      "value": "Обучение"
+    },
+    {
+      "key": "menu.home.tutorial_hint",
+      "value": "Обучение — начните отсюда"
+    },
+    {
+      "key": "menu.home.online",
+      "value": "Сетевая игра"
+    },
+    {
+      "key": "menu.home.rules",
+      "value": "Правила"
+    },
+    {
+      "key": "menu.home.stats",
+      "value": "Счётчик партий"
+    },
+    {
+      "key": "menu.home.clubs",
+      "value": "Клубы и друзья"
+    },
+    {
+      "key": "menu.home.settings",
+      "value": "Настройки"
+    },
+    {
+      "key": "menu.home.language_switch",
+      "value": "Язык: Русский / Switch to English"
+    }
+  ]
+}

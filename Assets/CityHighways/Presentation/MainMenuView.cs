@@ -251,7 +251,7 @@ namespace CityHighways.Presentation
             rightCity.style.marginLeft = 18f;
             titleRow.Add(rightCity);
             page.Add(titleRow);
-            var subtitle = Ui.Text("Стройте дороги, выполняйте контракты мэрии и берите плату за проезд", 17f, Theme.Text);
+            var subtitle = Ui.Text(LocalizationService.Get("menu.home.subtitle"), 17f, Theme.Text);
             subtitle.style.unityTextAlign = TextAnchor.MiddleCenter;
             subtitle.style.marginTop = 6f;
             subtitle.style.marginBottom = 18f;
@@ -272,7 +272,7 @@ namespace CityHighways.Presentation
             var newsIcon = new MenuIcon(MenuIcon.Glyph.News, 22f, Theme.Gold);
             newsIcon.style.flexShrink = 0f;
             _newsBox.Add(newsIcon);
-            var newsCaption = Ui.Text("Новости:", 15f, Theme.Gold, true);
+            var newsCaption = Ui.Text(LocalizationService.Get("menu.home.news"), 15f, Theme.Gold, true);
             newsCaption.style.marginLeft = 10f;
             newsCaption.style.marginRight = 8f;
             // Подпись не сжимается и не переносится: иначе «Новости» рвётся на «Новост / и:».
@@ -305,15 +305,15 @@ namespace CityHighways.Presentation
                 buttons.Add(button);
                 return button;
             }
-            var newGame = Add(MenuIcon.Glyph.Gamepad, "Новая игра", () => ShowPage(Page.NewGame), saved == null);
+            var newGame = Add(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.home.new_game"), () => ShowPage(Page.NewGame), saved == null);
             // «Быстрый старт» — сразу в партию с последними настройками.
-            var quick = Ui.Button("Быстрый старт", StartGame, ButtonKind.Secondary, 13f);
+            var quick = Ui.Button(LocalizationService.Get("menu.home.quick_start"), StartGame, ButtonKind.Secondary, 13f);
             quick.style.minHeight = 30f;
             Ui.Padding(quick, 4f, 12f);
             quick.style.backgroundColor = new Color(1f, 1f, 1f, 0.16f);
             newGame.Badge.Add(quick);
-            Add(MenuIcon.Glyph.Cap, AnyTutorialDone ? "Обучение" : "Обучение — начните отсюда", () => ShowPage(Page.Tutorial), false);
-            _onlineButton = Add(MenuIcon.Glyph.Globe, "Сетевая игра", () =>
+            Add(MenuIcon.Glyph.Cap, LocalizationService.Get(AnyTutorialDone ? "menu.home.tutorial" : "menu.home.tutorial_hint"), () => ShowPage(Page.Tutorial), false);
+            _onlineButton = Add(MenuIcon.Glyph.Globe, LocalizationService.Get("menu.home.online"), () =>
             {
                 // Заблокированному аккаунту сетевая игра закрыта — показываем причину в уведомлениях.
                 if (Profiles.Active.cloudBanned)
@@ -326,10 +326,20 @@ namespace CityHighways.Presentation
             _onlineBadge = Pill("");
             Ui.Show(_onlineBadge, false);
             _onlineButton.Badge.Add(_onlineBadge);
-            Add(MenuIcon.Glyph.Book, "Правила", () => OpenRules(null, Page.Home), false);
-            Add(MenuIcon.Glyph.Chart, "Счётчик партий", () => ShowPage(Page.Stats), false);
-            Add(MenuIcon.Glyph.Flag, "Клубы и друзья", () => ShowPage(Page.Club), false);
-            Add(MenuIcon.Glyph.Gear, "Настройки", () => ShowPage(Page.Settings), false);
+            Add(MenuIcon.Glyph.Book, LocalizationService.Get("menu.home.rules"), () => OpenRules(null, Page.Home), false);
+            Add(MenuIcon.Glyph.Chart, LocalizationService.Get("menu.home.stats"), () => ShowPage(Page.Stats), false);
+            Add(MenuIcon.Glyph.Flag, LocalizationService.Get("menu.home.clubs"), () => ShowPage(Page.Club), false);
+            Add(MenuIcon.Glyph.Gear, LocalizationService.Get("menu.home.settings"), () => ShowPage(Page.Settings), false);
+
+            // Первый этап локализации: переключатель на главной странице.
+            // Остальные экраны сохраняют исходные русские строки до их переноса в таблицы.
+            var languageButton = Ui.Button(LocalizationService.Get("menu.home.language_switch"), () =>
+            {
+                LocalizationService.SetLanguage(LocalizationService.Language == "en" ? "ru" : "en");
+                _app.ShowMenu(); // Пересоздаём экран: все текстовые элементы построены в C#.
+            }, ButtonKind.Secondary, 13f);
+            languageButton.style.marginTop = 6f;
+            buttons.Add(languageButton);
 
             var summary = Ui.Text(StatsLog.Summary(), 14f, Theme.Text);
             summary.style.marginTop = 8f;
