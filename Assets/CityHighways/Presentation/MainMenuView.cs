@@ -1017,7 +1017,7 @@ namespace CityHighways.Presentation
             if (_lastCharacterSlot >= 0 && _lastCharacterSlot < _setup.players.Count && _setup.players[_lastCharacterSlot].character > 0)
             {
                 var kind = (CharacterKind)_setup.players[_lastCharacterSlot].character;
-                _characterHint.text = $"{Characters.Title(kind)}: {Characters.Ability(kind, config)}";
+                _characterHint.text = $"{CharacterLocalization.Title(kind)}: {CharacterLocalization.Ability(kind, config)}";
             }
             else _characterHint.text = LocalizationService.Get("menu.new_game.character_help");
             if (_mapButton != null)
@@ -1152,7 +1152,7 @@ namespace CityHighways.Presentation
         static string CharacterLabel(PlayerSlot slot) =>
             slot.character == PlayerSlot.DraftCharacter ? LocalizationService.Get("menu.new_game.character_draft")
             : slot.character == PlayerSlot.RandomCharacter ? LocalizationService.Get("menu.new_game.character_random")
-            : Characters.Title((CharacterKind)slot.character);
+            : CharacterLocalization.Title((CharacterKind)slot.character);
 
         static string KindLabel(PlayerSlot slot) => LocalizationService.Get(!slot.isBot ? "menu.new_game.human" : slot.botLevel == BotLevel.Random ? "menu.new_game.bot_random" : "menu.new_game.bot_smart");
 

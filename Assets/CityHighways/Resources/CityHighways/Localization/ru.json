@@ -5139,6 +5139,134 @@
     {
       "key": "menu.home.afford_notice",
       "value": "Хватает влияния на «{0}» ({1}) — загляните в профиль"
+    },
+    {
+      "key": "character.title.Lucky",
+      "value": "Везунчик"
+    },
+    {
+      "key": "character.title.Foreman",
+      "value": "Прораб"
+    },
+    {
+      "key": "character.title.Insurer",
+      "value": "Страховщик"
+    },
+    {
+      "key": "character.title.Tollman",
+      "value": "Сборщик пошлин"
+    },
+    {
+      "key": "character.title.Official",
+      "value": "Чиновник"
+    },
+    {
+      "key": "character.title.Bridger",
+      "value": "Мостовик"
+    },
+    {
+      "key": "character.title.None",
+      "value": "Без персонажа"
+    },
+    {
+      "key": "character.quote.Lucky",
+      "value": "Удача любит смелых — а смелее меня нет"
+    },
+    {
+      "key": "character.quote.Foreman",
+      "value": "Сначала дорогу проложим, карты потом"
+    },
+    {
+      "key": "character.quote.Insurer",
+      "value": "Риск — моя работа, а не ваша беда"
+    },
+    {
+      "key": "character.quote.Tollman",
+      "value": "Проезд платный. Касса справа"
+    },
+    {
+      "key": "character.quote.Official",
+      "value": "Есть подпись — есть контракт"
+    },
+    {
+      "key": "character.quote.Bridger",
+      "value": "Строю там, где другие боятся"
+    },
+    {
+      "key": "character.hint.Lucky",
+      "value": "Берите удачу смелее: худшую карту вы просто не возьмёте."
+    },
+    {
+      "key": "character.hint.Foreman",
+      "value": "Берегите бесплатную стройку для дороги, на которую не хватает карт."
+    },
+    {
+      "key": "character.hint.Insurer",
+      "value": "Удача для вас почти без риска — тяните её, когда нет нужных открытых карт."
+    },
+    {
+      "key": "character.hint.Tollman",
+      "value": "Стройте в узких местах: соперникам придётся ехать по вашим дорогам."
+    },
+    {
+      "key": "character.hint.Official",
+      "value": "Каждый выполненный контракт дороже — берите их больше."
+    },
+    {
+      "key": "character.hint.Bridger",
+      "value": "Река — ваша: мосты дешевле и приносят больше."
+    },
+    {
+      "key": "character.difficulty.1",
+      "value": "Новичку"
+    },
+    {
+      "key": "character.difficulty.2",
+      "value": "Просто"
+    },
+    {
+      "key": "character.difficulty.3",
+      "value": "Средне"
+    },
+    {
+      "key": "character.difficulty.4",
+      "value": "Опытному"
+    },
+    {
+      "key": "character.difficulty.5",
+      "value": "Эксперту"
+    },
+    {
+      "key": "character.ability.Lucky",
+      "value": "Берёт удачу — открывает 2 карты и оставляет лучшую."
+    },
+    {
+      "key": "character.ability.ForemanOnce",
+      "value": "Один раз за партию строит дорогу длиной до {1} без карт."
+    },
+    {
+      "key": "character.ability.ForemanMany",
+      "value": "{0} раза за партию строит дорогу длиной до {1} без карт."
+    },
+    {
+      "key": "character.ability.Insurer",
+      "value": "Дебафы удачи ему не страшны: вместо любого — только −{0} очко."
+    },
+    {
+      "key": "character.ability.Tollman",
+      "value": "Проезд по его дорогам стоит {0} очка вместо {1}."
+    },
+    {
+      "key": "character.ability.Official",
+      "value": "Связи в мэрии: +{0} очка за каждый выполненный контракт."
+    },
+    {
+      "key": "character.ability.Bridger",
+      "value": "Мосты на {0} карту дешевле и +{1} очко за каждый свой мост."
+    },
+    {
+      "key": "character.ability.None",
+      "value": "Обычная компания без особых способностей."
     }
   ]
 }

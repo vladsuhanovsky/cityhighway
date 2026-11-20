@@ -152,7 +152,7 @@ namespace CityHighways.Presentation
                 cell.style.backgroundColor = selected ? Theme.PanelHover : new Color(0f, 0f, 0f, 0f);
                 var face = new CharacterIcon(selected ? 48f : 42f, k, selected ? accent : Theme.TextDim);
                 cell.Add(face);
-                var label = Ui.Text(Characters.Title(k), 11f, selected ? Theme.Text : Theme.TextDim, selected);
+                var label = Ui.Text(CharacterLocalization.Title(k), 11f, selected ? Theme.Text : Theme.TextDim, selected);
                 label.style.unityTextAlign = TextAnchor.MiddleCenter;
                 label.style.marginTop = 4f;
                 label.pickingMode = PickingMode.Ignore;
@@ -198,7 +198,7 @@ namespace CityHighways.Presentation
                 squares.Add(square);
             }
             left.Add(squares);
-            var levelText = Ui.Text(string.Format(LocalizationService.Get("menu.characters.dynamic.difficulty"), Characters.DifficultyTitle(level)), 13f, Theme.Text);
+            var levelText = Ui.Text(string.Format(LocalizationService.Get("menu.characters.dynamic.difficulty"), CharacterLocalization.DifficultyTitle(level)), 13f, Theme.Text);
             levelText.style.marginTop = 6f;
             left.Add(levelText);
             body.Add(left);
@@ -215,9 +215,9 @@ namespace CityHighways.Presentation
             var icon = new CharacterIcon(34f, kind, accent);
             icon.style.marginRight = 10f;
             nameRow.Add(icon);
-            nameRow.Add(Ui.Text(Characters.Title(kind).ToUpperInvariant(), 24f, Theme.Text, true));
+            nameRow.Add(Ui.Text(CharacterLocalization.Title(kind).ToUpperInvariant(), 24f, Theme.Text, true));
             right.Add(nameRow);
-            var quote = Ui.Text($"«{Characters.Quote(kind)}»", 15f, Theme.TextDim);
+            var quote = Ui.Text($"«{CharacterLocalization.Quote(kind)}»", 15f, Theme.TextDim);
             quote.style.unityFontStyleAndWeight = FontStyle.Italic;
             quote.style.whiteSpace = WhiteSpace.Normal;
             quote.style.marginTop = 6f;
@@ -225,18 +225,18 @@ namespace CityHighways.Presentation
 
             right.Add(Divider());
             right.Add(SectionTitle(LocalizationService.Get("menu.characters.004"), accent));
-            var ability = Ui.Text(Characters.Ability(kind, config), 15f, Theme.Text);
+            var ability = Ui.Text(CharacterLocalization.Ability(kind, config), 15f, Theme.Text);
             ability.style.whiteSpace = WhiteSpace.Normal;
             ability.style.marginTop = 4f;
             right.Add(ability);
-            var hint = Ui.Text(Characters.Hint(kind), 13f, Theme.TextDim);
+            var hint = Ui.Text(CharacterLocalization.Hint(kind), 13f, Theme.TextDim);
             hint.style.whiteSpace = WhiteSpace.Normal;
             hint.style.marginTop = 6f;
             right.Add(hint);
 
             right.Add(Divider());
             right.Add(SectionTitle(LocalizationService.Get("menu.characters.005"), accent));
-            _pickerStats.TryGetValue(Characters.Title(kind), out var stat);
+            _pickerStats.TryGetValue(CharacterLocalization.Title(kind), out var stat);
             string statText = stat.played == 0
                 ? LocalizationService.Get("menu.characters.006")
                 : string.Format(LocalizationService.Get("menu.characters.dynamic.record"), stat.played, stat.won, Mathf.RoundToInt(100f * stat.won / stat.played));

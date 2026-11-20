@@ -5139,6 +5139,134 @@
     {
       "key": "menu.home.afford_notice",
       "value": "You can afford “{0}” ({1}) — visit your profile"
+    },
+    {
+      "key": "character.title.Lucky",
+      "value": "Lucky"
+    },
+    {
+      "key": "character.title.Foreman",
+      "value": "Foreman"
+    },
+    {
+      "key": "character.title.Insurer",
+      "value": "Insurer"
+    },
+    {
+      "key": "character.title.Tollman",
+      "value": "Toll Collector"
+    },
+    {
+      "key": "character.title.Official",
+      "value": "Official"
+    },
+    {
+      "key": "character.title.Bridger",
+      "value": "Bridge Builder"
+    },
+    {
+      "key": "character.title.None",
+      "value": "No Character"
+    },
+    {
+      "key": "character.quote.Lucky",
+      "value": "Fortune favors the bold — and no one is bolder than me"
+    },
+    {
+      "key": "character.quote.Foreman",
+      "value": "Build the road first; worry about cards later"
+    },
+    {
+      "key": "character.quote.Insurer",
+      "value": "Risk is my job, not your problem"
+    },
+    {
+      "key": "character.quote.Tollman",
+      "value": "Tolls apply. Pay at the booth"
+    },
+    {
+      "key": "character.quote.Official",
+      "value": "A signature seals the deal"
+    },
+    {
+      "key": "character.quote.Bridger",
+      "value": "I build where others dare not"
+    },
+    {
+      "key": "character.hint.Lucky",
+      "value": "Draw luck cards confidently: you can discard the worse one."
+    },
+    {
+      "key": "character.hint.Foreman",
+      "value": "Save your free build for a road you cannot otherwise afford."
+    },
+    {
+      "key": "character.hint.Insurer",
+      "value": "Luck cards carry little risk for you — draw when useful cards are not face-up."
+    },
+    {
+      "key": "character.hint.Tollman",
+      "value": "Build at bottlenecks so rivals must travel on your roads."
+    },
+    {
+      "key": "character.hint.Official",
+      "value": "Each completed contract earns bonus points — take more contracts."
+    },
+    {
+      "key": "character.hint.Bridger",
+      "value": "The river is yours: bridges cost less and score more."
+    },
+    {
+      "key": "character.difficulty.1",
+      "value": "Beginner"
+    },
+    {
+      "key": "character.difficulty.2",
+      "value": "Easy"
+    },
+    {
+      "key": "character.difficulty.3",
+      "value": "Medium"
+    },
+    {
+      "key": "character.difficulty.4",
+      "value": "Experienced"
+    },
+    {
+      "key": "character.difficulty.5",
+      "value": "Expert"
+    },
+    {
+      "key": "character.ability.Lucky",
+      "value": "Draws two luck cards and keeps the better one."
+    },
+    {
+      "key": "character.ability.ForemanOnce",
+      "value": "Once per game, builds a road up to length {1} without paying cards."
+    },
+    {
+      "key": "character.ability.ForemanMany",
+      "value": "Can build a road up to length {1} without paying cards {0} times per game."
+    },
+    {
+      "key": "character.ability.Insurer",
+      "value": "Luck debuffs only cause a {0}-point penalty."
+    },
+    {
+      "key": "character.ability.Tollman",
+      "value": "Tolls on their roads cost {0} points instead of {1}."
+    },
+    {
+      "key": "character.ability.Official",
+      "value": "City Hall connections: +{0} points for every completed contract."
+    },
+    {
+      "key": "character.ability.Bridger",
+      "value": "Bridges cost {0} fewer cards and earn +{1} points each."
+    },
+    {
+      "key": "character.ability.None",
+      "value": "An ordinary company with no special abilities."
     }
   ]
 }

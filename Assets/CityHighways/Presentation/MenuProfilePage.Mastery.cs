@@ -23,7 +23,7 @@ namespace CityHighways.Presentation
             var fresh = new List<string>();
             foreach (var kind in Characters.All)
                 foreach (var node in CharacterMastery.Unlock(profile, kind))
-                    fresh.Add($"{Characters.Title(kind)} — {node.Title}");
+                    fresh.Add($"{CharacterLocalization.Title(kind)} — {node.Title}");
             if (fresh.Count > 0)
             {
                 Profiles.Save();
@@ -77,7 +77,7 @@ namespace CityHighways.Presentation
             var texts = Ui.Column();
             texts.pickingMode = PickingMode.Ignore;
             texts.style.flexGrow = 1f;
-            var name = Ui.Text(Characters.Title(kind), 13f, selected ? Theme.Text : Theme.TextDim, true);
+            var name = Ui.Text(CharacterLocalization.Title(kind), 13f, selected ? Theme.Text : Theme.TextDim, true);
             name.pickingMode = PickingMode.Ignore;
             texts.Add(name);
             var bar = Ui.Box();
@@ -126,8 +126,8 @@ namespace CityHighways.Presentation
             var titles = Ui.Column();
             titles.style.flexGrow = 1f;
             titles.style.flexShrink = 1f;
-            titles.Add(Ui.Text(Characters.Title(kind), 22f, Theme.Text, true));
-            var ability = Caption(Characters.Ability(kind, new GameConfig()), 12f, Theme.TextDim, 0f, 2f);
+            titles.Add(Ui.Text(CharacterLocalization.Title(kind), 22f, Theme.Text, true));
+            var ability = Caption(CharacterLocalization.Ability(kind, new GameConfig()), 12f, Theme.TextDim, 0f, 2f);
             ability.style.whiteSpace = WhiteSpace.Normal;
             titles.Add(ability);
             head.Add(titles);
