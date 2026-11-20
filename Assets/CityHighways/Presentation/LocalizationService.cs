@@ -17,6 +17,8 @@ namespace CityHighways.Presentation
         const string Root = "CityHighways/Localization/";
         static readonly Dictionary<string, string> Russian = new Dictionary<string, string>();
         static readonly Dictionary<string, string> English = new Dictionary<string, string>();
+        static readonly Dictionary<string, string> LegacyEnglish = new Dictionary<string, string>();
+        static readonly HashSet<string> AmbiguousLegacy = new HashSet<string>();
         static bool _loaded;
         static string _language;
 
@@ -35,6 +37,21 @@ namespace CityHighways.Presentation
             _loaded = true;
             ReadTable("ru", Russian);
             ReadTable("en", English);
+            // Allow shared UI controls to reuse existing translations of unmodified legacy labels.
+            // A Russian source string may mean different things in different contexts:
+            // never guess when its English translations disagree.
+            foreach (var entry in Russian)
+            {
+                if (string.IsNullOrEmpty(entry.Value) || !English.TryGetValue(entry.Key, out var translated))
+                    continue;
+                if (LegacyEnglish.TryGetValue(entry.Value, out var current) && current != translated)
+                {
+                    AmbiguousLegacy.Add(entry.Value);
+                    LegacyEnglish.Remove(entry.Value);
+                }
+                else if (!AmbiguousLegacy.Contains(entry.Value))
+                    LegacyEnglish[entry.Value] = translated;
+            }
             string saved = PlayerPrefs.GetString(PrefsKey, "ru");
             _language = saved == "en" ? "en" : "ru";
         }
@@ -67,6 +84,19 @@ namespace CityHighways.Presentation
             _language = language;
             PlayerPrefs.SetString(PrefsKey, language);
             PlayerPrefs.Save();
+        }
+
+        /// <summary>
+        /// Compatibility translation for legacy static text displayed through shared UI helpers.
+        /// Ambiguous strings and dynamic messages are deliberately left unchanged.
+        /// New code should always use Get with a semantic key.
+        /// </summary>
+        public static string TranslateLegacy(string text)
+        {
+            EnsureLoaded();
+            if (_language == "en" && text != null && LegacyEnglish.TryGetValue(text, out var english))
+                return english;
+            return text;
         }
 
         public static string Get(string key)

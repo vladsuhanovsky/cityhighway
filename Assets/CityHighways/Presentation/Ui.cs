@@ -175,7 +175,7 @@ namespace CityHighways.Presentation
 
         public static Label Text(string text, float size = 15f, Color? color = null, bool bold = false)
         {
-            var label = new Label(text);
+            var label = new Label(LocalizationService.TranslateLegacy(text));
             label.pickingMode = PickingMode.Ignore;
             label.style.fontSize = size;
             label.style.color = color ?? Theme.Text;
@@ -351,7 +351,7 @@ namespace CityHighways.Presentation
 
         public static Label SectionTitle(string text)
         {
-            var label = Text(text.ToUpperInvariant(), 12f, Theme.TextDim, true);
+            var label = Text(LocalizationService.TranslateLegacy(text).ToUpperInvariant(), 12f, Theme.TextDim, true);
             label.style.letterSpacing = 1.5f;
             label.style.marginBottom = 8f;
             return label;
@@ -391,7 +391,7 @@ namespace CityHighways.Presentation
                 onClick?.Invoke();
             };
             var button = new UnityEngine.UIElements.Button(click);
-            button.text = text;
+            button.text = LocalizationService.TranslateLegacy(text);
             // Кнопки «← Назад» срабатывают и по Esc (см. GoBack).
             if (text != null && text.StartsWith("← Назад", StringComparison.Ordinal)) MarkBack(button, click);
             button.style.fontSize = fontSize;

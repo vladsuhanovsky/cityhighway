@@ -127,6 +127,24 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void SharedUiControls_TranslateOnlyUnambiguousLegacyText()
+        {
+            string previous = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Settings", LocalizationService.TranslateLegacy("Настройки"));
+                Assert.AreEqual("Players", LocalizationService.TranslateLegacy("Игроки"));
+                // "Карта" means both a map and a card; it must not be translated implicitly.
+                Assert.AreEqual("Карта", LocalizationService.TranslateLegacy("Карта"));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(previous);
+            }
+        }
+
+        [Test]
         public void EnglishCatalog_HasHomeKeys()
         {
             var asset = Resources.Load<TextAsset>("CityHighways/Localization/en");
