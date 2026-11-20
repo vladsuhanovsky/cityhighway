@@ -20,7 +20,12 @@ namespace CityHighways.Presentation
     public sealed class MasteryNode
     {
         public string Id;
-        public string Title;
+        string _title;
+        public string Title
+        {
+            get => LocalizationService.GetOrFallback("mastery.node." + Id.Substring(Id.LastIndexOf('.') + 1) + ".title", _title);
+            set => _title = value;
+        }
         /// <summary>Что сделать (текст для карточки).</summary>
         public string Goal;
         /// <summary>Что нужно открыть раньше (id узлов этого же персонажа).</summary>
@@ -47,12 +52,12 @@ namespace CityHighways.Presentation
         {
             switch (kind)
             {
-                case CharacterKind.Bridger: return ("мостов построено", "Постройте мостов", 2, 5, 10);
-                case CharacterKind.Tollman: return ("пошлин собрано", "Соберите пошлин", 12, 40, 100);
-                case CharacterKind.Official: return ("контрактов выполнено", "Выполните контрактов", 5, 15, 30);
-                case CharacterKind.Foreman: return ("дорог построено", "Постройте дорог", 15, 40, 80);
-                case CharacterKind.Insurer: return ("партий без провалов", "Сыграйте без проваленных контрактов партий", 2, 5, 10);
-                case CharacterKind.Lucky: return ("очков набрано", "Наберите очков", 100, 300, 600);
+                case CharacterKind.Bridger: return (LocalizationService.Get("mastery.metric.Bridger.label"), LocalizationService.Get("mastery.metric.Bridger.verb"), 2, 5, 10);
+                case CharacterKind.Tollman: return (LocalizationService.Get("mastery.metric.Tollman.label"), LocalizationService.Get("mastery.metric.Tollman.verb"), 12, 40, 100);
+                case CharacterKind.Official: return (LocalizationService.Get("mastery.metric.Official.label"), LocalizationService.Get("mastery.metric.Official.verb"), 5, 15, 30);
+                case CharacterKind.Foreman: return (LocalizationService.Get("mastery.metric.Foreman.label"), LocalizationService.Get("mastery.metric.Foreman.verb"), 15, 40, 80);
+                case CharacterKind.Insurer: return (LocalizationService.Get("mastery.metric.Insurer.label"), LocalizationService.Get("mastery.metric.Insurer.verb"), 2, 5, 10);
+                case CharacterKind.Lucky: return (LocalizationService.Get("mastery.metric.Lucky.label"), LocalizationService.Get("mastery.metric.Lucky.verb"), 100, 300, 600);
                 default: return ("", "", 1, 1, 1);
             }
         }
@@ -98,13 +103,13 @@ namespace CityHighways.Presentation
             string k = Key(kind);
             return new List<MasteryNode>
             {
-                new MasteryNode { Id = k + ".1", Title = "Знакомство", Goal = "Сыграйте партию этим персонажем",
+                new MasteryNode { Id = k + ".1", Title = "Знакомство", Goal = LocalizationService.Get("mastery.goal.first_game"),
                     Current = p => p.games, Target = 1, Influence = 5, Column = 0, Row = 0 },
                 new MasteryNode { Id = k + ".2", Title = "Ученик", Goal = $"{m.verb}: {m.a}", Requires = new[] { k + ".1" },
                     Current = p => p.metric, Target = m.a, Influence = 10, Column = 1, Row = 0 },
                 new MasteryNode { Id = k + ".3", Title = "Подмастерье", Goal = $"{m.verb}: {m.b}", Requires = new[] { k + ".2" },
                     Current = p => p.metric, Target = m.b, Item = TitleItem(kind), Column = 2, Row = -1 },
-                new MasteryNode { Id = k + ".4", Title = "Победитель", Goal = $"Победите этим персонажем {WinsForWinner} раза", Requires = new[] { k + ".2" },
+                new MasteryNode { Id = k + ".4", Title = "Победитель", Goal = string.Format(LocalizationService.Get("mastery.goal.wins"), WinsForWinner), Requires = new[] { k + ".2" },
                     Current = p => p.wins, Target = WinsForWinner, Influence = 20, Column = 2, Row = 1 },
                 new MasteryNode { Id = k + ".5", Title = "Мастер", Goal = $"{m.verb}: {m.c}", Requires = new[] { k + ".3", k + ".4" },
                     Current = p => p.metric, Target = m.c, Item = MasterFrame, Influence = 0, Column = 3, Row = 0 },
@@ -192,10 +197,10 @@ namespace CityHighways.Presentation
             if (!string.IsNullOrEmpty(node.Item))
             {
                 var item = Profiles.Item(node.Item);
-                if (item != null) parts.Add(item.Kind == ShopKind.Title ? $"титул «{item.Name}»" : item.Name.ToLowerInvariant());
+                if (item != null) parts.Add(item.Kind == ShopKind.Title ? string.Format(LocalizationService.Get("mastery.reward.title"), item.DisplayName) : item.DisplayName);
             }
-            if (node.Influence > 0) parts.Add($"+{node.Influence} влияния");
-            return parts.Count == 0 ? "" : string.Join(" и ", parts);
+            if (node.Influence > 0) parts.Add(string.Format(LocalizationService.Get("mastery.reward.influence"), node.Influence));
+            return parts.Count == 0 ? "" : string.Join(LocalizationService.Get("mastery.reward.and"), parts);
         }
     }
 }

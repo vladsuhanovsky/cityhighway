@@ -5267,6 +5267,134 @@
     {
       "key": "character.ability.None",
       "value": "Обычная компания без особых способностей."
+    },
+    {
+      "key": "mastery.metric.Bridger.label",
+      "value": "мостов построено"
+    },
+    {
+      "key": "mastery.metric.Bridger.verb",
+      "value": "Постройте мостов"
+    },
+    {
+      "key": "mastery.metric.Tollman.label",
+      "value": "пошлин собрано"
+    },
+    {
+      "key": "mastery.metric.Tollman.verb",
+      "value": "Соберите пошлин"
+    },
+    {
+      "key": "mastery.metric.Official.label",
+      "value": "контрактов выполнено"
+    },
+    {
+      "key": "mastery.metric.Official.verb",
+      "value": "Выполните контрактов"
+    },
+    {
+      "key": "mastery.metric.Foreman.label",
+      "value": "дорог построено"
+    },
+    {
+      "key": "mastery.metric.Foreman.verb",
+      "value": "Постройте дорог"
+    },
+    {
+      "key": "mastery.metric.Insurer.label",
+      "value": "партий без провалов"
+    },
+    {
+      "key": "mastery.metric.Insurer.verb",
+      "value": "Сыграйте без проваленных контрактов партий"
+    },
+    {
+      "key": "mastery.metric.Lucky.label",
+      "value": "очков набрано"
+    },
+    {
+      "key": "mastery.metric.Lucky.verb",
+      "value": "Наберите очков"
+    },
+    {
+      "key": "mastery.node.1.title",
+      "value": "Знакомство"
+    },
+    {
+      "key": "mastery.node.2.title",
+      "value": "Ученик"
+    },
+    {
+      "key": "mastery.node.3.title",
+      "value": "Подмастерье"
+    },
+    {
+      "key": "mastery.node.4.title",
+      "value": "Победитель"
+    },
+    {
+      "key": "mastery.node.5.title",
+      "value": "Мастер"
+    },
+    {
+      "key": "mastery.goal.first_game",
+      "value": "Сыграйте партию этим персонажем"
+    },
+    {
+      "key": "mastery.goal.wins",
+      "value": "Победите этим персонажем {0} раза"
+    },
+    {
+      "key": "mastery.reward.title",
+      "value": "титул «{0}»"
+    },
+    {
+      "key": "mastery.reward.influence",
+      "value": "+{0} влияния"
+    },
+    {
+      "key": "mastery.reward.and",
+      "value": " и "
+    },
+    {
+      "key": "mastery.header",
+      "value": "Мастерство персонажей"
+    },
+    {
+      "key": "mastery.description",
+      "value": "Играйте персонажем в соревновании и кооперативе — копятся партии, победы и его главный показатель. Узлы древа открываются сами, награды сразу попадают в профиль: влияние, титул персонажа, а у мастера — золотая рамка."
+    },
+    {
+      "key": "mastery.unlocked",
+      "value": "Открыто: {0}."
+    },
+    {
+      "key": "mastery.status.done",
+      "value": "✓ открыто"
+    },
+    {
+      "key": "mastery.status.progress",
+      "value": "в процессе"
+    },
+    {
+      "key": "mastery.status.locked",
+      "value": "закрыто"
+    },
+    {
+      "key": "mastery.reward.label",
+      "value": "Награда: {0}"
+    },
+    {
+      "key": "mastery.require_previous",
+      "value": "Сначала откройте предыдущие узлы."
+    },
+    {
+      "key": "mastery.stat.games",
+      "value": "партий"
+    },
+    {
+      "key": "mastery.stat.wins",
+      "value": "побед"
     }
   ]
 }

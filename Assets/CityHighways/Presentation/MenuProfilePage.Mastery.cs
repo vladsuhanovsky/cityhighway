@@ -27,7 +27,7 @@ namespace CityHighways.Presentation
             if (fresh.Count > 0)
             {
                 Profiles.Save();
-                _status = "Открыто: " + string.Join(", ", fresh) + ".";
+                _status = string.Format(LocalizationService.Get("mastery.unlocked"), string.Join(", ", fresh));
                 _statusLabel.text = _status;
                 _setupChanged?.Invoke();
             }
@@ -39,9 +39,8 @@ namespace CityHighways.Presentation
 
             var intro = Card(14f);
             intro.style.marginBottom = 12f;
-            intro.Add(Ui.Text("Мастерство персонажей", 18f, Theme.Text, true));
-            intro.Add(Caption("Играйте персонажем в соревновании и кооперативе — копятся партии, победы и его главный показатель. " +
-                              "Узлы древа открываются сами, награды сразу попадают в профиль: влияние, титул персонажа, а у мастера — золотая рамка.",
+            intro.Add(Ui.Text(LocalizationService.Get("mastery.header"), 18f, Theme.Text, true));
+            intro.Add(Caption(LocalizationService.Get("mastery.description"),
                 12f, Theme.TextDim, 0f, 4f));
             var chips = Ui.Row();
             chips.style.flexWrap = Wrap.Wrap;
@@ -131,7 +130,7 @@ namespace CityHighways.Presentation
             ability.style.whiteSpace = WhiteSpace.Normal;
             titles.Add(ability);
             head.Add(titles);
-            foreach (var (value, label) in new[] { (progress.games, "партий"), (progress.wins, "побед"), (progress.metric, metric.label) })
+            foreach (var (value, label) in new[] { (progress.games, LocalizationService.Get("mastery.stat.games")), (progress.wins, LocalizationService.Get("mastery.stat.wins")), (progress.metric, metric.label) })
             {
                 var stat = Ui.Column();
                 stat.style.alignItems = Align.Center;
@@ -194,7 +193,7 @@ namespace CityHighways.Presentation
             var title = Ui.Text(node.Title, 15f, done ? accent : Theme.Text, true);
             title.style.flexGrow = 1f;
             top.Add(title);
-            top.Add(Ui.Text(done ? "✓ открыто" : open ? "в процессе" : "закрыто", 11f, done ? GameColors.Accent : Theme.TextDim, done));
+            top.Add(Ui.Text(LocalizationService.Get(done ? "mastery.status.done" : open ? "mastery.status.progress" : "mastery.status.locked"), 11f, done ? GameColors.Accent : Theme.TextDim, done));
             box.Add(top);
             var goal = Ui.Text(node.Goal, 12f, Theme.TextDim);
             goal.style.whiteSpace = WhiteSpace.Normal;
@@ -220,11 +219,11 @@ namespace CityHighways.Presentation
             numbers.style.marginLeft = 6f;
             barRow.Add(numbers);
             box.Add(barRow);
-            var reward = Ui.Text("Награда: " + CharacterMastery.RewardText(node), 11f, done ? GameColors.Warning : Theme.Text, done);
+            var reward = Ui.Text(string.Format(LocalizationService.Get("mastery.reward.label"), CharacterMastery.RewardText(node)), 11f, done ? GameColors.Warning : Theme.Text, done);
             reward.style.marginTop = 4f;
             reward.style.whiteSpace = WhiteSpace.Normal;
             box.Add(reward);
-            if (!open && !done) box.tooltip = "Сначала откройте предыдущие узлы.";
+            if (!open && !done) box.tooltip = LocalizationService.Get("mastery.require_previous");
             return box;
         }
 

@@ -5267,6 +5267,134 @@
     {
       "key": "character.ability.None",
       "value": "An ordinary company with no special abilities."
+    },
+    {
+      "key": "mastery.metric.Bridger.label",
+      "value": "bridges built"
+    },
+    {
+      "key": "mastery.metric.Bridger.verb",
+      "value": "Build Bridges"
+    },
+    {
+      "key": "mastery.metric.Tollman.label",
+      "value": "toll points earned"
+    },
+    {
+      "key": "mastery.metric.Tollman.verb",
+      "value": "Collect Tolls"
+    },
+    {
+      "key": "mastery.metric.Official.label",
+      "value": "contracts completed"
+    },
+    {
+      "key": "mastery.metric.Official.verb",
+      "value": "Complete Contracts"
+    },
+    {
+      "key": "mastery.metric.Foreman.label",
+      "value": "roads built"
+    },
+    {
+      "key": "mastery.metric.Foreman.verb",
+      "value": "Build Roads"
+    },
+    {
+      "key": "mastery.metric.Insurer.label",
+      "value": "games without failed contracts"
+    },
+    {
+      "key": "mastery.metric.Insurer.verb",
+      "value": "Play Games Without Failed Contracts"
+    },
+    {
+      "key": "mastery.metric.Lucky.label",
+      "value": "points scored"
+    },
+    {
+      "key": "mastery.metric.Lucky.verb",
+      "value": "Score Points"
+    },
+    {
+      "key": "mastery.node.1.title",
+      "value": "Introduction"
+    },
+    {
+      "key": "mastery.node.2.title",
+      "value": "Apprentice"
+    },
+    {
+      "key": "mastery.node.3.title",
+      "value": "Journeyman"
+    },
+    {
+      "key": "mastery.node.4.title",
+      "value": "Winner"
+    },
+    {
+      "key": "mastery.node.5.title",
+      "value": "Master"
+    },
+    {
+      "key": "mastery.goal.first_game",
+      "value": "Play a game with this character"
+    },
+    {
+      "key": "mastery.goal.wins",
+      "value": "Win {0} games with this character"
+    },
+    {
+      "key": "mastery.reward.title",
+      "value": "title “{0}”"
+    },
+    {
+      "key": "mastery.reward.influence",
+      "value": "+{0} influence"
+    },
+    {
+      "key": "mastery.reward.and",
+      "value": " and "
+    },
+    {
+      "key": "mastery.header",
+      "value": "Character Mastery"
+    },
+    {
+      "key": "mastery.description",
+      "value": "Play competitive and cooperative matches to develop each character. Games, wins and a unique metric unlock mastery nodes automatically. Rewards include influence, a character title and a golden frame."
+    },
+    {
+      "key": "mastery.unlocked",
+      "value": "Unlocked: {0}."
+    },
+    {
+      "key": "mastery.status.done",
+      "value": "✓ unlocked"
+    },
+    {
+      "key": "mastery.status.progress",
+      "value": "in progress"
+    },
+    {
+      "key": "mastery.status.locked",
+      "value": "locked"
+    },
+    {
+      "key": "mastery.reward.label",
+      "value": "Reward: {0}"
+    },
+    {
+      "key": "mastery.require_previous",
+      "value": "Unlock the previous nodes first."
+    },
+    {
+      "key": "mastery.stat.games",
+      "value": "games"
+    },
+    {
+      "key": "mastery.stat.wins",
+      "value": "wins"
     }
   ]
 }
