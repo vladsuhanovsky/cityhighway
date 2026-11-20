@@ -279,7 +279,7 @@ namespace CityHighways.Presentation
             newsCaption.style.flexShrink = 0f;
             newsCaption.style.whiteSpace = WhiteSpace.NoWrap;
             _newsBox.Add(newsCaption);
-            _newsText = Ui.Text(News[0], 15f, Theme.Text);
+            _newsText = Ui.Text(LocalizationService.Get(NewsKeys[0]), 15f, Theme.Text);
             _newsText.style.flexShrink = 1f;
             _newsText.style.flexGrow = 1f;
             _newsText.style.whiteSpace = WhiteSpace.Normal;
@@ -361,49 +361,49 @@ namespace CityHighways.Presentation
         // ------------------------------------------------------------------ Новости
 
         /// <summary>Что нового в игре — короткие строки для ленты на главной.</summary>
-        static readonly string[] News =
+        static readonly string[] NewsKeys =
         {
-            LocalizationService.Get("menu.main.legacy.002"),
-            LocalizationService.Get("menu.main.legacy.003"),
-            LocalizationService.Get("menu.main.legacy.004"),
-            LocalizationService.Get("menu.main.legacy.005"),
-            LocalizationService.Get("menu.main.legacy.006"),
-            LocalizationService.Get("menu.main.legacy.007"),
-            LocalizationService.Get("menu.main.legacy.008"),
-            LocalizationService.Get("menu.main.legacy.009"),
-            LocalizationService.Get("menu.main.legacy.010"),
-            LocalizationService.Get("menu.main.legacy.011"),
-            LocalizationService.Get("menu.main.legacy.012"),
-            LocalizationService.Get("menu.main.legacy.013"),
-            LocalizationService.Get("menu.main.legacy.014"),
-            LocalizationService.Get("menu.main.legacy.015"),
-            LocalizationService.Get("menu.main.legacy.016"),
-            LocalizationService.Get("menu.main.legacy.017"),
-            LocalizationService.Get("menu.main.legacy.018"),
-            LocalizationService.Get("menu.main.legacy.019"),
-            LocalizationService.Get("menu.main.legacy.020"),
-            LocalizationService.Get("menu.main.legacy.021"),
-            LocalizationService.Get("menu.main.legacy.022"),
-            LocalizationService.Get("menu.main.legacy.023"),
-            LocalizationService.Get("menu.main.legacy.024"),
-            LocalizationService.Get("menu.main.legacy.025"),
-            LocalizationService.Get("menu.main.legacy.026"),
-            LocalizationService.Get("menu.main.legacy.027"),
-            LocalizationService.Get("menu.main.legacy.028"),
-            LocalizationService.Get("menu.main.legacy.029"),
-            LocalizationService.Get("menu.main.legacy.030"),
-            LocalizationService.Get("menu.main.legacy.031"),
-            LocalizationService.Get("menu.main.legacy.032"),
-            LocalizationService.Get("menu.main.legacy.033"),
-            LocalizationService.Get("menu.main.legacy.034"),
-            LocalizationService.Get("menu.main.legacy.035"),
-            LocalizationService.Get("menu.main.legacy.036"),
-            LocalizationService.Get("menu.main.legacy.037"),
-            LocalizationService.Get("menu.main.legacy.038"),
-            LocalizationService.Get("menu.main.legacy.039"),
-            LocalizationService.Get("menu.main.legacy.040"),
-            LocalizationService.Get("menu.main.legacy.041"),
-            LocalizationService.Get("menu.main.legacy.042")
+            "menu.main.legacy.002",
+            "menu.main.legacy.003",
+            "menu.main.legacy.004",
+            "menu.main.legacy.005",
+            "menu.main.legacy.006",
+            "menu.main.legacy.007",
+            "menu.main.legacy.008",
+            "menu.main.legacy.009",
+            "menu.main.legacy.010",
+            "menu.main.legacy.011",
+            "menu.main.legacy.012",
+            "menu.main.legacy.013",
+            "menu.main.legacy.014",
+            "menu.main.legacy.015",
+            "menu.main.legacy.016",
+            "menu.main.legacy.017",
+            "menu.main.legacy.018",
+            "menu.main.legacy.019",
+            "menu.main.legacy.020",
+            "menu.main.legacy.021",
+            "menu.main.legacy.022",
+            "menu.main.legacy.023",
+            "menu.main.legacy.024",
+            "menu.main.legacy.025",
+            "menu.main.legacy.026",
+            "menu.main.legacy.027",
+            "menu.main.legacy.028",
+            "menu.main.legacy.029",
+            "menu.main.legacy.030",
+            "menu.main.legacy.031",
+            "menu.main.legacy.032",
+            "menu.main.legacy.033",
+            "menu.main.legacy.034",
+            "menu.main.legacy.035",
+            "menu.main.legacy.036",
+            "menu.main.legacy.037",
+            "menu.main.legacy.038",
+            "menu.main.legacy.039",
+            "menu.main.legacy.040",
+            "menu.main.legacy.041",
+            "menu.main.legacy.042"
         };
 
         /// <summary>Номер выпуска новостей: если больше прочитанного — в уведомлениях «Что нового».</summary>
@@ -419,12 +419,12 @@ namespace CityHighways.Presentation
             _newsTimer += dt;
             if (_newsTimer < 7f) return;
             _newsTimer = 0f;
-            _newsIndex = (_newsIndex + 1) % News.Length;
+            _newsIndex = (_newsIndex + 1) % NewsKeys.Length;
             int index = _newsIndex;
             _newsText.style.opacity = 0f;
             _newsText.schedule.Execute(() =>
             {
-                _newsText.text = News[index];
+                _newsText.text = LocalizationService.Get(NewsKeys[index]);
                 _newsText.style.opacity = 1f;
             }).ExecuteLater(320);
         }
@@ -599,7 +599,7 @@ namespace CityHighways.Presentation
             Ui.Border(_moonButton, mode == MenuBackground.LightMode.Night ? 2f : 1f, mode == MenuBackground.LightMode.Night ? Theme.Accent : Theme.Line);
             Ui.Border(_sunButton, mode == MenuBackground.LightMode.Day ? 2f : 1f, mode == MenuBackground.LightMode.Day ? Theme.Accent : Theme.Line);
             string light = mode == MenuBackground.LightMode.Night ? LocalizationService.Get("menu.main.legacy.043") : mode == MenuBackground.LightMode.Day ? LocalizationService.Get("menu.main.legacy.044") : LocalizationService.Get("menu.main.legacy.045");
-            _lightCaption.text = $"Свет: {light} · {MenuBackground.PaletteNames[_background.PaletteIndex]}";
+            _lightCaption.text = string.Format(LocalizationService.Get("menu.home.light_status"), light, MenuBackground.PaletteNames[_background.PaletteIndex]);
         }
 
         void ConfirmQuit()
@@ -685,17 +685,17 @@ namespace CityHighways.Presentation
                 ShowPage(Page.Profile);
             }
             if (profile != null && profile.dailyDone != Achievements.DateKey(DateTime.Now))
-                list.Add((MenuIcon.Glyph.Star, $"Задание дня: {Achievements.Today.Title} (+{Achievements.DailyReward} влияния)", OpenProfile));
+                list.Add((MenuIcon.Glyph.Star, string.Format(LocalizationService.Get("menu.home.daily_notice"), Achievements.Today.Title, Achievements.DailyReward), OpenProfile));
             if (profile != null)
             {
                 var item = Profiles.Catalog.Where(i => !i.Exclusive && !profile.Owns(i.Id) && i.Price > 0 && i.Price <= profile.wallet)
                     .OrderByDescending(i => i.Price).FirstOrDefault();
-                if (item != null) list.Add((MenuIcon.Glyph.Palette, $"Хватает влияния на «{item.Name}» ({item.Price}) — загляните в профиль", OpenProfile));
+                if (item != null) list.Add((MenuIcon.Glyph.Palette, string.Format(LocalizationService.Get("menu.home.afford_notice"), item.DisplayName, item.Price), OpenProfile));
             }
             var saved = SaveSystem.Load();
             if (saved != null) list.Add((MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.main.legacy.053"), () => _app.ContinueGame(saved)));
             if (PlayerPrefs.GetInt(NewsSeenKey, 0) < NewsVersion)
-                list.Add((MenuIcon.Glyph.News, LocalizationService.Get("menu.main.legacy.054") + News[0], () =>
+                list.Add((MenuIcon.Glyph.News, LocalizationService.Get("menu.main.legacy.054") + LocalizationService.Get(NewsKeys[0]), () =>
                 {
                     PlayerPrefs.SetInt(NewsSeenKey, NewsVersion);
                     PlayerPrefs.Save();

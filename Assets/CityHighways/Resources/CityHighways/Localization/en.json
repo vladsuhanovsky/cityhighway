@@ -5127,6 +5127,18 @@
     {
       "key": "wardrobe.gender.male",
       "value": "Male"
+    },
+    {
+      "key": "menu.home.light_status",
+      "value": "Lighting: {0} · {1}"
+    },
+    {
+      "key": "menu.home.daily_notice",
+      "value": "Daily challenge: {0} (+{1} influence)"
+    },
+    {
+      "key": "menu.home.afford_notice",
+      "value": "You can afford “{0}” ({1}) — visit your profile"
     }
   ]
 }

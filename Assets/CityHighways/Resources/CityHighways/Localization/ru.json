@@ -5127,6 +5127,18 @@
     {
       "key": "wardrobe.gender.male",
       "value": "Мужчина"
+    },
+    {
+      "key": "menu.home.light_status",
+      "value": "Свет: {0} · {1}"
+    },
+    {
+      "key": "menu.home.daily_notice",
+      "value": "Задание дня: {0} (+{1} влияния)"
+    },
+    {
+      "key": "menu.home.afford_notice",
+      "value": "Хватает влияния на «{0}» ({1}) — загляните в профиль"
     }
   ]
 }
