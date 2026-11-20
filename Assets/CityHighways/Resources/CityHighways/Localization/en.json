@@ -4187,6 +4187,258 @@
     {
       "key": "menu.tutorial.dynamic.victory_end",
       "value": "The city wins if crisis reaches {0} or the team runs out of road pieces before completing enough orders."
+    },
+    {
+      "key": "menu.main.legacy.001",
+      "value": "← Back"
+    },
+    {
+      "key": "menu.main.legacy.002",
+      "value": "Match replays, record challenges and builders' clubs with weekly goals and unique emblems"
+    },
+    {
+      "key": "menu.main.legacy.003",
+      "value": "Co-op rebalanced: deadlines scale with order length, orders are staggered, crisis rises more slowly"
+    },
+    {
+      "key": "menu.main.legacy.004",
+      "value": "New competitive and co-op loading screens with Scenario artwork and mode-specific tips"
+    },
+    {
+      "key": "menu.main.legacy.005",
+      "value": "Magnate: in-game settings, with tutorial and rules in the top-right Menu"
+    },
+    {
+      "key": "menu.main.legacy.006",
+      "value": "New Magnate loading screen featuring a logistics city, animated truck and gameplay tips"
+    },
+    {
+      "key": "menu.main.legacy.007",
+      "value": "Chongqing now features pagodas and Chinese-style buildings; Amsterdam has narrow canal houses, gables and churches"
+    },
+    {
+      "key": "menu.main.legacy.008",
+      "value": "Magnate: players build dead ends and critical crossings; empty trucks can be sent toward oversize cargo early"
+    },
+    {
+      "key": "menu.main.legacy.009",
+      "value": "The left mouse button rotates the board while clicks still select; restore old controls in Settings → Controls"
+    },
+    {
+      "key": "menu.main.legacy.010",
+      "value": "Zoom in twice as far, up to ×8, to see cars, curbs and station shelters"
+    },
+    {
+      "key": "menu.main.legacy.011",
+      "value": "Magnate: hubs can be taken over, trailing players go first, own roads are faster, fair starts, runners-up get half city order rewards"
+    },
+    {
+      "key": "menu.main.legacy.012",
+      "value": "Magnate: the first round is for building roads; trucks start collecting cargo in round two"
+    },
+    {
+      "key": "menu.main.legacy.013",
+      "value": "Built roads have company-colored outlines, making ownership clear"
+    },
+    {
+      "key": "menu.main.legacy.014",
+      "value": "Wardrobe item descriptions now explain when layers are hidden, such as a tie under a sweater"
+    },
+    {
+      "key": "menu.main.legacy.015",
+      "value": "Wardrobe improvements: hats work with hairstyles, overalls layer correctly and clothing fits the character"
+    },
+    {
+      "key": "menu.main.legacy.016",
+      "value": "Character mastery trees, Bridge Builder's colored bridges and animated character selection portraits"
+    },
+    {
+      "key": "menu.main.legacy.017",
+      "value": "Owner-colored roads, competitive Map Layers, a cleaner Moscow map and bridges over the full-length river"
+    },
+    {
+      "key": "menu.main.legacy.018",
+      "value": "Profile: spend influence on containers with clothes, emblems, titles and frames; eight items are container-exclusive"
+    },
+    {
+      "key": "menu.main.legacy.019",
+      "value": "Magnate: hazardous cargo awards extra trucks (up to five), smooth board rotation and customizable controls"
+    },
+    {
+      "key": "menu.main.legacy.020",
+      "value": "Magnate: hubs sit on level ground away from roads and rivers, with station access and no gray slab"
+    },
+    {
+      "key": "menu.main.legacy.021",
+      "value": "Profile: cleaner character visuals, correctly held props and better fitting hats and clothes"
+    },
+    {
+      "key": "menu.main.legacy.022",
+      "value": "Livelier 3D city with pedestrians, traffic lights, groves, courtyards, rooftop equipment, trains and hangars"
+    },
+    {
+      "key": "menu.main.legacy.023",
+      "value": "3D terrain adds hills, river valleys and slope-adjusted roads, with unique terrain for each map"
+    },
+    {
+      "key": "menu.main.legacy.024",
+      "value": "3D roads with company-colored curbs, station shelters, cars, buses and trucks in Magnate"
+    },
+    {
+      "key": "menu.main.legacy.025",
+      "value": "3D camera rotation and tilt with the right mouse button (Q/E, R/F), compass, streetlights, bushes and boats"
+    },
+    {
+      "key": "menu.main.legacy.026",
+      "value": "Magnate: right-side Players, Cargo and City Orders panels, thin dashed roads, 3D terminals, cranes and trucks"
+    },
+    {
+      "key": "menu.main.legacy.027",
+      "value": "Magnate: dashed available roads, 3D stations and airports, map cargo panel and tutorial map"
+    },
+    {
+      "key": "menu.main.legacy.028",
+      "value": "Game screen: centered bottom Players tab with profile portraits, nearby resources and top-bar log"
+    },
+    {
+      "key": "menu.main.legacy.029",
+      "value": "New character portraits and personalized sounds: coin, hammer, briefcase, cash register, stamp and beam"
+    },
+    {
+      "key": "menu.main.legacy.030",
+      "value": "New Game: character selection cards show the hero, difficulty, ability and your win statistics"
+    },
+    {
+      "key": "menu.main.legacy.031",
+      "value": "Profile: male and female characters and a 58-item 3D-inspired wardrobe"
+    },
+    {
+      "key": "menu.main.legacy.032",
+      "value": "Characters now have faces: 3D Lucky, Foreman, Bridge Builder and others"
+    },
+    {
+      "key": "menu.main.legacy.033",
+      "value": "Magnate: road prices on the map, random first-player draw, rules and log at the top"
+    },
+    {
+      "key": "menu.main.legacy.034",
+      "value": "New cargo, hub and event icons, city menu art and card illustrations"
+    },
+    {
+      "key": "menu.main.legacy.035",
+      "value": "New game interface with full-screen map, minimap and contract cards"
+    },
+    {
+      "key": "menu.main.legacy.036",
+      "value": "Tilted 2.5D board with morning, day, sunset and night during one match"
+    },
+    {
+      "key": "menu.main.legacy.037",
+      "value": "Scenarios: Winter, Greater City, Year of Repairs and Mayoral Elections"
+    },
+    {
+      "key": "menu.main.legacy.038",
+      "value": "New maps: canal-filled Amsterdam and Chongqing, the city of bridges across two rivers"
+    },
+    {
+      "key": "menu.main.legacy.039",
+      "value": "New co-op mode: City Against Everyone — one team against the crisis"
+    },
+    {
+      "key": "menu.main.legacy.040",
+      "value": "A guided tutorial match is the best way to start"
+    },
+    {
+      "key": "menu.main.legacy.041",
+      "value": "Traffic jams and passes: detours pay off, and highways avoid congestion"
+    },
+    {
+      "key": "menu.main.legacy.042",
+      "value": "Achievements and daily challenges earn influence for the character wardrobe"
+    },
+    {
+      "key": "menu.main.legacy.043",
+      "value": "night"
+    },
+    {
+      "key": "menu.main.legacy.044",
+      "value": "day"
+    },
+    {
+      "key": "menu.main.legacy.045",
+      "value": "system time"
+    },
+    {
+      "key": "menu.main.legacy.046",
+      "value": "Exit City Highways?"
+    },
+    {
+      "key": "menu.main.legacy.047",
+      "value": "Your unfinished game will be saved so you can resume it later."
+    },
+    {
+      "key": "menu.main.legacy.048",
+      "value": "Exit"
+    },
+    {
+      "key": "menu.main.legacy.049",
+      "value": "Stay"
+    },
+    {
+      "key": "menu.main.legacy.050",
+      "value": "Notifications"
+    },
+    {
+      "key": "menu.main.legacy.051",
+      "value": "Account Blocked"
+    },
+    {
+      "key": "menu.main.legacy.052",
+      "value": ". Online play is unavailable."
+    },
+    {
+      "key": "menu.main.legacy.053",
+      "value": "An unfinished game is available to resume"
+    },
+    {
+      "key": "menu.main.legacy.054",
+      "value": "What's New: "
+    },
+    {
+      "key": "menu.main.legacy.055",
+      "value": "You haven't completed the tutorial. Choose a mode and start with a coach."
+    },
+    {
+      "key": "menu.main.legacy.056",
+      "value": "No new notifications."
+    },
+    {
+      "key": "menu.main.legacy.057",
+      "value": "Steam: could not load friends in lobby: "
+    },
+    {
+      "key": "menu.main.legacy.058",
+      "value": "public game"
+    },
+    {
+      "key": "menu.main.legacy.059",
+      "value": "public games"
+    },
+    {
+      "key": "menu.main.legacy.060",
+      "value": "public games"
+    },
+    {
+      "key": "menu.main.legacy.061",
+      "value": "Unfinished Game"
+    },
+    {
+      "key": "menu.main.legacy.062",
+      "value": "Resume"
+    },
+    {
+      "key": "menu.main.legacy.063",
+      "value": "Delete"
     }
   ]
 }

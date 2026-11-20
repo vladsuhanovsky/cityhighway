@@ -223,7 +223,7 @@ namespace CityHighways.Presentation
             var row = Ui.Row();
             row.style.alignItems = Align.Center;
             row.style.marginBottom = 18f;
-            var backButton = Ui.Button("← Назад", back, ButtonKind.Ghost, 15f);
+            var backButton = Ui.Button(LocalizationService.Get("menu.main.legacy.001"), back, ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             row.Add(backButton);
             row.Add(Ui.Text(text, 34f, Theme.Gold, true));
@@ -363,47 +363,47 @@ namespace CityHighways.Presentation
         /// <summary>Что нового в игре — короткие строки для ленты на главной.</summary>
         static readonly string[] News =
         {
-            "Повторы партий, рейды на рекорды друзей и клубы строителей с целями недели и уникальными логотипами",
-            "Кооператив перебалансирован: сроки заказов по их длине, заказы в очередь, кризис растёт медленнее",
-            "Экраны загрузки соревнования и кооператива: новые картины из Scenario и советы по правилам режима",
-            "Магнат: настройки прямо в партии, а обучение и правила — в «Меню» справа вверху",
-            "Новый экран загрузки магната: картина логистического города, фура на полосе загрузки и советы по правилам",
-            "Чунцин застроен пагодами и домами под китайскими крышами, Амстердам — узкими домами на каналах с фронтонами и церквями",
-            "Магнат: тупики и единственные переправы строят игроки; пустую фуру можно отправить к крупногабариту заранее",
-            "Поле крутится левой кнопкой мыши, клик по-прежнему выбирает. Вернуть старое управление — в «Настройки → Управление»",
-            "Поле можно приблизить вдвое сильнее — до ×8: видно машины, бордюры и павильоны вблизи",
-            "Магнат: хабы можно перехватить, отстающие ходят первыми, свои дороги быстрее, равный старт, второму в заказе мэрии — половина",
-            "Магнат: первый раунд — раунд стройки. Каждая компания строит по дороге, фуры берут грузы со второго раунда",
-            "Построенные дороги обрамлены цветом компании, а не белым — сразу видно, чья трасса",
-            "В гардеробе — описания вещей и подсказка, что под чем не видно: например, галстук под свитером",
-            "Гардероб: шляпы больше не путаются с причёсками, комбинезон с нагрудником поверх футболки, одежда не «висит» при надевании",
-            "Древо мастерства персонажей в профиле, мосты Мостовика подсвечены его цветом, аватары в выборе персонажа «выпрыгивают»",
-            "Дороги отмечены цветом владельца, в соревновании появились «Слои карты», Москва без МКАД, река через всю карту и ровные мосты",
-            "Профиль: контейнеры за влияние — одежда, эмблемы, титулы и рамки, восемь вещей бывают только в контейнерах",
-            "Магнат: за опасный груз — новая фура (до 5). Плавное вращение поля, раздел «Управление» в настройках, Esc — назад в меню",
-            "Магнат: хабы встают в стороне от дорог и рек, на ровной земле — без серой плиты, с подъездом от станции",
-            "Профиль: персонаж без розовой каймы и мерцания, свиток и планшет держатся в руке, шляпы и одежда садятся ровно",
-            "3D-город живее: пешеходы у станций и хабов, светофоры на перекрёстках, рощи на холмах, дворы и техника на крышах, поезда и ангары у крупных хабов",
-            "3D-рельеф: холмы и речные долины, дороги по склонам с подрезками и насыпями, у каждой карты свой рельеф",
-            "3D: дороги с бордюрами цвета компании, павильоны станций, машины и автобусы на улицах, 3D-фуры в магнате",
-            "3D-камера: крутите и наклоняйте карту правой кнопкой мыши (Q/E, R/F), компас под мини-картой; фонари, кусты и лодки в городе",
-            "Магнат: «Игроки», «Грузы» и «Заказы мэрии» — панелями справа, тонкий пунктир дорог, 3D-терминалы, краны и фуры у хабов",
-            "Магнат: пунктир для новых дорог, вокзалы и аэропорты в 3D, грузы справа на карте и учебная карта в «Обучении»",
-            "Экран партии: «Игроки» по центру внизу с портретами из профиля, ресурсы рядом, журнал — наверху у меню",
-            "Новые портреты персонажей и свой звук у каждого: монетка, молоток, портфель, касса, печать, балка",
-            "Новая игра: карточка выбора персонажа — герой, сложность, способность и ваша статистика побед",
-            "Профиль: мужской и женский персонаж, новый гардероб из 58 вещей в стиле 3D-героев",
-            "Персонажи получили лица: 3D-герои Везунчика, Прораба, Мостовика и остальных",
-            "Магнат: цены дорог прямо на карте, жребий первого хода, правила и журнал вверху",
-            "Новые иконки грузов, хабов и событий, картина города в меню и иллюстрации карточек",
-            "Новый интерфейс партии: карта на весь экран, мини-карта и карточки контрактов",
-            "Поле с наклоном 2.5D: утро, день, закат и ночь в одной партии",
-            "Сценарии: Зима, Большой город, Год ремонта и Выборы мэра",
-            "Новые карты: Амстердам с каналами и Чунцин — город мостов на двух реках",
-            "Новый режим: кооператив «Город против всех» — одна команда против кризиса",
-            "Обучающая партия с наставником — лучший способ начать",
-            "Пробки и пропуска: объезды выгоднее, магистрали не стоят в пробках",
-            "Достижения и задание дня приносят влияние на гардероб персонажа"
+            LocalizationService.Get("menu.main.legacy.002"),
+            LocalizationService.Get("menu.main.legacy.003"),
+            LocalizationService.Get("menu.main.legacy.004"),
+            LocalizationService.Get("menu.main.legacy.005"),
+            LocalizationService.Get("menu.main.legacy.006"),
+            LocalizationService.Get("menu.main.legacy.007"),
+            LocalizationService.Get("menu.main.legacy.008"),
+            LocalizationService.Get("menu.main.legacy.009"),
+            LocalizationService.Get("menu.main.legacy.010"),
+            LocalizationService.Get("menu.main.legacy.011"),
+            LocalizationService.Get("menu.main.legacy.012"),
+            LocalizationService.Get("menu.main.legacy.013"),
+            LocalizationService.Get("menu.main.legacy.014"),
+            LocalizationService.Get("menu.main.legacy.015"),
+            LocalizationService.Get("menu.main.legacy.016"),
+            LocalizationService.Get("menu.main.legacy.017"),
+            LocalizationService.Get("menu.main.legacy.018"),
+            LocalizationService.Get("menu.main.legacy.019"),
+            LocalizationService.Get("menu.main.legacy.020"),
+            LocalizationService.Get("menu.main.legacy.021"),
+            LocalizationService.Get("menu.main.legacy.022"),
+            LocalizationService.Get("menu.main.legacy.023"),
+            LocalizationService.Get("menu.main.legacy.024"),
+            LocalizationService.Get("menu.main.legacy.025"),
+            LocalizationService.Get("menu.main.legacy.026"),
+            LocalizationService.Get("menu.main.legacy.027"),
+            LocalizationService.Get("menu.main.legacy.028"),
+            LocalizationService.Get("menu.main.legacy.029"),
+            LocalizationService.Get("menu.main.legacy.030"),
+            LocalizationService.Get("menu.main.legacy.031"),
+            LocalizationService.Get("menu.main.legacy.032"),
+            LocalizationService.Get("menu.main.legacy.033"),
+            LocalizationService.Get("menu.main.legacy.034"),
+            LocalizationService.Get("menu.main.legacy.035"),
+            LocalizationService.Get("menu.main.legacy.036"),
+            LocalizationService.Get("menu.main.legacy.037"),
+            LocalizationService.Get("menu.main.legacy.038"),
+            LocalizationService.Get("menu.main.legacy.039"),
+            LocalizationService.Get("menu.main.legacy.040"),
+            LocalizationService.Get("menu.main.legacy.041"),
+            LocalizationService.Get("menu.main.legacy.042")
         };
 
         /// <summary>Номер выпуска новостей: если больше прочитанного — в уведомлениях «Что нового».</summary>
@@ -598,7 +598,7 @@ namespace CityHighways.Presentation
             var mode = _background.Mode;
             Ui.Border(_moonButton, mode == MenuBackground.LightMode.Night ? 2f : 1f, mode == MenuBackground.LightMode.Night ? Theme.Accent : Theme.Line);
             Ui.Border(_sunButton, mode == MenuBackground.LightMode.Day ? 2f : 1f, mode == MenuBackground.LightMode.Day ? Theme.Accent : Theme.Line);
-            string light = mode == MenuBackground.LightMode.Night ? "ночь" : mode == MenuBackground.LightMode.Day ? "день" : "по часам";
+            string light = mode == MenuBackground.LightMode.Night ? LocalizationService.Get("menu.main.legacy.043") : mode == MenuBackground.LightMode.Day ? LocalizationService.Get("menu.main.legacy.044") : LocalizationService.Get("menu.main.legacy.045");
             _lightCaption.text = $"Свет: {light} · {MenuBackground.PaletteNames[_background.PaletteIndex]}";
         }
 
@@ -610,16 +610,16 @@ namespace CityHighways.Presentation
             box.style.width = 420f;
             box.style.backgroundColor = Theme.Panel;
             Ui.Shadow(box, 10f, 20f, 0.6f);
-            box.Add(Ui.Text("Выйти из City Highways?", 22f, Theme.Text, true));
-            var note = Ui.Text("Незаконченная партия сохранится — её можно будет продолжить.", 14f, Theme.TextDim);
+            box.Add(Ui.Text(LocalizationService.Get("menu.main.legacy.046"), 22f, Theme.Text, true));
+            var note = Ui.Text(LocalizationService.Get("menu.main.legacy.047"), 14f, Theme.TextDim);
             note.style.marginTop = 6f;
             note.style.marginBottom = 16f;
             box.Add(note);
             var row = Ui.Row();
-            var quit = Ui.Button("Выйти", Quit, ButtonKind.Primary, 15f);
+            var quit = Ui.Button(LocalizationService.Get("menu.main.legacy.048"), Quit, ButtonKind.Primary, 15f);
             quit.style.marginRight = 10f;
             row.Add(quit);
-            row.Add(Ui.Button("Остаться", () => Ui.Show(_overlay, false), ButtonKind.Secondary, 15f));
+            row.Add(Ui.Button(LocalizationService.Get("menu.main.legacy.049"), () => Ui.Show(_overlay, false), ButtonKind.Secondary, 15f));
             box.Add(row);
             _overlay.Add(box);
             Ui.Show(_overlay, true);
@@ -649,7 +649,7 @@ namespace CityHighways.Presentation
             Ui.Border(panel, 1f, Theme.Line);
             Ui.Padding(panel, 12f, 14f);
             Ui.Shadow(panel, 14f, 18f, 0.55f);
-            panel.Add(Ui.Text("Уведомления", 18f, Theme.Text, true));
+            panel.Add(Ui.Text(LocalizationService.Get("menu.main.legacy.050"), 18f, Theme.Text, true));
             _bellList = Ui.Column();
             _bellList.style.marginTop = 8f;
             panel.Add(_bellList);
@@ -672,8 +672,8 @@ namespace CityHighways.Presentation
             var list = new List<(MenuIcon.Glyph, string, Action)>();
             var profile = Profiles.Active;
             if (profile != null && profile.cloudBanned)
-                list.Add((MenuIcon.Glyph.Flag, "Аккаунт заблокирован" + (string.IsNullOrWhiteSpace(profile.cloudBanReason) ? "" : ": " + profile.cloudBanReason) +
-                          ". Сетевая игра недоступна.", null));
+                list.Add((MenuIcon.Glyph.Flag, LocalizationService.Get("menu.main.legacy.051") + (string.IsNullOrWhiteSpace(profile.cloudBanReason) ? "" : ": " + profile.cloudBanReason) +
+                          LocalizationService.Get("menu.main.legacy.052"), null));
             foreach (var message in CloudProfiles.Messages.ToList())
             {
                 string shown = message;
@@ -693,15 +693,15 @@ namespace CityHighways.Presentation
                 if (item != null) list.Add((MenuIcon.Glyph.Palette, $"Хватает влияния на «{item.Name}» ({item.Price}) — загляните в профиль", OpenProfile));
             }
             var saved = SaveSystem.Load();
-            if (saved != null) list.Add((MenuIcon.Glyph.Gamepad, "Есть незаконченная партия — можно продолжить", () => _app.ContinueGame(saved)));
+            if (saved != null) list.Add((MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.main.legacy.053"), () => _app.ContinueGame(saved)));
             if (PlayerPrefs.GetInt(NewsSeenKey, 0) < NewsVersion)
-                list.Add((MenuIcon.Glyph.News, "Что нового: " + News[0], () =>
+                list.Add((MenuIcon.Glyph.News, LocalizationService.Get("menu.main.legacy.054") + News[0], () =>
                 {
                     PlayerPrefs.SetInt(NewsSeenKey, NewsVersion);
                     PlayerPrefs.Save();
                     RefreshNotifications();
                 }));
-            if (!AnyTutorialDone) list.Add((MenuIcon.Glyph.Cap, "Обучение ещё не пройдено — выберите режим и начните с наставником", () => ShowPage(Page.Tutorial)));
+            if (!AnyTutorialDone) list.Add((MenuIcon.Glyph.Cap, LocalizationService.Get("menu.main.legacy.055"), () => ShowPage(Page.Tutorial)));
             // Итоги рейдов, рекорды и вклад в клуб после последних партий; клик — открыть «Клубы и друзья».
             foreach (var news in SocialCloud.News.ToList())
             {
@@ -725,7 +725,7 @@ namespace CityHighways.Presentation
             _bellList.Clear();
             if (list.Count == 0)
             {
-                _bellList.Add(Ui.Text("Новых уведомлений нет.", 14f, Theme.TextDim));
+                _bellList.Add(Ui.Text(LocalizationService.Get("menu.main.legacy.056"), 14f, Theme.TextDim));
                 return;
             }
             foreach (var (glyph, text, action) in list)
@@ -778,7 +778,7 @@ namespace CityHighways.Presentation
             }
             catch (Exception e)
             {
-                Debug.LogWarning("Steam: не удалось узнать друзей в лобби: " + e.Message);
+                Debug.LogWarning(LocalizationService.Get("menu.main.legacy.057") + e.Message);
             }
             var ugs = NetPlatforms.Ugs;
             if (ugs == null)
@@ -792,7 +792,7 @@ namespace CityHighways.Presentation
         void SetOnlineBadge(int open, int friends)
         {
             var parts = new List<string>();
-            if (open > 0) parts.Add($"{open} {Plural(open, "открытая игра", "открытые игры", "открытых игр")}");
+            if (open > 0) parts.Add($"{open} {Plural(open, LocalizationService.Get("menu.main.legacy.058"), LocalizationService.Get("menu.main.legacy.059"), LocalizationService.Get("menu.main.legacy.060"))}");
             if (friends > 0) parts.Add($"друзей в лобби: {friends}");
             _onlineBadge.text = string.Join(" · ", parts);
             Ui.Show(_onlineBadge, parts.Count > 0);
@@ -978,16 +978,16 @@ namespace CityHighways.Presentation
 
             var texts = Ui.Column();
             texts.style.flexGrow = 1f;
-            texts.Add(Ui.Text("Незаконченная партия", 18f, Theme.Gold, true));
+            texts.Add(Ui.Text(LocalizationService.Get("menu.main.legacy.061"), 18f, Theme.Gold, true));
             var names = string.Join(", ", saved.setup.PlayerNames());
             int turn = saved.game != null ? saved.game.turnNumber : 0;
             texts.Add(Ui.Text($"{names} · ход {turn} · сохранена {saved.savedAt}", 14f, Theme.Text));
             card.Add(texts);
 
-            var resume = Ui.Button("Продолжить", () => _app.ContinueGame(saved), ButtonKind.Primary, 18f);
+            var resume = Ui.Button(LocalizationService.Get("menu.main.legacy.062"), () => _app.ContinueGame(saved), ButtonKind.Primary, 18f);
             resume.style.marginRight = 10f;
             card.Add(resume);
-            card.Add(Ui.Button("Удалить", () =>
+            card.Add(Ui.Button(LocalizationService.Get("menu.main.legacy.063"), () =>
             {
                 SaveSystem.Delete();
                 _app.ShowMenu();
