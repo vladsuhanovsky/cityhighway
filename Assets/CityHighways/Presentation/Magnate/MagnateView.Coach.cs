@@ -26,30 +26,30 @@ namespace CityHighways.Presentation
 
         static readonly (string title, string text, string target, bool action)[] CoachSteps =
         {
-            ("Добро пожаловать в «Логистический магнат»",
-                "Вы владеете транспортной компанией. Ваши фуры забирают грузы на хабах и везут получателям — за каждую доставку дают очки. " +
-                "Побеждает компания, набравшая больше всех очков к концу последнего раунда.", null, false),
-            ("Хабы — источники грузов",
-                "Аэропорты, вокзалы и порты пульсируют на карте. Квадратики над хабом — грузы, цвет показывает вид. " +
-                "Красная рамка — скоропорт, который вот-вот испортится, золотая точка — груз для заказа мэрии.", null, false),
-            ("Стройка: купите дорогу",
-                "Раунд начинается со стройки. Асфальтовые дороги — городские, по ним ездят все. Пунктир — дорога, которую можно построить: кликните пунктир рядом с вашими фурами, " +
-                "чтобы купить её: по своим дорогам вы ездите бесплатно, а соперники платят вам за проезд.", null, true),
-            ("Переходите к маршрутам",
-                "Когда очки стройки потрачены, нажмите «Дальше: маршруты фур» в нижней панели — кнопка подсвечена.", "next", true),
-            ("Выберите фуру",
-                "Кликните фуру в разделе «Маршруты фур» внизу — откроется её карточка. На карте фура — кузов цвета вашей компании.", "truck", true),
-            ("Возьмите груз",
-                "Если фура стоит на хабе, нажмите «Взять» у груза в её карточке. Если рядом грузов нет, откройте «Грузы» внизу (список появится справа на карте) и нажмите «Выбрать» — " +
-                "ближайшая свободная фура возьмёт груз или поедет за ним. Клик по строке груза — подробности и путь на карте.", "cargo", true),
-            ("Отправляйте фуры",
-                "Спланируйте остальные фуры или сразу нажмите «Готово». Все компании едут одновременно. Если на дорогу заедет больше фур, " +
-                "чем она пропускает, будет пробка, и все они простоят раунд.", "done", true),
-            ("Фуры в пути",
-                "Скоропорт едет быстрее, тяжёлые грузы — медленнее. Над очередью в пробке крутятся часы, перекрытая дорога — со шлагбаумом.", null, true),
-            ("Дальше — сами",
-                "Разделы «Игроки», «Грузы» и «Заказы мэрии» внизу показывают счётчики и по клику открываются панелью справа на карте, справа вверху — «Журнал», «Меню» (правила и это обучение) и «Настройки». Справа вверху на карте — " +
-                "«Слои карты»: можно спрятать подписи, грузы, свободные дороги или включить загрузку дорог.", null, false),
+            (LocalizationService.Get("magnate.tutorial.001"),
+                LocalizationService.Get("magnate.tutorial.002") +
+                LocalizationService.Get("magnate.tutorial.003"), null, false),
+            (LocalizationService.Get("magnate.tutorial.004"),
+                LocalizationService.Get("magnate.tutorial.005") +
+                LocalizationService.Get("magnate.tutorial.006"), null, false),
+            (LocalizationService.Get("magnate.tutorial.007"),
+                LocalizationService.Get("magnate.tutorial.008") +
+                LocalizationService.Get("magnate.tutorial.009"), null, true),
+            (LocalizationService.Get("magnate.tutorial.010"),
+                LocalizationService.Get("magnate.tutorial.011"), "next", true),
+            (LocalizationService.Get("magnate.tutorial.012"),
+                LocalizationService.Get("magnate.tutorial.013"), "truck", true),
+            (LocalizationService.Get("magnate.tutorial.014"),
+                LocalizationService.Get("magnate.tutorial.015") +
+                LocalizationService.Get("magnate.tutorial.016"), "cargo", true),
+            (LocalizationService.Get("magnate.tutorial.017"),
+                LocalizationService.Get("magnate.tutorial.018") +
+                LocalizationService.Get("magnate.tutorial.019"), "done", true),
+            (LocalizationService.Get("magnate.tutorial.020"),
+                LocalizationService.Get("magnate.tutorial.021"), null, true),
+            (LocalizationService.Get("magnate.tutorial.022"),
+                LocalizationService.Get("magnate.tutorial.023") +
+                LocalizationService.Get("magnate.tutorial.024"), null, false),
         };
 
         void BuildCoach()

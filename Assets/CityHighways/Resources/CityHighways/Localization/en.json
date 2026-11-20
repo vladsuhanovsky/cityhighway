@@ -3395,6 +3395,102 @@
     {
       "key": "magnate.menu.018",
       "value": "Screen mode and resolution are available in Main Menu → Settings."
+    },
+    {
+      "key": "magnate.tutorial.001",
+      "value": "Welcome to Logistics Magnate"
+    },
+    {
+      "key": "magnate.tutorial.002",
+      "value": "You manage a transport company. Your trucks collect cargo at hubs and deliver it to customers, earning points for each shipment. "
+    },
+    {
+      "key": "magnate.tutorial.003",
+      "value": "The company with the most points after the final round wins."
+    },
+    {
+      "key": "magnate.tutorial.004",
+      "value": "Hubs — Cargo Sources"
+    },
+    {
+      "key": "magnate.tutorial.005",
+      "value": "Airports, train stations and ports pulse on the map. Colored squares above hubs show available cargo. "
+    },
+    {
+      "key": "magnate.tutorial.006",
+      "value": "Red borders indicate cargo about to spoil; a golden dot indicates cargo needed for a city order."
+    },
+    {
+      "key": "magnate.tutorial.007",
+      "value": "Construction: Build a Road"
+    },
+    {
+      "key": "magnate.tutorial.008",
+      "value": "Each round begins with construction. Asphalt roads are public streets used by everyone. Dashed lines show available roads: click one near your trucks "
+    },
+    {
+      "key": "magnate.tutorial.009",
+      "value": "to build it. Your trucks use your roads for free; competitors pay tolls."
+    },
+    {
+      "key": "magnate.tutorial.010",
+      "value": "Move on to Routes"
+    },
+    {
+      "key": "magnate.tutorial.011",
+      "value": "After spending your construction points, select Next: Truck Routes on the bottom panel."
+    },
+    {
+      "key": "magnate.tutorial.012",
+      "value": "Select a Truck"
+    },
+    {
+      "key": "magnate.tutorial.013",
+      "value": "Select a truck in the Truck Routes section to open its card. On the map, trucks are colored by company."
+    },
+    {
+      "key": "magnate.tutorial.014",
+      "value": "Pick Up Cargo"
+    },
+    {
+      "key": "magnate.tutorial.015",
+      "value": "If your truck is at a hub, select Pick Up next to the cargo. Otherwise open Cargo at the bottom and select Choose in the cargo list — "
+    },
+    {
+      "key": "magnate.tutorial.016",
+      "value": "the nearest available truck will collect it or drive toward it. Select cargo to see its details and route."
+    },
+    {
+      "key": "magnate.tutorial.017",
+      "value": "Dispatch Trucks"
+    },
+    {
+      "key": "magnate.tutorial.018",
+      "value": "Plan routes for the other trucks, or press Done. All companies move simultaneously. If more trucks enter a road "
+    },
+    {
+      "key": "magnate.tutorial.019",
+      "value": "than its capacity allows, they get stuck in a traffic jam for one round."
+    },
+    {
+      "key": "magnate.tutorial.020",
+      "value": "Trucks on the Road"
+    },
+    {
+      "key": "magnate.tutorial.021",
+      "value": "Perishable cargo travels faster, heavy cargo slower. A clock marks queues in traffic jams; barriers mark blocked roads."
+    },
+    {
+      "key": "magnate.tutorial.022",
+      "value": "You're Ready"
+    },
+    {
+      "key": "magnate.tutorial.023",
+      "value": "The Players, Cargo and City Orders sections at the bottom show counts and open panels on the right. The top-right controls include Log, Menu (rules and tutorial) and Settings. Above the map is "
+    },
+    {
+      "key": "magnate.tutorial.024",
+      "value": "Map Layers: hide labels, cargo and unclaimed roads, or display traffic loads."
     }
   ]
 }
