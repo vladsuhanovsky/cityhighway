@@ -2655,6 +2655,674 @@
     {
       "key": "menu.rules.detail.046",
       "value": "A concise glossary of game terms. Underlined terms show a definition on hover; click them to open the glossary."
+    },
+    {
+      "key": "game.ui.001",
+      "value": "Location Names"
+    },
+    {
+      "key": "game.ui.002",
+      "value": "Labels below stations"
+    },
+    {
+      "key": "game.ui.003",
+      "value": "District Names"
+    },
+    {
+      "key": "game.ui.004",
+      "value": "Large district labels"
+    },
+    {
+      "key": "game.ui.005",
+      "value": "Unclaimed Roads"
+    },
+    {
+      "key": "game.ui.006",
+      "value": "Unclaimed roads that can still be built"
+    },
+    {
+      "key": "game.ui.007",
+      "value": "Vehicles"
+    },
+    {
+      "key": "game.ui.008",
+      "value": "Vehicles on constructed roads (3D city)"
+    },
+    {
+      "key": "game.ui.009",
+      "value": "Pedestrians"
+    },
+    {
+      "key": "game.ui.010",
+      "value": "People near stations (3D city)"
+    },
+    {
+      "key": "game.ui.011",
+      "value": "Focus Under Cursor"
+    },
+    {
+      "key": "game.ui.012",
+      "value": "Dim the map away from cursor"
+    },
+    {
+      "key": "game.ui.013",
+      "value": "Map Layers"
+    },
+    {
+      "key": "game.ui.014",
+      "value": "Map Layers"
+    },
+    {
+      "key": "game.ui.015",
+      "value": "Skip Turn"
+    },
+    {
+      "key": "game.ui.016",
+      "value": "Deck"
+    },
+    {
+      "key": "game.ui.017",
+      "value": "Luck"
+    },
+    {
+      "key": "game.ui.018",
+      "value": "Contracts"
+    },
+    {
+      "key": "game.ui.019",
+      "value": "Influence"
+    },
+    {
+      "key": "game.ui.020",
+      "value": "Trade"
+    },
+    {
+      "key": "game.ui.021",
+      "value": "Log"
+    },
+    {
+      "key": "game.ui.022",
+      "value": "New Entries ↓"
+    },
+    {
+      "key": "game.ui.023",
+      "value": "Scroll to zoom · drag to pan"
+    },
+    {
+      "key": "game.ui.024",
+      "value": "Road Pieces"
+    },
+    {
+      "key": "game.ui.025",
+      "value": "Game"
+    },
+    {
+      "key": "game.ui.026",
+      "value": "City Goals"
+    },
+    {
+      "key": "game.ui.027",
+      "value": "Rules"
+    },
+    {
+      "key": "game.ui.028",
+      "value": "Exit to Menu"
+    },
+    {
+      "key": "game.ui.029",
+      "value": "Tutorial game: central Moscow, you versus the Coach."
+    },
+    {
+      "key": "game.ui.030",
+      "value": "Online session disconnected"
+    },
+    {
+      "key": "game.ui.031",
+      "value": "Main Menu"
+    },
+    {
+      "key": "game.ui.032",
+      "value": "you are the host"
+    },
+    {
+      "key": "game.ui.033",
+      "value": "host — "
+    },
+    {
+      "key": "game.ui.034",
+      "value": "Bot: "
+    },
+    {
+      "key": "game.ui.035",
+      "value": " · you"
+    },
+    {
+      "key": "game.ui.036",
+      "value": " · online"
+    },
+    {
+      "key": "game.ui.037",
+      "value": " · random bot"
+    },
+    {
+      "key": "game.ui.038",
+      "value": " · bot"
+    },
+    {
+      "key": "game.ui.039",
+      "value": "Turn sent to host…"
+    },
+    {
+      "key": "game.ui.040",
+      "value": "A bot is taking its turn."
+    },
+    {
+      "key": "game.ui.041",
+      "value": "Current player: "
+    },
+    {
+      "key": "game.ui.042",
+      "value": "Not available right now."
+    },
+    {
+      "key": "game.ui.043",
+      "value": "Choose a company and starting contracts first."
+    },
+    {
+      "key": "game.ui.044",
+      "value": "Draw the second card first."
+    },
+    {
+      "key": "game.ui.045",
+      "value": "Choose your contracts first."
+    },
+    {
+      "key": "game.ui.046",
+      "value": "Choose a luck card first."
+    },
+    {
+      "key": "game.ui.047",
+      "value": "Respond to the trade offer first."
+    },
+    {
+      "key": "game.ui.048",
+      "value": "Place your city auction bid first."
+    },
+    {
+      "key": "game.ui.049",
+      "value": "You cannot build this road now."
+    },
+    {
+      "key": "game.ui.050",
+      "value": "any single resource"
+    },
+    {
+      "key": "game.ui.051",
+      "value": "LUCK"
+    },
+    {
+      "key": "game.ui.052",
+      "value": "BUFF"
+    },
+    {
+      "key": "game.ui.053",
+      "value": "DEBUFF"
+    },
+    {
+      "key": "game.ui.054",
+      "value": "Setup"
+    },
+    {
+      "key": "game.ui.055",
+      "value": "Turn "
+    },
+    {
+      "key": "game.ui.056",
+      "value": " · Cooperative"
+    },
+    {
+      "key": "game.ui.057",
+      "value": "Deck ×2"
+    },
+    {
+      "key": "game.ui.058",
+      "value": "Deck ×1"
+    },
+    {
+      "key": "game.ui.059",
+      "value": "The luck deck is empty."
+    },
+    {
+      "key": "game.ui.060",
+      "value": " (will reshuffle)"
+    },
+    {
+      "key": "game.ui.061",
+      "value": " · trade used"
+    },
+    {
+      "key": "game.ui.062",
+      "value": " · influence spent"
+    },
+    {
+      "key": "game.ui.063",
+      "value": " · discount −1 card"
+    },
+    {
+      "key": "game.ui.064",
+      "value": "Draw Contracts"
+    },
+    {
+      "key": "game.ui.065",
+      "value": "City Influence"
+    },
+    {
+      "key": "game.ui.066",
+      "value": "Market Control"
+    },
+    {
+      "key": "game.ui.067",
+      "value": "Bribe Officials (Secret)"
+    },
+    {
+      "key": "game.ui.068",
+      "value": "Expose Bribery"
+    },
+    {
+      "key": "game.ui.069",
+      "value": "Accuse: "
+    },
+    {
+      "key": "game.ui.070",
+      "value": "Evidence: "
+    },
+    {
+      "key": "game.ui.071",
+      "value": "Last turn — no evidence"
+    },
+    {
+      "key": "game.ui.072",
+      "value": "Close"
+    },
+    {
+      "key": "game.ui.073",
+      "value": "Choose Company"
+    },
+    {
+      "key": "game.ui.074",
+      "value": "One character for the entire match. Consider your starting contracts: Bridge Builder excels at bridges, Official at contracts."
+    },
+    {
+      "key": "game.ui.075",
+      "value": "Choose"
+    },
+    {
+      "key": "game.ui.076",
+      "value": "Starting Contracts"
+    },
+    {
+      "key": "game.ui.077",
+      "value": "New Contracts"
+    },
+    {
+      "key": "game.ui.078",
+      "value": "Hidden until the turn is handed over."
+    },
+    {
+      "key": "game.ui.079",
+      "value": "No contracts yet. Use Draw Contracts in the Actions panel."
+    },
+    {
+      "key": "game.ui.080",
+      "value": "Swipe cards left/right or scroll. Hover to highlight districts and routes; click to pin the route."
+    },
+    {
+      "key": "game.ui.081",
+      "value": "TRANSIT"
+    },
+    {
+      "key": "game.ui.082",
+      "value": "HUB"
+    },
+    {
+      "key": "game.ui.083",
+      "value": "CONTRACT"
+    },
+    {
+      "key": "game.ui.084",
+      "value": "KEEP"
+    },
+    {
+      "key": "game.ui.085",
+      "value": "via"
+    },
+    {
+      "key": "game.ui.086",
+      "value": "and"
+    },
+    {
+      "key": "game.ui.087",
+      "value": "Keep"
+    },
+    {
+      "key": "game.ui.088",
+      "value": "Discard"
+    },
+    {
+      "key": "game.ui.089",
+      "value": "Completed"
+    },
+    {
+      "key": "game.ui.090",
+      "value": "Incomplete"
+    },
+    {
+      "key": "game.ui.091",
+      "value": "Game Over"
+    },
+    {
+      "key": "game.ui.092",
+      "value": "Results are shown in the center panel."
+    },
+    {
+      "key": "game.ui.093",
+      "value": "Bot is thinking…"
+    },
+    {
+      "key": "game.ui.094",
+      "value": "Pass the computer to this player."
+    },
+    {
+      "key": "game.ui.095",
+      "value": "Choose a company and starting contracts from the Contracts tab below."
+    },
+    {
+      "key": "game.ui.096",
+      "value": "Choose starting contracts from the Contracts tab below."
+    },
+    {
+      "key": "game.ui.097",
+      "value": "Draw two cards, build a highlighted road on the map, or take contracts."
+    },
+    {
+      "key": "game.ui.098",
+      "value": "Draw your second card. Face-up machinery is not available now."
+    },
+    {
+      "key": "game.ui.099",
+      "value": "Select which contracts to keep in the Contracts tab."
+    },
+    {
+      "key": "game.ui.100",
+      "value": "Lucky character: choose one of two luck cards."
+    },
+    {
+      "key": "game.ui.101",
+      "value": "You have a trade offer — accept or decline."
+    },
+    {
+      "key": "game.ui.102",
+      "value": "City auction: place a secret influence bid."
+    },
+    {
+      "key": "game.ui.103",
+      "value": "hand hidden"
+    },
+    {
+      "key": "game.ui.104",
+      "value": "Cancel"
+    },
+    {
+      "key": "game.ui.105",
+      "value": "Lucky character: which card will you keep?"
+    },
+    {
+      "key": "game.ui.106",
+      "value": "Both cards will be discarded; only the chosen card takes effect."
+    },
+    {
+      "key": "game.ui.107",
+      "value": "Keep"
+    },
+    {
+      "key": "game.ui.108",
+      "value": "CITY AUCTION · ONCE PER GAME"
+    },
+    {
+      "key": "game.ui.109",
+      "value": "Each player makes one secret influence bid. The highest bid wins; ties favor the player with fewer points. Only the winner pays."
+    },
+    {
+      "key": "game.ui.110",
+      "value": "Already bid: "
+    },
+    {
+      "key": "game.ui.111",
+      "value": "You bid first."
+    },
+    {
+      "key": "game.ui.112",
+      "value": "Pass"
+    },
+    {
+      "key": "game.ui.113",
+      "value": "One trade per turn before the main action; trading does not use your action."
+    },
+    {
+      "key": "game.ui.114",
+      "value": " Influence can be traded or used to purchase cards."
+    },
+    {
+      "key": "game.ui.115",
+      "value": " A pass grants free travel on the seller's roads until the end of the game (city congestion fees still apply)."
+    },
+    {
+      "key": "game.ui.116",
+      "value": "Propose"
+    },
+    {
+      "key": "game.ui.117",
+      "value": "To"
+    },
+    {
+      "key": "game.ui.118",
+      "value": "Give"
+    },
+    {
+      "key": "game.ui.119",
+      "value": "…and influence"
+    },
+    {
+      "key": "game.ui.120",
+      "value": "…and pass"
+    },
+    {
+      "key": "game.ui.121",
+      "value": "My pass: yes"
+    },
+    {
+      "key": "game.ui.122",
+      "value": "My pass: no"
+    },
+    {
+      "key": "game.ui.123",
+      "value": "Request"
+    },
+    {
+      "key": "game.ui.124",
+      "value": "Their pass: yes"
+    },
+    {
+      "key": "game.ui.125",
+      "value": "Their pass: no"
+    },
+    {
+      "key": "game.ui.126",
+      "value": "Trade Offer"
+    },
+    {
+      "key": "game.ui.127",
+      "value": "Decline"
+    },
+    {
+      "key": "game.ui.128",
+      "value": "Accept"
+    },
+    {
+      "key": "game.ui.129",
+      "value": "Not enough cards to upgrade."
+    },
+    {
+      "key": "game.ui.130",
+      "value": "Pass the Computer"
+    },
+    {
+      "key": "game.ui.131",
+      "value": "Other players should look away: this player's cards and contracts will be revealed."
+    },
+    {
+      "key": "game.ui.132",
+      "value": "While You Were Away"
+    },
+    {
+      "key": "game.ui.133",
+      "value": "Show My Cards"
+    },
+    {
+      "key": "game.ui.134",
+      "value": "Team Victory!"
+    },
+    {
+      "key": "game.ui.135",
+      "value": "The City Won"
+    },
+    {
+      "key": "game.ui.136",
+      "value": "Company"
+    },
+    {
+      "key": "game.ui.137",
+      "value": "Roads"
+    },
+    {
+      "key": "game.ui.138",
+      "value": "Tolls"
+    },
+    {
+      "key": "game.ui.139",
+      "value": "Network"
+    },
+    {
+      "key": "game.ui.140",
+      "value": "Goals"
+    },
+    {
+      "key": "game.ui.141",
+      "value": "Character"
+    },
+    {
+      "key": "game.ui.142",
+      "value": "Penalties"
+    },
+    {
+      "key": "game.ui.143",
+      "value": "Total"
+    },
+    {
+      "key": "game.ui.144",
+      "value": "Final audit: no bribes were found."
+    },
+    {
+      "key": "game.ui.145",
+      "value": "Added to profile wallet: "
+    },
+    {
+      "key": "game.ui.146",
+      "value": "Play Tutorial Again"
+    },
+    {
+      "key": "game.ui.147",
+      "value": "Play Again"
+    },
+    {
+      "key": "game.ui.148",
+      "value": "No goals in this game."
+    },
+    {
+      "key": "game.ui.149",
+      "value": "Luck cards were disabled."
+    },
+    {
+      "key": "game.ui.150",
+      "value": "No one drew a luck card."
+    },
+    {
+      "key": "game.ui.151",
+      "value": "Luck points include grants, bonuses and penalties, but not cards gained from supply or theft."
+    },
+    {
+      "key": "game.ui.152",
+      "value": "Return to Main Menu?"
+    },
+    {
+      "key": "game.ui.153",
+      "value": "Game saved; you can resume it from the main menu."
+    },
+    {
+      "key": "game.ui.154",
+      "value": "The online session will end for every player."
+    },
+    {
+      "key": "game.ui.155",
+      "value": "You will leave the online game; the host's bot will take over."
+    },
+    {
+      "key": "game.ui.156",
+      "value": "Exit"
+    },
+    {
+      "key": "game.ui.157",
+      "value": "Stay"
+    },
+    {
+      "key": "game.ui.158",
+      "value": "Could Not Start Game"
+    },
+    {
+      "key": "game.ui.159",
+      "value": "City"
+    },
+    {
+      "key": "game.ui.160",
+      "value": "Start Game"
+    },
+    {
+      "key": "game.ui.161",
+      "value": "Next"
+    },
+    {
+      "key": "game.ui.162",
+      "value": "Skip Tutorial"
+    },
+    {
+      "key": "game.ui.163",
+      "value": "Quiet Round"
+    },
+    {
+      "key": "game.ui.164",
+      "value": "No events this round. A new event may occur at the start of the next round."
+    },
+    {
+      "key": "game.ui.165",
+      "value": "replaces any card when building"
+    },
+    {
+      "key": "game.ui.166",
+      "value": "builds: "
+    },
+    {
+      "key": "game.ui.167",
+      "value": "completed: "
     }
   ]
 }

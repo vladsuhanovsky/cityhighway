@@ -168,12 +168,12 @@ namespace CityHighways.Presentation
 
         static readonly (MapLayer layer, string title, string hint)[] LayerItems =
         {
-            (MapLayer.StationNames, "Названия мест", "Подписи под станциями"),
-            (MapLayer.DistrictNames, "Названия районов", "Крупные подписи районов"),
-            (MapLayer.FreeRoads, "Свободные дороги", "Ничьи дороги — те, что ещё можно построить"),
-            (MapLayer.Cars, "Машины", "Машины на построенных дорогах (3D-город)"),
-            (MapLayer.People, "Пешеходы", "Люди у станций (3D-город)"),
-            (MapLayer.Focus, "Фокус под курсором", "Вдали от курсора карта тускнеет"),
+            (MapLayer.StationNames, LocalizationService.Get("game.ui.001"), LocalizationService.Get("game.ui.002")),
+            (MapLayer.DistrictNames, LocalizationService.Get("game.ui.003"), LocalizationService.Get("game.ui.004")),
+            (MapLayer.FreeRoads, LocalizationService.Get("game.ui.005"), LocalizationService.Get("game.ui.006")),
+            (MapLayer.Cars, LocalizationService.Get("game.ui.007"), LocalizationService.Get("game.ui.008")),
+            (MapLayer.People, LocalizationService.Get("game.ui.009"), LocalizationService.Get("game.ui.010")),
+            (MapLayer.Focus, LocalizationService.Get("game.ui.011"), LocalizationService.Get("game.ui.012")),
         };
 
         bool HasLayer(MapLayer layer) => (_layers & (int)layer) != 0;
@@ -181,7 +181,7 @@ namespace CityHighways.Presentation
         void BuildLayersList()
         {
             _layersList.Clear();
-            var caption = Ui.Text("Что показывать на карте", 12f, Theme.TextDim, true);
+            var caption = Ui.Text(LocalizationService.Get("game.ui.013"), 12f, Theme.TextDim, true);
             caption.style.marginBottom = 6f;
             _layersList.Add(caption);
             foreach (var item in LayerItems)
@@ -446,7 +446,7 @@ namespace CityHighways.Presentation
             _layersPanel.style.right = 14f;
             _layersPanel.style.top = 14f;
             _layersPanel.style.alignItems = Align.FlexEnd;
-            var layersButton = Ui.Button("Слои карты", () =>
+            var layersButton = Ui.Button(LocalizationService.Get("game.ui.014"), () =>
             {
                 bool open = _layersList.style.display == DisplayStyle.None;
                 _app.Sound.Play(open ? Sfx.Open : Sfx.Close, 0.4f);
@@ -489,7 +489,7 @@ namespace CityHighways.Presentation
             _flashLabel = Ui.Text("", 14f, Theme.Danger);
             _flashLabel.style.marginTop = 4f;
             status.Add(_flashLabel);
-            _passButton = Ui.Button("Пропустить ход", () => Act(() => _game.Pass()), ButtonKind.Primary, 14f);
+            _passButton = Ui.Button(LocalizationService.Get("game.ui.015"), () => Act(() => _game.Pass()), ButtonKind.Primary, 14f);
             _passButton.style.marginLeft = 14f;
             _passButton.style.flexShrink = 0f;
             _statusBanner.Add(_passButton);
@@ -569,17 +569,17 @@ namespace CityHighways.Presentation
                 row.Add(button);
                 return button;
             }
-            _deckButton = ActionButton(firstRow, "Колода", () => Act(DrawFromDeck), ButtonKind.Primary);
-            _luckButton = ActionButton(firstRow, "Удача", () => Act(() => _game.DrawLuckCard()), ButtonKind.Secondary, true);
-            _contractsButton = ActionButton(secondRow, "Контракты", () => Act(() => _game.DrawContracts()), ButtonKind.Secondary);
-            _influenceButton = ActionButton(secondRow, "Влияние", ShowInfluenceMenu, ButtonKind.Secondary);
-            _tradeButton = ActionButton(secondRow, "Сделка", ShowTradeComposer, ButtonKind.Secondary, true);
+            _deckButton = ActionButton(firstRow, LocalizationService.Get("game.ui.016"), () => Act(DrawFromDeck), ButtonKind.Primary);
+            _luckButton = ActionButton(firstRow, LocalizationService.Get("game.ui.017"), () => Act(() => _game.DrawLuckCard()), ButtonKind.Secondary, true);
+            _contractsButton = ActionButton(secondRow, LocalizationService.Get("game.ui.018"), () => Act(() => _game.DrawContracts()), ButtonKind.Secondary);
+            _influenceButton = ActionButton(secondRow, LocalizationService.Get("game.ui.019"), ShowInfluenceMenu, ButtonKind.Secondary);
+            _tradeButton = ActionButton(secondRow, LocalizationService.Get("game.ui.020"), ShowTradeComposer, ButtonKind.Secondary, true);
             _luckOdds = Ui.Text("", 13f, Theme.TextDim);
             _luckOdds.style.marginTop = 10f;
             actionButtons.Add(_luckOdds);
 
             // Контракты: карточки с swipe-навигацией (и выбор новых контрактов).
-            _contractsSheet = Sheet("Контракты", ContractsSheetWidth, CloseSheet, out var contractsBody);
+            _contractsSheet = Sheet(LocalizationService.Get("game.ui.018"), ContractsSheetWidth, CloseSheet, out var contractsBody);
             // Не выше поля: если выбор персонажа и контрактов не помещается — прокрутка.
             _contractsSheet.style.maxHeight = Length.Percent(100f);
             var contractsScroll = new ScrollView(ScrollViewMode.Vertical);
@@ -596,7 +596,7 @@ namespace CityHighways.Presentation
 
             // Журнал.
             // Кнопка журнала наверху, поэтому и панель выезжает сверху справа, под верхней полосой.
-            _logSheet = Sheet("Журнал", 640f, CloseSheet, out var logBody);
+            _logSheet = Sheet(LocalizationService.Get("game.ui.021"), 640f, CloseSheet, out var logBody);
             _logSheet.style.height = 360f;
             _logSheet.style.bottom = StyleKeyword.Auto;
             _logSheet.style.top = 0f;
@@ -632,7 +632,7 @@ namespace CityHighways.Presentation
             };
             _logPage.contentContainer.RegisterCallback<GeometryChangedEvent>(_ => KeepLogAtEnd());
             _logPage.contentViewport.RegisterCallback<GeometryChangedEvent>(_ => KeepLogAtEnd());
-            _logNewButton = Ui.Button("Новые записи ↓", () =>
+            _logNewButton = Ui.Button(LocalizationService.Get("game.ui.022"), () =>
             {
                 _logStick = true;
                 Ui.Show(_logNewButton, false);
@@ -705,7 +705,7 @@ namespace CityHighways.Presentation
             _topBar.Add(spaceRight);
 
             // Журнал — наверху, рядом с меню; панель журнала выезжает сверху справа.
-            _logTab = Ui.Button("Журнал", () => ToggleSheet(SheetKind.Log), ButtonKind.Ghost, 14f);
+            _logTab = Ui.Button(LocalizationService.Get("game.ui.021"), () => ToggleSheet(SheetKind.Log), ButtonKind.Ghost, 14f);
             _logTab.style.marginRight = 8f;
             _logTab.style.minHeight = 40f;
             Ui.Border(_logTab, 0f, Color.clear);
@@ -776,7 +776,7 @@ namespace CityHighways.Presentation
             }
             _actionsTab = Tab(bottomLeft, LocalizationService.Get("game.hud.actions"), () => ToggleSheet(SheetKind.Actions));
             _contractsTab = Tab(bottomLeft, LocalizationService.Get("game.hud.contracts"), () => ToggleSheet(SheetKind.Contracts));
-            _viewHint = Ui.Text("Колесо мыши — приближение · перетаскивание — сдвиг карты", 12f, Theme.TextDim);
+            _viewHint = Ui.Text(LocalizationService.Get("game.ui.023"), 12f, Theme.TextDim);
             _viewHint.style.whiteSpace = WhiteSpace.NoWrap;
             _viewHint.style.marginLeft = 10f;
             _viewHint.style.flexShrink = 1f;
@@ -812,7 +812,7 @@ namespace CityHighways.Presentation
             pieces.pickingMode = PickingMode.Position;
             pieces.style.marginLeft = 6f;
             var piecesTop = Ui.Row();
-            piecesTop.Add(Ui.Text("Участки", 11f, Theme.TextDim, true));
+            piecesTop.Add(Ui.Text(LocalizationService.Get("game.ui.024"), 11f, Theme.TextDim, true));
             _piecesLabel = Ui.Number("", 14f, Theme.Text, true);
             _piecesLabel.style.marginLeft = 6f;
             piecesTop.Add(_piecesLabel);
@@ -846,7 +846,7 @@ namespace CityHighways.Presentation
 
             var drawerHeader = Ui.Row();
             drawerHeader.style.marginBottom = 12f;
-            drawerHeader.Add(Ui.Text("Партия", 22f, Theme.Text, true));
+            drawerHeader.Add(Ui.Text(LocalizationService.Get("game.ui.025"), 22f, Theme.Text, true));
             var drawerSpace = Ui.Box();
             drawerSpace.style.flexGrow = 1f;
             drawerHeader.Add(drawerSpace);
@@ -876,7 +876,7 @@ namespace CityHighways.Presentation
             Ui.Show(_eventCard, false);
             _drawer.Add(_eventCard);
 
-            _goalsTitle = Ui.SectionTitle("Цели мэрии");
+            _goalsTitle = Ui.SectionTitle(LocalizationService.Get("game.ui.026"));
             _drawer.Add(_goalsTitle);
             _goalsBox = Ui.Column();
             _goalsPage = new ScrollView(ScrollViewMode.Vertical);
@@ -892,11 +892,11 @@ namespace CityHighways.Presentation
             _drawerInfo.style.marginBottom = 12f;
             _drawer.Add(_drawerInfo);
             var drawerButtons = Ui.Row();
-            var rulesButton = Ui.Button("Правила", () => ToggleModal(Modal.Rules), ButtonKind.Secondary, 14f);
+            var rulesButton = Ui.Button(LocalizationService.Get("game.ui.027"), () => ToggleModal(Modal.Rules), ButtonKind.Secondary, 14f);
             rulesButton.style.flexGrow = 1f;
             rulesButton.style.marginRight = 8f;
             drawerButtons.Add(rulesButton);
-            var exitButton = Ui.Button("Выйти в меню", ShowConfirmExit, ButtonKind.Ghost, 14f);
+            var exitButton = Ui.Button(LocalizationService.Get("game.ui.028"), ShowConfirmExit, ButtonKind.Ghost, 14f);
             exitButton.style.flexGrow = 1f;
             drawerButtons.Add(exitButton);
             _drawer.Add(drawerButtons);
@@ -1027,7 +1027,7 @@ namespace CityHighways.Presentation
                 ShowError(e.Message);
                 return;
             }
-            Begin(game, 0f, _setup.tutorial ? "Обучающая партия: центр Москвы, вы против Наставника." : $"Новая партия на карте «{game.Map.Name}».");
+            Begin(game, 0f, _setup.tutorial ? LocalizationService.Get("game.ui.029") : $"Новая партия на карте «{game.Map.Name}».");
         }
 
         /// <summary>Сетевая партия: Game уже собран сессией (у хоста — новый, у клиента — по данным хоста).</summary>
@@ -1049,19 +1049,19 @@ namespace CityHighways.Presentation
                 if (_game != null && _game.Phase == GamePhase.GameOver) return;
                 ShowConnectionLost(text);
             };
-            string role = _net.IsHost ? "вы хост" : "хост — " + _net.Seats[0].name;
+            string role = _net.IsHost ? LocalizationService.Get("game.ui.032") : LocalizationService.Get("game.ui.033") + _net.Seats[0].name;
             Begin(_net.Game, 0f, $"Сетевая партия ({_net.Transport.Kind}, {role}) на карте «{_net.Game.Map.Name}».");
         }
 
         void ShowConnectionLost(string text)
         {
             var box = DialogBox(560f);
-            box.Add(Ui.Text("Сетевая партия прервана", 22f, Theme.Danger, true));
+            box.Add(Ui.Text(LocalizationService.Get("game.ui.030"), 22f, Theme.Danger, true));
             var label = Ui.Text(text, 15f, Theme.Text);
             label.style.marginTop = 10f;
             label.style.marginBottom = 20f;
             box.Add(label);
-            box.Add(Ui.Button("В главное меню", _app.ShowMenu, ButtonKind.Primary, 16f));
+            box.Add(Ui.Button(LocalizationService.Get("game.ui.031"), _app.ShowMenu, ButtonKind.Primary, 16f));
             ShowOverlay(OverlayKind.ConfirmExit, Centered(box), Theme.ShadeOpaque);
         }
 
@@ -1354,7 +1354,7 @@ namespace CityHighways.Presentation
             _botTimer = 0f;
 
             var result = _bots[acting].Act(_game);
-            if (!result.Success) Flash("Бот: " + result.Error);
+            if (!result.Success) Flash(LocalizationService.Get("game.ui.034") + result.Error);
         }
 
         // ================================================================== Кто ходит и кто смотрит
@@ -1412,17 +1412,17 @@ namespace CityHighways.Presentation
 
         string BotTag(int index)
         {
-            if (Online && !IsRealBot(index)) return index == _net.LocalSeat ? " · вы" : " · по сети";
+            if (Online && !IsRealBot(index)) return index == _net.LocalSeat ? LocalizationService.Get("game.ui.035") : LocalizationService.Get("game.ui.036");
             if (!IsRealBot(index)) return "";
-            return index < _setup.players.Count && _setup.players[index].botLevel == BotLevel.Random ? " · случайный бот" : " · бот";
+            return index < _setup.players.Count && _setup.players[index].botLevel == BotLevel.Random ? LocalizationService.Get("game.ui.037") : LocalizationService.Get("game.ui.038");
         }
 
         string WhoActsText(int acting)
         {
-            if (AwaitingHost) return "Ход отправлен хосту…";
-            if (IsRealBot(acting)) return "Сейчас ходит бот.";
-            if (Online) return "Сейчас ходит " + _game.Players[acting].Name + ".";
-            return "Сейчас нельзя.";
+            if (AwaitingHost) return LocalizationService.Get("game.ui.039");
+            if (IsRealBot(acting)) return LocalizationService.Get("game.ui.040");
+            if (Online) return LocalizationService.Get("game.ui.041") + _game.Players[acting].Name + ".";
+            return LocalizationService.Get("game.ui.042");
         }
 
         /// <summary>
@@ -1475,22 +1475,22 @@ namespace CityHighways.Presentation
             switch (_game.Phase)
             {
                 case GamePhase.SetupContracts:
-                    Flash("Сначала выберите компанию и стартовые контракты.");
+                    Flash(LocalizationService.Get("game.ui.043"));
                     return;
                 case GamePhase.DrawingSecondCard:
-                    Flash("Сначала возьмите вторую карту.");
+                    Flash(LocalizationService.Get("game.ui.044"));
                     return;
                 case GamePhase.ChoosingContracts:
-                    Flash("Сначала выберите контракты.");
+                    Flash(LocalizationService.Get("game.ui.045"));
                     return;
                 case GamePhase.ChoosingLuck:
-                    Flash("Сначала выберите карту удачи.");
+                    Flash(LocalizationService.Get("game.ui.046"));
                     return;
                 case GamePhase.RespondingTrade:
-                    Flash("Сначала ответьте на сделку.");
+                    Flash(LocalizationService.Get("game.ui.047"));
                     return;
                 case GamePhase.Bidding:
-                    Flash("Сначала сделайте ставку на аукционе мэрии.");
+                    Flash(LocalizationService.Get("game.ui.048"));
                     return;
             }
 
@@ -1518,7 +1518,7 @@ namespace CityHighways.Presentation
             }
             if (options.Count == 0)
             {
-                Flash(_game.GetBuildBlocker(route.Id) ?? "Эту дорогу сейчас построить нельзя.");
+                Flash(_game.GetBuildBlocker(route.Id) ?? LocalizationService.Get("game.ui.049"));
                 return;
             }
             if (options.Count == 1)
@@ -1557,7 +1557,7 @@ namespace CityHighways.Presentation
         string RoadTooltip(Road road)
         {
             string kind = ResourceInfo.RoadKind(road.Resource);
-            string resource = road.Resource.HasValue ? Palette.CardTitle(road.Resource.Value) : "любой один ресурс";
+            string resource = road.Resource.HasValue ? Palette.CardTitle(road.Resource.Value) : LocalizationService.Get("game.ui.050");
             string text = $"<b>{LocationName(road.A)} — {LocationName(road.B)}</b>\n" +
                           $"{char.ToUpper(kind[0]) + kind.Substring(1)} · длина {road.Length} · {resource} · {_game.Config.PointsForLength(road.Length)} очк.";
 
@@ -2160,13 +2160,13 @@ namespace CityHighways.Presentation
             var back = Ui.Column();
             back.style.alignItems = Align.Center;
             back.Add(Ui.Text("?", 96f, Theme.Gold, true));
-            back.Add(Ui.Text("УДАЧА", 20f, Theme.Gold, true));
+            back.Add(Ui.Text(LocalizationService.Get("game.ui.051"), 20f, Theme.Gold, true));
             card.Add(back);
 
             // Лицо.
             var face = Ui.Column();
             face.style.alignItems = Align.Center;
-            face.Add(Ui.Text(buff ? "БАФ" : "ДЕБАФ", 14f, color, true));
+            face.Add(Ui.Text(buff ? LocalizationService.Get("game.ui.052") : LocalizationService.Get("game.ui.053"), 14f, color, true));
             var title = Ui.Text(LuckInfo.Title(kind), 24f, Theme.Text, true);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
             title.style.whiteSpace = WhiteSpace.Normal;
@@ -2257,9 +2257,9 @@ namespace CityHighways.Presentation
         void Refresh()
         {
             if (_game == null) return;
-            _turnLabel.text = (_game.Phase == GamePhase.SetupContracts ? "Подготовка" : "Ход " + _game.TurnNumber)
+            _turnLabel.text = (_game.Phase == GamePhase.SetupContracts ? LocalizationService.Get("game.ui.054") : LocalizationService.Get("game.ui.055") + _game.TurnNumber)
                               + (_game.Scenario != ScenarioKind.Standard ? " · " + Scenarios.Title(_game.Scenario) : "")
-                              + (_game.IsCooperative ? " · Кооператив" : "");
+                              + (_game.IsCooperative ? LocalizationService.Get("game.ui.056") : "");
             RefreshEvent();
             RefreshGoals();
             RefreshGhost();
@@ -2316,30 +2316,30 @@ namespace CityHighways.Presentation
             _faceUpRow.style.opacity = canDraw ? 1f : 0.7f;
 
             bool firstCard = _game.Phase == GamePhase.AwaitingAction;
-            _deckButton.text = (firstCard ? "Колода ×2" : "Колода ×1");
+            _deckButton.text = (firstCard ? LocalizationService.Get("game.ui.057") : LocalizationService.Get("game.ui.058"));
             Ui.SetEnabled(_deckButton, canDraw && _game.DeckCount + _game.DiscardCount > 0);
             Ui.Show(_luckButton, _game.Config.LuckEnabled);
             // На кнопке — сколько карт осталось до перемешивания; под кнопками — шансы.
-            _luckButton.text = "Удача";
+            _luckButton.text = LocalizationService.Get("game.ui.017");
             Ui.Show(_luckOdds, _game.Config.LuckEnabled);
             int buffs = _game.LuckBuffsLeft, debuffs = _game.LuckDebuffsLeft;
-            if (buffs + debuffs == 0) _luckOdds.text = "Колода удачи пуста.";
+            if (buffs + debuffs == 0) _luckOdds.text = LocalizationService.Get("game.ui.059");
             else
             {
                 int chance = (int)Math.Round(100.0 * buffs / (buffs + debuffs));
                 int luckLeft = _game.LuckWillReshuffle ? _game.LuckDiscardCount : _game.LuckDeckCount;
                 _luckOdds.text = $"В колоде {_game.DeckCount} · контрактов {_game.ContractDeckCount} · удача {luckLeft}: шанс бафа {chance}%"
-                                 + (_game.LuckWillReshuffle ? " (перемешается)" : "")
-                                 + (_game.TradeUsedThisTurn ? " · сделка была" : "")
-                                 + (_game.InfluenceUsedThisTurn ? " · влияние потрачено" : "")
-                                 + (HumanToAct && _game.BribeDiscountActive ? " · скидка −1 карта" : "")
+                                 + (_game.LuckWillReshuffle ? LocalizationService.Get("game.ui.060") : "")
+                                 + (_game.TradeUsedThisTurn ? LocalizationService.Get("game.ui.061") : "")
+                                 + (_game.InfluenceUsedThisTurn ? LocalizationService.Get("game.ui.062") : "")
+                                 + (HumanToAct && _game.BribeDiscountActive ? LocalizationService.Get("game.ui.063") : "")
                                  + (_game.AnnouncedBribes > 0 ? $" · нераскрытых взяток прошлого круга: {_game.AnnouncedBribes}" : "");
             }
             Ui.SetEnabled(_luckButton, HumanToAct && _game.CanDrawLuckCard());
-            _contractsButton.text = "Взять контракты";
+            _contractsButton.text = LocalizationService.Get("game.ui.064");
             Ui.SetEnabled(_contractsButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction && _game.ContractDeckCount > 0);
             Ui.Show(_tradeButton, _game.Config.TradesEnabled);
-            _tradeButton.text = "Сделка";
+            _tradeButton.text = LocalizationService.Get("game.ui.020");
             Ui.SetEnabled(_tradeButton, HumanToAct && _game.CanProposeTrade());
             Ui.Show(_influenceButton, _game.Config.InfluenceEnabled);
             _influenceButton.text = $"Влияние {_game.Players[Viewer].Influence}";
@@ -2417,13 +2417,13 @@ namespace CityHighways.Presentation
                     box.Add(row);
                 }
             }
-            Group("Влияние на город", true);
-            Group("Контроль рынка", false);
+            Group(LocalizationService.Get("game.ui.065"), true);
+            Group(LocalizationService.Get("game.ui.066"), false);
 
             if (_game.BribesAllowed)
             {
                 int fine = _game.Config.BribeFineFor(_game.Players.Count);
-                var bribeHeader = Ui.Text("Взятка чиновникам (тайно)", 15f, Theme.Text, true);
+                var bribeHeader = Ui.Text(LocalizationService.Get("game.ui.067"), 15f, Theme.Text, true);
                 bribeHeader.style.marginTop = 6f;
                 box.Add(bribeHeader);
                 var bribeNote = Ui.Text($"Сейчас никто ничего не увидит. В начале следующего круга объявят только, сколько было взяток, — без имён. " +
@@ -2449,7 +2449,7 @@ namespace CityHighways.Presentation
                         }));
                 }
 
-                var accuseHeader = Ui.Text("Разоблачение", 15f, Theme.Text, true);
+                var accuseHeader = Ui.Text(LocalizationService.Get("game.ui.068"), 15f, Theme.Text, true);
                 accuseHeader.style.marginTop = 6f;
                 box.Add(accuseHeader);
                 var accuseNote = Ui.Text(_game.AnnouncedBribes > 0
@@ -2466,7 +2466,7 @@ namespace CityHighways.Presentation
                     var cell = Ui.Column();
                     cell.style.marginRight = 8f;
                     cell.style.marginBottom = 6f;
-                    var button = Ui.Button("Обвинить: " + other.Name, () =>
+                    var button = Ui.Button(LocalizationService.Get("game.ui.069") + other.Name, () =>
                     {
                         HideOverlay();
                         Act(() => _game.Accuse(target));
@@ -2474,7 +2474,7 @@ namespace CityHighways.Presentation
                     Ui.SetEnabled(button, _game.GetAccuseBlocker(target) == null);
                     cell.Add(button);
                     string evidence = _game.SuspicionText(target);
-                    var hint = Ui.Text(evidence.Length > 0 ? "Улика: " + evidence : "Прошлый ход — без улик", 11f,
+                    var hint = Ui.Text(evidence.Length > 0 ? LocalizationService.Get("game.ui.070") + evidence : LocalizationService.Get("game.ui.071"), 11f,
                         evidence.Length > 0 ? Theme.Gold : Theme.TextDim);
                     hint.style.marginTop = 2f;
                     cell.Add(hint);
@@ -2483,7 +2483,7 @@ namespace CityHighways.Presentation
                 box.Add(accuseRow);
             }
 
-            var close = Ui.Button("Закрыть", HideOverlay, ButtonKind.Ghost, 15f);
+            var close = Ui.Button(LocalizationService.Get("game.ui.072"), HideOverlay, ButtonKind.Ghost, 15f);
             close.style.alignSelf = Align.FlexEnd;
             close.style.marginTop = 6f;
             box.Add(close);
@@ -2544,7 +2544,7 @@ namespace CityHighways.Presentation
 
                 var piecesLine = Ui.Row();
                 piecesLine.style.marginTop = 8f;
-                var piecesCaption = Ui.Text("Участки", 12f, Theme.TextDim);
+                var piecesCaption = Ui.Text(LocalizationService.Get("game.ui.024"), 12f, Theme.TextDim);
                 piecesCaption.style.width = 70f;
                 piecesLine.Add(piecesCaption);
                 var pieces = new ProgressBar(PlayersPanelWidth - 140f, 6f, color);
@@ -2691,8 +2691,8 @@ namespace CityHighways.Presentation
             var card = Ui.Card(12f);
             Ui.Border(card, 2f, Theme.Gold);
             card.style.marginBottom = 10f;
-            card.Add(Ui.Text("Выберите компанию", 17f, Theme.Gold, true));
-            var hint = Ui.Text("Один персонаж на всю партию. Подумайте о стартовых контрактах: мосты на пути — Мостовику, много контрактов — Чиновнику.", 12f, Theme.TextDim);
+            card.Add(Ui.Text(LocalizationService.Get("game.ui.073"), 17f, Theme.Gold, true));
+            var hint = Ui.Text(LocalizationService.Get("game.ui.074"), 12f, Theme.TextDim);
             hint.style.whiteSpace = WhiteSpace.Normal;
             hint.style.marginTop = 4f;
             hint.style.marginBottom = 8f;
@@ -2715,7 +2715,7 @@ namespace CityHighways.Presentation
                 ability.style.whiteSpace = WhiteSpace.Normal;
                 texts.Add(ability);
                 row.Add(texts);
-                var pick = Ui.Button("Выбрать", () => Act(() => _game.ChooseCharacter(player.Index, chosen)), ButtonKind.Primary, 14f);
+                var pick = Ui.Button(LocalizationService.Get("game.ui.075"), () => Act(() => _game.ChooseCharacter(player.Index, chosen)), ButtonKind.Primary, 14f);
                 pick.style.marginLeft = 10f;
                 row.Add(pick);
                 card.Add(row);
@@ -2743,7 +2743,7 @@ namespace CityHighways.Presentation
             var header = Ui.Row();
             header.style.alignItems = Align.FlexEnd;
             header.style.marginBottom = 4f;
-            header.Add(Ui.Text(setup ? "Стартовые контракты" : "Новые контракты", 18f, Theme.Gold, true));
+            header.Add(Ui.Text(setup ? LocalizationService.Get("game.ui.076") : LocalizationService.Get("game.ui.077"), 18f, Theme.Gold, true));
             var hint = Ui.Text($"  ·  оставьте хотя бы {required}. Клик по карточке — взять или отказаться. Наведите — районы подсветятся. Невыполненный контракт в конце отнимает очки.", 13f, Theme.TextDim);
             hint.style.flexShrink = 1f;
             header.Add(hint);
@@ -2780,16 +2780,16 @@ namespace CityHighways.Presentation
             var viewer = _game.Players[Viewer];
             if (NeedsHandoff)
             {
-                _contractsBox.Add(Ui.Text("Скрыто до передачи хода.", 14f, Theme.TextDim));
+                _contractsBox.Add(Ui.Text(LocalizationService.Get("game.ui.078"), 14f, Theme.TextDim));
                 return;
             }
             if (viewer.Contracts.Count == 0)
             {
-                _contractsBox.Add(Ui.Text("Контрактов пока нет. Взять новые — кнопка «Взять контракты» в панели «Действия».", 14f, Theme.TextDim));
+                _contractsBox.Add(Ui.Text(LocalizationService.Get("game.ui.079"), 14f, Theme.TextDim));
                 return;
             }
 
-            var tip = Ui.Text("Тяните карточки влево-вправо или крутите колесо. Наведите — районы и путь подсветятся; клик закрепляет маршрут на карте.", 13f, Theme.TextDim);
+            var tip = Ui.Text(LocalizationService.Get("game.ui.080"), 13f, Theme.TextDim);
             tip.style.marginBottom = 2f;
             _contractsBox.Add(tip);
 
@@ -2828,14 +2828,14 @@ namespace CityHighways.Presentation
             Ui.Transitions(card, "translate", "background-color");
 
             var tags = Ui.Row();
-            string kind = contract.Kind == ContractKind.Transit ? "ТРАНЗИТ" : contract.Kind == ContractKind.Hub ? "УЗЕЛ" : "КОНТРАКТ";
+            string kind = contract.Kind == ContractKind.Transit ? LocalizationService.Get("game.ui.081") : contract.Kind == ContractKind.Hub ? LocalizationService.Get("game.ui.082") : LocalizationService.Get("game.ui.083");
             tags.Add(Ui.Text(kind, 11f, contract.IsComplex ? MapView.ThirdColor : Theme.TextDim, true));
             var tagSpace = Ui.Box();
             tagSpace.style.flexGrow = 1f;
             tags.Add(tagSpace);
             if (_game.Players[playerIndex].IsMayorContract(contract.Id))
                 tags.Add(Ui.Text($"МЭРИЯ +{_game.Config.AuctionBonus}", 11f, Theme.Gold, true));
-            if (selection && marked) tags.Add(Ui.Text("БЕРУ", 11f, Theme.Success, true));
+            if (selection && marked) tags.Add(Ui.Text(LocalizationService.Get("game.ui.084"), 11f, Theme.Success, true));
             card.Add(tags);
 
             VisualElement DistrictLine(Color chip, string prefix, string district)
@@ -2857,7 +2857,7 @@ namespace CityHighways.Presentation
             card.Add(DistrictLine(MapView.FromColor, null, contract.DistrictA));
             card.Add(DistrictLine(MapView.ToColor, null, contract.DistrictB));
             if (contract.IsComplex)
-                card.Add(DistrictLine(MapView.ThirdColor, contract.Kind == ContractKind.Transit ? "через" : "и", contract.DistrictC));
+                card.Add(DistrictLine(MapView.ThirdColor, contract.Kind == ContractKind.Transit ? LocalizationService.Get("game.ui.085") : LocalizationService.Get("game.ui.086"), contract.DistrictC));
 
             var space = Ui.Box();
             space.style.flexGrow = 1f;
@@ -2868,7 +2868,7 @@ namespace CityHighways.Presentation
             bottom.style.marginTop = 8f;
             string status;
             Color statusColor = Theme.TextDim;
-            if (selection) status = marked ? "Берёте" : "Не берёте";
+            if (selection) status = marked ? LocalizationService.Get("game.ui.087") : LocalizationService.Get("game.ui.088");
             else if (done && foreign > 0)
             {
                 status = $"через {foreign} чужих · проезд −{check.Toll}" + (check.JamFee > 0 ? $" · пробка −{check.JamFee}" : "");
@@ -2876,12 +2876,12 @@ namespace CityHighways.Presentation
             }
             else if (done)
             {
-                status = "Выполнен";
+                status = LocalizationService.Get("game.ui.089");
                 statusColor = Theme.Success;
             }
             else if (contract.Kind == ContractKind.Hub && check.LegsCompleted > 0)
                 status = $"готово {check.LegsCompleted} из {check.LegsTotal}";
-            else status = "Не выполнен";
+            else status = LocalizationService.Get("game.ui.090");
             var statusLabel = Ui.Text(pinned ? status + "\nмаршрут закреплён" : status, 12f, statusColor);
             statusLabel.style.flexGrow = 1f;
             statusLabel.style.flexShrink = 1f;
@@ -3070,7 +3070,7 @@ namespace CityHighways.Presentation
             else
             {
                 _statusChip.style.backgroundColor = Theme.Gold;
-                _statusName.text = "Партия окончена";
+                _statusName.text = LocalizationService.Get("game.ui.091");
             }
 
             _statusText.text = Instruction(acting) + TimerText();
@@ -3086,30 +3086,30 @@ namespace CityHighways.Presentation
 
         string Instruction(int acting)
         {
-            if (acting < 0) return "Итоги — в окне по центру.";
-            if (AwaitingHost) return "Ход отправлен хосту…";
-            if (IsRealBot(acting)) return "Бот думает над ходом…";
+            if (acting < 0) return LocalizationService.Get("game.ui.092");
+            if (AwaitingHost) return LocalizationService.Get("game.ui.039");
+            if (IsRealBot(acting)) return LocalizationService.Get("game.ui.093");
             if (IsBot(acting)) return $"Ходит {_game.Players[acting].Name} (по сети)…";
-            if (NeedsHandoff) return "Передайте компьютер этому игроку.";
+            if (NeedsHandoff) return LocalizationService.Get("game.ui.094");
 
             switch (_game.Phase)
             {
                 case GamePhase.SetupContracts:
                     return _game.ActingPlayerIndex >= 0 && _game.Players[_game.ActingPlayerIndex].CharacterOffer.Count > 0
-                        ? "Выберите компанию и стартовые контракты на панели «Контракты» внизу."
-                        : "Выберите стартовые контракты на панели «Контракты» внизу.";
+                        ? LocalizationService.Get("game.ui.095")
+                        : LocalizationService.Get("game.ui.096");
                 case GamePhase.AwaitingAction:
-                    return "Возьмите 2 карты (панель «Действия»), постройте дорогу кликом по карте — доступные светятся — или возьмите контракты.";
+                    return LocalizationService.Get("game.ui.097");
                 case GamePhase.DrawingSecondCard:
-                    return "Возьмите вторую карту. Открытую технику сейчас брать нельзя.";
+                    return LocalizationService.Get("game.ui.098");
                 case GamePhase.ChoosingContracts:
-                    return "Отметьте в панели «Контракты», какие берёте.";
+                    return LocalizationService.Get("game.ui.099");
                 case GamePhase.ChoosingLuck:
-                    return "Везунчик: выберите одну из двух карт удачи.";
+                    return LocalizationService.Get("game.ui.100");
                 case GamePhase.RespondingTrade:
-                    return "Вам предлагают сделку — примите или откажитесь.";
+                    return LocalizationService.Get("game.ui.101");
                 case GamePhase.Bidding:
-                    return "Аукцион мэрии: сделайте тайную ставку влиянием.";
+                    return LocalizationService.Get("game.ui.102");
                 default:
                     return "";
             }
@@ -3120,7 +3120,7 @@ namespace CityHighways.Presentation
         {
             var viewer = _game.Players[Viewer];
             bool hidden = NeedsHandoff;
-            _handTitle.text = hidden ? "рука скрыта" : HumanCount > 1 ? viewer.Name : "";
+            _handTitle.text = hidden ? LocalizationService.Get("game.ui.103") : HumanCount > 1 ? viewer.Name : "";
             foreach (var pair in _hand) pair.Value.Set(viewer.CardCount(pair.Key), hidden);
 
             int start = Math.Max(1, _game.Config.RoadPiecesFor(_game.Players.Count));
@@ -3263,7 +3263,7 @@ namespace CityHighways.Presentation
                 button.style.marginTop = 8f;
                 box.Add(button);
             }
-            var cancel = Ui.Button("Отмена", HideOverlay, ButtonKind.Ghost, 14f);
+            var cancel = Ui.Button(LocalizationService.Get("game.ui.104"), HideOverlay, ButtonKind.Ghost, 14f);
             cancel.style.marginTop = 8f;
             box.Add(cancel);
 
@@ -3297,8 +3297,8 @@ namespace CityHighways.Presentation
             var box = DialogBox(640f);
             box.style.alignItems = Align.Center;
             Ui.Border(box, 3f, Theme.Gold);
-            box.Add(Ui.Text("Везунчик: какую карту оставить?", 24f, Theme.Gold, true));
-            var note = Ui.Text("Обе карты уйдут в сброс, сработает только выбранная.", 13f, Theme.TextDim);
+            box.Add(Ui.Text(LocalizationService.Get("game.ui.105"), 24f, Theme.Gold, true));
+            var note = Ui.Text(LocalizationService.Get("game.ui.106"), 13f, Theme.TextDim);
             note.style.marginTop = 4f;
             note.style.marginBottom = 16f;
             box.Add(note);
@@ -3322,7 +3322,7 @@ namespace CityHighways.Presentation
                 if (i == 0) card.style.marginRight = 16f;
                 Ui.Radius(card, 14f);
                 Ui.Border(card, 3f, color);
-                card.Add(Ui.Text(buff ? "БАФ" : "ДЕБАФ", 13f, color, true));
+                card.Add(Ui.Text(buff ? LocalizationService.Get("game.ui.052") : LocalizationService.Get("game.ui.053"), 13f, color, true));
                 var title = Ui.Text(LuckInfo.Title(kind), 22f, Theme.Text, true);
                 title.style.marginTop = 8f;
                 title.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -3334,7 +3334,7 @@ namespace CityHighways.Presentation
                 text.style.unityTextAlign = TextAnchor.MiddleCenter;
                 text.style.whiteSpace = WhiteSpace.Normal;
                 card.Add(text);
-                var take = Ui.Button("Оставить", () =>
+                var take = Ui.Button(LocalizationService.Get("game.ui.107"), () =>
                 {
                     HideOverlay();
                     Act(() => _game.ChooseLuckCard(index));
@@ -3376,7 +3376,7 @@ namespace CityHighways.Presentation
             var box = DialogBox(580f);
             box.style.alignItems = Align.Center;
             Ui.Border(box, 3f, Theme.Gold);
-            box.Add(Ui.Text("АУКЦИОН МЭРИИ · РАЗ ЗА ПАРТИЮ", 13f, Theme.TextDim, true));
+            box.Add(Ui.Text(LocalizationService.Get("game.ui.108"), 13f, Theme.TextDim, true));
             var title = Ui.Text(ContractTitle(contract), 26f, Theme.Gold, true);
             title.style.marginTop = 6f;
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -3387,14 +3387,14 @@ namespace CityHighways.Presentation
             value.style.unityTextAlign = TextAnchor.MiddleCenter;
             value.style.marginTop = 8f;
             box.Add(value);
-            var rules = Ui.Text("Каждый делает одну тайную ставку влиянием. Побеждает самая высокая (при равенстве — отстающий по очкам) и платит свою ставку; остальные не платят ничего.", 12f, Theme.TextDim);
+            var rules = Ui.Text(LocalizationService.Get("game.ui.109"), 12f, Theme.TextDim);
             rules.style.whiteSpace = WhiteSpace.Normal;
             rules.style.unityTextAlign = TextAnchor.MiddleCenter;
             rules.style.marginTop = 8f;
             box.Add(rules);
 
             var done = _game.Players.Where(p => p.Index != bidder && _game.HasBid(p.Index)).Select(p => p.Name).ToList();
-            var status = Ui.Text(done.Count > 0 ? "Уже поставили: " + string.Join(", ", done) : "Вы ставите первым.", 12f, Theme.TextDim);
+            var status = Ui.Text(done.Count > 0 ? LocalizationService.Get("game.ui.110") + string.Join(", ", done) : LocalizationService.Get("game.ui.111"), 12f, Theme.TextDim);
             status.style.marginTop = 6f;
             box.Add(status);
 
@@ -3408,7 +3408,7 @@ namespace CityHighways.Presentation
             void Refresh()
             {
                 amount.text = bid + " вл.";
-                place.text = bid > 0 ? $"Поставить {bid}" : "Не участвовать";
+                place.text = bid > 0 ? $"Поставить {bid}" : LocalizationService.Get("game.ui.112");
             }
             row.Add(Ui.Button("–", () => { bid = Math.Max(0, bid - 1); Refresh(); }, ButtonKind.Secondary, 20f));
             row.Add(amount);
@@ -3446,10 +3446,10 @@ namespace CityHighways.Presentation
 
             var box = DialogBox(560f);
             Ui.Border(box, 2f, Theme.Gold);
-            box.Add(Ui.Text("Сделка", 26f, Theme.Gold, true));
-            var note = Ui.Text("Одна сделка за ход, до основного действия. Ход она не тратит."
-                               + (influenceOn ? " Можно доплатить влиянием или купить карты за влияние." : "")
-                               + (passesOn ? " Пропуск — бесплатный проезд по всем дорогам продавца до конца партии (пробочный сбор городу остаётся)." : ""),
+            box.Add(Ui.Text(LocalizationService.Get("game.ui.020"), 26f, Theme.Gold, true));
+            var note = Ui.Text(LocalizationService.Get("game.ui.113")
+                               + (influenceOn ? LocalizationService.Get("game.ui.114") : "")
+                               + (passesOn ? LocalizationService.Get("game.ui.115") : ""),
                 13f, Theme.TextDim);
             note.style.whiteSpace = WhiteSpace.Normal;
             note.style.marginBottom = 14f;
@@ -3457,7 +3457,7 @@ namespace CityHighways.Presentation
 
             var summary = Ui.Text("", 15f, Theme.Text, true);
             summary.style.whiteSpace = WhiteSpace.Normal;
-            var propose = Ui.Button("Предложить", () => { }, ButtonKind.Primary, 16f);
+            var propose = Ui.Button(LocalizationService.Get("game.ui.116"), () => { }, ButtonKind.Primary, 16f);
 
             void RefreshSummary()
             {
@@ -3517,7 +3517,7 @@ namespace CityHighways.Presentation
             Resource NextResource(Resource current) => resources[(Array.IndexOf(resources, current) + 1) % resources.Length];
 
             int othersIndex = 0;
-            box.Add(Line("Кому", Cycle(() => _game.Players[to].Name, () =>
+            box.Add(Line(LocalizationService.Get("game.ui.117"), Cycle(() => _game.Players[to].Name, () =>
             {
                 othersIndex = (othersIndex + 1) % others.Count;
                 to = others[othersIndex].Index;
@@ -3525,15 +3525,15 @@ namespace CityHighways.Presentation
             var giveRow = Ui.Row();
             giveRow.Add(Cycle(() => Palette.CardTitle(give), () => give = NextResource(give)));
             giveRow.Add(Counter(() => giveCount, v => giveCount = v, minCards, max));
-            box.Add(Line("Отдаю", giveRow));
-            if (influenceOn) box.Add(Line("…и влияния", Counter(() => giveInfluence, v => giveInfluence = v, 0, maxInfluence)));
-            if (passesOn) box.Add(Line("…и пропуск", Cycle(() => givePass ? "Мой пропуск: да" : "Мой пропуск: нет", () => givePass = !givePass)));
+            box.Add(Line(LocalizationService.Get("game.ui.118"), giveRow));
+            if (influenceOn) box.Add(Line(LocalizationService.Get("game.ui.119"), Counter(() => giveInfluence, v => giveInfluence = v, 0, maxInfluence)));
+            if (passesOn) box.Add(Line(LocalizationService.Get("game.ui.120"), Cycle(() => givePass ? LocalizationService.Get("game.ui.121") : LocalizationService.Get("game.ui.122"), () => givePass = !givePass)));
             var getRow = Ui.Row();
             getRow.Add(Cycle(() => Palette.CardTitle(get), () => get = NextResource(get)));
             getRow.Add(Counter(() => getCount, v => getCount = v, minCards, max));
-            box.Add(Line("Прошу", getRow));
-            if (influenceOn) box.Add(Line("…и влияния", Counter(() => getInfluence, v => getInfluence = v, 0, maxInfluence)));
-            if (passesOn) box.Add(Line("…и пропуск", Cycle(() => getPass ? "Его пропуск: да" : "Его пропуск: нет", () => getPass = !getPass)));
+            box.Add(Line(LocalizationService.Get("game.ui.123"), getRow));
+            if (influenceOn) box.Add(Line(LocalizationService.Get("game.ui.119"), Counter(() => getInfluence, v => getInfluence = v, 0, maxInfluence)));
+            if (passesOn) box.Add(Line(LocalizationService.Get("game.ui.120"), Cycle(() => getPass ? LocalizationService.Get("game.ui.124") : LocalizationService.Get("game.ui.125"), () => getPass = !getPass)));
 
             summary.style.marginTop = 6f;
             summary.style.marginBottom = 16f;
@@ -3541,7 +3541,7 @@ namespace CityHighways.Presentation
 
             var buttons = Ui.Row();
             buttons.style.justifyContent = Justify.FlexEnd;
-            var cancel = Ui.Button("Отмена", HideOverlay, ButtonKind.Ghost, 15f);
+            var cancel = Ui.Button(LocalizationService.Get("game.ui.104"), HideOverlay, ButtonKind.Ghost, 15f);
             cancel.style.marginRight = 10f;
             buttons.Add(cancel);
             propose.clicked += () =>
@@ -3564,7 +3564,7 @@ namespace CityHighways.Presentation
             var box = DialogBox(560f);
             box.style.alignItems = Align.Center;
             Ui.Border(box, 3f, Palette.PlayerColor(offer.From));
-            box.Add(Ui.Text("Вам предлагают сделку", 14f, Theme.TextDim, true));
+            box.Add(Ui.Text(LocalizationService.Get("game.ui.126"), 14f, Theme.TextDim, true));
             var who = Ui.Text(_game.Players[offer.From].Name, 30f, Palette.PlayerColor(offer.From), true);
             who.style.marginTop = 4f;
             box.Add(who);
@@ -3581,10 +3581,10 @@ namespace CityHighways.Presentation
             text.style.marginBottom = 20f;
             box.Add(text);
             var buttons = Ui.Row();
-            var no = Ui.Button("Отказаться", () => { HideOverlay(); Act(() => _game.RespondTrade(false)); }, ButtonKind.Secondary, 16f);
+            var no = Ui.Button(LocalizationService.Get("game.ui.127"), () => { HideOverlay(); Act(() => _game.RespondTrade(false)); }, ButtonKind.Secondary, 16f);
             no.style.marginRight = 12f;
             buttons.Add(no);
-            buttons.Add(Ui.Button("Согласиться", () => { HideOverlay(); Act(() => _game.RespondTrade(true)); }, ButtonKind.Primary, 16f));
+            buttons.Add(Ui.Button(LocalizationService.Get("game.ui.128"), () => { HideOverlay(); Act(() => _game.RespondTrade(true)); }, ButtonKind.Primary, 16f));
             box.Add(buttons);
             ShowOverlay(OverlayKind.TradeRespond, Centered(box), Theme.Shade);
         }
@@ -3609,7 +3609,7 @@ namespace CityHighways.Presentation
             box.Add(info);
             if (options.Count == 0)
             {
-                var none = Ui.Text("Не хватает карт для улучшения.", 13f, Theme.Danger);
+                var none = Ui.Text(LocalizationService.Get("game.ui.129"), 13f, Theme.Danger);
                 none.style.marginTop = 8f;
                 box.Add(none);
             }
@@ -3624,7 +3624,7 @@ namespace CityHighways.Presentation
                 button.style.marginTop = 8f;
                 box.Add(button);
             }
-            var cancel = Ui.Button("Отмена", HideOverlay, ButtonKind.Ghost, 14f);
+            var cancel = Ui.Button(LocalizationService.Get("game.ui.104"), HideOverlay, ButtonKind.Ghost, 14f);
             cancel.style.marginTop = 8f;
             box.Add(cancel);
 
@@ -3644,11 +3644,11 @@ namespace CityHighways.Presentation
             box.style.alignItems = Align.Center;
             Ui.Border(box, 3f, Palette.PlayerColor(playerIndex));
 
-            box.Add(Ui.Text("Передайте компьютер", 14f, Theme.TextDim, true));
+            box.Add(Ui.Text(LocalizationService.Get("game.ui.130"), 14f, Theme.TextDim, true));
             var title = Ui.Text(player.Name, 36f, Palette.PlayerColor(playerIndex), true);
             title.style.marginTop = 6f;
             box.Add(title);
-            var text = Ui.Text("Остальные — отвернитесь: сейчас откроются карты и контракты этого игрока.", 15f, Theme.Text);
+            var text = Ui.Text(LocalizationService.Get("game.ui.131"), 15f, Theme.Text);
             text.style.unityTextAlign = TextAnchor.MiddleCenter;
             text.style.marginTop = 14f;
             text.style.marginBottom = 16f;
@@ -3663,7 +3663,7 @@ namespace CityHighways.Presentation
                 report.style.backgroundColor = Theme.PanelLight;
                 report.style.marginBottom = 18f;
                 Ui.Radius(report, 10f);
-                report.Add(Ui.Text("Пока вас не было", 13f, Theme.Gold, true));
+                report.Add(Ui.Text(LocalizationService.Get("game.ui.132"), 13f, Theme.Gold, true));
                 const int maxLines = 8;
                 if (unseen.Count > maxLines)
                     report.Add(Ui.Text($"…и ещё {unseen.Count - maxLines} событий раньше", 12f, Theme.TextDim));
@@ -3676,7 +3676,7 @@ namespace CityHighways.Presentation
                 }
                 box.Add(report);
             }
-            box.Add(Ui.Button("Показать мои карты", () =>
+            box.Add(Ui.Button(LocalizationService.Get("game.ui.133"), () =>
             {
                 _revealedFor = playerIndex;
                 HideOverlay();
@@ -3713,7 +3713,7 @@ namespace CityHighways.Presentation
                 hero.Add(city);
             }
             var title = Ui.Text(result.Cooperative
-                    ? (result.TeamWon ? "Победа команды!" : "Город победил")
+                    ? (result.TeamWon ? LocalizationService.Get("game.ui.134") : LocalizationService.Get("game.ui.135"))
                     : "Победа: " + string.Join(", ", result.Winners.Select(w => w.PlayerName)),
                 34f, result.Cooperative && !result.TeamWon ? Theme.Danger : Theme.Gold, true);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -3737,7 +3737,7 @@ namespace CityHighways.Presentation
             box.Add(subtitle);
 
             float[] widths = { 190f, 64f, 140f, 70f, 100f, 58f, 62f, 82f, 70f, 64f };
-            box.Add(ResultRow(new[] { "Компания", "Дороги", "Контракты", "Проезд", "Сеть", "Цели", "Удача", "Персонаж", "Штрафы", "Итого" }, widths, Theme.TextDim, -1, false));
+            box.Add(ResultRow(new[] { LocalizationService.Get("game.ui.136"), LocalizationService.Get("game.ui.137"), LocalizationService.Get("game.ui.018"), LocalizationService.Get("game.ui.138"), LocalizationService.Get("game.ui.139"), LocalizationService.Get("game.ui.140"), LocalizationService.Get("game.ui.017"), LocalizationService.Get("game.ui.141"), LocalizationService.Get("game.ui.142"), LocalizationService.Get("game.ui.143") }, widths, Theme.TextDim, -1, false));
 
             int place = 1;
             foreach (var s in result.Ranking)
@@ -3770,7 +3770,7 @@ namespace CityHighways.Presentation
                 var found = _game.FinalAudit.Where(a => a.Exposed > 0).ToList();
                 var audit = Ui.Text(found.Count > 0
                         ? "Проверка перед итогами нашла взятки: " + string.Join(" · ", found.Select(a => $"{_game.Players[a.Player].Name} −{a.Fine}")) + " (в столбце «Штрафы»)."
-                        : "Проверка перед итогами: взяток не нашли.", 13f, found.Count > 0 ? Theme.Danger : Theme.TextDim);
+                        : LocalizationService.Get("game.ui.144"), 13f, found.Count > 0 ? Theme.Danger : Theme.TextDim);
                 audit.style.whiteSpace = WhiteSpace.Normal;
                 audit.style.unityTextAlign = TextAnchor.MiddleCenter;
                 audit.style.marginTop = 8f;
@@ -3779,7 +3779,7 @@ namespace CityHighways.Presentation
 
             if (_profileCredits != null && _profileCredits.Count > 0)
             {
-                var credit = Ui.Text("В кошелёк профиля: " + string.Join(" · ", _profileCredits.Select(c => $"{c.Profile} +{c.Amount + c.Bonus}"))
+                var credit = Ui.Text(LocalizationService.Get("game.ui.145") + string.Join(" · ", _profileCredits.Select(c => $"{c.Profile} +{c.Amount + c.Bonus}"))
                                      + " — тратится на оформление в «Профиле».", 14f, Theme.Gold, true);
                 credit.style.whiteSpace = WhiteSpace.Normal;
                 credit.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -3825,11 +3825,11 @@ namespace CityHighways.Presentation
                 box.Add(done);
             }
             var again = _setup.tutorial
-                ? Ui.Button("Пройти ещё раз", _app.StartTutorial, ButtonKind.Primary, 17f)
-                : Ui.Button("Сыграть ещё", () => _app.StartGame(_setup), ButtonKind.Primary, 17f);
+                ? Ui.Button(LocalizationService.Get("game.ui.146"), _app.StartTutorial, ButtonKind.Primary, 17f)
+                : Ui.Button(LocalizationService.Get("game.ui.147"), () => _app.StartGame(_setup), ButtonKind.Primary, 17f);
             again.style.marginRight = 12f;
             buttons.Add(again);
-            buttons.Add(Ui.Button("В главное меню", _app.ShowMenu, ButtonKind.Secondary, 17f));
+            buttons.Add(Ui.Button(LocalizationService.Get("game.ui.031"), _app.ShowMenu, ButtonKind.Secondary, 17f));
             box.Add(buttons);
 
             ShowOverlay(OverlayKind.GameOver, Centered(box), Theme.Shade);
@@ -3861,9 +3861,9 @@ namespace CityHighways.Presentation
             }
 
             // Цели мэрии.
-            var goals = Column("Цели мэрии");
+            var goals = Column(LocalizationService.Get("game.ui.026"));
             goals.style.marginRight = 12f;
-            if (_game.ActiveGoals.Count == 0) goals.Add(Line("В этой партии целей не было.", Theme.TextDim));
+            if (_game.ActiveGoals.Count == 0) goals.Add(Line(LocalizationService.Get("game.ui.148"), Theme.TextDim));
             foreach (var goal in _game.ActiveGoals)
             {
                 var owner = _game.GoalOwner(goal.Id);
@@ -3874,11 +3874,11 @@ namespace CityHighways.Presentation
             row.Add(goals);
 
             // Удача.
-            var luck = Column("Удача");
+            var luck = Column(LocalizationService.Get("game.ui.017"));
             var players = _game.Players;
             int drawnTotal = players.Sum(p => p.LuckBuffs + p.LuckDebuffs);
-            if (!_game.Config.LuckEnabled) luck.Add(Line("Колода удачи была выключена.", Theme.TextDim));
-            else if (drawnTotal == 0) luck.Add(Line("Карту удачи никто не брал.", Theme.TextDim));
+            if (!_game.Config.LuckEnabled) luck.Add(Line(LocalizationService.Get("game.ui.149"), Theme.TextDim));
+            else if (drawnTotal == 0) luck.Add(Line(LocalizationService.Get("game.ui.150"), Theme.TextDim));
             else
             {
                 foreach (var p in players.OrderByDescending(x => x.LuckPoints).ThenBy(x => x.Index))
@@ -3893,7 +3893,7 @@ namespace CityHighways.Presentation
                 var unluckiest = players.Where(p => p.LuckBuffs + p.LuckDebuffs > 0).OrderBy(p => p.LuckPoints).First();
                 if (luckiest.LuckPoints > 0) luck.Add(Line($"Самый везучий: {luckiest.Name}", Theme.Success, true));
                 if (unluckiest != luckiest && unluckiest.LuckPoints < 0) luck.Add(Line($"Не повезло: {unluckiest.Name}", Theme.Danger, true));
-                luck.Add(Line("Очки удачи — только гранты, премии и штрафы; карты от поставок и кражи сюда не входят.", Theme.TextDim));
+                luck.Add(Line(LocalizationService.Get("game.ui.151"), Theme.TextDim));
             }
             row.Add(luck);
             return row;
@@ -3926,18 +3926,18 @@ namespace CityHighways.Presentation
         void ShowConfirmExit()
         {
             var box = DialogBox(480f);
-            box.Add(Ui.Text("Выйти в главное меню?", 22f, null, true));
-            var text = Ui.Text(!Online ? "Партия сохранена — её можно будет продолжить из главного меню."
-                : _net.IsHost ? "Сетевая партия закончится у всех игроков." : "Вы выйдете из сетевой партии; за вас доиграет бот хоста.", 15f, Theme.TextDim);
+            box.Add(Ui.Text(LocalizationService.Get("game.ui.152"), 22f, null, true));
+            var text = Ui.Text(!Online ? LocalizationService.Get("game.ui.153")
+                : _net.IsHost ? LocalizationService.Get("game.ui.154") : LocalizationService.Get("game.ui.155"), 15f, Theme.TextDim);
             text.style.marginTop = 8f;
             text.style.marginBottom = 20f;
             box.Add(text);
 
             var buttons = Ui.Row();
-            var exit = Ui.Button("Выйти", _app.ShowMenu, ButtonKind.Primary, 16f);
+            var exit = Ui.Button(LocalizationService.Get("game.ui.156"), _app.ShowMenu, ButtonKind.Primary, 16f);
             exit.style.marginRight = 10f;
             buttons.Add(exit);
-            buttons.Add(Ui.Button("Остаться", HideOverlay, ButtonKind.Secondary, 16f));
+            buttons.Add(Ui.Button(LocalizationService.Get("game.ui.157"), HideOverlay, ButtonKind.Secondary, 16f));
             box.Add(buttons);
 
             ShowOverlay(OverlayKind.ConfirmExit, Centered(box), Theme.Shade);
@@ -3946,12 +3946,12 @@ namespace CityHighways.Presentation
         void ShowError(string message)
         {
             var box = DialogBox(640f);
-            box.Add(Ui.Text("Не удалось начать партию", 22f, Theme.Danger, true));
+            box.Add(Ui.Text(LocalizationService.Get("game.ui.158"), 22f, Theme.Danger, true));
             var text = Ui.Text(message, 14f, Theme.Text);
             text.style.marginTop = 10f;
             text.style.marginBottom = 20f;
             box.Add(text);
-            box.Add(Ui.Button("В главное меню", _app.ShowMenu, ButtonKind.Primary, 16f));
+            box.Add(Ui.Button(LocalizationService.Get("game.ui.031"), _app.ShowMenu, ButtonKind.Primary, 16f));
             ShowOverlay(OverlayKind.ConfirmExit, Centered(box), Theme.ShadeOpaque);
         }
 
@@ -3969,7 +3969,7 @@ namespace CityHighways.Presentation
             new TutorialStep
             {
                 Target = () => _map,
-                Title = _game?.Map.Name ?? "Город",
+                Title = _game?.Map.Name ?? LocalizationService.Get("game.ui.159"),
                 Text = "Вы — дорожная компания. Стройте участки дорог между местами города: каждая дорога сразу приносит очки (дорога длиной 4 — 7 очков). Цветные пятна — районы."
             },
             new TutorialStep
@@ -4011,13 +4011,13 @@ namespace CityHighways.Presentation
             new TutorialStep
             {
                 Target = () => _menuButton,
-                Title = "Цели мэрии",
+                Title = LocalizationService.Get("game.ui.026"),
                 Text = "Цели — в «Меню» справа вверху. Три общие цели открыты для всех. Награду получает тот, кто выполнит цель первым, — следите за прогрессом соперников."
             },
             new TutorialStep
             {
                 Target = () => _actionsTab,
-                Title = "Удача",
+                Title = LocalizationService.Get("game.ui.017"),
                 Text = "Кнопка «Удача» — в панели «Действия». Когда берёте карты, одну из двух можно заменить картой удачи — не больше одной за ход. Бафы: грант, поставка ресурсов, премия за контракты. Дебафы: штраф, кража карты, отзыв невыполненного контракта. Риск, а не бесплатный бонус."
             }
         };
@@ -4077,10 +4077,10 @@ namespace CityHighways.Presentation
 
             var buttons = Ui.Row();
             bool last = index == steps.Length - 1;
-            var next = Ui.Button(last ? "Начать игру" : "Далее", () => ShowTutorialStep(index + 1), ButtonKind.Primary, 15f);
+            var next = Ui.Button(last ? LocalizationService.Get("game.ui.160") : LocalizationService.Get("game.ui.161"), () => ShowTutorialStep(index + 1), ButtonKind.Primary, 15f);
             next.style.marginRight = 10f;
             buttons.Add(next);
-            if (!last) buttons.Add(Ui.Button("Пропустить обучение", FinishTutorial, ButtonKind.Ghost, 14f));
+            if (!last) buttons.Add(Ui.Button(LocalizationService.Get("game.ui.162"), FinishTutorial, ButtonKind.Ghost, 14f));
             card.Add(buttons);
             layer.Add(card);
 
@@ -4109,11 +4109,11 @@ namespace CityHighways.Presentation
                 // Спокойный круг: событие не выпало.
                 var calm = new Color(0.55f, 0.60f, 0.70f);
                 _eventChip.style.backgroundColor = calm;
-                _eventTitle.text = "Спокойный круг";
+                _eventTitle.text = LocalizationService.Get("game.ui.163");
                 _eventTitle.style.color = calm;
-                _eventText.text = "В этом круге событий нет. Новое может открыться в начале следующего круга.";
+                _eventText.text = LocalizationService.Get("game.ui.164");
                 Ui.Border(_eventCard, 2f, new Color(calm.r, calm.g, calm.b, 0.35f));
-                SetEventPill(calm, "Спокойный круг");
+                SetEventPill(calm, LocalizationService.Get("game.ui.163"));
                 return;
             }
             var color = EventColor(cityEvent.Kind);
@@ -4486,8 +4486,8 @@ namespace CityHighways.Presentation
         {
             var viewer = _game.Players[Viewer];
             bool choosing = TryGetContractChooser(out _);
-            _contractsTab.text = choosing ? "Контракты •" : NeedsHandoff ? "Контракты" : $"Контракты · {viewer.Contracts.Count}";
-            _logTab.text = _logTotal > _logSeenTotal && _sheet != SheetKind.Log ? "Журнал •" : "Журнал";
+            _contractsTab.text = choosing ? "Контракты •" : NeedsHandoff ? LocalizationService.Get("game.ui.018") : $"Контракты · {viewer.Contracts.Count}";
+            _logTab.text = _logTotal > _logSeenTotal && _sheet != SheetKind.Log ? "Журнал •" : LocalizationService.Get("game.ui.021");
             StyleTab(_actionsTab, _sheet == SheetKind.Actions);
             StyleTab(_contractsTab, _sheet == SheetKind.Contracts);
             StyleTab(_logTab, _sheet == SheetKind.Log);
@@ -4541,7 +4541,7 @@ namespace CityHighways.Presentation
             if (NeedsHandoff) return LocalizationService.Get("game.tooltip.hand_hidden");
             int count = _game.Players[Viewer].CardCount(resource);
             string name = ResourceInfo.RussianName(resource);
-            string use = resource == Resource.Machinery ? "заменяет любую карту при стройке" : "строит: " + ResourceInfo.RoadKind(resource);
+            string use = resource == Resource.Machinery ? LocalizationService.Get("game.ui.165") : LocalizationService.Get("game.ui.166") + ResourceInfo.RoadKind(resource);
             return $"{char.ToUpper(name[0]) + name.Substring(1)}: {count} шт.\n{use}. Одно деление — одна карта.";
         }
 
@@ -4629,7 +4629,7 @@ namespace CityHighways.Presentation
                 texts.style.flexShrink = 1f;
                 texts.Add(Ui.Text(goal.Name, 13f, owner.HasValue ? Theme.TextDim : Theme.Text, true));
                 string status = owner.HasValue
-                    ? "выполнил: " + _game.Players[owner.Value].Name
+                    ? LocalizationService.Get("game.ui.167") + _game.Players[owner.Value].Name
                     : $"{goal.Describe(_game.Map)} · у вас {Math.Min(goal.Count, _game.GoalProgress(viewer.Index, goal))}/{goal.Count}";
                 var statusLabel = Ui.Text(status, 11f, owner.HasValue ? Palette.PlayerColor(owner.Value) : Theme.TextDim);
                 statusLabel.style.whiteSpace = WhiteSpace.Normal;
