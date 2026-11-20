@@ -24,3 +24,14 @@ without an appropriate Unity license/activation method.
 ## Verification
 Source-level review is not a substitute for compiling with Unity Editor.
 No Unity build or Edit Mode test execution is claimed until the Actions run succeeds.
+
+## CI troubleshooting
+The first PR workflow run failed **before Unity compilation** because none of the
+Unity activation variables were configured (GameCI reported: `License activation
+strategy could not be determined`). The workflow now checks for activation
+configuration before downloading/running the Unity editor image.
+
+For a supported Unity licensing method, add the required credentials as GitHub
+Actions repository secrets (never commit them). Then trigger the workflow with a
+new commit on this PR branch. This documentation-only change also triggers a fresh
+PR workflow run; its outcome still depends on valid license activation.
