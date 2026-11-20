@@ -56,6 +56,7 @@ jobs:
           projectPath: .
           unityVersion: 6000.6.8f1
           testMode: editmode
+          cliVersion: v0.1.76
           artifactsPath: artifacts
           githubToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload test artifacts
