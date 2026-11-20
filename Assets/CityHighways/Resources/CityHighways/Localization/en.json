@@ -5637,11 +5637,11 @@
       "value": "Choose difficulty in New Game when playing Magnate. It changes cargo spawn rates, rewards, events and penalties:"
     },
     {
-      "key": "rules.magnate.cargo.Ordinary.name",
+      "key": "rules.magnate.cargo.Regular.name",
       "value": "Ordinary Cargo"
     },
     {
-      "key": "rules.magnate.cargo.Ordinary.rule",
+      "key": "rules.magnate.cargo.Regular.rule",
       "value": "No special conditions."
     },
     {
