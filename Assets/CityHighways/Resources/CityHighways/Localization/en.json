@@ -5823,6 +5823,34 @@
     {
       "key": "rarity.singular.Legendary",
       "value": "Legendary"
+    },
+    {
+      "key": "profile.achievement.category_format",
+      "value": "{0} · {1}/{2}"
+    },
+    {
+      "key": "profile.achievement.category.contracts",
+      "value": "Contracts"
+    },
+    {
+      "key": "profile.achievement.category.construction",
+      "value": "Construction"
+    },
+    {
+      "key": "profile.achievement.category.victories",
+      "value": "Victories"
+    },
+    {
+      "key": "profile.achievement.category.tolls",
+      "value": "Tolls & Politics"
+    },
+    {
+      "key": "profile.achievement.category.logistics",
+      "value": "Logistics"
+    },
+    {
+      "key": "profile.achievement.category.collections",
+      "value": "Collections"
     }
   ]
 }

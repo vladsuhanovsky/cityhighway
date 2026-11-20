@@ -5823,6 +5823,34 @@
     {
       "key": "rarity.singular.Legendary",
       "value": "Легендарный"
+    },
+    {
+      "key": "profile.achievement.category_format",
+      "value": "{0} · {1}/{2}"
+    },
+    {
+      "key": "profile.achievement.category.contracts",
+      "value": "Контракты"
+    },
+    {
+      "key": "profile.achievement.category.construction",
+      "value": "Стройка"
+    },
+    {
+      "key": "profile.achievement.category.victories",
+      "value": "Победы"
+    },
+    {
+      "key": "profile.achievement.category.tolls",
+      "value": "Проезд и политика"
+    },
+    {
+      "key": "profile.achievement.category.logistics",
+      "value": "Логистика"
+    },
+    {
+      "key": "profile.achievement.category.collections",
+      "value": "Коллекции"
     }
   ]
 }

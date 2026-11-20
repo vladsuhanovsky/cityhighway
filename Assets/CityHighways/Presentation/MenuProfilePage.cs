@@ -711,7 +711,7 @@ namespace CityHighways.Presentation
                     ? items.OrderByDescending(a => a.Reward).ToList()
                     : items.OrderByDescending(a => Fraction(profile, a)).ThenByDescending(a => a.Reward).ToList();
                 int openedHere = items.Count(a => Achievements.Unlocked(profile, a));
-                var title = Ui.SectionTitle($"{category} · {openedHere}/{items.Count}");
+                var title = Ui.SectionTitle(string.Format(LocalizationService.Get("profile.achievement.category_format"), AchievementCategoryLabel(category), openedHere, items.Count));
                 title.style.marginTop = 4f;
                 _content.Add(title);
                 var grid = Ui.Row();
@@ -724,6 +724,20 @@ namespace CityHighways.Presentation
                 _content.Add(grid);
             }
             if (anyNew) Profiles.Save();
+        }
+
+        static string AchievementCategoryLabel(string category)
+        {
+            switch (category)
+            {
+                case "Контракты": return LocalizationService.Get("profile.achievement.category.contracts");
+                case "Стройка": return LocalizationService.Get("profile.achievement.category.construction");
+                case "Победы": return LocalizationService.Get("profile.achievement.category.victories");
+                case "Проезд и политика": return LocalizationService.Get("profile.achievement.category.tolls");
+                case "Логистика": return LocalizationService.Get("profile.achievement.category.logistics");
+                case "Коллекции": return LocalizationService.Get("profile.achievement.category.collections");
+                default: return category;
+            }
         }
 
         static float Fraction(PlayerProfile profile, Achievement achievement)
