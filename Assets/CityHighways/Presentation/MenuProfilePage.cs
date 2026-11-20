@@ -312,7 +312,7 @@ namespace CityHighways.Presentation
             {
                 var cover = shown.HiddenBy(slot);
                 if (cover == null) continue;
-                var hidden = Ui.Text($"«{CharacterCatalog.Item(shown.Get(slot))?.name}» не видно под «{cover.name}»", 12f, Theme.TextDim);
+                var hidden = Ui.Text($"«{CharacterCatalog.Item(shown.Get(slot))?.DisplayName}» не видно под «{cover.DisplayName}»", 12f, Theme.TextDim);
                 hidden.style.unityTextAlign = TextAnchor.MiddleCenter;
                 hidden.style.marginTop = 6f;
                 hidden.style.whiteSpace = WhiteSpace.Normal;
@@ -441,7 +441,7 @@ namespace CityHighways.Presentation
             var mini = new CharacterView(60f, slot == "hat" || slot == "hair" || slot == "body");
             mini.Set(worn.With(slot, id));
             tile.Add(mini);
-            var name = Ui.Text(item?.name ?? LocalizationService.Get("menu.profile.021") + (slot == "hat" ? LocalizationService.Get("menu.profile.022") : LocalizationService.Get("menu.profile.023")), 12f, Theme.Text, true);
+            var name = Ui.Text(item?.DisplayName ?? LocalizationService.Get("menu.profile.021") + (slot == "hat" ? LocalizationService.Get("menu.profile.022") : LocalizationService.Get("menu.profile.023")), 12f, Theme.Text, true);
             name.style.unityTextAlign = TextAnchor.MiddleCenter;
             name.style.marginTop = 4f;
             tile.Add(name);
@@ -465,7 +465,7 @@ namespace CityHighways.Presentation
                 button = Btn($"Купить · {item.price}", () =>
                 {
                     var error = Profiles.BuyClothing(profile, item);
-                    _status = error ?? $"Куплено и надето: {item.name}.";
+                    _status = error ?? $"Куплено и надето: {item.DisplayName}.";
                     if (error == null)
                     {
                         _tryOn = null;
@@ -541,7 +541,7 @@ namespace CityHighways.Presentation
             _itemInfo.Clear();
             var head = Ui.Row();
             head.style.alignItems = Align.Center;
-            string title = item?.name ?? LocalizationService.Get("menu.profile.021") + (slot == "hat" ? LocalizationService.Get("menu.profile.022") : LocalizationService.Get("menu.profile.023"));
+            string title = item?.DisplayName ?? LocalizationService.Get("menu.profile.021") + (slot == "hat" ? LocalizationService.Get("menu.profile.022") : LocalizationService.Get("menu.profile.023"));
             var name = Ui.Text(title, 14f, Theme.Text, true);
             name.style.marginRight = 8f;
             head.Add(name);
@@ -558,7 +558,7 @@ namespace CityHighways.Presentation
 
             string text = item == null
                 ? LocalizationService.Get("menu.profile.028")
-                : string.IsNullOrEmpty(item.description) ? CharacterCatalog.SlotTitle(slot) : item.description;
+                : string.IsNullOrEmpty(item.DisplayDescription) ? CharacterCatalog.SlotTitle(slot) : item.DisplayDescription;
             var description = Ui.Text(text, 12f, Theme.TextDim);
             description.style.whiteSpace = WhiteSpace.Normal;
             description.style.marginTop = 4f;
@@ -566,7 +566,7 @@ namespace CityHighways.Presentation
 
             if (item?.hides != null && item.hides.Length > 0)
             {
-                var names = item.hides.Select(h => CharacterCatalog.Item(h)?.name ?? CharacterCatalog.SlotTitle(h).ToLowerInvariant());
+                var names = item.hides.Select(h => CharacterCatalog.Item(h)?.DisplayName ?? CharacterCatalog.SlotTitle(h).ToLowerInvariant());
                 var line = Ui.Text(LocalizationService.Get("menu.profile.029") + string.Join(", ", names) + LocalizationService.Get("menu.profile.030"), 12f, GameColors.Warning);
                 line.style.whiteSpace = WhiteSpace.Normal;
                 line.style.marginTop = 4f;
@@ -574,7 +574,7 @@ namespace CityHighways.Presentation
             }
             if (item != null && shown.Get(slot) == item.id && shown.HiddenBy(slot) is CharacterItem cover)
             {
-                var line = Ui.Text($"Сейчас не видно — под «{cover.name}».", 12f, GameColors.Warning);
+                var line = Ui.Text($"Сейчас не видно — под «{cover.DisplayName}».", 12f, GameColors.Warning);
                 line.style.marginTop = 4f;
                 _itemInfo.Add(line);
             }
@@ -638,14 +638,14 @@ namespace CityHighways.Presentation
                 Profiles.Wear(profile, slot, id);
                 if (_tryOn != null) _tryOn = _tryOn.With(slot, id);
                 if (_tryOn != null && _tryOn.Serialize() == profile.Outfit.Serialize()) _tryOn = null;
-                _status = item == null ? LocalizationService.Get("menu.profile.031") : $"Надето: {item.name}.";
+                _status = item == null ? LocalizationService.Get("menu.profile.031") : $"Надето: {item.DisplayName}.";
             }
             else
             {
                 if (worn.Get(slot) == id && _tryOn == null) return;
                 _tryOn = (_tryOn ?? worn).With(slot, id);
                 if (_tryOn.Serialize() == worn.Serialize()) _tryOn = null;
-                _status = item == null ? "" : has ? $"Примерка: {item.name}" : $"Примерка: {item.name} — купить за {item.price}";
+                _status = item == null ? "" : has ? $"Примерка: {item.DisplayName}" : $"Примерка: {item.DisplayName} — купить за {item.price}";
             }
             _animateSlot = slot;
             Rebuild();

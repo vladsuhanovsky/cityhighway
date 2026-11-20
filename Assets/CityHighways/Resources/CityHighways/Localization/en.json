@@ -4859,6 +4859,274 @@
     {
       "key": "rarity.plural.3",
       "value": "Legendary"
+    },
+    {
+      "key": "wardrobe.body_light.name",
+      "value": "Light Skin"
+    },
+    {
+      "key": "wardrobe.body_tan.name",
+      "value": "Tan Skin"
+    },
+    {
+      "key": "wardrobe.body_dark.name",
+      "value": "Dark Skin"
+    },
+    {
+      "key": "wardrobe.hair_short.name",
+      "value": "Short Hair"
+    },
+    {
+      "key": "wardrobe.hair_long.name",
+      "value": "Long Hair"
+    },
+    {
+      "key": "wardrobe.hair_bun.name",
+      "value": "Bun"
+    },
+    {
+      "key": "wardrobe.hair_beard.name",
+      "value": "Foreman's Beard"
+    },
+    {
+      "key": "wardrobe.top_tshirt.name",
+      "value": "T-Shirt"
+    },
+    {
+      "key": "wardrobe.top_vest.name",
+      "value": "Safety Vest"
+    },
+    {
+      "key": "wardrobe.top_shirt.name",
+      "value": "Shirt"
+    },
+    {
+      "key": "wardrobe.top_sweater.name",
+      "value": "Sweater"
+    },
+    {
+      "key": "wardrobe.top_jacket.name",
+      "value": "Blazer"
+    },
+    {
+      "key": "wardrobe.bottom_trousers.name",
+      "value": "Work Pants"
+    },
+    {
+      "key": "wardrobe.bottom_jeans.name",
+      "value": "Jeans"
+    },
+    {
+      "key": "wardrobe.bottom_classic.name",
+      "value": "Dress Pants"
+    },
+    {
+      "key": "wardrobe.bottom_overalls.name",
+      "value": "Overalls"
+    },
+    {
+      "key": "wardrobe.shoes_boots.name",
+      "value": "Work Boots"
+    },
+    {
+      "key": "wardrobe.shoes_sneakers.name",
+      "value": "Sneakers"
+    },
+    {
+      "key": "wardrobe.shoes_rubber.name",
+      "value": "Rubber Boots"
+    },
+    {
+      "key": "wardrobe.shoes_oxford.name",
+      "value": "Dress Shoes"
+    },
+    {
+      "key": "wardrobe.hat_hardhat.name",
+      "value": "Hard Hat"
+    },
+    {
+      "key": "wardrobe.hat_cap.name",
+      "value": "Cap"
+    },
+    {
+      "key": "wardrobe.hat_fedora.name",
+      "value": "Fedora"
+    },
+    {
+      "key": "wardrobe.hat_tophat.name",
+      "value": "Top Hat"
+    },
+    {
+      "key": "wardrobe.acc_glasses.name",
+      "value": "Glasses"
+    },
+    {
+      "key": "wardrobe.acc_tie.name",
+      "value": "Tie"
+    },
+    {
+      "key": "wardrobe.acc_radio.name",
+      "value": "Radio"
+    },
+    {
+      "key": "wardrobe.acc_blueprint.name",
+      "value": "Blueprint Scroll"
+    },
+    {
+      "key": "wardrobe.acc_chain.name",
+      "value": "Gold Chain"
+    },
+    {
+      "key": "wardrobe.body_f_light.name",
+      "value": "Light Skin"
+    },
+    {
+      "key": "wardrobe.body_f_tan.name",
+      "value": "Tan Skin"
+    },
+    {
+      "key": "wardrobe.body_f_dark.name",
+      "value": "Dark Skin"
+    },
+    {
+      "key": "wardrobe.hair_f_bob.name",
+      "value": "Bob Haircut"
+    },
+    {
+      "key": "wardrobe.hair_f_long.name",
+      "value": "Long Hair"
+    },
+    {
+      "key": "wardrobe.hair_f_ponytail.name",
+      "value": "High Ponytail"
+    },
+    {
+      "key": "wardrobe.hair_f_curly.name",
+      "value": "Curly Hair"
+    },
+    {
+      "key": "wardrobe.top_f_tshirt.name",
+      "value": "T-Shirt"
+    },
+    {
+      "key": "wardrobe.top_f_vest.name",
+      "value": "Safety Vest"
+    },
+    {
+      "key": "wardrobe.top_f_blouse.name",
+      "value": "Blouse"
+    },
+    {
+      "key": "wardrobe.top_f_cardigan.name",
+      "value": "Cardigan"
+    },
+    {
+      "key": "wardrobe.top_f_blazer.name",
+      "value": "Blazer"
+    },
+    {
+      "key": "wardrobe.bottom_f_trousers.name",
+      "value": "Work Pants"
+    },
+    {
+      "key": "wardrobe.bottom_f_jeans.name",
+      "value": "Jeans"
+    },
+    {
+      "key": "wardrobe.bottom_f_skirt.name",
+      "value": "Skirt"
+    },
+    {
+      "key": "wardrobe.bottom_f_overalls.name",
+      "value": "Overalls"
+    },
+    {
+      "key": "wardrobe.shoes_f_boots.name",
+      "value": "Work Boots"
+    },
+    {
+      "key": "wardrobe.shoes_f_sneakers.name",
+      "value": "Sneakers"
+    },
+    {
+      "key": "wardrobe.shoes_f_rubber.name",
+      "value": "Rubber Boots"
+    },
+    {
+      "key": "wardrobe.shoes_f_heels.name",
+      "value": "High Heels"
+    },
+    {
+      "key": "wardrobe.hat_f_hardhat.name",
+      "value": "Hard Hat"
+    },
+    {
+      "key": "wardrobe.hat_f_cap.name",
+      "value": "Cap"
+    },
+    {
+      "key": "wardrobe.hat_f_beret.name",
+      "value": "Beret"
+    },
+    {
+      "key": "wardrobe.hat_f_sunhat.name",
+      "value": "Sun Hat"
+    },
+    {
+      "key": "wardrobe.acc_f_glasses.name",
+      "value": "Glasses"
+    },
+    {
+      "key": "wardrobe.acc_f_scarf.name",
+      "value": "Neck Scarf"
+    },
+    {
+      "key": "wardrobe.acc_f_radio.name",
+      "value": "Radio"
+    },
+    {
+      "key": "wardrobe.acc_f_tablet.name",
+      "value": "Tablet"
+    },
+    {
+      "key": "wardrobe.acc_f_pearls.name",
+      "value": "Pearl Necklace"
+    },
+    {
+      "key": "wardrobe.slot.body",
+      "value": "Appearance"
+    },
+    {
+      "key": "wardrobe.slot.hair",
+      "value": "Hairstyle"
+    },
+    {
+      "key": "wardrobe.slot.hat",
+      "value": "Headwear"
+    },
+    {
+      "key": "wardrobe.slot.top",
+      "value": "Top"
+    },
+    {
+      "key": "wardrobe.slot.bottom",
+      "value": "Bottom"
+    },
+    {
+      "key": "wardrobe.slot.shoes",
+      "value": "Shoes"
+    },
+    {
+      "key": "wardrobe.slot.accessory",
+      "value": "Accessory"
+    },
+    {
+      "key": "wardrobe.gender.female",
+      "value": "Female"
+    },
+    {
+      "key": "wardrobe.gender.male",
+      "value": "Male"
     }
   ]
 }

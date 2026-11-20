@@ -4859,6 +4859,274 @@
     {
       "key": "rarity.plural.3",
       "value": "Легендарные"
+    },
+    {
+      "key": "wardrobe.body_light.name",
+      "value": "Светлая кожа"
+    },
+    {
+      "key": "wardrobe.body_tan.name",
+      "value": "Смуглая кожа"
+    },
+    {
+      "key": "wardrobe.body_dark.name",
+      "value": "Тёмная кожа"
+    },
+    {
+      "key": "wardrobe.hair_short.name",
+      "value": "Короткая стрижка"
+    },
+    {
+      "key": "wardrobe.hair_long.name",
+      "value": "Длинные волосы"
+    },
+    {
+      "key": "wardrobe.hair_bun.name",
+      "value": "Пучок"
+    },
+    {
+      "key": "wardrobe.hair_beard.name",
+      "value": "Борода прораба"
+    },
+    {
+      "key": "wardrobe.top_tshirt.name",
+      "value": "Футболка"
+    },
+    {
+      "key": "wardrobe.top_vest.name",
+      "value": "Сигнальный жилет"
+    },
+    {
+      "key": "wardrobe.top_shirt.name",
+      "value": "Рубашка"
+    },
+    {
+      "key": "wardrobe.top_sweater.name",
+      "value": "Свитер"
+    },
+    {
+      "key": "wardrobe.top_jacket.name",
+      "value": "Пиджак"
+    },
+    {
+      "key": "wardrobe.bottom_trousers.name",
+      "value": "Рабочие брюки"
+    },
+    {
+      "key": "wardrobe.bottom_jeans.name",
+      "value": "Джинсы"
+    },
+    {
+      "key": "wardrobe.bottom_classic.name",
+      "value": "Классические брюки"
+    },
+    {
+      "key": "wardrobe.bottom_overalls.name",
+      "value": "Комбинезон"
+    },
+    {
+      "key": "wardrobe.shoes_boots.name",
+      "value": "Рабочие ботинки"
+    },
+    {
+      "key": "wardrobe.shoes_sneakers.name",
+      "value": "Кроссовки"
+    },
+    {
+      "key": "wardrobe.shoes_rubber.name",
+      "value": "Резиновые сапоги"
+    },
+    {
+      "key": "wardrobe.shoes_oxford.name",
+      "value": "Туфли"
+    },
+    {
+      "key": "wardrobe.hat_hardhat.name",
+      "value": "Строительная каска"
+    },
+    {
+      "key": "wardrobe.hat_cap.name",
+      "value": "Кепка"
+    },
+    {
+      "key": "wardrobe.hat_fedora.name",
+      "value": "Шляпа"
+    },
+    {
+      "key": "wardrobe.hat_tophat.name",
+      "value": "Цилиндр"
+    },
+    {
+      "key": "wardrobe.acc_glasses.name",
+      "value": "Очки"
+    },
+    {
+      "key": "wardrobe.acc_tie.name",
+      "value": "Галстук"
+    },
+    {
+      "key": "wardrobe.acc_radio.name",
+      "value": "Рация"
+    },
+    {
+      "key": "wardrobe.acc_blueprint.name",
+      "value": "Свиток чертежей"
+    },
+    {
+      "key": "wardrobe.acc_chain.name",
+      "value": "Золотая цепь"
+    },
+    {
+      "key": "wardrobe.body_f_light.name",
+      "value": "Светлая кожа"
+    },
+    {
+      "key": "wardrobe.body_f_tan.name",
+      "value": "Смуглая кожа"
+    },
+    {
+      "key": "wardrobe.body_f_dark.name",
+      "value": "Тёмная кожа"
+    },
+    {
+      "key": "wardrobe.hair_f_bob.name",
+      "value": "Каре"
+    },
+    {
+      "key": "wardrobe.hair_f_long.name",
+      "value": "Длинные волосы"
+    },
+    {
+      "key": "wardrobe.hair_f_ponytail.name",
+      "value": "Высокий хвост"
+    },
+    {
+      "key": "wardrobe.hair_f_curly.name",
+      "value": "Кудри"
+    },
+    {
+      "key": "wardrobe.top_f_tshirt.name",
+      "value": "Футболка"
+    },
+    {
+      "key": "wardrobe.top_f_vest.name",
+      "value": "Сигнальный жилет"
+    },
+    {
+      "key": "wardrobe.top_f_blouse.name",
+      "value": "Блузка"
+    },
+    {
+      "key": "wardrobe.top_f_cardigan.name",
+      "value": "Кардиган"
+    },
+    {
+      "key": "wardrobe.top_f_blazer.name",
+      "value": "Жакет"
+    },
+    {
+      "key": "wardrobe.bottom_f_trousers.name",
+      "value": "Рабочие брюки"
+    },
+    {
+      "key": "wardrobe.bottom_f_jeans.name",
+      "value": "Джинсы"
+    },
+    {
+      "key": "wardrobe.bottom_f_skirt.name",
+      "value": "Юбка"
+    },
+    {
+      "key": "wardrobe.bottom_f_overalls.name",
+      "value": "Комбинезон"
+    },
+    {
+      "key": "wardrobe.shoes_f_boots.name",
+      "value": "Рабочие ботинки"
+    },
+    {
+      "key": "wardrobe.shoes_f_sneakers.name",
+      "value": "Кроссовки"
+    },
+    {
+      "key": "wardrobe.shoes_f_rubber.name",
+      "value": "Резиновые сапоги"
+    },
+    {
+      "key": "wardrobe.shoes_f_heels.name",
+      "value": "Туфли на каблуке"
+    },
+    {
+      "key": "wardrobe.hat_f_hardhat.name",
+      "value": "Строительная каска"
+    },
+    {
+      "key": "wardrobe.hat_f_cap.name",
+      "value": "Кепка"
+    },
+    {
+      "key": "wardrobe.hat_f_beret.name",
+      "value": "Берет"
+    },
+    {
+      "key": "wardrobe.hat_f_sunhat.name",
+      "value": "Шляпка"
+    },
+    {
+      "key": "wardrobe.acc_f_glasses.name",
+      "value": "Очки"
+    },
+    {
+      "key": "wardrobe.acc_f_scarf.name",
+      "value": "Шейный платок"
+    },
+    {
+      "key": "wardrobe.acc_f_radio.name",
+      "value": "Рация"
+    },
+    {
+      "key": "wardrobe.acc_f_tablet.name",
+      "value": "Планшет"
+    },
+    {
+      "key": "wardrobe.acc_f_pearls.name",
+      "value": "Жемчужное ожерелье"
+    },
+    {
+      "key": "wardrobe.slot.body",
+      "value": "Внешность"
+    },
+    {
+      "key": "wardrobe.slot.hair",
+      "value": "Причёска"
+    },
+    {
+      "key": "wardrobe.slot.hat",
+      "value": "Головной убор"
+    },
+    {
+      "key": "wardrobe.slot.top",
+      "value": "Верх"
+    },
+    {
+      "key": "wardrobe.slot.bottom",
+      "value": "Низ"
+    },
+    {
+      "key": "wardrobe.slot.shoes",
+      "value": "Обувь"
+    },
+    {
+      "key": "wardrobe.slot.accessory",
+      "value": "Аксессуар"
+    },
+    {
+      "key": "wardrobe.gender.female",
+      "value": "Женщина"
+    },
+    {
+      "key": "wardrobe.gender.male",
+      "value": "Мужчина"
     }
   ]
 }

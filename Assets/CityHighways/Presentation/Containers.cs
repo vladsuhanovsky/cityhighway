@@ -10,6 +10,7 @@ namespace CityHighways.Presentation
     {
         public string Id;
         public string Name;
+        public string DisplayName => Clothing != null ? Clothing.DisplayName : Style != null ? Style.DisplayName : Name;
         /// <summary>Ценность в влиянии: по ней редкость и возврат за дубликат.</summary>
         public int Value;
         public CharacterItem Clothing;

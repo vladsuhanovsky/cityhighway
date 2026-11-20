@@ -11,6 +11,8 @@ namespace CityHighways.Presentation
         public string id;
         public string slot;
         public string name;
+        public string DisplayName => LocalizationService.GetOrFallback("wardrobe." + id + ".name", name);
+        public string DisplayDescription => LocalizationService.GetOrFallback("wardrobe." + id + ".description", description);
         public int price;
         /// <summary>Путь картинки внутри Resources/CityHighways/Character без расширения, например «hat/hat_cap».</summary>
         public string file;
@@ -98,13 +100,13 @@ namespace CityHighways.Presentation
         {
             switch (slot)
             {
-                case "body": return "Внешность";
-                case "hair": return "Причёска";
-                case "hat": return "Головной убор";
-                case "top": return "Верх";
-                case "bottom": return "Низ";
-                case "shoes": return "Обувь";
-                default: return "Аксессуар";
+                case "body": return LocalizationService.Get("wardrobe.slot.body");
+                case "hair": return LocalizationService.Get("wardrobe.slot.hair");
+                case "hat": return LocalizationService.Get("wardrobe.slot.hat");
+                case "top": return LocalizationService.Get("wardrobe.slot.top");
+                case "bottom": return LocalizationService.Get("wardrobe.slot.bottom");
+                case "shoes": return LocalizationService.Get("wardrobe.slot.shoes");
+                default: return LocalizationService.Get("wardrobe.slot.accessory");
             }
         }
 
@@ -146,7 +148,7 @@ namespace CityHighways.Presentation
         public static IEnumerable<CharacterItem> ItemsIn(string slot, string gender) =>
             Data.items.Where(i => i.slot == slot && i.Fits(gender));
 
-        public static string GenderTitle(string gender) => gender == Female ? "Женщина" : "Мужчина";
+        public static string GenderTitle(string gender) => gender == Female ? LocalizationService.Get("wardrobe.gender.female") : LocalizationService.Get("wardrobe.gender.male");
 
         public static CharacterItem Item(string id) =>
             string.IsNullOrEmpty(id) ? null : Data.items.FirstOrDefault(i => i.id == id);
