@@ -139,6 +139,34 @@
     {
       "key": "menu.settings.preview",
       "value": "Предпросмотр"
+    },
+    {
+      "key": "game.hud.menu",
+      "value": "Меню"
+    },
+    {
+      "key": "game.hud.settings",
+      "value": "Настройки"
+    },
+    {
+      "key": "game.hud.actions",
+      "value": "Действия"
+    },
+    {
+      "key": "game.hud.contracts",
+      "value": "Контракты"
+    },
+    {
+      "key": "game.hud.players",
+      "value": "Игроки"
+    },
+    {
+      "key": "game.hud.resources",
+      "value": "РЕСУРСЫ"
+    },
+    {
+      "key": "game.hud.rules",
+      "value": "Правила"
     }
   ]
 }

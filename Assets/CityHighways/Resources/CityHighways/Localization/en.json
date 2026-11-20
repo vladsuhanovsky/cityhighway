@@ -139,6 +139,34 @@
     {
       "key": "menu.settings.preview",
       "value": "Preview"
+    },
+    {
+      "key": "game.hud.menu",
+      "value": "Menu"
+    },
+    {
+      "key": "game.hud.settings",
+      "value": "Settings"
+    },
+    {
+      "key": "game.hud.actions",
+      "value": "Actions"
+    },
+    {
+      "key": "game.hud.contracts",
+      "value": "Contracts"
+    },
+    {
+      "key": "game.hud.players",
+      "value": "Players"
+    },
+    {
+      "key": "game.hud.resources",
+      "value": "RESOURCES"
+    },
+    {
+      "key": "game.hud.rules",
+      "value": "Rules"
     }
   ]
 }

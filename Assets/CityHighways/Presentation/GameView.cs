@@ -713,7 +713,7 @@ namespace CityHighways.Presentation
             Ui.Transitions(_logTab, "background-color", "color", "border-bottom-color");
             _topBar.Add(_logTab);
 
-            _menuButton = new IconButton(IconButton.Glyph.Menu, "Меню", ToggleDrawer);
+            _menuButton = new IconButton(IconButton.Glyph.Menu, LocalizationService.Get("game.hud.menu"), ToggleDrawer);
             _menuButton.style.marginRight = 8f;
             _menuDot = Ui.Box();
             _menuDot.style.position = Position.Absolute;
@@ -726,7 +726,7 @@ namespace CityHighways.Presentation
             Ui.Show(_menuDot, false);
             _menuButton.Add(_menuDot);
             _topBar.Add(_menuButton);
-            _topBar.Add(new IconButton(IconButton.Glyph.Gear, "Настройки", () => ToggleModal(Modal.Settings)));
+            _topBar.Add(new IconButton(IconButton.Glyph.Gear, LocalizationService.Get("game.hud.settings"), () => ToggleModal(Modal.Settings)));
 
             // ---------- Нижняя полоса: вкладки
             var bottomBar = Ui.Row();
@@ -774,8 +774,8 @@ namespace CityHighways.Presentation
                 parent.Add(button);
                 return button;
             }
-            _actionsTab = Tab(bottomLeft, "Действия", () => ToggleSheet(SheetKind.Actions));
-            _contractsTab = Tab(bottomLeft, "Контракты", () => ToggleSheet(SheetKind.Contracts));
+            _actionsTab = Tab(bottomLeft, LocalizationService.Get("game.hud.actions"), () => ToggleSheet(SheetKind.Actions));
+            _contractsTab = Tab(bottomLeft, LocalizationService.Get("game.hud.contracts"), () => ToggleSheet(SheetKind.Contracts));
             _viewHint = Ui.Text("Колесо мыши — приближение · перетаскивание — сдвиг карты", 12f, Theme.TextDim);
             _viewHint.style.whiteSpace = WhiteSpace.NoWrap;
             _viewHint.style.marginLeft = 10f;
@@ -787,14 +787,14 @@ namespace CityHighways.Presentation
             _playersTab.style.marginRight = 0f;
             _playersTab.style.flexDirection = FlexDirection.Row;
             _playersTab.style.alignItems = Align.Center;
-            var playersCaption = Ui.Text("Игроки", 15f, null, true);
+            var playersCaption = Ui.Text(LocalizationService.Get("game.hud.players"), 15f, null, true);
             _playersTab.Add(playersCaption);
             _playerChipsRow = Ui.Row();
             _playerChipsRow.style.marginLeft = 6f;
             _playersTab.Add(_playerChipsRow);
 
             // Ресурсы: карты в руке (деления + число) и оставшиеся участки дороги.
-            _resourcesCaption = Ui.Text("РЕСУРСЫ", 11f, Theme.TextDim, true);
+            _resourcesCaption = Ui.Text(LocalizationService.Get("game.hud.resources"), 11f, Theme.TextDim, true);
             _resourcesCaption.style.letterSpacing = 1.5f;
             _resourcesCaption.style.marginRight = 10f;
             resourcesRow.Add(_resourcesCaption);
@@ -935,7 +935,7 @@ namespace CityHighways.Presentation
             Ui.Shadow(_playersPanel, 14f);
             var playersHeader = Ui.Row();
             playersHeader.style.marginBottom = 8f;
-            playersHeader.Add(Ui.Text("Игроки", 20f, Theme.Text, true));
+            playersHeader.Add(Ui.Text(LocalizationService.Get("game.hud.players"), 20f, Theme.Text, true));
             var playersHeaderSpace = Ui.Box();
             playersHeaderSpace.style.flexGrow = 1f;
             playersHeader.Add(playersHeaderSpace);
@@ -951,8 +951,8 @@ namespace CityHighways.Presentation
             _playersPanel.style.display = DisplayStyle.None;
             _playersPanel.style.opacity = 0f;
             playersDock.Add(_playersPanel);
-            _settingsModal = ModalCard("Настройки", 480f, out _settingsBody);
-            _rulesModal = ModalCard("Правила", 1200f, out _rulesBody);
+            _settingsModal = ModalCard(LocalizationService.Get("game.hud.settings"), 480f, out _settingsBody);
+            _rulesModal = ModalCard(LocalizationService.Get("game.hud.rules"), 1200f, out _rulesBody);
 
             // ---------- Оверлеи и эффекты
             _overlay = new VisualElement();
