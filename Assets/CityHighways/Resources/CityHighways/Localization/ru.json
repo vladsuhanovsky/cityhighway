@@ -3323,6 +3323,78 @@
     {
       "key": "game.ui.167",
       "value": "выполнил: "
+    },
+    {
+      "key": "magnate.menu.001",
+      "value": "Настройки"
+    },
+    {
+      "key": "magnate.menu.002",
+      "value": "? Обучение"
+    },
+    {
+      "key": "magnate.menu.003",
+      "value": "Правила"
+    },
+    {
+      "key": "magnate.menu.004",
+      "value": "Выйти в меню"
+    },
+    {
+      "key": "magnate.menu.005",
+      "value": "Правила коротко"
+    },
+    {
+      "key": "magnate.menu.006",
+      "value": "Партия"
+    },
+    {
+      "key": "magnate.menu.007",
+      "value": "Журнал •"
+    },
+    {
+      "key": "magnate.menu.008",
+      "value": "Журнал"
+    },
+    {
+      "key": "magnate.menu.009",
+      "value": "Включено"
+    },
+    {
+      "key": "magnate.menu.010",
+      "value": "Выключено"
+    },
+    {
+      "key": "magnate.menu.011",
+      "value": "Звук"
+    },
+    {
+      "key": "magnate.menu.012",
+      "value": "Громкость"
+    },
+    {
+      "key": "magnate.menu.013",
+      "value": "Наклон поля (2.5D)"
+    },
+    {
+      "key": "magnate.menu.014",
+      "value": "3D-город"
+    },
+    {
+      "key": "magnate.menu.015",
+      "value": "Угол камеры"
+    },
+    {
+      "key": "magnate.menu.016",
+      "value": "Мини-карта"
+    },
+    {
+      "key": "magnate.menu.017",
+      "value": "Вращение поля левой кнопкой"
+    },
+    {
+      "key": "magnate.menu.018",
+      "value": "Режим экрана и разрешение — в главном меню, раздел «Настройки»."
     }
   ]
 }

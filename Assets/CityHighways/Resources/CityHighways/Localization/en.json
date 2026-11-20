@@ -3323,6 +3323,78 @@
     {
       "key": "game.ui.167",
       "value": "completed: "
+    },
+    {
+      "key": "magnate.menu.001",
+      "value": "Settings"
+    },
+    {
+      "key": "magnate.menu.002",
+      "value": "? Tutorial"
+    },
+    {
+      "key": "magnate.menu.003",
+      "value": "Rules"
+    },
+    {
+      "key": "magnate.menu.004",
+      "value": "Exit to Menu"
+    },
+    {
+      "key": "magnate.menu.005",
+      "value": "Quick Rules"
+    },
+    {
+      "key": "magnate.menu.006",
+      "value": "Game"
+    },
+    {
+      "key": "magnate.menu.007",
+      "value": "Log •"
+    },
+    {
+      "key": "magnate.menu.008",
+      "value": "Log"
+    },
+    {
+      "key": "magnate.menu.009",
+      "value": "Enabled"
+    },
+    {
+      "key": "magnate.menu.010",
+      "value": "Disabled"
+    },
+    {
+      "key": "magnate.menu.011",
+      "value": "Sound"
+    },
+    {
+      "key": "magnate.menu.012",
+      "value": "Volume"
+    },
+    {
+      "key": "magnate.menu.013",
+      "value": "Board Tilt (2.5D)"
+    },
+    {
+      "key": "magnate.menu.014",
+      "value": "3D City"
+    },
+    {
+      "key": "magnate.menu.015",
+      "value": "Camera Angle"
+    },
+    {
+      "key": "magnate.menu.016",
+      "value": "Minimap"
+    },
+    {
+      "key": "magnate.menu.017",
+      "value": "Rotate Board with Left Button"
+    },
+    {
+      "key": "magnate.menu.018",
+      "value": "Screen mode and resolution are available in Main Menu → Settings."
     }
   ]
 }

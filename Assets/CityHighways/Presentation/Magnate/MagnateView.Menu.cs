@@ -43,7 +43,7 @@ namespace CityHighways.Presentation
             });
             Root.Add(_modalLayer);
 
-            _settingsCard = ModalCard("Настройки", 520f, out _settingsBody);
+            _settingsCard = ModalCard(LocalizationService.Get("magnate.menu.001"), 520f, out _settingsBody);
             _rulesCard = ModalCard(null, 1200f, out _rulesBody);
             _rulesCard.style.height = Length.Percent(92f);
         }
@@ -136,24 +136,24 @@ namespace CityHighways.Presentation
                 actions.Add(button);
                 return button;
             }
-            AddAction("? Обучение", ButtonKind.Secondary, () =>
+            AddAction(LocalizationService.Get("magnate.menu.002"), ButtonKind.Secondary, () =>
             {
                 ClosePopup(false);
                 StartCoach();
             });
-            AddAction("Правила", ButtonKind.Secondary, () => OpenModal("rules"));
-            AddAction("Выйти в меню", ButtonKind.Ghost, () =>
+            AddAction(LocalizationService.Get("magnate.menu.003"), ButtonKind.Secondary, () => OpenModal("rules"));
+            AddAction(LocalizationService.Get("magnate.menu.004"), ButtonKind.Ghost, () =>
             {
                 ClosePopup(false);
                 _app.ShowMenu();
             });
             _popupBody.Add(Pad(actions));
 
-            var subtitle = Ui.Text("Правила коротко", 13f, Theme.TextDim, true);
+            var subtitle = Ui.Text(LocalizationService.Get("magnate.menu.005"), 13f, Theme.TextDim, true);
             subtitle.style.marginBottom = 6f;
             _popupBody.Add(Pad(subtitle));
             FillRules();
-            _popupTitle.text = "Партия";
+            _popupTitle.text = LocalizationService.Get("magnate.menu.006");
         }
 
         void RefreshJournalButton()
@@ -161,7 +161,7 @@ namespace CityHighways.Presentation
             if (_journalButton == null) return;
             bool open = _popupKind == "log";
             if (open) _logSeen = _log.Count;
-            _journalButton.text = _log.Count > _logSeen && !open ? "Журнал •" : "Журнал";
+            _journalButton.text = _log.Count > _logSeen && !open ? LocalizationService.Get("magnate.menu.007") : LocalizationService.Get("magnate.menu.008");
         }
 
         /// <summary>Настройки прямо в партии магната. Режим экрана и разрешение — в главном меню.</summary>
@@ -187,18 +187,18 @@ namespace CityHighways.Presentation
             void Toggle(string caption, Func<bool> get, Action<bool> set)
             {
                 var row = Row(caption);
-                var button = Ui.Button(get() ? "Включено" : "Выключено", () => { }, ButtonKind.Secondary, 14f);
+                var button = Ui.Button(get() ? LocalizationService.Get("magnate.menu.009") : LocalizationService.Get("magnate.menu.010"), () => { }, ButtonKind.Secondary, 14f);
                 button.style.width = 170f;
                 button.style.flexShrink = 0f;
                 button.clicked += () =>
                 {
                     set(!get());
-                    button.text = get() ? "Включено" : "Выключено";
+                    button.text = get() ? LocalizationService.Get("magnate.menu.009") : LocalizationService.Get("magnate.menu.010");
                 };
                 row.Add(button);
             }
 
-            Toggle("Звук", () => _app.Sound.Enabled, on =>
+            Toggle(LocalizationService.Get("magnate.menu.011"), () => _app.Sound.Enabled, on =>
             {
                 _app.Sound.Enabled = on;
                 _setup.sound = on;
@@ -214,7 +214,7 @@ namespace CityHighways.Presentation
 
             if (display != null)
             {
-                var volumeRow = Row("Громкость");
+                var volumeRow = Row(LocalizationService.Get("magnate.menu.012"));
                 var controls = Ui.Row();
                 controls.style.flexShrink = 0f;
                 var value = Ui.Number($"{Mathf.RoundToInt(display.volume * 100f)}%", 16f, Theme.Text, true);
@@ -237,13 +237,13 @@ namespace CityHighways.Presentation
                 controls.Add(louder);
                 volumeRow.Add(controls);
 
-                Toggle("Наклон поля (2.5D)", () => display.tiltedBoard, on =>
+                Toggle(LocalizationService.Get("magnate.menu.013"), () => display.tiltedBoard, on =>
                 {
                     display.tiltedBoard = on;
                     display.Save();
                     _map.TiltEnabled = on;
                 });
-                Toggle("3D-город", () => display.city3D, on =>
+                Toggle(LocalizationService.Get("magnate.menu.014"), () => display.city3D, on =>
                 {
                     display.city3D = on;
                     display.Save();
@@ -252,7 +252,7 @@ namespace CityHighways.Presentation
                 });
 
                 // Угол камеры 3D-города: 30° — почти сверху, 45° — панорама.
-                var angleRow = Row("Угол камеры");
+                var angleRow = Row(LocalizationService.Get("magnate.menu.015"));
                 var angles = Ui.Row();
                 angles.style.flexShrink = 0f;
                 var angleButtons = new List<Button>();
@@ -278,20 +278,20 @@ namespace CityHighways.Presentation
                 }
                 angleRow.Add(angles);
 
-                Toggle("Мини-карта", () => display.showMinimap, on =>
+                Toggle(LocalizationService.Get("magnate.menu.016"), () => display.showMinimap, on =>
                 {
                     display.showMinimap = on;
                     display.Save();
                     if (_minimap != null) Ui.Show(_minimap, on);
                 });
-                Toggle("Вращение поля левой кнопкой", () => display.leftDragRotates, on =>
+                Toggle(LocalizationService.Get("magnate.menu.017"), () => display.leftDragRotates, on =>
                 {
                     display.leftDragRotates = on;
                     display.Save();
                 });
             }
 
-            var hint = Ui.Text("Режим экрана и разрешение — в главном меню, раздел «Настройки».", 13f, Theme.TextDim);
+            var hint = Ui.Text(LocalizationService.Get("magnate.menu.018"), 13f, Theme.TextDim);
             hint.style.marginTop = 4f;
             hint.style.whiteSpace = WhiteSpace.Normal;
             _settingsBody.Add(hint);
