@@ -4143,6 +4143,18 @@
     {
       "key": "menu.online.dynamic.turn_timer",
       "value": "Turn timer: {0} sec"
+    },
+    {
+      "key": "menu.characters.dynamic.player",
+      "value": "Player {0}"
+    },
+    {
+      "key": "menu.characters.dynamic.difficulty",
+      "value": "Difficulty: {0}"
+    },
+    {
+      "key": "menu.characters.dynamic.record",
+      "value": "Played: {0}  |  Wins: {1} ({2}%)"
     }
   ]
 }

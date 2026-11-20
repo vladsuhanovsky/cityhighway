@@ -130,7 +130,7 @@ namespace CityHighways.Presentation
             var title = Ui.Text(LocalizationService.Get("menu.characters.003"), 20f, Theme.Text, true);
             title.style.flexGrow = 1f;
             head.Add(title);
-            var who = Ui.Text(string.IsNullOrWhiteSpace(slot.name) ? $"Игрок {_pickerSlot + 1}" : slot.name, 14f, Palette.PlayerColor(_pickerSlot), true);
+            var who = Ui.Text(string.IsNullOrWhiteSpace(slot.name) ? string.Format(LocalizationService.Get("menu.characters.dynamic.player"), _pickerSlot + 1) : slot.name, 14f, Palette.PlayerColor(_pickerSlot), true);
             head.Add(who);
             panel.Add(head);
 
@@ -198,7 +198,7 @@ namespace CityHighways.Presentation
                 squares.Add(square);
             }
             left.Add(squares);
-            var levelText = Ui.Text($"Сложность: {Characters.DifficultyTitle(level)}", 13f, Theme.Text);
+            var levelText = Ui.Text(string.Format(LocalizationService.Get("menu.characters.dynamic.difficulty"), Characters.DifficultyTitle(level)), 13f, Theme.Text);
             levelText.style.marginTop = 6f;
             left.Add(levelText);
             body.Add(left);
@@ -239,7 +239,7 @@ namespace CityHighways.Presentation
             _pickerStats.TryGetValue(Characters.Title(kind), out var stat);
             string statText = stat.played == 0
                 ? LocalizationService.Get("menu.characters.006")
-                : $"Сыграно: {stat.played}  |  Побед: {stat.won} ({Mathf.RoundToInt(100f * stat.won / stat.played)}%)";
+                : string.Format(LocalizationService.Get("menu.characters.dynamic.record"), stat.played, stat.won, Mathf.RoundToInt(100f * stat.won / stat.played));
             var stats = Ui.Text(statText, 15f, Theme.Text);
             stats.style.marginTop = 4f;
             right.Add(stats);

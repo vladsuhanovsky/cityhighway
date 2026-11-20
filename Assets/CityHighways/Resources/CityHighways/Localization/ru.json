@@ -4143,6 +4143,18 @@
     {
       "key": "menu.online.dynamic.turn_timer",
       "value": "Таймер хода: {0} с"
+    },
+    {
+      "key": "menu.characters.dynamic.player",
+      "value": "Игрок {0}"
+    },
+    {
+      "key": "menu.characters.dynamic.difficulty",
+      "value": "Сложность: {0}"
+    },
+    {
+      "key": "menu.characters.dynamic.record",
+      "value": "Сыграно: {0}  |  Побед: {1} ({2}%)"
     }
   ]
 }
