@@ -241,6 +241,15 @@ namespace CityHighways.Presentation
         void ScreenSection(VisualElement s)
         {
             s.Add(SectionHead(MenuIcon.Glyph.Monitor, "Экран"));
+            // First localization slice: language choice is available from Settings too.
+            // Rebuild the menu to refresh labels created programmatically by UI Toolkit.
+            s.Add(Row("Language / Язык", "Switch the home screen language / Сменить язык главной страницы.",
+                new Segmented(new[] { "Русский", "English" }, LocalizationService.Language == "en" ? 1 : 0, i =>
+                {
+                    LocalizationService.SetLanguage(i == 1 ? "en" : "ru");
+                    _app.ShowMenu();
+                })));
+
             s.Add(Row("Режим", "Полный экран или окно.",
                 new Segmented(new[] { "Полный экран", "В окне" }, _display.fullscreen ? 0 : 1, i =>
                 {
