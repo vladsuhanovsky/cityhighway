@@ -1025,19 +1025,19 @@ namespace CityHighways.Presentation
                 var map = GameSetup.MapOf(_setup.mapResourcePath);
                 _mapButton.text = map.Title;
                 _mapHint.text = map.Hint;
-                _modeButton.text = _setup.magnate ? "Магнат" : _setup.cooperative ? "Кооператив" : "Соревнование";
+                _modeButton.text = LocalizationService.Get(_setup.magnate ? "menu.new_game.mode_magnate" : _setup.cooperative ? "menu.new_game.mode_coop" : "menu.new_game.mode_competitive");
                 var rules = new GameConfig();
                 var magnateRules = new MagnateConfig();
                 if (_setup.magnate)
                 {
-                    _mapButton.text = "Новый город";
-                    _mapHint.text = "Город генерируется заново при каждом запуске: реки, станции, аэропорты, вокзалы и порты.";
+                    _mapButton.text = LocalizationService.Get("menu.new_game.generated_city");
+                    _mapHint.text = LocalizationService.Get("menu.new_game.generated_city_hint");
                 }
                 _modeHint.text = _setup.magnate
                     ? $"«Логистический магнат»: компании возят грузы с хабов — скоропорт, тяжеловес, опасный. Раунд стройки и {magnateRules.Rounds} раундов перевозок, ходы планируются тайно, фуры едут разом; перегруженная дорога — пробка."
                     : _setup.cooperative
                     ? $"«Город против всех»: все — одна команда. Выполните {rules.CoopOrdersToWin(_setup.players.Count)} заказов города, пока кризис не дошёл до {rules.CoopCrisisMax}. Проезд между союзниками бесплатный."
-                    : "Каждый сам за себя: больше всех очков — победа.";
+                    : LocalizationService.Get("menu.new_game.competitive_hint");
             }
             if (_scenarioButton != null)
             {
@@ -1047,9 +1047,9 @@ namespace CityHighways.Presentation
                     ? Scenarios.Summary(scenario)
                     : string.Join("\n", Scenarios.Changes(scenario).Select(c => "• " + c));
             }
-            _trainsValue.text = _setup.roadPieces > 0 ? _setup.roadPieces.ToString() : "по правилам";
-            _hideCardsButton.text = _setup.hideCardsBetweenTurns ? "Да" : "Нет";
-            _timerButton.text = _setup.turnSeconds > 0 ? $"{_setup.turnSeconds / 60}:{_setup.turnSeconds % 60:00}" : "Без таймера";
+            _trainsValue.text = _setup.roadPieces > 0 ? _setup.roadPieces.ToString() : LocalizationService.Get("menu.new_game.default_pieces");
+            _hideCardsButton.text = LocalizationService.Get(_setup.hideCardsBetweenTurns ? "common.yes" : "common.no");
+            _timerButton.text = _setup.turnSeconds > 0 ? $"{_setup.turnSeconds / 60}:{_setup.turnSeconds % 60:00}" : LocalizationService.Get("menu.new_game.no_timer");
 
             // В магнате нет сценариев, участков, карт на руке, персонажей и таймера хода — эти строки прячем.
             bool classic = !_setup.magnate;
@@ -1072,10 +1072,10 @@ namespace CityHighways.Presentation
             _hint.text = _setup.magnate
                 ? (humans > 1 ? "Игра за одним компьютером: перед каждым ходом заставка — соперники не видят ваши маршруты." : "Наведите на дорогу или станцию — подсказка покажет пропускную способность, владельца и грузы.")
                 : humans == 0
-                ? "Все игроки — боты: можно просто смотреть партию."
+                ? LocalizationService.Get("menu.new_game.all_bots_hint")
                 : humans == 1
-                    ? "Наведите на дорогу — подсказка покажет, хватает ли ресурсов. Умный бот охотно ездит по чужим дорогам — стройте мосты!"
-                    : "Игра за одним компьютером: перед ходом карты скрываются, пока игрок не нажмёт «Показать».";
+                    ? LocalizationService.Get("menu.new_game.solo_hint")
+                    : LocalizationService.Get("menu.new_game.hotseat_hint");
         }
 
         VisualElement PlayerRow(int index)
@@ -1150,11 +1150,11 @@ namespace CityHighways.Presentation
         }
 
         static string CharacterLabel(PlayerSlot slot) =>
-            slot.character == PlayerSlot.DraftCharacter ? "Персонаж: выбор из двух"
-            : slot.character == PlayerSlot.RandomCharacter ? "Персонаж: случайный"
+            slot.character == PlayerSlot.DraftCharacter ? LocalizationService.Get("menu.new_game.character_draft")
+            : slot.character == PlayerSlot.RandomCharacter ? LocalizationService.Get("menu.new_game.character_random")
             : Characters.Title((CharacterKind)slot.character);
 
-        static string KindLabel(PlayerSlot slot) => !slot.isBot ? "Человек" : slot.botLevel == BotLevel.Random ? "Бот: случайный" : "Бот: умный";
+        static string KindLabel(PlayerSlot slot) => LocalizationService.Get(!slot.isBot ? "menu.new_game.human" : slot.botLevel == BotLevel.Random ? "menu.new_game.bot_random" : "menu.new_game.bot_smart");
 
         static void CycleKind(PlayerSlot slot)
         {

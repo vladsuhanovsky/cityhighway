@@ -167,6 +167,78 @@
     {
       "key": "game.hud.rules",
       "value": "Правила"
+    },
+    {
+      "key": "menu.new_game.mode_magnate",
+      "value": "Магнат"
+    },
+    {
+      "key": "menu.new_game.mode_coop",
+      "value": "Кооператив"
+    },
+    {
+      "key": "menu.new_game.mode_competitive",
+      "value": "Соревнование"
+    },
+    {
+      "key": "menu.new_game.generated_city",
+      "value": "Новый город"
+    },
+    {
+      "key": "menu.new_game.generated_city_hint",
+      "value": "Город генерируется заново при каждом запуске: реки, станции, аэропорты, вокзалы и порты."
+    },
+    {
+      "key": "menu.new_game.competitive_hint",
+      "value": "Каждый сам за себя: больше всех очков — победа."
+    },
+    {
+      "key": "menu.new_game.default_pieces",
+      "value": "по правилам"
+    },
+    {
+      "key": "common.yes",
+      "value": "Да"
+    },
+    {
+      "key": "common.no",
+      "value": "Нет"
+    },
+    {
+      "key": "menu.new_game.no_timer",
+      "value": "Без таймера"
+    },
+    {
+      "key": "menu.new_game.all_bots_hint",
+      "value": "Все игроки — боты: можно просто смотреть партию."
+    },
+    {
+      "key": "menu.new_game.solo_hint",
+      "value": "Наведите на дорогу — подсказка покажет, хватает ли ресурсов. Умный бот охотно ездит по чужим дорогам — стройте мосты!"
+    },
+    {
+      "key": "menu.new_game.hotseat_hint",
+      "value": "Игра за одним компьютером: перед ходом карты скрываются, пока игрок не нажмёт «Показать»."
+    },
+    {
+      "key": "menu.new_game.human",
+      "value": "Человек"
+    },
+    {
+      "key": "menu.new_game.bot_random",
+      "value": "Бот: случайный"
+    },
+    {
+      "key": "menu.new_game.bot_smart",
+      "value": "Бот: умный"
+    },
+    {
+      "key": "menu.new_game.character_draft",
+      "value": "Персонаж: выбор из двух"
+    },
+    {
+      "key": "menu.new_game.character_random",
+      "value": "Персонаж: случайный"
     }
   ]
 }

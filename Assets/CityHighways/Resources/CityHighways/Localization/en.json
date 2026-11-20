@@ -167,6 +167,78 @@
     {
       "key": "game.hud.rules",
       "value": "Rules"
+    },
+    {
+      "key": "menu.new_game.mode_magnate",
+      "value": "Magnate"
+    },
+    {
+      "key": "menu.new_game.mode_coop",
+      "value": "Cooperative"
+    },
+    {
+      "key": "menu.new_game.mode_competitive",
+      "value": "Competitive"
+    },
+    {
+      "key": "menu.new_game.generated_city",
+      "value": "New City"
+    },
+    {
+      "key": "menu.new_game.generated_city_hint",
+      "value": "A new city is generated every game, including rivers, stations, airports and ports."
+    },
+    {
+      "key": "menu.new_game.competitive_hint",
+      "value": "Every player for themselves: the highest score wins."
+    },
+    {
+      "key": "menu.new_game.default_pieces",
+      "value": "by rules"
+    },
+    {
+      "key": "common.yes",
+      "value": "Yes"
+    },
+    {
+      "key": "common.no",
+      "value": "No"
+    },
+    {
+      "key": "menu.new_game.no_timer",
+      "value": "No timer"
+    },
+    {
+      "key": "menu.new_game.all_bots_hint",
+      "value": "All players are bots: you can watch the match."
+    },
+    {
+      "key": "menu.new_game.solo_hint",
+      "value": "Hover over a road to check if you have enough resources. Smart bots often use other players’ roads — build bridges!"
+    },
+    {
+      "key": "menu.new_game.hotseat_hint",
+      "value": "Hot-seat game: cards stay hidden until the next player selects Show."
+    },
+    {
+      "key": "menu.new_game.human",
+      "value": "Human"
+    },
+    {
+      "key": "menu.new_game.bot_random",
+      "value": "Bot: Random"
+    },
+    {
+      "key": "menu.new_game.bot_smart",
+      "value": "Bot: Smart"
+    },
+    {
+      "key": "menu.new_game.character_draft",
+      "value": "Character: choose one of two"
+    },
+    {
+      "key": "menu.new_game.character_random",
+      "value": "Character: random"
     }
   ]
 }
