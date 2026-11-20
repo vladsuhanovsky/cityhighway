@@ -32,15 +32,13 @@ namespace CityHighways.Presentation
             var texts = Ui.Column();
             texts.style.flexGrow = 1f;
             texts.style.flexShrink = 1f;
-            texts.Add(Ui.Text("Контейнеры", 18f, Theme.Text, true));
-            texts.Add(Caption("Открывайте за влияние: внутри одежда персонажа и оформление. Вещей с пометкой «только из контейнеров» " +
-                              "нет в продаже. Выпадает то, чего у вас ещё нет; если вся редкость собрана — дубликат, за него " +
-                              "возвращается половина ценности.", 12f, Theme.TextDim, 12f, 4f));
+            texts.Add(Ui.Text(LocalizationService.Get("profile.containers.header"), 18f, Theme.Text, true));
+            texts.Add(Caption(LocalizationService.Get("profile.containers.intro"), 12f, Theme.TextDim, 12f, 4f));
             intro.Add(texts);
             var numbers = Ui.Column();
             numbers.style.alignItems = Align.FlexEnd;
-            numbers.Add(Ui.Text($"Кошелёк: {profile.wallet} влияния", 15f, GameColors.Accent, true));
-            numbers.Add(Caption($"Открыто контейнеров: {profile.containersOpened}", 12f, Theme.TextDim, 0f, 4f));
+            numbers.Add(Ui.Text(string.Format(LocalizationService.Get("profile.containers.wallet"), profile.wallet), 15f, GameColors.Accent, true));
+            numbers.Add(Caption(string.Format(LocalizationService.Get("profile.containers.opened"), profile.containersOpened), 12f, Theme.TextDim, 0f, 4f));
             intro.Add(numbers);
             _content.Add(intro);
 
@@ -101,11 +99,11 @@ namespace CityHighways.Presentation
             }
             card.Add(odds);
 
-            var open = Btn($"Открыть · {kind.Price}", () => OpenContainer(profile, kind), ButtonKind.Primary, 14f);
+            var open = Btn(string.Format(LocalizationService.Get("profile.containers.open"), kind.Price), () => OpenContainer(profile, kind), ButtonKind.Primary, 14f);
             open.style.marginTop = 10f;
             open.style.alignSelf = Align.Stretch;
             Ui.SetEnabled(open, !_spinActive && profile.wallet >= kind.Price);
-            if (profile.wallet < kind.Price) open.tooltip = $"Не хватает {kind.Price - profile.wallet} влияния.";
+            if (profile.wallet < kind.Price) open.tooltip = string.Format(LocalizationService.Get("profile.containers.insufficient"), kind.Price - profile.wallet);
             card.Add(open);
             return card;
         }
@@ -247,7 +245,7 @@ namespace CityHighways.Presentation
             var side = Ui.Column();
             side.style.flexGrow = 1f;
             side.style.flexShrink = 1f;
-            side.Add(Ui.Text(result.Duplicate ? "Уже есть в коллекции" : "Выпало!", 14f, Theme.TextDim, true));
+            side.Add(Ui.Text(LocalizationService.Get(result.Duplicate ? "profile.containers.duplicate" : "profile.containers.received"), 14f, Theme.TextDim, true));
             side.Add(Ui.Text(item.DisplayName, 24f, color, true));
             var tags = Ui.Row();
             tags.style.marginTop = 4f;
@@ -258,20 +256,20 @@ namespace CityHighways.Presentation
             tags.Add(kindLabel);
             if (item.Exclusive)
             {
-                var exclusive = Ui.Text("ТОЛЬКО ИЗ КОНТЕЙНЕРОВ", 10f, GameColors.Warning, true);
+                var exclusive = Ui.Text(LocalizationService.Get("profile.containers.exclusive_upper"), 10f, GameColors.Warning, true);
                 exclusive.style.marginLeft = 8f;
                 tags.Add(exclusive);
             }
             side.Add(tags);
             if (result.Duplicate)
-                side.Add(Caption($"Вместо дубликата в кошелёк вернулось {result.Refund} влияния.", 13f, GameColors.Accent, 0f, 6f));
+                side.Add(Caption(string.Format(LocalizationService.Get("profile.containers.refund"), result.Refund), 13f, GameColors.Accent, 0f, 6f));
 
             var buttons = Ui.Row();
             buttons.style.marginTop = 10f;
             if (Containers.Owns(profile, item))
             {
                 bool worn = Containers.IsEquipped(profile, item);
-                var wear = Btn(worn ? "Надето" : "Надеть", () =>
+                var wear = Btn(LocalizationService.Get(worn ? "profile.containers.equipped" : "profile.containers.equip"), () =>
                 {
                     Containers.Equip(profile, item);
                     _status = $"Надето: {item.DisplayName}.";
@@ -282,7 +280,7 @@ namespace CityHighways.Presentation
                 wear.style.marginRight = 8f;
                 buttons.Add(wear);
             }
-            var again = Btn($"Открыть ещё · {result.Container.Price}", () => OpenContainer(profile, result.Container), ButtonKind.Primary, 14f);
+            var again = Btn(string.Format(LocalizationService.Get("profile.containers.open_again"), result.Container.Price), () => OpenContainer(profile, result.Container), ButtonKind.Primary, 14f);
             Ui.SetEnabled(again, profile.wallet >= result.Container.Price);
             buttons.Add(again);
             side.Add(buttons);
@@ -295,8 +293,8 @@ namespace CityHighways.Presentation
         {
             var pool = Containers.Pool(profile);
             var card = Card(16f);
-            card.Add(Ui.Text("Коллекция", 16f, Theme.Text, true));
-            card.Add(Caption("Что из содержимого контейнеров у вас уже есть (одежда — для вашего пола персонажа).", 12f, Theme.TextDim, 0f, 2f));
+            card.Add(Ui.Text(LocalizationService.Get("profile.containers.collection"), 16f, Theme.Text, true));
+            card.Add(Caption(LocalizationService.Get("profile.containers.collection_detail"), 12f, Theme.TextDim, 0f, 2f));
             var row = Ui.Row();
             row.style.flexWrap = Wrap.Wrap;
             row.style.marginTop = 8f;
@@ -307,7 +305,7 @@ namespace CityHighways.Presentation
                 box.style.marginRight = 10f;
                 box.style.marginBottom = 6f;
                 box.Add(Ui.Text(caption, 12f, color, true));
-                box.Add(Ui.Text($"{have} из {total}", 16f, Theme.Text, true));
+                box.Add(Ui.Text(string.Format(LocalizationService.Get("profile.containers.out_of"), have, total), 16f, Theme.Text, true));
                 var bar = Ui.Box();
                 bar.style.height = 6f;
                 bar.style.marginTop = 4f;
@@ -329,7 +327,7 @@ namespace CityHighways.Presentation
                 Counter(LocalizationService.GetOrFallback("rarity.plural." + i, Containers.RarityNames[i]), Rarity.ColorOf((Rarity.Level)i), items.Count(x => Containers.Owns(profile, x)), items.Count);
             }
             var exclusives = pool.Where(x => x.Exclusive).ToList();
-            Counter("Только из контейнеров", GameColors.Warning, exclusives.Count(x => Containers.Owns(profile, x)), exclusives.Count);
+            Counter(LocalizationService.Get("profile.containers.exclusive"), GameColors.Warning, exclusives.Count(x => Containers.Owns(profile, x)), exclusives.Count);
             card.Add(row);
             return card;
         }

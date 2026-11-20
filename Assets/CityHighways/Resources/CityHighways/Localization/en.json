@@ -5719,6 +5719,74 @@
     {
       "key": "rules.coop.team_contracts",
       "value": "Personal contracts still count toward the team score: completed ones add points, failed ones subtract them. Allied bots prioritize city orders. Hover over an order in the top-right panel to highlight its districts."
+    },
+    {
+      "key": "profile.containers.header",
+      "value": "Containers"
+    },
+    {
+      "key": "profile.containers.intro",
+      "value": "Spend influence to open containers with clothing and cosmetics. Container-exclusive items cannot be purchased. You'll receive an item you don't own, or a duplicate with a partial refund once a rarity tier is complete."
+    },
+    {
+      "key": "profile.containers.wallet",
+      "value": "Wallet: {0} influence"
+    },
+    {
+      "key": "profile.containers.opened",
+      "value": "Containers opened: {0}"
+    },
+    {
+      "key": "profile.containers.open",
+      "value": "Open · {0}"
+    },
+    {
+      "key": "profile.containers.insufficient",
+      "value": "Need {0} more influence."
+    },
+    {
+      "key": "profile.containers.duplicate",
+      "value": "Already in Collection"
+    },
+    {
+      "key": "profile.containers.received",
+      "value": "You Got:"
+    },
+    {
+      "key": "profile.containers.exclusive_upper",
+      "value": "CONTAINER EXCLUSIVE"
+    },
+    {
+      "key": "profile.containers.refund",
+      "value": "Duplicate refunded {0} influence."
+    },
+    {
+      "key": "profile.containers.equipped",
+      "value": "Equipped"
+    },
+    {
+      "key": "profile.containers.equip",
+      "value": "Equip"
+    },
+    {
+      "key": "profile.containers.open_again",
+      "value": "Open Again · {0}"
+    },
+    {
+      "key": "profile.containers.collection",
+      "value": "Collection"
+    },
+    {
+      "key": "profile.containers.collection_detail",
+      "value": "Container contents you already own (clothing shown for your character's selected gender)."
+    },
+    {
+      "key": "profile.containers.out_of",
+      "value": "{0} of {1}"
+    },
+    {
+      "key": "profile.containers.exclusive",
+      "value": "Container Exclusive"
     }
   ]
 }

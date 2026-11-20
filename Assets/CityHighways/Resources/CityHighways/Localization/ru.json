@@ -5719,6 +5719,74 @@
     {
       "key": "rules.coop.team_contracts",
       "value": "Свои контракты тоже никуда не делись: выполненные дают очки, проваленные отнимают — это общий счёт команды. Боты-союзники видят заказы города и строят под них в первую очередь. Панель заказов — в правом верхнем углу поля; наведите на заказ, чтобы подсветить его районы."
+    },
+    {
+      "key": "profile.containers.header",
+      "value": "Контейнеры"
+    },
+    {
+      "key": "profile.containers.intro",
+      "value": "Открывайте за влияние: внутри одежда персонажа и оформление. Вещей с пометкой «только из контейнеров» нет в продаже. Выпадает то, чего у вас ещё нет; если вся редкость собрана — дубликат, за него возвращается половина ценности."
+    },
+    {
+      "key": "profile.containers.wallet",
+      "value": "Кошелёк: {0} влияния"
+    },
+    {
+      "key": "profile.containers.opened",
+      "value": "Открыто контейнеров: {0}"
+    },
+    {
+      "key": "profile.containers.open",
+      "value": "Открыть · {0}"
+    },
+    {
+      "key": "profile.containers.insufficient",
+      "value": "Не хватает {0} влияния."
+    },
+    {
+      "key": "profile.containers.duplicate",
+      "value": "Уже есть в коллекции"
+    },
+    {
+      "key": "profile.containers.received",
+      "value": "Выпало!"
+    },
+    {
+      "key": "profile.containers.exclusive_upper",
+      "value": "ТОЛЬКО ИЗ КОНТЕЙНЕРОВ"
+    },
+    {
+      "key": "profile.containers.refund",
+      "value": "Вместо дубликата в кошелёк вернулось {0} влияния."
+    },
+    {
+      "key": "profile.containers.equipped",
+      "value": "Надето"
+    },
+    {
+      "key": "profile.containers.equip",
+      "value": "Надеть"
+    },
+    {
+      "key": "profile.containers.open_again",
+      "value": "Открыть ещё · {0}"
+    },
+    {
+      "key": "profile.containers.collection",
+      "value": "Коллекция"
+    },
+    {
+      "key": "profile.containers.collection_detail",
+      "value": "Что из содержимого контейнеров у вас уже есть (одежда — для вашего пола персонажа)."
+    },
+    {
+      "key": "profile.containers.out_of",
+      "value": "{0} из {1}"
+    },
+    {
+      "key": "profile.containers.exclusive",
+      "value": "Только из контейнеров"
     }
   ]
 }
