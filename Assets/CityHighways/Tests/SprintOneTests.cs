@@ -113,6 +113,20 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void NotificationCatalogs_HaveMatchingFormatArguments()
+        {
+            var russian = LoadCatalog("ru").entries.ToDictionary(entry => entry.key, entry => entry.value);
+            var english = LoadCatalog("en").entries.ToDictionary(entry => entry.key, entry => entry.value);
+            foreach (var key in russian.Keys.Where(key => key.StartsWith("game.notice.") || key.StartsWith("game.tooltip.")))
+            {
+                Assert.IsTrue(english.ContainsKey(key), "Missing English text for " + key);
+                var arguments = new object[] { "A", "B", "C" };
+                Assert.DoesNotThrow(() => string.Format(russian[key], arguments), "Invalid Russian format: " + key);
+                Assert.DoesNotThrow(() => string.Format(english[key], arguments), "Invalid English format: " + key);
+            }
+        }
+
+        [Test]
         public void EnglishCatalog_HasHomeKeys()
         {
             var asset = Resources.Load<TextAsset>("CityHighways/Localization/en");

@@ -411,6 +411,70 @@
     {
       "key": "game.settings.display_hint",
       "value": "Screen mode and resolution are available from the main menu under Settings."
+    },
+    {
+      "key": "game.notice.turn_timeout",
+      "value": "Time is up — a bot completed {0}'s turn"
+    },
+    {
+      "key": "game.notice.final_soon",
+      "value": "Final round approaching: a player has {0} road pieces left. At {1}, the final round begins"
+    },
+    {
+      "key": "game.notice.final_order_completed",
+      "value": "{0} completed the final order: +{1}"
+    },
+    {
+      "key": "game.notice.final_order_open",
+      "value": "Final round! City hall's final order: {0}, +{1} to the player who builds it"
+    },
+    {
+      "key": "game.notice.whispers",
+      "value": "Rumors from city hall last round: {0} bribes. The parties are unknown"
+    },
+    {
+      "key": "game.notice.choose_company",
+      "value": "{0}, choose your company and starting contracts"
+    },
+    {
+      "key": "game.notice.choose_contracts",
+      "value": "{0}, choose your starting contracts"
+    },
+    {
+      "key": "game.notice.player_turn",
+      "value": "{0}'s turn"
+    },
+    {
+      "key": "game.notice.your_turn",
+      "value": "Your turn"
+    },
+    {
+      "key": "game.tooltip.hand_hidden",
+      "value": "Your hand is hidden until the turn is handed over."
+    },
+    {
+      "key": "game.tooltip.remaining_roads",
+      "value": "Road pieces remaining: {0} of {1}.\\nWhen any player has {2} or fewer left, the final round begins."
+    },
+    {
+      "key": "game.tooltip.location_roads",
+      "value": "Roads from here: {0}, unclaimed: {1}"
+    },
+    {
+      "key": "game.tooltip.built_by",
+      "value": "Built by: "
+    },
+    {
+      "key": "game.tooltip.your_contract",
+      "value": "• your contract: {0} ({1}){2}"
+    },
+    {
+      "key": "game.tooltip.completed",
+      "value": " — completed"
+    },
+    {
+      "key": "game.tooltip.goal_reward",
+      "value": "The first player to complete the goal receives the reward."
     }
   ]
 }

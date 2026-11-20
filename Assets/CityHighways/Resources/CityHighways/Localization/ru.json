@@ -411,6 +411,70 @@
     {
       "key": "game.settings.display_hint",
       "value": "Режим экрана и разрешение — в главном меню, раздел «Настройки»."
+    },
+    {
+      "key": "game.notice.turn_timeout",
+      "value": "Время вышло — за {0} походил бот"
+    },
+    {
+      "key": "game.notice.final_soon",
+      "value": "Скоро финал: у кого-то осталось {0} уч. При {1} — последний круг"
+    },
+    {
+      "key": "game.notice.final_order_completed",
+      "value": "{0} выполняет финальный заказ: +{1}"
+    },
+    {
+      "key": "game.notice.final_order_open",
+      "value": "Последний круг! Финальный заказ мэрии: {0}, +{1} тому, кто построит"
+    },
+    {
+      "key": "game.notice.whispers",
+      "value": "В прошлом круге в мэрии шептались: взяток — {0}. Кто — неизвестно"
+    },
+    {
+      "key": "game.notice.choose_company",
+      "value": "{0}, выберите компанию и стартовые контракты"
+    },
+    {
+      "key": "game.notice.choose_contracts",
+      "value": "{0}, выберите стартовые контракты"
+    },
+    {
+      "key": "game.notice.player_turn",
+      "value": "Ходит {0}"
+    },
+    {
+      "key": "game.notice.your_turn",
+      "value": "Ваш ход"
+    },
+    {
+      "key": "game.tooltip.hand_hidden",
+      "value": "Рука скрыта до передачи хода."
+    },
+    {
+      "key": "game.tooltip.remaining_roads",
+      "value": "Участков дороги осталось: {0} из {1}.\\nКогда у кого-то останется {2} или меньше, начнётся последний круг."
+    },
+    {
+      "key": "game.tooltip.location_roads",
+      "value": "Дорог отсюда: {0}, свободных: {1}"
+    },
+    {
+      "key": "game.tooltip.built_by",
+      "value": "Построили: "
+    },
+    {
+      "key": "game.tooltip.your_contract",
+      "value": "• ваш контракт: {0} ({1}){2}"
+    },
+    {
+      "key": "game.tooltip.completed",
+      "value": " — выполнен"
+    },
+    {
+      "key": "game.tooltip.goal_reward",
+      "value": "Награду получает тот, кто выполнит цель первым."
     }
   ]
 }

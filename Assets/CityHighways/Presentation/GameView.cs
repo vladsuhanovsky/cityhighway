@@ -1303,7 +1303,7 @@ namespace CityHighways.Presentation
                 }
                 return last;
             });
-            Toast($"Время вышло — за {name} походил бот", Theme.Danger);
+            Toast(string.Format(LocalizationService.Get("game.notice.turn_timeout"), name), Theme.Danger);
             _dirty = true;
         }
 
@@ -1748,7 +1748,7 @@ namespace CityHighways.Presentation
             if (_game.FinalWarningNumber > _lastFinalWarningShown)
             {
                 _lastFinalWarningShown = _game.FinalWarningNumber;
-                Toast($"Скоро финал: у кого-то осталось {_game.FewestPieces} уч. При {_game.Config.FinalRoundPieces} — последний круг", Theme.Gold);
+                Toast(string.Format(LocalizationService.Get("game.notice.final_soon"), _game.FewestPieces, _game.Config.FinalRoundPieces), Theme.Gold);
             }
             if (_game.FinalOrderNumber > _lastFinalOrderShown)
             {
@@ -1758,8 +1758,8 @@ namespace CityHighways.Presentation
                 {
                     string where = $"{LocationName(order.A)} — {LocationName(order.B)}";
                     Toast(_game.FinalOrderWinner >= 0
-                        ? $"{_game.Players[_game.FinalOrderWinner].Name} выполняет финальный заказ: +{_game.Config.FinalOrderBonus}"
-                        : $"Последний круг! Финальный заказ мэрии: {where}, +{_game.Config.FinalOrderBonus} тому, кто построит", Theme.Gold);
+                        ? string.Format(LocalizationService.Get("game.notice.final_order_completed"), _game.Players[_game.FinalOrderWinner].Name, _game.Config.FinalOrderBonus)
+                        : string.Format(LocalizationService.Get("game.notice.final_order_open"), where, _game.Config.FinalOrderBonus), Theme.Gold);
                 }
             }
 
@@ -1767,7 +1767,7 @@ namespace CityHighways.Presentation
             if (_game.WhisperNumber > _lastWhisperShown)
             {
                 _lastWhisperShown = _game.WhisperNumber;
-                Toast($"В прошлом круге в мэрии шептались: взяток — {_game.LastWhisperCount}. Кто — неизвестно", Theme.TextDim);
+                Toast(string.Format(LocalizationService.Get("game.notice.whispers"), _game.LastWhisperCount), Theme.TextDim);
             }
             if (_game.AccusationNumber > _lastAccusationShown && _game.LastAccusation != null)
             {
@@ -1926,9 +1926,9 @@ namespace CityHighways.Presentation
             var name = _game.Players[acting].Name;
             if (_game.Phase == GamePhase.SetupContracts)
                 Toast(_game.ActingPlayerIndex >= 0 && _game.Players[_game.ActingPlayerIndex].CharacterOffer.Count > 0
-                    ? $"{name}, выберите компанию и стартовые контракты"
-                    : $"{name}, выберите стартовые контракты", Theme.Gold);
-            else Toast(HumanCount > 1 ? "Ходит " + name : "Ваш ход", Theme.Gold);
+                    ? string.Format(LocalizationService.Get("game.notice.choose_company"), name)
+                    : string.Format(LocalizationService.Get("game.notice.choose_contracts"), name), Theme.Gold);
+            else Toast(HumanCount > 1 ? string.Format(LocalizationService.Get("game.notice.player_turn"), name) : LocalizationService.Get("game.notice.your_turn"), Theme.Gold);
         }
 
         static float ClaimDuration(Road road) => road == null ? 0f : 0.12f * road.Length + 0.1f;
@@ -4538,7 +4538,7 @@ namespace CityHighways.Presentation
 
         string ResourceTooltip(Resource resource)
         {
-            if (NeedsHandoff) return "Рука скрыта до передачи хода.";
+            if (NeedsHandoff) return LocalizationService.Get("game.tooltip.hand_hidden");
             int count = _game.Players[Viewer].CardCount(resource);
             string name = ResourceInfo.RussianName(resource);
             string use = resource == Resource.Machinery ? "заменяет любую карту при стройке" : "строит: " + ResourceInfo.RoadKind(resource);
@@ -4549,8 +4549,7 @@ namespace CityHighways.Presentation
         {
             var viewer = _game.Players[Viewer];
             int start = _game.Config.RoadPiecesFor(_game.Players.Count);
-            return $"Участков дороги осталось: {viewer.RoadPieces} из {start}.\n" +
-                   $"Когда у кого-то останется {_game.Config.FinalRoundPieces} или меньше, начнётся последний круг.";
+            return string.Format(LocalizationService.Get("game.tooltip.remaining_roads"), viewer.RoadPieces, start, _game.Config.FinalRoundPieces);
         }
 
         /// <summary>Адаптивность: на узком окне прячем второстепенное, панели не шире окна.</summary>
@@ -4586,17 +4585,17 @@ namespace CityHighways.Presentation
             var lines = new List<string> { $"{location.Name} · {DistrictName(location.DistrictId)}" };
             var roads = _game.Map.Roads.Where(r => (r.A == location.Id || r.B == location.Id) && _game.IsRoadOpen(r.Id)).ToList();
             int free = roads.Count(r => !_game.GetRoadOwner(r.Id).HasValue);
-            lines.Add($"Дорог отсюда: {roads.Count}, свободных: {free}");
+            lines.Add(string.Format(LocalizationService.Get("game.tooltip.location_roads"), roads.Count, free));
             var owners = roads.Select(r => _game.GetRoadOwner(r.Id)).Where(o => o.HasValue).GroupBy(o => o.Value)
                 .Select(g => $"{_game.Players[g.Key].Name} — {g.Count()}").ToList();
-            if (owners.Count > 0) lines.Add("Построили: " + string.Join(", ", owners));
+            if (owners.Count > 0) lines.Add(LocalizationService.Get("game.tooltip.built_by") + string.Join(", ", owners));
             if (!NeedsHandoff)
             {
                 var viewer = _game.Players[Viewer];
                 foreach (var contract in viewer.Contracts.Where(c => c.Districts.Contains(location.DistrictId)))
                 {
                     bool done = _game.CheckContract(viewer.Index, contract).Completed;
-                    lines.Add($"• ваш контракт: {ContractTitle(contract)} ({contract.Points}){(done ? " — выполнен" : "")}");
+                    lines.Add(string.Format(LocalizationService.Get("game.tooltip.your_contract"), ContractTitle(contract), contract.Points, done ? LocalizationService.Get("game.tooltip.completed") : ""));
                 }
             }
             return string.Join("\n", lines);
@@ -4610,7 +4609,7 @@ namespace CityHighways.Presentation
             Ui.Show(_goalsBox, goals.Count > 0);
             Ui.Show(_goalsTitle, goals.Count > 0);
             if (goals.Count == 0) return;
-            var goalsNote = Ui.Text("Награду получает тот, кто выполнит цель первым.", 11f, Theme.TextDim);
+            var goalsNote = Ui.Text(LocalizationService.Get("game.tooltip.goal_reward"), 11f, Theme.TextDim);
             goalsNote.style.marginBottom = 6f;
             _goalsBox.Add(goalsNote);
             var viewer = _game.Players[Viewer];
