@@ -2471,6 +2471,190 @@
     {
       "key": "menu.rules.049",
       "value": "City Victory"
+    },
+    {
+      "key": "menu.rules.detail.001",
+      "value": "Nothing found. Try words like “bridge”, “toll” or “bribe”."
+    },
+    {
+      "key": "menu.rules.detail.002",
+      "value": "This sandbox uses real rule values, but no match is played or saved."
+    },
+    {
+      "key": "menu.rules.detail.003",
+      "value": "You run a road company. Build links between locations, complete city contracts to connect districts and earn tolls from opponents using your roads. The highest-scoring player wins."
+    },
+    {
+      "key": "menu.rules.detail.004",
+      "value": "Occasionally a city auction"
+    },
+    {
+      "key": "menu.rules.detail.005",
+      "value": "Trailing players gain some influence"
+    },
+    {
+      "key": "menu.rules.detail.006",
+      "value": "Trade with an opponent"
+    },
+    {
+      "key": "menu.rules.detail.007",
+      "value": "Spend influence"
+    },
+    {
+      "key": "menu.rules.detail.008",
+      "value": "Bribe (secret)"
+    },
+    {
+      "key": "menu.rules.detail.009",
+      "value": "Optional; does not use the main action"
+    },
+    {
+      "key": "menu.rules.detail.010",
+      "value": "…then the next player takes their turn. A new round begins after everyone has acted."
+    },
+    {
+      "key": "menu.rules.detail.011",
+      "value": "Your main action is one of three: draw two resource cards (one can be a luck card), build a road by paying its resource cost, or draw contracts and keep at least one. Instead of building, you can upgrade a road to a highway."
+    },
+    {
+      "key": "menu.rules.detail.012",
+      "value": "Road building scores points; longer roads are more valuable."
+    },
+    {
+      "key": "menu.rules.detail.013",
+      "value": "Road color identifies the required resource. A road of length 3 costs three matching cards. White roads accept any one resource type. Click a card to flip it."
+    },
+    {
+      "key": "menu.rules.detail.014",
+      "value": "City streets are the most common road type."
+    },
+    {
+      "key": "menu.rules.detail.015",
+      "value": "Avenues and ring roads are long and profitable."
+    },
+    {
+      "key": "menu.rules.detail.016",
+      "value": "Machinery replaces any card. Taking face-up machinery as the first draw ends card drawing for that turn."
+    },
+    {
+      "key": "menu.rules.detail.017",
+      "value": "A contract connects two districts using any of their locations. Completed contracts earn points; unfinished ones lose points at the end."
+    },
+    {
+      "key": "menu.rules.detail.018",
+      "value": "Tolls are charged as soon as you complete a contract, using the cheapest available route. Later upgrades do not raise that fee, and building your own detour later will not refund it."
+    },
+    {
+      "key": "menu.rules.detail.019",
+      "value": "District A"
+    },
+    {
+      "key": "menu.rules.detail.020",
+      "value": "District B"
+    },
+    {
+      "key": "menu.rules.detail.021",
+      "value": "yours"
+    },
+    {
+      "key": "menu.rules.detail.022",
+      "value": "Try It: Connect a Contract Route"
+    },
+    {
+      "key": "menu.rules.detail.023",
+      "value": "Complex contracts earn more points, but carry larger penalties:"
+    },
+    {
+      "key": "menu.rules.detail.024",
+      "value": "Transit contract: a single route from A to B via C."
+    },
+    {
+      "key": "menu.rules.detail.025",
+      "value": "Hub contract: district A is connected to B and C."
+    },
+    {
+      "key": "menu.rules.detail.026",
+      "value": "New locations, roads and contracts open on the outskirts."
+    },
+    {
+      "key": "menu.rules.detail.027",
+      "value": "Roads connecting to the center cannot be built this round."
+    },
+    {
+      "key": "menu.rules.detail.028",
+      "value": "Try It: Propose a Trade"
+    },
+    {
+      "key": "menu.rules.detail.029",
+      "value": "Roads are built in sections and may be upgraded to highways, marked with an orange outline."
+    },
+    {
+      "key": "menu.rules.detail.030",
+      "value": "Highways have an orange outline; roads built during rush hour look similar."
+    },
+    {
+      "key": "menu.rules.detail.031",
+      "value": "Try It: Highway and Traffic Jam"
+    },
+    {
+      "key": "menu.rules.detail.032",
+      "value": "Influence may be spent once per turn before your main action, without using the action:"
+    },
+    {
+      "key": "menu.rules.detail.033",
+      "value": "Try It: Spend Influence"
+    },
+    {
+      "key": "menu.rules.detail.034",
+      "value": "Scenarios are chosen in New Game (by the host in online lobbies) and modify rules for the entire match. The scenario name appears next to the turn number."
+    },
+    {
+      "key": "menu.rules.detail.035",
+      "value": "Final score includes:"
+    },
+    {
+      "key": "menu.rules.detail.036",
+      "value": "points for roads and highways built"
+    },
+    {
+      "key": "menu.rules.detail.037",
+      "value": "completed contracts add points; unfinished ones subtract points"
+    },
+    {
+      "key": "menu.rules.detail.038",
+      "value": "tolls paid to other owners and received for your roads; congestion fees are lost"
+    },
+    {
+      "key": "menu.rules.detail.039",
+      "value": "Largest Network"
+    },
+    {
+      "key": "menu.rules.detail.040",
+      "value": "rewards for being first to reach city goals"
+    },
+    {
+      "key": "menu.rules.detail.041",
+      "value": "grants, bonuses and penalties from luck cards"
+    },
+    {
+      "key": "menu.rules.detail.042",
+      "value": "Official bonuses for contracts; Bridge Builder bonuses for bridges"
+    },
+    {
+      "key": "menu.rules.detail.043",
+      "value": "Co-op: City Against Everyone"
+    },
+    {
+      "key": "menu.rules.detail.044",
+      "value": "Select co-op in New Game (the host chooses online). All companies form a team against the city. Everyone wins or loses together."
+    },
+    {
+      "key": "menu.rules.detail.045",
+      "value": "The team shares a road network: allied roads count toward your contracts and are free to use. No bribes, auctions or passes; trades help share cards."
+    },
+    {
+      "key": "menu.rules.detail.046",
+      "value": "A concise glossary of game terms. Underlined terms show a definition on hover; click them to open the glossary."
     }
   ]
 }

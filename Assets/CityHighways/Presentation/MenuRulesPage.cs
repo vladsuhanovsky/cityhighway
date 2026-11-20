@@ -433,7 +433,7 @@ namespace CityHighways.Presentation
 
             var list = Ui.Column();
             list.Add(Ui.Text($"Поиск: «{query}»", 22f, Theme.Gold, true));
-            list.Add(Caption(results.Count == 0 ? "Ничего не нашлось. Попробуйте другое слово: «мост», «проезд», «взятка»…"
+            list.Add(Caption(results.Count == 0 ? LocalizationService.Get("menu.rules.detail.001")
                 : $"Найдено: {results.Count}{(results.Count == 30 ? "+" : "")}. Нажмите на строку — откроется раздел.", 13f, Theme.TextDim, 4f));
             foreach (var (section, text) in results)
             {
@@ -622,7 +622,7 @@ namespace CityHighways.Presentation
             head.Add(close);
             window.Add(head);
             window.Add(RuleSandbox.Build(kind, _config));
-            var note = Ui.Text("Это песочница: числа — из правил, но партия не идёт и ничего не сохраняется.", 11f, Theme.TextDim);
+            var note = Ui.Text(LocalizationService.Get("menu.rules.detail.002"), 11f, Theme.TextDim);
             note.style.marginTop = 10f;
             window.Add(note);
             _overlay.Add(window);
@@ -712,7 +712,7 @@ namespace CityHighways.Presentation
         VisualElement Basics()
         {
             var s = Section(LocalizationService.Get("menu.rules.008"));
-            Paragraph(s, "Вы — дорожная компания. Стройте дороги между местами города, выполняйте контракты мэрии на связь районов и берите плату, когда соперники ездят по вашим дорогам. Побеждает тот, у кого больше очков в конце партии.");
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.003"));
 
             // Пошаговая схема хода: 1 → 2 → 3 → 4 и обратно к следующему игроку.
             var flow = Ui.Row();
@@ -720,8 +720,8 @@ namespace CityHighways.Presentation
             flow.style.alignItems = Align.Stretch;
             var steps = new[]
             {
-                (LocalizationService.Get("menu.rules.023"), MenuIcon.Glyph.Bell, new[] { $"Событие города с шансом {Mathf.RoundToInt(_config.EventChance * 100)}%", "Иногда — аукцион мэрии", "Отстающим — немного влияния" }),
-                (LocalizationService.Get("menu.rules.024"), MenuIcon.Glyph.Swap, new[] { "Сделка с соперником", "Трата влияния", "Взятка (тайно)", "Всё по желанию, ход не тратит" }),
+                (LocalizationService.Get("menu.rules.023"), MenuIcon.Glyph.Bell, new[] { $"Событие города с шансом {Mathf.RoundToInt(_config.EventChance * 100)}%", LocalizationService.Get("menu.rules.detail.004"), LocalizationService.Get("menu.rules.detail.005") }),
+                (LocalizationService.Get("menu.rules.024"), MenuIcon.Glyph.Swap, new[] { LocalizationService.Get("menu.rules.detail.006"), LocalizationService.Get("menu.rules.detail.007"), LocalizationService.Get("menu.rules.detail.008"), LocalizationService.Get("menu.rules.detail.009") }),
                 (LocalizationService.Get("menu.rules.025"), MenuIcon.Glyph.Play, new[] { LocalizationService.Get("menu.rules.026"), LocalizationService.Get("menu.rules.027"), $"Взять {_config.ContractsDrawn} контракта", LocalizationService.Get("menu.rules.028") }),
                 (LocalizationService.Get("menu.rules.029"), MenuIcon.Glyph.Flag, new[] { LocalizationService.Get("menu.rules.030"), LocalizationService.Get("menu.rules.031"), LocalizationService.Get("menu.rules.032") })
             };
@@ -783,10 +783,10 @@ namespace CityHighways.Presentation
             var loopIcon = new MenuIcon(MenuIcon.Glyph.Person, 16f, Theme.TextDim);
             loopIcon.style.marginRight = 6f;
             loop.Add(loopIcon);
-            loop.Add(Ui.Text("…и ход переходит к следующему игроку. Когда все сходили — новый круг.", 13f, Theme.TextDim));
+            loop.Add(Ui.Text(LocalizationService.Get("menu.rules.detail.010"), 13f, Theme.TextDim));
             s.Add(loop);
 
-            Paragraph(s, "Главное действие — одно из трёх: взять карты ресурсов (2 из открытого ряда или колоды, одну можно заменить картой удачи), построить дорогу (сдать карты её ресурса по длине) или взять контракты и оставить хотя бы один. Вместо стройки можно улучшить свою дорогу до магистрали.");
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.011"));
 
             var points = Ui.Row();
             points.style.marginTop = 14f;
@@ -806,14 +806,14 @@ namespace CityHighways.Presentation
                 cell.Add(Ui.Text($"+{_config.PointsForLength(length)}", 16f, Theme.Gold, true));
                 points.Add(cell);
             }
-            Picture(s, points, "Очки за построенную дорогу: длинные дороги выгоднее.");
+            Picture(s, points, LocalizationService.Get("menu.rules.detail.012"));
             return s;
         }
 
         VisualElement ResourcesSection()
         {
             var s = Section(LocalizationService.Get("menu.rules.009"));
-            Paragraph(s, "Цвет дороги на карте — ресурс, которым её строят. Дорога длины 3 стоит 3 карты своего ресурса; белые дороги — любым одним ресурсом. Нажмите на карту, чтобы перевернуть её.");
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.013"));
 
             // Сколько дорог каждого ресурса на карте Москвы — для оборота карт.
             var onMap = new Dictionary<Resource, int>();
@@ -837,11 +837,11 @@ namespace CityHighways.Presentation
             row.style.marginTop = 14f;
             var info = new[]
             {
-                (Resource.Asphalt, LocalizationService.Get("menu.rules.033"), "Городские улицы — самые частые дороги."),
-                (Resource.Concrete, LocalizationService.Get("menu.rules.034"), "Проспекты и кольца — длинные и выгодные."),
+                (Resource.Asphalt, LocalizationService.Get("menu.rules.033"), LocalizationService.Get("menu.rules.detail.014")),
+                (Resource.Concrete, LocalizationService.Get("menu.rules.034"), LocalizationService.Get("menu.rules.detail.015")),
                 (Resource.Steel, LocalizationService.Get("menu.rules.035"), $"Мосты через реку. «Субсидия мэрии» делает их дешевле на {_config.BridgeSubsidy} карту."),
                 (Resource.Gravel, LocalizationService.Get("menu.rules.036"), $"Дороги за городом. В «Снегопад» дороже на {_config.SnowExtraCost} карту."),
-                (Resource.Machinery, LocalizationService.Get("menu.rules.037"), "Заменяет любую карту. Открытую технику первой картой — весь ход, второй — нельзя.")
+                (Resource.Machinery, LocalizationService.Get("menu.rules.037"), LocalizationService.Get("menu.rules.detail.016"))
             };
             foreach (var (resource, role, use) in info)
             {
@@ -889,22 +889,22 @@ namespace CityHighways.Presentation
         VisualElement Contracts()
         {
             var s = Section(LocalizationService.Get("menu.rules.010"));
-            Paragraph(s, "Контракт — соединить два района, подойдёт любое их место. Выполненный приносит очки, невыполненный в конце партии их отнимает.");
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.017"));
             Paragraph(s, $"Чужая дорога — не тупик. Контракт засчитается, если на пути есть хотя бы одна ваша дорога и не больше {_config.MaxForeignRoadsPerContract} чужих. За каждую чужую дорогу вы платите её владельцу {_config.TollPerRoad} очка.");
-            Paragraph(s, "Проезд платится сразу, как только контракт выполнен: в этот момент выбирается самый дешёвый путь, и он закрепляется. Если владелец потом улучшит дорогу, ваш контракт не подорожает — успейте раньше. А своя дорога в обход, построенная позже, уже не вернёт заплаченное.");
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.018"));
 
             var diagram = new RuleDiagram(640f, 170f)
-                .Place("a", 0.08f, 0.55f, MapView.FromColor, "Район А")
+                .Place("a", 0.08f, 0.55f, MapView.FromColor, LocalizationService.Get("menu.rules.detail.019"))
                 .Place("x", 0.36f, 0.30f, Spot, null)
                 .Place("y", 0.64f, 0.30f, Spot, null)
-                .Place("b", 0.92f, 0.55f, MapView.ToColor, "Район Б")
-                .Road("a", "x", Own, "ваша")
+                .Place("b", 0.92f, 0.55f, MapView.ToColor, LocalizationService.Get("menu.rules.detail.020"))
+                .Road("a", "x", Own, LocalizationService.Get("menu.rules.detail.021"))
                 .Road("x", "y", Rival, $"чужая −{_config.TollPerRoad}")
                 .Road("y", "b", Rival, $"чужая −{_config.TollPerRoad}");
             Picture(s, diagram, $"Контракт А — Б выполнен: одна своя дорога и две чужие. Владелец чужих получит {2 * _config.TollPerRoad} очка.");
-            s.Add(TryButton(RuleSandbox.Kind.Toll, "Попробовать: соберите путь контракта"));
+            s.Add(TryButton(RuleSandbox.Kind.Toll, LocalizationService.Get("menu.rules.detail.022")));
 
-            Paragraph(s, "Сложные контракты приносят больше очков, но и провал стоит дороже:");
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.023"));
             var transit = new RuleDiagram(310f, 150f)
                 .Place("a", 0.10f, 0.50f, MapView.FromColor, "А")
                 .Place("c", 0.50f, 0.25f, MapView.ThirdColor, "через В")
@@ -920,9 +920,9 @@ namespace CityHighways.Presentation
             var pair = Ui.Row();
             pair.style.justifyContent = Justify.SpaceBetween;
             var left = Ui.Column();
-            Picture(left, transit, "Транзит: один путь из А в Б через район В.");
+            Picture(left, transit, LocalizationService.Get("menu.rules.detail.024"));
             var right = Ui.Column();
-            Picture(right, hub, "Узел: район А связан и с Б, и с В.");
+            Picture(right, hub, LocalizationService.Get("menu.rules.detail.025"));
             pair.Add(left);
             pair.Add(right);
             s.Add(pair);
@@ -937,8 +937,8 @@ namespace CityHighways.Presentation
             Add(CityEventKind.RushHour, LocalizationService.Get("menu.rules.039"), $"Дороги, построенные в этот круг, становятся загруженными магистралями: проезд по ним — {_config.TollPerRoad * _config.RushHourTollMultiplier} очка.");
             Add(CityEventKind.Repair, LocalizationService.Get("menu.rules.040"), $"{_config.RepairRoads} случайных свободных участка закрыты для стройки.");
             Add(CityEventKind.Subsidy, LocalizationService.Get("menu.rules.041"), $"Мосты дешевле на {_config.BridgeSubsidy} карту стали.");
-            Add(CityEventKind.NewDistrict, LocalizationService.Get("menu.rules.042"), "На окраине открываются новые места, дороги и контракты.");
-            Add(CityEventKind.Parade, LocalizationService.Get("menu.rules.043"), "Дороги, касающиеся Центра, закрыты для стройки.");
+            Add(CityEventKind.NewDistrict, LocalizationService.Get("menu.rules.042"), LocalizationService.Get("menu.rules.detail.026"));
+            Add(CityEventKind.Parade, LocalizationService.Get("menu.rules.043"), LocalizationService.Get("menu.rules.detail.027"));
             Add(CityEventKind.Snow, LocalizationService.Get("menu.rules.044"), $"Щебёночные дороги на {_config.SnowExtraCost} карту дороже.");
             Add(CityEventKind.Investor, LocalizationService.Get("menu.rules.045"), $"Каждая дорога, построенная в этот круг, приносит ещё +{_config.InvestorBonus} очка.");
             return s;
@@ -980,17 +980,17 @@ namespace CityHighways.Presentation
         {
             var s = Section(LocalizationService.Get("menu.rules.011"));
             Paragraph(s, $"Сделка: раз в ход, до основного действия, предложите одному сопернику обмен — от 1 до {_config.TradeMaxCards} карт одного ресурса на 1–{_config.TradeMaxCards} карты другого. Он соглашается или отказывается. Ход сделка не тратит.");
-            s.Add(TryButton(RuleSandbox.Kind.Deal, "Попробовать: предложите сделку"));
+            s.Add(TryButton(RuleSandbox.Kind.Deal, LocalizationService.Get("menu.rules.detail.028")));
             Paragraph(s, $"Магистраль: кликните по своей дороге — её можно улучшить за ход и половину её длины в картах её ресурса. Она приносит +{_config.UpgradePoints} очка, а проезд по ней для соперников становится в {_config.RushHourTollMultiplier} раза дороже.");
             Picture(s, new RoadBuildAnimation(640f, 130f, Mathf.Min(4, _config.MaxRoadLength), Own),
-                "Как это выглядит: дорога строится участками, потом её улучшают до магистрали — с оранжевой рамкой.");
+                LocalizationService.Get("menu.rules.detail.029"));
             var diagram = new RuleDiagram(640f, 150f)
                 .Place("a", 0.10f, 0.55f, Spot, null)
                 .Place("b", 0.50f, 0.55f, Spot, null)
                 .Place("c", 0.90f, 0.55f, Spot, null)
                 .Road("a", "b", Own, "обычная: проезд " + _config.TollPerRoad)
                 .Road("b", "c", Own, "магистраль: проезд " + _config.TollPerRoad * _config.RushHourTollMultiplier, frame: true);
-            Picture(s, diagram, "Магистраль на карте — с оранжевой рамкой. Так же выглядят дороги, построенные в час пик.");
+            Picture(s, diagram, LocalizationService.Get("menu.rules.detail.030"));
 
             if (_config.JamThreshold > 0)
             {
@@ -999,7 +999,7 @@ namespace CityHighways.Presentation
                              $"стоит ещё +{_config.JamFee} очка, и они сгорают: владельцу не достаются. Соперникам выгодно построить объезд, " +
                              "а владельцу — улучшить дорогу: магистраль в пробку не встаёт, а проезд по ней дороже.");
             }
-            s.Add(TryButton(RuleSandbox.Kind.Highway, "Попробовать: магистраль и пробка"));
+            s.Add(TryButton(RuleSandbox.Kind.Highway, LocalizationService.Get("menu.rules.detail.031")));
             if (_config.PassesEnabled)
                 Paragraph(s, "Пропуск. В сделке можно продать сопернику пропуск: до конца партии он ездит по всем вашим дорогам, не платя вам. " +
                              "Пропуск продаётся за карты, влияние или в обмен на его пропуск. Пробочный сбор городу пропуск не отменяет.");
@@ -1011,13 +1011,13 @@ namespace CityHighways.Presentation
             var s = Section(LocalizationService.Get("menu.rules.018"));
             Paragraph(s, "Влияние — особая валюта мэрии. В очки оно не превращается: его тратят во время партии, а остаток пригодится в профиле.");
             Paragraph(s, $"Откуда берётся: выполненный контракт +{_config.InfluencePerContract} (сложный +{_config.InfluencePerComplexContract}); дорога в новый для вашей сети район +{_config.InfluencePerNewDistrict} (кроме самой первой дороги); цель мэрии +{_config.InfluencePerGoal}; «Грант мэрии» из колоды удачи +{_config.LuckGrantInfluence}; в начале круга, если вы отстаёте от лидера на {_config.InfluenceCatchUpGap} очков и больше, +{_config.InfluenceCatchUp}.");
-            Paragraph(s, "Тратить можно раз в ход, до основного действия; ход это не занимает:");
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.032"));
             foreach (var action in InfluenceInfo.All)
                 s.Add(Tile($"{InfluenceInfo.Title(action)} · {InfluenceInfo.Cost(action, _config)} вл.",
                     InfluenceInfo.Describe(action, _config) +
                     (action == InfluenceAction.RefreshMarket && _config.InfluenceRefreshStep > 0 ? $" Каждое следующее ваше обновление на {_config.InfluenceRefreshStep} дороже." : ""),
                     new Color(0.75f, 0.60f, 0.98f), new MenuIcon(InfluenceInfo.IsCityAction(action) ? MenuIcon.Glyph.Skyline : MenuIcon.Glyph.Coins, 26f, new Color(0.75f, 0.60f, 0.98f))));
-            s.Add(TryButton(RuleSandbox.Kind.Influence, "Попробовать: потратьте влияние"));
+            s.Add(TryButton(RuleSandbox.Kind.Influence, LocalizationService.Get("menu.rules.detail.033")));
             Paragraph(s, $"В сделках влиянием можно доплатить или купить карты: до {_config.TradeMaxInfluence} влияния с каждой стороны.");
             Paragraph(s, $"Аукцион мэрии — раз за партию, в начале круга, когда кто-то построил треть своих участков. Мэрия выставляет самый дорогой из верхних контрактов колоды. Каждый делает одну тайную ставку влиянием; самая высокая забирает контракт и платит свою ставку (при равенстве — отстающий по очкам), остальные не платят. Выполнен к концу партии — +{_config.AuctionBonus} очков сверх обычного, не выполнен — штраф как у любого контракта. Ставок нет — контракт уходит под колоду.");
             Paragraph(s, $"Взятки — от {_config.BribesMinPlayers} игроков: раз в ход, тайно, за влияние — «Ускорить согласование» ({_config.BribeDiscountCost} вл.: в этот ход дороги на 1 карту дешевле) или «Внеочередная поставка» ({_config.BribeExtraCardCost} вл.: сразу карта из колоды). В момент взятки никто ничего не видит. В начале следующего круга объявляют только, сколько было взяток, — без имён. Раскрыть взятку можно до конца круга после неё: любой в свой ход обвиняет любого соперника. Угадал — давший платит штраф за каждую раскрытую взятку (на троих −{_config.BribeFineFor(3)}, на четверых и пятерых −{_config.BribeFineFor(4)}), а разоблачитель получает +{_config.BribeWhistleReward} влияния; ошибся — −{_config.FalseAccusationFine} обвинителю. Улики видны всем: рука за ход выросла на 3 карты и больше или дорога обошлась дешевле своей длины. Но так бывает и честно — после сделки, «Поставки», с субсидией или у Мостовика.");
@@ -1027,7 +1027,7 @@ namespace CityHighways.Presentation
         VisualElement ScenariosSection()
         {
             var s = Section(LocalizationService.Get("menu.rules.021"));
-            Paragraph(s, "Сценарий выбирается в меню «Новая игра» (в сетевой — хостом в лобби) и меняет правила на всю партию. Название сценария — рядом с номером хода.");
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.034"));
             foreach (var kind in Scenarios.All)
             {
                 if (kind == ScenarioKind.Standard) continue;
@@ -1078,16 +1078,16 @@ namespace CityHighways.Presentation
                 Paragraph(s, $"Финальный заказ мэрии: в начале последнего круга мэрия выбирает одну свободную дорогу — ту, за которую могут побороться больше всего компаний. На карте она в золотой рамке. Кто построит её в последнем круге, получает +{_config.FinalOrderBonus} очков (в столбце «Цели»).");
             if (_config.BribesEnabled && _config.FinalAuditPercent > 0)
                 Paragraph(s, $"Проверка перед итогами: каждая ещё нераскрытая взятка последних двух кругов раскрывается с шансом {_config.FinalAuditPercent}% — с тем же штрафом, что и при обвинении. Взятка в последнем круге — тоже риск.");
-            Paragraph(s, "Итог складывается из:");
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.035"));
             var lines = new[]
             {
-                ("Дороги", "очки за каждую построенную дорогу и магистрали", MenuIcon.Glyph.Road),
-                ("Контракты", "выполненные — плюсом, невыполненные — минусом", MenuIcon.Glyph.Document),
-                ("Проезд", "плата владельцам чужих дорог и плата вам за ваши; сборы в пробках сгорают", MenuIcon.Glyph.Coins),
-                ("Крупнейшая сеть", $"+{_config.NetworkBonus} за связную сеть на больше всего районов", MenuIcon.Glyph.Pin),
-                ("Цели мэрии", "награды за цели, выполненные первым", MenuIcon.Glyph.Trophy),
-                ("Удача", "гранты, премии и штрафы карт удачи", MenuIcon.Glyph.Star),
-                ("Персонаж", "Чиновник — за контракты, Мостовик — за мосты", MenuIcon.Glyph.Person)
+                ("Дороги", LocalizationService.Get("menu.rules.detail.036"), MenuIcon.Glyph.Road),
+                ("Контракты", LocalizationService.Get("menu.rules.detail.037"), MenuIcon.Glyph.Document),
+                ("Проезд", LocalizationService.Get("menu.rules.detail.038"), MenuIcon.Glyph.Coins),
+                (LocalizationService.Get("menu.rules.detail.039"), $"+{_config.NetworkBonus} за связную сеть на больше всего районов", MenuIcon.Glyph.Pin),
+                ("Цели мэрии", LocalizationService.Get("menu.rules.detail.040"), MenuIcon.Glyph.Trophy),
+                ("Удача", LocalizationService.Get("menu.rules.detail.041"), MenuIcon.Glyph.Star),
+                ("Персонаж", LocalizationService.Get("menu.rules.detail.042"), MenuIcon.Glyph.Person)
             };
             foreach (var (title, text, glyph) in lines) s.Add(Tile(title, text, Theme.Gold, new MenuIcon(glyph, 24f, Theme.Gold)));
             return s;
@@ -1096,9 +1096,9 @@ namespace CityHighways.Presentation
         VisualElement Cooperative()
         {
             var coop = new GameConfig().MakeCooperative();
-            var s = Section("Кооператив «Город против всех»");
-            Paragraph(s, "Режим выбирается в «Новой игре» (в сети — хостом в лобби). Все компании — одна команда, противник — сам город. Побеждают или проигрывают все вместе.");
-            Paragraph(s, "Сеть общая: дорога любого союзника засчитывается в ваши контракты, и проезд по ней бесплатный. Взяток, аукциона и пропусков нет — делиться картами помогают сделки.");
+            var s = Section(LocalizationService.Get("menu.rules.detail.043"));
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.044"));
+            Paragraph(s, LocalizationService.Get("menu.rules.detail.045"));
 
             // Шкала кризиса — как на панели в партии.
             var meter = Ui.Row();
@@ -1137,7 +1137,7 @@ namespace CityHighways.Presentation
         VisualElement Glossary()
         {
             var s = Section(LocalizationService.Get("menu.rules.013"));
-            var intro = Caption("Все термины правил коротко. В тексте разделов они подчёркнуты: наведите — появится определение, нажмите — откроется эта страница.", 14f, Theme.TextDim, 8f);
+            var intro = Caption(LocalizationService.Get("menu.rules.detail.046"), 14f, Theme.TextDim, 8f);
             s.Add(intro);
             var grid = Ui.Row();
             grid.style.flexWrap = Wrap.Wrap;
