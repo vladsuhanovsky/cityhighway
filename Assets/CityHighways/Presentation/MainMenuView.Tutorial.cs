@@ -26,8 +26,8 @@ namespace CityHighways.Presentation
         VisualElement BuildTutorial()
         {
             var page = Ui.Column();
-            page.Add(PageTitle("Обучение", () => ShowPage(Page.Home)));
-            var intro = Ui.Text("Выберите режим. В каждом — своё обучение: наставник проведёт по первым ходам, а правила режима всегда под рукой.", 15f, Theme.TextDim);
+            page.Add(PageTitle(LocalizationService.Get("menu.tutorial.001"), () => ShowPage(Page.Home)));
+            var intro = Ui.Text(LocalizationService.Get("menu.tutorial.002"), 15f, Theme.TextDim);
             intro.style.whiteSpace = WhiteSpace.Normal;
             intro.style.marginBottom = 16f;
             page.Add(intro);
@@ -46,23 +46,23 @@ namespace CityHighways.Presentation
 
             _tutorialCards.Add(TutorialCard(GameMode.Magnate, MagnateTutorialDone,
                 $"Учебная карта: небольшой город с аэропортом, вокзалом и портом. Вы и один бот, лёгкая сложность, {GameSetup.TutorialMagnateRounds} раундов. Наставник проведёт по первому раунду.",
-                new[] { "хабы и грузы семи видов", "покупка дорог (пунктир) и развитие хабов", "маршруты фур, пробки и доставка", "нижняя панель и окна" },
-                "Начать с наставником", () =>
+                new[] { LocalizationService.Get("menu.tutorial.003"), LocalizationService.Get("menu.tutorial.004"), LocalizationService.Get("menu.tutorial.005"), LocalizationService.Get("menu.tutorial.006") },
+                LocalizationService.Get("menu.tutorial.007"), () =>
                 {
                     var setup = GameSetup.CreateMagnatePractice(GameSetup.Load(), profileName);
                     _app.StartGame(setup);
                 }, null, null));
 
             _tutorialCards.Add(TutorialCard(GameMode.Classic, TutorialCoach.IsDone,
-                "Учебная партия с наставником на небольшой карте — около 10 минут.",
-                new[] { "карты ресурсов и стройка дорог", "контракты мэрии", "плата за проезд и магистрали", "конец партии и подсчёт очков" },
-                "Начать с наставником", _app.StartTutorial, null, null));
+                LocalizationService.Get("menu.tutorial.008"),
+                new[] { LocalizationService.Get("menu.tutorial.009"), LocalizationService.Get("menu.tutorial.010"), LocalizationService.Get("menu.tutorial.011"), LocalizationService.Get("menu.tutorial.012") },
+                LocalizationService.Get("menu.tutorial.007"), _app.StartTutorial, null, null));
 
             _tutorialCards.Add(TutorialCard(GameMode.Coop, CoopBriefingDone,
-                "Знакомство из пяти шагов, затем тренировочная партия: вы и два бота-союзника против города.",
-                new[] { "общая сеть и общий счёт", "заказы города", "шкала кризиса", "как победить и как проиграть" },
-                "Знакомство: 5 шагов", () => ShowCoopBriefing(0),
-                "Тренировочная партия", StartCoopPractice));
+                LocalizationService.Get("menu.tutorial.013"),
+                new[] { LocalizationService.Get("menu.tutorial.014"), LocalizationService.Get("menu.tutorial.015"), LocalizationService.Get("menu.tutorial.016"), LocalizationService.Get("menu.tutorial.017") },
+                LocalizationService.Get("menu.tutorial.018"), () => ShowCoopBriefing(0),
+                LocalizationService.Get("menu.tutorial.019"), StartCoopPractice));
         }
 
         VisualElement TutorialCard(GameMode mode, bool done, string text, string[] learn, string primary, Action onPrimary, string secondary, Action onSecondary)
@@ -84,7 +84,7 @@ namespace CityHighways.Presentation
             var titles = Ui.Column();
             titles.style.flexShrink = 1f;
             titles.Add(Ui.Text(ModeTabs.Title(mode), 20f, Theme.Gold, true));
-            titles.Add(Ui.Text(done ? "✓ Пройдено" : "Ещё не пройдено", 12f, done ? GameColors.Success : Theme.TextDim, true));
+            titles.Add(Ui.Text(done ? LocalizationService.Get("menu.tutorial.020") : LocalizationService.Get("menu.tutorial.021"), 12f, done ? GameColors.Success : Theme.TextDim, true));
             head.Add(titles);
             card.Add(head);
 
@@ -97,7 +97,7 @@ namespace CityHighways.Presentation
             about.style.marginTop = 8f;
             card.Add(about);
 
-            var caption = Ui.Text("Чему научитесь", 12f, Theme.TextDim, true);
+            var caption = Ui.Text(LocalizationService.Get("menu.tutorial.022"), 12f, Theme.TextDim, true);
             caption.style.marginTop = 12f;
             card.Add(caption);
             foreach (var item in learn)
@@ -119,7 +119,7 @@ namespace CityHighways.Presentation
             spacer.style.flexGrow = 1f;
             spacer.style.minHeight = 14f;
             card.Add(spacer);
-            var start = Ui.Button(done ? primary.Replace("Начать", "Пройти снова") : primary, onPrimary, ButtonKind.Primary, 15f);
+            var start = Ui.Button(done ? primary.Replace(LocalizationService.Get("menu.tutorial.023"), LocalizationService.Get("menu.tutorial.024")) : primary, onPrimary, ButtonKind.Primary, 15f);
             start.style.marginTop = 6f;
             card.Add(start);
             if (secondary != null)
@@ -128,7 +128,7 @@ namespace CityHighways.Presentation
                 more.style.marginTop = 6f;
                 card.Add(more);
             }
-            var rules = Ui.Button("Правила режима", () => OpenRules(mode, Page.Tutorial), ButtonKind.Ghost, 13f);
+            var rules = Ui.Button(LocalizationService.Get("menu.tutorial.025"), () => OpenRules(mode, Page.Tutorial), ButtonKind.Ghost, 13f);
             rules.style.marginTop = 6f;
             card.Add(rules);
             return card;
@@ -155,19 +155,19 @@ namespace CityHighways.Presentation
             var c = new GameConfig().MakeCooperative();
             return new List<(MenuIcon.Glyph, string, string)>
             {
-                (MenuIcon.Glyph.Skyline, "Одна команда против города",
-                    "Все компании за столом — одна команда, противник — сам город. Побеждают или проигрывают все вместе, счёт тоже общий."),
-                (MenuIcon.Glyph.Road, "Общая сеть",
-                    "Дорога любого союзника засчитывается в ваши контракты, и проезд по ней бесплатный. Взяток, аукциона и пропусков нет — " +
-                    "делиться картами ресурсов помогают сделки."),
-                (MenuIcon.Glyph.Document, "Заказы города",
+                (MenuIcon.Glyph.Skyline, LocalizationService.Get("menu.tutorial.026"),
+                    LocalizationService.Get("menu.tutorial.027")),
+                (MenuIcon.Glyph.Road, LocalizationService.Get("menu.tutorial.028"),
+                    LocalizationService.Get("menu.tutorial.029") +
+                    LocalizationService.Get("menu.tutorial.030")),
+                (MenuIcon.Glyph.Document, LocalizationService.Get("menu.tutorial.031"),
                     $"На столе — {c.CoopOpenOrdersFor(2)}–{c.CoopOpenOrdersFor(4)} заказа города (зависит от числа игроков) — общие контракты команды. " +
                     "Заказ выполнен, когда общая сеть связала его районы. Срок зависит от длины заказа: вдвоём на заказ в 10 очков — " +
                     $"{c.CoopOrderRoundsFor(10, 2)} кругов; просроченный поднимает кризис на {c.CoopCrisisPerFailedOrder}. Панель заказов — в правом верхнем углу поля."),
-                (MenuIcon.Glyph.Flame, "Шкала кризиса",
+                (MenuIcon.Glyph.Flame, LocalizationService.Get("menu.tutorial.032"),
                     $"Кризис начинается с {c.CoopCrisisStart} и растёт сам: +1 каждые {c.CoopCrisisEveryRounds} круга, а ремонт, снегопад и парад добавляют ещё " +
                     $"+{c.CoopCrisisPerBadEvent}. Каждый выполненный заказ снижает кризис на {c.CoopCrisisReliefPerOrder}."),
-                (MenuIcon.Glyph.Trophy, "Победа и поражение",
+                (MenuIcon.Glyph.Trophy, LocalizationService.Get("menu.tutorial.033"),
                     $"Команда побеждает, выполнив заказы города: на двоих — {c.CoopOrdersToWin(2)}, на троих — {c.CoopOrdersToWin(3)}, на четверых — {c.CoopOrdersToWin(4)}. " +
                     $"Город побеждает, если кризис дошёл до {c.CoopCrisisMax} или участки кончились раньше, чем набралось заказов."),
             };
@@ -188,7 +188,7 @@ namespace CityHighways.Presentation
             var head = Ui.Row();
             head.style.alignItems = Align.Center;
             head.style.justifyContent = Justify.SpaceBetween;
-            head.Add(Ui.Text("Кооператив · знакомство", 13f, Theme.TextDim, true));
+            head.Add(Ui.Text(LocalizationService.Get("menu.tutorial.034"), 13f, Theme.TextDim, true));
             head.Add(Ui.Text($"{index + 1} / {steps.Count}", 13f, Theme.TextDim, true));
             box.Add(head);
 
@@ -230,20 +230,20 @@ namespace CityHighways.Presentation
             buttons.style.marginTop = 18f;
             buttons.style.justifyContent = Justify.SpaceBetween;
             var left = Ui.Row();
-            if (index > 0) left.Add(Ui.Button("← Назад", () => ShowCoopBriefing(index - 1), ButtonKind.Ghost, 14f));
-            left.Add(Ui.Button("Закрыть", () => { Ui.Show(_overlay, false); RefreshTutorial(); }, ButtonKind.Ghost, 14f));
+            if (index > 0) left.Add(Ui.Button(LocalizationService.Get("menu.tutorial.035"), () => ShowCoopBriefing(index - 1), ButtonKind.Ghost, 14f));
+            left.Add(Ui.Button(LocalizationService.Get("menu.tutorial.036"), () => { Ui.Show(_overlay, false); RefreshTutorial(); }, ButtonKind.Ghost, 14f));
             buttons.Add(left);
             var right = Ui.Row();
             if (index < steps.Count - 1)
-                right.Add(Ui.Button("Дальше →", () => ShowCoopBriefing(index + 1), ButtonKind.Primary, 15f));
+                right.Add(Ui.Button(LocalizationService.Get("menu.tutorial.037"), () => ShowCoopBriefing(index + 1), ButtonKind.Primary, 15f));
             else
             {
                 PlayerPrefs.SetInt(CoopBriefingKey, 1);
                 PlayerPrefs.Save();
-                var rules = Ui.Button("Правила кооператива", () => { Ui.Show(_overlay, false); OpenRules(GameMode.Coop, Page.Tutorial); }, ButtonKind.Secondary, 14f);
+                var rules = Ui.Button(LocalizationService.Get("menu.tutorial.038"), () => { Ui.Show(_overlay, false); OpenRules(GameMode.Coop, Page.Tutorial); }, ButtonKind.Secondary, 14f);
                 rules.style.marginRight = 8f;
                 right.Add(rules);
-                right.Add(Ui.Button("Тренировочная партия", StartCoopPractice, ButtonKind.Primary, 15f));
+                right.Add(Ui.Button(LocalizationService.Get("menu.tutorial.019"), StartCoopPractice, ButtonKind.Primary, 15f));
             }
             buttons.Add(right);
             box.Add(buttons);

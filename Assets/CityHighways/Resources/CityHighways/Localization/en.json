@@ -3887,6 +3887,158 @@
     {
       "key": "magnate.panel.053",
       "value": "Empty for now."
+    },
+    {
+      "key": "menu.tutorial.001",
+      "value": "Tutorial"
+    },
+    {
+      "key": "menu.tutorial.002",
+      "value": "Choose a mode. Each has its own tutorial to guide you through your first turns, with rules always available."
+    },
+    {
+      "key": "menu.tutorial.003",
+      "value": "hubs and seven types of cargo"
+    },
+    {
+      "key": "menu.tutorial.004",
+      "value": "buying roads (dashed lines) and upgrading hubs"
+    },
+    {
+      "key": "menu.tutorial.005",
+      "value": "truck routes, traffic jams and deliveries"
+    },
+    {
+      "key": "menu.tutorial.006",
+      "value": "bottom panel and windows"
+    },
+    {
+      "key": "menu.tutorial.007",
+      "value": "Start with Coach"
+    },
+    {
+      "key": "menu.tutorial.008",
+      "value": "A guided game on a small map — about 10 minutes."
+    },
+    {
+      "key": "menu.tutorial.009",
+      "value": "resource cards and road construction"
+    },
+    {
+      "key": "menu.tutorial.010",
+      "value": "city hall contracts"
+    },
+    {
+      "key": "menu.tutorial.011",
+      "value": "tolls and highways"
+    },
+    {
+      "key": "menu.tutorial.012",
+      "value": "endgame and scoring"
+    },
+    {
+      "key": "menu.tutorial.013",
+      "value": "A five-step introduction, followed by a practice game: you and two allied bots versus the city."
+    },
+    {
+      "key": "menu.tutorial.014",
+      "value": "shared network and team score"
+    },
+    {
+      "key": "menu.tutorial.015",
+      "value": "city orders"
+    },
+    {
+      "key": "menu.tutorial.016",
+      "value": "crisis meter"
+    },
+    {
+      "key": "menu.tutorial.017",
+      "value": "how to win and lose"
+    },
+    {
+      "key": "menu.tutorial.018",
+      "value": "Introduction: 5 Steps"
+    },
+    {
+      "key": "menu.tutorial.019",
+      "value": "Practice Game"
+    },
+    {
+      "key": "menu.tutorial.020",
+      "value": "✓ Completed"
+    },
+    {
+      "key": "menu.tutorial.021",
+      "value": "Not Completed Yet"
+    },
+    {
+      "key": "menu.tutorial.022",
+      "value": "What You'll Learn"
+    },
+    {
+      "key": "menu.tutorial.023",
+      "value": "Start"
+    },
+    {
+      "key": "menu.tutorial.024",
+      "value": "Replay"
+    },
+    {
+      "key": "menu.tutorial.025",
+      "value": "Mode Rules"
+    },
+    {
+      "key": "menu.tutorial.026",
+      "value": "One Team Against the City"
+    },
+    {
+      "key": "menu.tutorial.027",
+      "value": "All companies at the table form one team against the city. You win or lose together and share a score."
+    },
+    {
+      "key": "menu.tutorial.028",
+      "value": "Shared Network"
+    },
+    {
+      "key": "menu.tutorial.029",
+      "value": "All allied roads count toward your contracts and are free to use. There are no bribes, auctions or travel passes — "
+    },
+    {
+      "key": "menu.tutorial.030",
+      "value": "trading helps you share resource cards."
+    },
+    {
+      "key": "menu.tutorial.031",
+      "value": "City Orders"
+    },
+    {
+      "key": "menu.tutorial.032",
+      "value": "Crisis Meter"
+    },
+    {
+      "key": "menu.tutorial.033",
+      "value": "Victory and Defeat"
+    },
+    {
+      "key": "menu.tutorial.034",
+      "value": "Co-op · Introduction"
+    },
+    {
+      "key": "menu.tutorial.035",
+      "value": "← Back"
+    },
+    {
+      "key": "menu.tutorial.036",
+      "value": "Close"
+    },
+    {
+      "key": "menu.tutorial.037",
+      "value": "Next →"
+    },
+    {
+      "key": "menu.tutorial.038",
+      "value": "Co-op Rules"
     }
   ]
 }
