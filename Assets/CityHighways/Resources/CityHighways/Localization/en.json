@@ -475,6 +475,438 @@
     {
       "key": "game.tooltip.goal_reward",
       "value": "The first player to complete the goal receives the reward."
+    },
+    {
+      "key": "menu.settings.detail.001",
+      "value": "Change settings to update both the preview and game immediately."
+    },
+    {
+      "key": "menu.settings.detail.002",
+      "value": "Language"
+    },
+    {
+      "key": "menu.settings.detail.003",
+      "value": "Change the interface language."
+    },
+    {
+      "key": "menu.settings.detail.004",
+      "value": "Display Mode"
+    },
+    {
+      "key": "menu.settings.detail.005",
+      "value": "Fullscreen or windowed mode."
+    },
+    {
+      "key": "menu.settings.detail.006",
+      "value": "Fullscreen"
+    },
+    {
+      "key": "menu.settings.detail.007",
+      "value": "Windowed"
+    },
+    {
+      "key": "menu.settings.detail.008",
+      "value": "Resolution"
+    },
+    {
+      "key": "menu.settings.detail.009",
+      "value": "Graphics Quality"
+    },
+    {
+      "key": "menu.settings.detail.010",
+      "value": "Project quality levels: antialiasing, shadows and detail."
+    },
+    {
+      "key": "menu.settings.detail.011",
+      "value": "Main Menu Background"
+    },
+    {
+      "key": "menu.settings.detail.012",
+      "value": "Lighting"
+    },
+    {
+      "key": "menu.settings.detail.013",
+      "value": "Follow system time, always day or always night."
+    },
+    {
+      "key": "menu.settings.detail.014",
+      "value": "System Time"
+    },
+    {
+      "key": "menu.settings.detail.015",
+      "value": "Day"
+    },
+    {
+      "key": "menu.settings.detail.016",
+      "value": "Night"
+    },
+    {
+      "key": "menu.settings.detail.017",
+      "value": "Lighting follows system time."
+    },
+    {
+      "key": "menu.settings.detail.018",
+      "value": "Always daylight."
+    },
+    {
+      "key": "menu.settings.detail.019",
+      "value": "Always night: lit windows and moonlight."
+    },
+    {
+      "key": "menu.settings.detail.020",
+      "value": "Palette"
+    },
+    {
+      "key": "menu.settings.detail.021",
+      "value": "Sky and window colors, also visible behind this page."
+    },
+    {
+      "key": "menu.settings.detail.022",
+      "value": "City Illustration"
+    },
+    {
+      "key": "menu.settings.detail.023",
+      "value": "Use city artwork instead of the live background. Lighting and palette won't be visible."
+    },
+    {
+      "key": "menu.settings.detail.024",
+      "value": "Showing city artwork as the menu background."
+    },
+    {
+      "key": "menu.settings.detail.025",
+      "value": "Showing the live city as the menu background."
+    },
+    {
+      "key": "menu.settings.detail.026",
+      "value": "In the editor, the Game window controls display mode and resolution; these settings apply in builds."
+    },
+    {
+      "key": "menu.settings.detail.027",
+      "value": "Game Sound"
+    },
+    {
+      "key": "menu.settings.detail.028",
+      "value": "All sound effects: cards, construction and fanfares."
+    },
+    {
+      "key": "menu.settings.detail.029",
+      "value": "Sound enabled."
+    },
+    {
+      "key": "menu.settings.detail.030",
+      "value": "Sound disabled."
+    },
+    {
+      "key": "menu.settings.detail.031",
+      "value": "Volume"
+    },
+    {
+      "key": "menu.settings.detail.032",
+      "value": "Release the slider to play a test sound."
+    },
+    {
+      "key": "menu.settings.detail.033",
+      "value": "Interface Sounds"
+    },
+    {
+      "key": "menu.settings.detail.034",
+      "value": "Button clicks and subtle hover sounds."
+    },
+    {
+      "key": "menu.settings.detail.035",
+      "value": "Card"
+    },
+    {
+      "key": "menu.settings.detail.036",
+      "value": "Coin"
+    },
+    {
+      "key": "menu.settings.detail.037",
+      "value": "Bell"
+    },
+    {
+      "key": "menu.settings.detail.038",
+      "value": "Fanfare"
+    },
+    {
+      "key": "menu.settings.detail.039",
+      "value": "Test Sounds"
+    },
+    {
+      "key": "menu.settings.detail.040",
+      "value": "Board Tilt (2.5D)"
+    },
+    {
+      "key": "menu.settings.detail.041",
+      "value": "A slightly tilted board with depth; disabled means a flat top-down map."
+    },
+    {
+      "key": "menu.settings.detail.042",
+      "value": "Board tilted: distant roads appear smaller."
+    },
+    {
+      "key": "menu.settings.detail.043",
+      "value": "Flat top-down map with uniform scale."
+    },
+    {
+      "key": "menu.settings.detail.044",
+      "value": "3D City"
+    },
+    {
+      "key": "menu.settings.detail.045",
+      "value": "Buildings, trees, rivers, embankments and elevated bridges, with time-of-day lighting."
+    },
+    {
+      "key": "menu.settings.detail.046",
+      "value": "A 3D city beneath the roads, with shadows and illuminated windows at night."
+    },
+    {
+      "key": "menu.settings.detail.047",
+      "value": "Flat drawn map for better performance on slower PCs."
+    },
+    {
+      "key": "menu.settings.detail.048",
+      "value": "Camera Angle"
+    },
+    {
+      "key": "menu.settings.detail.049",
+      "value": "3D camera angle: 30° is almost top-down, 45° shows more of the skyline."
+    },
+    {
+      "key": "menu.settings.detail.050",
+      "value": "3D Quality"
+    },
+    {
+      "key": "menu.settings.detail.051",
+      "value": "Low quality reduces buildings and shadows; high adds soft shadows, antialiasing and glow."
+    },
+    {
+      "key": "menu.settings.detail.052",
+      "value": "Minimap"
+    },
+    {
+      "key": "menu.settings.detail.053",
+      "value": "Small map in the corner: click to move the camera."
+    },
+    {
+      "key": "menu.settings.detail.054",
+      "value": "Minimap visible in the bottom-right corner."
+    },
+    {
+      "key": "menu.settings.detail.055",
+      "value": "Minimap hidden."
+    },
+    {
+      "key": "menu.settings.detail.056",
+      "value": "Show Again"
+    },
+    {
+      "key": "menu.settings.detail.057",
+      "value": "Will show next game"
+    },
+    {
+      "key": "menu.settings.detail.058",
+      "value": "First-Turn Tutorial"
+    },
+    {
+      "key": "menu.settings.detail.059",
+      "value": "The coach will guide you at the start of your next game."
+    },
+    {
+      "key": "menu.settings.detail.060",
+      "value": "Camera controls, mouse wheel and shortcuts are in Controls."
+    },
+    {
+      "key": "menu.settings.detail.061",
+      "value": "Controls"
+    },
+    {
+      "key": "menu.settings.detail.062",
+      "value": "Camera Speed"
+    },
+    {
+      "key": "menu.settings.detail.063",
+      "value": "Rotate and tilt the 3D board with mouse or Q/E and R/F."
+    },
+    {
+      "key": "menu.settings.detail.064",
+      "value": "Smooth Rotation"
+    },
+    {
+      "key": "menu.settings.detail.065",
+      "value": "The camera smoothly follows mouse movement; turn off for instant rotation."
+    },
+    {
+      "key": "menu.settings.detail.066",
+      "value": "Board rotation is smooth."
+    },
+    {
+      "key": "menu.settings.detail.067",
+      "value": "Board rotation follows the mouse immediately."
+    },
+    {
+      "key": "menu.settings.detail.068",
+      "value": "Rotate with Left Button"
+    },
+    {
+      "key": "menu.settings.detail.069",
+      "value": "Drag with the left mouse button to rotate/tilt; click to select. Drag the zoomed map with the right button. "
+    },
+    {
+      "key": "menu.settings.detail.070",
+      "value": "When disabled, left drags the map and right rotates it."
+    },
+    {
+      "key": "menu.settings.detail.071",
+      "value": "Left mouse button rotates the board."
+    },
+    {
+      "key": "menu.settings.detail.072",
+      "value": "Right mouse button rotates the board; left drags the map."
+    },
+    {
+      "key": "menu.settings.detail.073",
+      "value": "Invert Tilt"
+    },
+    {
+      "key": "menu.settings.detail.074",
+      "value": "Mouse up tilts toward the horizon; mouse down tilts toward the top view."
+    },
+    {
+      "key": "menu.settings.detail.075",
+      "value": "Tilt controls inverted."
+    },
+    {
+      "key": "menu.settings.detail.076",
+      "value": "Normal tilt: move the mouse up for a top-down view."
+    },
+    {
+      "key": "menu.settings.detail.077",
+      "value": "Mouse-Wheel Zoom"
+    },
+    {
+      "key": "menu.settings.detail.078",
+      "value": "How much one mouse-wheel tick changes zoom."
+    },
+    {
+      "key": "menu.settings.detail.079",
+      "value": "Smooth"
+    },
+    {
+      "key": "menu.settings.detail.080",
+      "value": "Normal"
+    },
+    {
+      "key": "menu.settings.detail.081",
+      "value": "Fast"
+    },
+    {
+      "key": "menu.settings.detail.082",
+      "value": "Mouse-wheel zoom step updated."
+    },
+    {
+      "key": "menu.settings.detail.083",
+      "value": "Mouse"
+    },
+    {
+      "key": "menu.settings.detail.084",
+      "value": "Left Button"
+    },
+    {
+      "key": "menu.settings.detail.085",
+      "value": "click to select road, station or cargo; drag to rotate and tilt the 3D board"
+    },
+    {
+      "key": "menu.settings.detail.086",
+      "value": "select road, station or cargo; drag to pan the map"
+    },
+    {
+      "key": "menu.settings.detail.087",
+      "value": "Right Button + Drag"
+    },
+    {
+      "key": "menu.settings.detail.088",
+      "value": "pan the zoomed map (rotate the board when not zoomed in)"
+    },
+    {
+      "key": "menu.settings.detail.089",
+      "value": "rotate and tilt the 3D board"
+    },
+    {
+      "key": "menu.settings.detail.090",
+      "value": "Middle Button + Drag"
+    },
+    {
+      "key": "menu.settings.detail.091",
+      "value": "pan the zoomed map"
+    },
+    {
+      "key": "menu.settings.detail.092",
+      "value": "Wheel"
+    },
+    {
+      "key": "menu.settings.detail.093",
+      "value": "zoom in/out around the cursor"
+    },
+    {
+      "key": "menu.settings.detail.094",
+      "value": "Keyboard"
+    },
+    {
+      "key": "menu.settings.detail.095",
+      "value": "rotate the board left/right"
+    },
+    {
+      "key": "menu.settings.detail.096",
+      "value": "tilt camera toward horizon/top view"
+    },
+    {
+      "key": "menu.settings.detail.097",
+      "value": "north at top, use configured tilt"
+    },
+    {
+      "key": "menu.settings.detail.098",
+      "value": "back to the previous menu section"
+    },
+    {
+      "key": "menu.settings.detail.099",
+      "value": "browse and select characters"
+    },
+    {
+      "key": "menu.settings.detail.100",
+      "value": "show layer guides in Profile → Character"
+    },
+    {
+      "key": "menu.settings.detail.101",
+      "value": "Reduce Animations"
+    },
+    {
+      "key": "menu.settings.detail.102",
+      "value": "Transitions become nearly instant, content stops sliding, and preview cars stay still."
+    },
+    {
+      "key": "menu.settings.detail.103",
+      "value": "Animations reduced."
+    },
+    {
+      "key": "menu.settings.detail.104",
+      "value": "Animations enabled."
+    },
+    {
+      "key": "menu.settings.detail.105",
+      "value": "UI Scale"
+    },
+    {
+      "key": "menu.settings.detail.106",
+      "value": "Resize the entire interface immediately."
+    },
+    {
+      "key": "menu.settings.detail.107",
+      "value": "High UI scaling on small screens may require scrolling long pages."
+    },
+    {
+      "key": "menu.settings.detail.108",
+      "value": "All settings were reset. Profiles, statistics and saved games were preserved."
     }
   ]
 }

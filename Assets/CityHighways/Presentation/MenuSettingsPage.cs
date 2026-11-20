@@ -140,7 +140,7 @@ namespace CityHighways.Presentation
             }
             _content.Add(section);
             Ui.Appear(section);
-            UpdatePreview("Меняйте настройки — картинка справа и сама игра меняются сразу.");
+            UpdatePreview(LocalizationService.Get("menu.settings.detail.001"));
             _nav.schedule.Execute(MoveIndicator).ExecuteLater(20);
         }
 
@@ -243,15 +243,15 @@ namespace CityHighways.Presentation
             s.Add(SectionHead(MenuIcon.Glyph.Monitor, LocalizationService.Get("menu.settings.screen")));
             // First localization slice: language choice is available from Settings too.
             // Rebuild the menu to refresh labels created programmatically by UI Toolkit.
-            s.Add(Row("Language / Язык", "Switch the home screen language / Сменить язык главной страницы.",
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.002"), LocalizationService.Get("menu.settings.detail.003"),
                 new Segmented(new[] { "Русский", "English" }, LocalizationService.Language == "en" ? 1 : 0, i =>
                 {
                     LocalizationService.SetLanguage(i == 1 ? "en" : "ru");
                     _app.ShowMenu();
                 })));
 
-            s.Add(Row("Режим", "Полный экран или окно.",
-                new Segmented(new[] { "Полный экран", "В окне" }, _display.fullscreen ? 0 : 1, i =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.004"), LocalizationService.Get("menu.settings.detail.005"),
+                new Segmented(new[] { LocalizationService.Get("menu.settings.detail.006"), LocalizationService.Get("menu.settings.detail.007") }, _display.fullscreen ? 0 : 1, i =>
                 {
                     _display.fullscreen = i == 0;
                     Save();
@@ -259,7 +259,7 @@ namespace CityHighways.Presentation
 
             var names = _resolutions.Select(r => $"{r.x} × {r.y}").ToList();
             int current = Mathf.Max(0, _resolutions.FindIndex(r => r.x == _display.width && r.y == _display.height));
-            s.Add(Row("Разрешение", null, Stepper(names, current, i =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.008"), null, Stepper(names, current, i =>
             {
                 _display.width = _resolutions[i].x;
                 _display.height = _resolutions[i].y;
@@ -270,7 +270,7 @@ namespace CityHighways.Presentation
             if (levels != null && levels.Length > 1)
             {
                 int quality = _display.quality >= 0 ? _display.quality : QualitySettings.GetQualityLevel();
-                s.Add(Row("Качество графики", "Уровни из настроек проекта Unity: сглаживание, тени, детализация.", Stepper(levels.ToList(), quality, i =>
+                s.Add(Row(LocalizationService.Get("menu.settings.detail.009"), LocalizationService.Get("menu.settings.detail.010"), Stepper(levels.ToList(), quality, i =>
                 {
                     _display.quality = i;
                     Save();
@@ -278,16 +278,16 @@ namespace CityHighways.Presentation
                 })));
             }
 
-            s.Add(SubHead("Фон главного меню"));
-            s.Add(Row("Свет", "По часам компьютера, всегда день или всегда ночь.",
-                new Segmented(new[] { "По часам", "День", "Ночь" }, _display.menuLight, i =>
+            s.Add(SubHead(LocalizationService.Get("menu.settings.detail.011")));
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.012"), LocalizationService.Get("menu.settings.detail.013"),
+                new Segmented(new[] { LocalizationService.Get("menu.settings.detail.014"), LocalizationService.Get("menu.settings.detail.015"), LocalizationService.Get("menu.settings.detail.016") }, _display.menuLight, i =>
                 {
                     _display.menuLight = i;
                     Save();
                     _backgroundChanged?.Invoke();
-                    UpdatePreview(i == 0 ? "Свет по часам компьютера." : i == 1 ? "Всегда день." : "Всегда ночь: окна горят, в небе луна.");
+                    UpdatePreview(i == 0 ? LocalizationService.Get("menu.settings.detail.017") : i == 1 ? LocalizationService.Get("menu.settings.detail.018") : LocalizationService.Get("menu.settings.detail.019"));
                 })));
-            s.Add(Row("Палитра", "Цвета неба и окон — видно и на фоне меню за этой страницей.",
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.020"), LocalizationService.Get("menu.settings.detail.021"),
                 new Segmented(MenuBackground.PaletteNames, _display.menuPalette, i =>
                 {
                     _display.menuPalette = i;
@@ -296,28 +296,28 @@ namespace CityHighways.Presentation
                     UpdatePreview($"Палитра «{MenuBackground.PaletteNames[i]}».");
                 })));
             if (GeneratedArt.Load(GeneratedArt.KeyArt) != null)
-                s.Add(Row("Картина города", "Иллюстрация города вместо живого фона. Свет и палитра тогда не видны.",
+                s.Add(Row(LocalizationService.Get("menu.settings.detail.022"), LocalizationService.Get("menu.settings.detail.023"),
                     new SwitchToggle(_display.menuKeyArt, on =>
                     {
                         _display.menuKeyArt = on;
                         Save();
                         _backgroundChanged?.Invoke();
-                        UpdatePreview(on ? "На фоне меню — картина города." : "На фоне меню — живой город.");
+                        UpdatePreview(on ? LocalizationService.Get("menu.settings.detail.024") : LocalizationService.Get("menu.settings.detail.025"));
                     })));
             if (Application.isEditor)
-                s.Add(Note("В редакторе режим и разрешение задаёт окно Game — они применятся в собранной игре."));
+                s.Add(Note(LocalizationService.Get("menu.settings.detail.026")));
         }
 
         void SoundSection(VisualElement s)
         {
             s.Add(SectionHead(MenuIcon.Glyph.Speaker, LocalizationService.Get("menu.settings.sound")));
-            s.Add(Row("Звук в игре", "Все звуки: карты, стройка, фанфары.", new SwitchToggle(_setup.sound, on =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.027"), LocalizationService.Get("menu.settings.detail.028"), new SwitchToggle(_setup.sound, on =>
             {
                 _setup.sound = on;
                 _app.Sound.Enabled = on;
                 _setup.Save();
                 if (on) _app.Sound.Play(Sfx.Bell, 0.6f);
-                UpdatePreview(on ? "Звук включён." : "Звук выключен.");
+                UpdatePreview(on ? LocalizationService.Get("menu.settings.detail.029") : LocalizationService.Get("menu.settings.detail.030"));
             })));
 
             // Громкость: слайдер, значок динамика меняется по уровню, число и тестовый звук.
@@ -348,131 +348,131 @@ namespace CityHighways.Presentation
             volumeRow.Add(slider);
             volumeRow.Add(value);
             Show(_display.volume);
-            s.Add(Row("Громкость", "Отпустите бегунок — прозвучит тестовый звук.", volumeRow));
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.031"), LocalizationService.Get("menu.settings.detail.032"), volumeRow));
 
-            s.Add(Row("Звуки интерфейса", "Щелчки кнопок и тихие звуки при наведении на пункты меню.", new SwitchToggle(_display.uiSounds, on =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.033"), LocalizationService.Get("menu.settings.detail.034"), new SwitchToggle(_display.uiSounds, on =>
             {
                 _display.uiSounds = on;
                 Save();
             })));
 
             var test = Ui.Row();
-            foreach (var (caption, sfx) in new[] { ("Карта", Sfx.Card), ("Монета", Sfx.Coin), ("Звонок", Sfx.Bell), ("Фанфары", Sfx.Fanfare) })
+            foreach (var (caption, sfx) in new[] { (LocalizationService.Get("menu.settings.detail.035"), Sfx.Card), (LocalizationService.Get("menu.settings.detail.036"), Sfx.Coin), (LocalizationService.Get("menu.settings.detail.037"), Sfx.Bell), (LocalizationService.Get("menu.settings.detail.038"), Sfx.Fanfare) })
             {
                 var button = Ui.Button(caption, () => _app.Sound.Play(sfx), ButtonKind.Secondary, 13f);
                 button.style.marginRight = 6f;
                 test.Add(button);
             }
-            s.Add(Row("Проверить звуки", null, test));
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.039"), null, test));
         }
 
         void GameplaySection(VisualElement s)
         {
             s.Add(SectionHead(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.settings.gameplay")));
-            s.Add(Row("Наклон поля (2.5D)", "Поле с лёгким наклоном и глубиной; выключено — плоская карта сверху.", new SwitchToggle(_display.tiltedBoard, on =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.040"), LocalizationService.Get("menu.settings.detail.041"), new SwitchToggle(_display.tiltedBoard, on =>
             {
                 _display.tiltedBoard = on;
                 Save();
-                UpdatePreview(on ? "Поле наклонено: дальние дороги тоньше, ближние крупнее." : "Плоская карта сверху — всё одного масштаба.");
+                UpdatePreview(on ? LocalizationService.Get("menu.settings.detail.042") : LocalizationService.Get("menu.settings.detail.043"));
             })));
-            s.Add(Row("3D-город", "Здания, деревья, река с набережными и мосты на опорах под картой; свет и тени по времени суток.", new SwitchToggle(_display.city3D, on =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.044"), LocalizationService.Get("menu.settings.detail.045"), new SwitchToggle(_display.city3D, on =>
             {
                 _display.city3D = on;
                 Save();
-                UpdatePreview(on ? "Под дорогами — объёмный город: тени, окна светятся ночью." : "Плоская нарисованная карта — легче для слабого ПК.");
+                UpdatePreview(on ? LocalizationService.Get("menu.settings.detail.046") : LocalizationService.Get("menu.settings.detail.047"));
             })));
             int angle = Mathf.Max(0, Array.IndexOf(DisplaySettings.TiltOptions, _display.tiltDegrees));
-            s.Add(Row("Угол камеры", "Наклон камеры 3D-города: 30° — почти сверху, 45° — панорама.",
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.048"), LocalizationService.Get("menu.settings.detail.049"),
                 new Segmented(new[] { "30°", "38°", "45°" }, angle, i =>
                 {
                     _display.tiltDegrees = DisplaySettings.TiltOptions[i];
                     Save();
                     UpdatePreview($"Камера наклонена на {DisplaySettings.TiltOptions[i]:0}°.");
                 })));
-            s.Add(Row("Качество 3D", "Низкое — меньше зданий и без теней; высокое — мягкие тени, сглаживание и свечение.",
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.050"), LocalizationService.Get("menu.settings.detail.051"),
                 new Segmented(DisplaySettings.City3DQualityNames, Mathf.Clamp(_display.city3DQuality, 0, 2), i =>
                 {
                     _display.city3DQuality = i;
                     Save();
                     UpdatePreview($"Качество 3D-города: {DisplaySettings.City3DQualityNames[i].ToLowerInvariant()}.");
                 })));
-            s.Add(Row("Мини-карта", "Уменьшенная карта в углу поля: клик переносит обзор.", new SwitchToggle(_display.showMinimap, on =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.052"), LocalizationService.Get("menu.settings.detail.053"), new SwitchToggle(_display.showMinimap, on =>
             {
                 _display.showMinimap = on;
                 Save();
-                UpdatePreview(on ? "Мини-карта в правом нижнем углу." : "Мини-карта скрыта.");
+                UpdatePreview(on ? LocalizationService.Get("menu.settings.detail.054") : LocalizationService.Get("menu.settings.detail.055"));
             })));
-            var tutorial = Ui.Button("Показать снова", () => { }, ButtonKind.Secondary, 13f);
+            var tutorial = Ui.Button(LocalizationService.Get("menu.settings.detail.056"), () => { }, ButtonKind.Secondary, 13f);
             tutorial.clicked += () =>
             {
                 PlayerPrefs.DeleteKey(GameView.TutorialPrefsKey);
                 PlayerPrefs.Save();
-                tutorial.text = "Покажем в новой партии";
+                tutorial.text = LocalizationService.Get("menu.settings.detail.057");
                 Ui.SetEnabled(tutorial, false);
             };
-            s.Add(Row("Подсказки первого хода", "Наставник подскажет, что делать, в начале следующей партии.", tutorial));
-            s.Add(Note("Камера, колесо мыши и горячие клавиши — в разделе «Управление»."));
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.058"), LocalizationService.Get("menu.settings.detail.059"), tutorial));
+            s.Add(Note(LocalizationService.Get("menu.settings.detail.060")));
         }
 
         void ControlsSection(VisualElement s)
         {
-            s.Add(SectionHead(MenuIcon.Glyph.Keyboard, "Управление"));
-            s.Add(Row("Скорость камеры", "Поворот и наклон 3D-поля мышью и клавишами Q/E, R/F.",
+            s.Add(SectionHead(MenuIcon.Glyph.Keyboard, LocalizationService.Get("menu.settings.detail.061")));
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.062"), LocalizationService.Get("menu.settings.detail.063"),
                 new Segmented(DisplaySettings.SpeedNames, Mathf.Clamp(_display.cameraSpeed, 0, 2), i =>
                 {
                     _display.cameraSpeed = i;
                     Save();
                     UpdatePreview($"Скорость камеры: {DisplaySettings.SpeedNames[i].ToLowerInvariant()}.");
                 })));
-            s.Add(Row("Плавное вращение", "Камера мягко догоняет мышь; выключено — поворачивается ровно за курсором.", new SwitchToggle(_display.smoothCamera, on =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.064"), LocalizationService.Get("menu.settings.detail.065"), new SwitchToggle(_display.smoothCamera, on =>
             {
                 _display.smoothCamera = on;
                 Save();
-                UpdatePreview(on ? "Поворот поля плавный, без рывков." : "Поле поворачивается сразу за мышью.");
+                UpdatePreview(on ? LocalizationService.Get("menu.settings.detail.066") : LocalizationService.Get("menu.settings.detail.067"));
             })));
-            s.Add(Row("Вращение левой кнопкой", "Тянуть левой кнопкой — повернуть и наклонить поле, клик — выбрать. Сдвиг приближенной карты — правой кнопкой. " +
-                      "Выключено — левая тянет карту, правая крутит.", new SwitchToggle(_display.leftDragRotates, on =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.068"), LocalizationService.Get("menu.settings.detail.069") +
+                      LocalizationService.Get("menu.settings.detail.070"), new SwitchToggle(_display.leftDragRotates, on =>
             {
                 _display.leftDragRotates = on;
                 Save();
-                UpdatePreview(on ? "Поле крутится левой кнопкой мыши." : "Поле крутится правой кнопкой, левая тянет карту.");
+                UpdatePreview(on ? LocalizationService.Get("menu.settings.detail.071") : LocalizationService.Get("menu.settings.detail.072"));
                 Rebuild();
             })));
-            s.Add(Row("Инвертировать наклон", "Мышь вверх — камера опускается к горизонту, вниз — поднимается.", new SwitchToggle(_display.invertTilt, on =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.073"), LocalizationService.Get("menu.settings.detail.074"), new SwitchToggle(_display.invertTilt, on =>
             {
                 _display.invertTilt = on;
                 Save();
-                UpdatePreview(on ? "Наклон инвертирован." : "Наклон как обычно: мышь вверх — вид сверху.");
+                UpdatePreview(on ? LocalizationService.Get("menu.settings.detail.075") : LocalizationService.Get("menu.settings.detail.076"));
             })));
-            s.Add(Row("Приближение колесом", "Насколько сильно приближает один щелчок колеса мыши.",
-                new Segmented(new[] { "Плавно", "Обычно", "Быстро" }, Mathf.Clamp(_display.zoomSpeed, 0, 2), i =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.077"), LocalizationService.Get("menu.settings.detail.078"),
+                new Segmented(new[] { LocalizationService.Get("menu.settings.detail.079"), LocalizationService.Get("menu.settings.detail.080"), LocalizationService.Get("menu.settings.detail.081") }, Mathf.Clamp(_display.zoomSpeed, 0, 2), i =>
                 {
                     _display.zoomSpeed = i;
                     Save();
-                    UpdatePreview("Шаг приближения колесом изменён.");
+                    UpdatePreview(LocalizationService.Get("menu.settings.detail.082"));
                 })));
 
-            s.Add(SubHead("Мышь"));
+            s.Add(SubHead(LocalizationService.Get("menu.settings.detail.083")));
             foreach (var (keys, action) in new[]
             {
-                ("Левая кнопка", _display.leftDragRotates
-                    ? "клик — выбрать дорогу, станцию, груз; перетаскивание — повернуть (влево-вправо) и наклонить (вверх-вниз) 3D-поле"
-                    : "выбрать дорогу, станцию, груз; перетаскивание — сдвинуть карту"),
-                ("Правая кнопка + движение", _display.leftDragRotates
-                    ? "сдвинуть приближенную карту (без приближения — повернуть поле)"
-                    : "повернуть (влево-вправо) и наклонить (вверх-вниз) 3D-поле"),
-                ("Средняя кнопка + движение", "сдвинуть приближенную карту"),
-                ("Колесо", "приблизить или отдалить под курсором"),
+                (LocalizationService.Get("menu.settings.detail.084"), _display.leftDragRotates
+                    ? LocalizationService.Get("menu.settings.detail.085")
+                    : LocalizationService.Get("menu.settings.detail.086")),
+                (LocalizationService.Get("menu.settings.detail.087"), _display.leftDragRotates
+                    ? LocalizationService.Get("menu.settings.detail.088")
+                    : LocalizationService.Get("menu.settings.detail.089")),
+                (LocalizationService.Get("menu.settings.detail.090"), LocalizationService.Get("menu.settings.detail.091")),
+                (LocalizationService.Get("menu.settings.detail.092"), LocalizationService.Get("menu.settings.detail.093")),
             }) s.Add(KeyRow(keys, action));
-            s.Add(SubHead("Клавиатура"));
+            s.Add(SubHead(LocalizationService.Get("menu.settings.detail.094")));
             foreach (var (keys, action) in new[]
             {
-                ("Q / E", "повернуть поле влево / вправо"),
-                ("R / F", "наклонить камеру к горизонту / к виду сверху"),
-                ("Home", "север сверху, наклон из настроек"),
-                ("Esc", "в меню — назад, в предыдущий раздел"),
-                ("← / →, Enter", "в выборе персонажа — листать и выбрать"),
-                ("F3", "в профиле, вкладка «Персонаж», — разметка слоёв: точки привязки и рамки вещей"),
+                ("Q / E", LocalizationService.Get("menu.settings.detail.095")),
+                ("R / F", LocalizationService.Get("menu.settings.detail.096")),
+                ("Home", LocalizationService.Get("menu.settings.detail.097")),
+                ("Esc", LocalizationService.Get("menu.settings.detail.098")),
+                ("← / →, Enter", LocalizationService.Get("menu.settings.detail.099")),
+                ("F3", LocalizationService.Get("menu.settings.detail.100")),
             }) s.Add(KeyRow(keys, action));
         }
 
@@ -502,23 +502,23 @@ namespace CityHighways.Presentation
         void AccessSection(VisualElement s)
         {
             s.Add(SectionHead(MenuIcon.Glyph.Access, LocalizationService.Get("menu.settings.access")));
-            s.Add(Row("Меньше анимаций", "Переходы почти мгновенные, контент появляется без сдвига, машинки в превью стоят.", new SwitchToggle(_display.reducedMotion, on =>
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.101"), LocalizationService.Get("menu.settings.detail.102"), new SwitchToggle(_display.reducedMotion, on =>
             {
                 _display.reducedMotion = on;
                 Save();
-                UpdatePreview(on ? "Анимации сведены к минимуму." : "Анимации включены.");
+                UpdatePreview(on ? LocalizationService.Get("menu.settings.detail.103") : LocalizationService.Get("menu.settings.detail.104"));
             })));
             var scales = DisplaySettings.UiScales;
             int index = Array.FindIndex(scales, x => Mathf.Approximately(x, _display.uiScale));
             if (index < 0) index = 1;
-            s.Add(Row("Масштаб интерфейса", "Весь интерфейс крупнее или мельче — меняется сразу.",
+            s.Add(Row(LocalizationService.Get("menu.settings.detail.105"), LocalizationService.Get("menu.settings.detail.106"),
                 new Segmented(scales.Select(x => $"{Mathf.RoundToInt(x * 100f)}%").ToList(), index, i =>
                 {
                     _display.uiScale = scales[i];
                     Save();
                     UpdatePreview($"Масштаб интерфейса {Mathf.RoundToInt(scales[i] * 100f)}%.");
                 })));
-            s.Add(Note("Крупный масштаб на небольших экранах может не уместить длинные страницы — тогда их можно прокрутить."));
+            s.Add(Note(LocalizationService.Get("menu.settings.detail.107")));
         }
 
         // ================================================================== Строки и мелочи
@@ -642,7 +642,7 @@ namespace CityHighways.Presentation
             Save();
             _backgroundChanged?.Invoke();
             Rebuild();
-            UpdatePreview("Все настройки сброшены к заводским. Профили, статистика и сохранённая партия не тронуты.");
+            UpdatePreview(LocalizationService.Get("menu.settings.detail.108"));
         }
     }
 }

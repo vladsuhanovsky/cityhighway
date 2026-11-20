@@ -475,6 +475,438 @@
     {
       "key": "game.tooltip.goal_reward",
       "value": "Награду получает тот, кто выполнит цель первым."
+    },
+    {
+      "key": "menu.settings.detail.001",
+      "value": "Меняйте настройки — картинка справа и сама игра меняются сразу."
+    },
+    {
+      "key": "menu.settings.detail.002",
+      "value": "Language / Язык"
+    },
+    {
+      "key": "menu.settings.detail.003",
+      "value": "Switch the home screen language / Сменить язык главной страницы."
+    },
+    {
+      "key": "menu.settings.detail.004",
+      "value": "Режим"
+    },
+    {
+      "key": "menu.settings.detail.005",
+      "value": "Полный экран или окно."
+    },
+    {
+      "key": "menu.settings.detail.006",
+      "value": "Полный экран"
+    },
+    {
+      "key": "menu.settings.detail.007",
+      "value": "В окне"
+    },
+    {
+      "key": "menu.settings.detail.008",
+      "value": "Разрешение"
+    },
+    {
+      "key": "menu.settings.detail.009",
+      "value": "Качество графики"
+    },
+    {
+      "key": "menu.settings.detail.010",
+      "value": "Уровни из настроек проекта Unity: сглаживание, тени, детализация."
+    },
+    {
+      "key": "menu.settings.detail.011",
+      "value": "Фон главного меню"
+    },
+    {
+      "key": "menu.settings.detail.012",
+      "value": "Свет"
+    },
+    {
+      "key": "menu.settings.detail.013",
+      "value": "По часам компьютера, всегда день или всегда ночь."
+    },
+    {
+      "key": "menu.settings.detail.014",
+      "value": "По часам"
+    },
+    {
+      "key": "menu.settings.detail.015",
+      "value": "День"
+    },
+    {
+      "key": "menu.settings.detail.016",
+      "value": "Ночь"
+    },
+    {
+      "key": "menu.settings.detail.017",
+      "value": "Свет по часам компьютера."
+    },
+    {
+      "key": "menu.settings.detail.018",
+      "value": "Всегда день."
+    },
+    {
+      "key": "menu.settings.detail.019",
+      "value": "Всегда ночь: окна горят, в небе луна."
+    },
+    {
+      "key": "menu.settings.detail.020",
+      "value": "Палитра"
+    },
+    {
+      "key": "menu.settings.detail.021",
+      "value": "Цвета неба и окон — видно и на фоне меню за этой страницей."
+    },
+    {
+      "key": "menu.settings.detail.022",
+      "value": "Картина города"
+    },
+    {
+      "key": "menu.settings.detail.023",
+      "value": "Иллюстрация города вместо живого фона. Свет и палитра тогда не видны."
+    },
+    {
+      "key": "menu.settings.detail.024",
+      "value": "На фоне меню — картина города."
+    },
+    {
+      "key": "menu.settings.detail.025",
+      "value": "На фоне меню — живой город."
+    },
+    {
+      "key": "menu.settings.detail.026",
+      "value": "В редакторе режим и разрешение задаёт окно Game — они применятся в собранной игре."
+    },
+    {
+      "key": "menu.settings.detail.027",
+      "value": "Звук в игре"
+    },
+    {
+      "key": "menu.settings.detail.028",
+      "value": "Все звуки: карты, стройка, фанфары."
+    },
+    {
+      "key": "menu.settings.detail.029",
+      "value": "Звук включён."
+    },
+    {
+      "key": "menu.settings.detail.030",
+      "value": "Звук выключен."
+    },
+    {
+      "key": "menu.settings.detail.031",
+      "value": "Громкость"
+    },
+    {
+      "key": "menu.settings.detail.032",
+      "value": "Отпустите бегунок — прозвучит тестовый звук."
+    },
+    {
+      "key": "menu.settings.detail.033",
+      "value": "Звуки интерфейса"
+    },
+    {
+      "key": "menu.settings.detail.034",
+      "value": "Щелчки кнопок и тихие звуки при наведении на пункты меню."
+    },
+    {
+      "key": "menu.settings.detail.035",
+      "value": "Карта"
+    },
+    {
+      "key": "menu.settings.detail.036",
+      "value": "Монета"
+    },
+    {
+      "key": "menu.settings.detail.037",
+      "value": "Звонок"
+    },
+    {
+      "key": "menu.settings.detail.038",
+      "value": "Фанфары"
+    },
+    {
+      "key": "menu.settings.detail.039",
+      "value": "Проверить звуки"
+    },
+    {
+      "key": "menu.settings.detail.040",
+      "value": "Наклон поля (2.5D)"
+    },
+    {
+      "key": "menu.settings.detail.041",
+      "value": "Поле с лёгким наклоном и глубиной; выключено — плоская карта сверху."
+    },
+    {
+      "key": "menu.settings.detail.042",
+      "value": "Поле наклонено: дальние дороги тоньше, ближние крупнее."
+    },
+    {
+      "key": "menu.settings.detail.043",
+      "value": "Плоская карта сверху — всё одного масштаба."
+    },
+    {
+      "key": "menu.settings.detail.044",
+      "value": "3D-город"
+    },
+    {
+      "key": "menu.settings.detail.045",
+      "value": "Здания, деревья, река с набережными и мосты на опорах под картой; свет и тени по времени суток."
+    },
+    {
+      "key": "menu.settings.detail.046",
+      "value": "Под дорогами — объёмный город: тени, окна светятся ночью."
+    },
+    {
+      "key": "menu.settings.detail.047",
+      "value": "Плоская нарисованная карта — легче для слабого ПК."
+    },
+    {
+      "key": "menu.settings.detail.048",
+      "value": "Угол камеры"
+    },
+    {
+      "key": "menu.settings.detail.049",
+      "value": "Наклон камеры 3D-города: 30° — почти сверху, 45° — панорама."
+    },
+    {
+      "key": "menu.settings.detail.050",
+      "value": "Качество 3D"
+    },
+    {
+      "key": "menu.settings.detail.051",
+      "value": "Низкое — меньше зданий и без теней; высокое — мягкие тени, сглаживание и свечение."
+    },
+    {
+      "key": "menu.settings.detail.052",
+      "value": "Мини-карта"
+    },
+    {
+      "key": "menu.settings.detail.053",
+      "value": "Уменьшенная карта в углу поля: клик переносит обзор."
+    },
+    {
+      "key": "menu.settings.detail.054",
+      "value": "Мини-карта в правом нижнем углу."
+    },
+    {
+      "key": "menu.settings.detail.055",
+      "value": "Мини-карта скрыта."
+    },
+    {
+      "key": "menu.settings.detail.056",
+      "value": "Показать снова"
+    },
+    {
+      "key": "menu.settings.detail.057",
+      "value": "Покажем в новой партии"
+    },
+    {
+      "key": "menu.settings.detail.058",
+      "value": "Подсказки первого хода"
+    },
+    {
+      "key": "menu.settings.detail.059",
+      "value": "Наставник подскажет, что делать, в начале следующей партии."
+    },
+    {
+      "key": "menu.settings.detail.060",
+      "value": "Камера, колесо мыши и горячие клавиши — в разделе «Управление»."
+    },
+    {
+      "key": "menu.settings.detail.061",
+      "value": "Управление"
+    },
+    {
+      "key": "menu.settings.detail.062",
+      "value": "Скорость камеры"
+    },
+    {
+      "key": "menu.settings.detail.063",
+      "value": "Поворот и наклон 3D-поля мышью и клавишами Q/E, R/F."
+    },
+    {
+      "key": "menu.settings.detail.064",
+      "value": "Плавное вращение"
+    },
+    {
+      "key": "menu.settings.detail.065",
+      "value": "Камера мягко догоняет мышь; выключено — поворачивается ровно за курсором."
+    },
+    {
+      "key": "menu.settings.detail.066",
+      "value": "Поворот поля плавный, без рывков."
+    },
+    {
+      "key": "menu.settings.detail.067",
+      "value": "Поле поворачивается сразу за мышью."
+    },
+    {
+      "key": "menu.settings.detail.068",
+      "value": "Вращение левой кнопкой"
+    },
+    {
+      "key": "menu.settings.detail.069",
+      "value": "Тянуть левой кнопкой — повернуть и наклонить поле, клик — выбрать. Сдвиг приближенной карты — правой кнопкой. "
+    },
+    {
+      "key": "menu.settings.detail.070",
+      "value": "Выключено — левая тянет карту, правая крутит."
+    },
+    {
+      "key": "menu.settings.detail.071",
+      "value": "Поле крутится левой кнопкой мыши."
+    },
+    {
+      "key": "menu.settings.detail.072",
+      "value": "Поле крутится правой кнопкой, левая тянет карту."
+    },
+    {
+      "key": "menu.settings.detail.073",
+      "value": "Инвертировать наклон"
+    },
+    {
+      "key": "menu.settings.detail.074",
+      "value": "Мышь вверх — камера опускается к горизонту, вниз — поднимается."
+    },
+    {
+      "key": "menu.settings.detail.075",
+      "value": "Наклон инвертирован."
+    },
+    {
+      "key": "menu.settings.detail.076",
+      "value": "Наклон как обычно: мышь вверх — вид сверху."
+    },
+    {
+      "key": "menu.settings.detail.077",
+      "value": "Приближение колесом"
+    },
+    {
+      "key": "menu.settings.detail.078",
+      "value": "Насколько сильно приближает один щелчок колеса мыши."
+    },
+    {
+      "key": "menu.settings.detail.079",
+      "value": "Плавно"
+    },
+    {
+      "key": "menu.settings.detail.080",
+      "value": "Обычно"
+    },
+    {
+      "key": "menu.settings.detail.081",
+      "value": "Быстро"
+    },
+    {
+      "key": "menu.settings.detail.082",
+      "value": "Шаг приближения колесом изменён."
+    },
+    {
+      "key": "menu.settings.detail.083",
+      "value": "Мышь"
+    },
+    {
+      "key": "menu.settings.detail.084",
+      "value": "Левая кнопка"
+    },
+    {
+      "key": "menu.settings.detail.085",
+      "value": "клик — выбрать дорогу, станцию, груз; перетаскивание — повернуть (влево-вправо) и наклонить (вверх-вниз) 3D-поле"
+    },
+    {
+      "key": "menu.settings.detail.086",
+      "value": "выбрать дорогу, станцию, груз; перетаскивание — сдвинуть карту"
+    },
+    {
+      "key": "menu.settings.detail.087",
+      "value": "Правая кнопка + движение"
+    },
+    {
+      "key": "menu.settings.detail.088",
+      "value": "сдвинуть приближенную карту (без приближения — повернуть поле)"
+    },
+    {
+      "key": "menu.settings.detail.089",
+      "value": "повернуть (влево-вправо) и наклонить (вверх-вниз) 3D-поле"
+    },
+    {
+      "key": "menu.settings.detail.090",
+      "value": "Средняя кнопка + движение"
+    },
+    {
+      "key": "menu.settings.detail.091",
+      "value": "сдвинуть приближенную карту"
+    },
+    {
+      "key": "menu.settings.detail.092",
+      "value": "Колесо"
+    },
+    {
+      "key": "menu.settings.detail.093",
+      "value": "приблизить или отдалить под курсором"
+    },
+    {
+      "key": "menu.settings.detail.094",
+      "value": "Клавиатура"
+    },
+    {
+      "key": "menu.settings.detail.095",
+      "value": "повернуть поле влево / вправо"
+    },
+    {
+      "key": "menu.settings.detail.096",
+      "value": "наклонить камеру к горизонту / к виду сверху"
+    },
+    {
+      "key": "menu.settings.detail.097",
+      "value": "север сверху, наклон из настроек"
+    },
+    {
+      "key": "menu.settings.detail.098",
+      "value": "в меню — назад, в предыдущий раздел"
+    },
+    {
+      "key": "menu.settings.detail.099",
+      "value": "в выборе персонажа — листать и выбрать"
+    },
+    {
+      "key": "menu.settings.detail.100",
+      "value": "в профиле, вкладка «Персонаж», — разметка слоёв: точки привязки и рамки вещей"
+    },
+    {
+      "key": "menu.settings.detail.101",
+      "value": "Меньше анимаций"
+    },
+    {
+      "key": "menu.settings.detail.102",
+      "value": "Переходы почти мгновенные, контент появляется без сдвига, машинки в превью стоят."
+    },
+    {
+      "key": "menu.settings.detail.103",
+      "value": "Анимации сведены к минимуму."
+    },
+    {
+      "key": "menu.settings.detail.104",
+      "value": "Анимации включены."
+    },
+    {
+      "key": "menu.settings.detail.105",
+      "value": "Масштаб интерфейса"
+    },
+    {
+      "key": "menu.settings.detail.106",
+      "value": "Весь интерфейс крупнее или мельче — меняется сразу."
+    },
+    {
+      "key": "menu.settings.detail.107",
+      "value": "Крупный масштаб на небольших экранах может не уместить длинные страницы — тогда их можно прокрутить."
+    },
+    {
+      "key": "menu.settings.detail.108",
+      "value": "Все настройки сброшены к заводским. Профили, статистика и сохранённая партия не тронуты."
     }
   ]
 }
