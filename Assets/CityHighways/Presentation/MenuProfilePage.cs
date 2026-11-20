@@ -77,10 +77,10 @@ namespace CityHighways.Presentation
             var header = Ui.Row();
             header.style.alignItems = Align.Center;
             header.style.marginBottom = 12f;
-            var backButton = Btn("← Назад", () => _back(), ButtonKind.Ghost, 15f);
+            var backButton = Btn(LocalizationService.Get("menu.profile.001"), () => _back(), ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             header.Add(backButton);
-            _title = Ui.Text("Профиль", 32f, GameColors.Accent, true);
+            _title = Ui.Text(LocalizationService.Get("menu.profile.002"), 32f, GameColors.Accent, true);
             header.Add(_title);
             // ID игрока — тот же, что у профиля в Steam (по нему профиль хранится на сервере).
             _idChip = Ui.Button("", () =>
@@ -88,13 +88,13 @@ namespace CityHighways.Presentation
                 var id = Profiles.Active.PlatformId;
                 if (id.Length == 0) return;
                 GUIUtility.systemCopyBuffer = Profiles.Active.steamId;
-                _status = "ID скопирован.";
+                _status = LocalizationService.Get("menu.profile.003");
                 Rebuild();
             }, GameColors.Button, GameColors.ButtonHover, Theme.TextDim, 12f);
             _idChip.style.marginLeft = 14f;
             _idChip.style.minHeight = 28f;
             Ui.Padding(_idChip, 3f, 10f);
-            _idChip.tooltip = "ID профиля Steam — нажмите, чтобы скопировать";
+            _idChip.tooltip = LocalizationService.Get("menu.profile.004");
             header.Add(_idChip);
             var grow = Ui.Box();
             grow.style.flexGrow = 1f;
@@ -106,13 +106,13 @@ namespace CityHighways.Presentation
             // Вкладки вместо длинной прокрутки.
             var tabs = Ui.Row();
             tabs.style.marginBottom = 12f;
-            AddTab(tabs, Tab.Character, MenuIcon.Glyph.Person, "Персонаж");
-            AddTab(tabs, Tab.Achievements, MenuIcon.Glyph.Trophy, "Достижения");
-            AddTab(tabs, Tab.Wallet, MenuIcon.Glyph.Coins, "Кошелёк");
-            AddTab(tabs, Tab.Style, MenuIcon.Glyph.Palette, "Стиль");
-            AddTab(tabs, Tab.Containers, MenuIcon.Glyph.Box, "Контейнеры");
-            AddTab(tabs, Tab.Mastery, MenuIcon.Glyph.Cap, "Мастерство");
-            AddTab(tabs, Tab.Stats, MenuIcon.Glyph.Chart, "Стата");
+            AddTab(tabs, Tab.Character, MenuIcon.Glyph.Person, LocalizationService.Get("menu.profile.005"));
+            AddTab(tabs, Tab.Achievements, MenuIcon.Glyph.Trophy, LocalizationService.Get("menu.profile.006"));
+            AddTab(tabs, Tab.Wallet, MenuIcon.Glyph.Coins, LocalizationService.Get("menu.profile.007"));
+            AddTab(tabs, Tab.Style, MenuIcon.Glyph.Palette, LocalizationService.Get("menu.profile.008"));
+            AddTab(tabs, Tab.Containers, MenuIcon.Glyph.Box, LocalizationService.Get("menu.profile.009"));
+            AddTab(tabs, Tab.Mastery, MenuIcon.Glyph.Cap, LocalizationService.Get("menu.profile.010"));
+            AddTab(tabs, Tab.Stats, MenuIcon.Glyph.Chart, LocalizationService.Get("menu.profile.011"));
             Root.Add(tabs);
 
             _scroll = new ScrollView(ScrollViewMode.Vertical);
@@ -184,7 +184,7 @@ namespace CityHighways.Presentation
             // Ушли с вкладки посреди открытия — вещь уже выдана, рулетку просто досматривать не нужно.
             if (_tab != Tab.Containers) FinishSpin(false);
             var profile = Profiles.Active;
-            _title.text = "Профиль: " + profile.name;
+            _title.text = LocalizationService.Get("menu.profile.012") + profile.name;
             _idChip.text = profile.IsSteam ? $"ID Steam: {profile.steamId}" : "";
             Ui.Show(_idChip, profile.IsSteam);
             _statusLabel.text = _status;
@@ -245,8 +245,8 @@ namespace CityHighways.Presentation
             left.style.marginRight = 14f;
             left.style.width = 280f;
             left.style.justifyContent = Justify.Center;
-            left.Add(Ui.Text("Персонаж", 18f, Theme.Text, true));
-            var hint = Ui.Text("Тяните мышью — повернуть. Перетащите вещь на персонажа — надеть или примерить.", 12f, Theme.TextDim);
+            left.Add(Ui.Text(LocalizationService.Get("menu.profile.005"), 18f, Theme.Text, true));
+            var hint = Ui.Text(LocalizationService.Get("menu.profile.013"), 12f, Theme.TextDim);
             hint.style.unityTextAlign = TextAnchor.MiddleCenter;
             hint.style.marginBottom = 8f;
             left.Add(hint);
@@ -257,7 +257,7 @@ namespace CityHighways.Presentation
 
             if (_tryOn != null)
             {
-                var note = Ui.Text("Примерка — ещё не надето", 13f, GameColors.Warning, true);
+                var note = Ui.Text(LocalizationService.Get("menu.profile.014"), 13f, GameColors.Warning, true);
                 note.style.marginTop = 8f;
                 left.Add(note);
                 // Что из примеренного ещё не куплено и сколько стоит.
@@ -279,7 +279,7 @@ namespace CityHighways.Presentation
                             }
                         }
                         foreach (var slot in CharacterCatalog.Slots) Profiles.Wear(profile, slot, _tryOn.Get(slot));
-                        _status = "Куплено и надето.";
+                        _status = LocalizationService.Get("menu.profile.015");
                         _tryOn = null;
                         Rebuild();
                     }, ButtonKind.Primary, 14f);
@@ -289,17 +289,17 @@ namespace CityHighways.Presentation
                 }
                 else
                 {
-                    var wearAll = Btn("Надеть примеренное", () =>
+                    var wearAll = Btn(LocalizationService.Get("menu.profile.016"), () =>
                     {
                         foreach (var slot in CharacterCatalog.Slots) Profiles.Wear(profile, slot, _tryOn.Get(slot));
                         _tryOn = null;
-                        _status = "Надето.";
+                        _status = LocalizationService.Get("menu.profile.017");
                         Rebuild();
                     }, ButtonKind.Primary, 14f);
                     wearAll.style.marginTop = 6f;
                     left.Add(wearAll);
                 }
-                var cancel = Btn("Снять примерку", () =>
+                var cancel = Btn(LocalizationService.Get("menu.profile.018"), () =>
                 {
                     _tryOn = null;
                     Rebuild();
@@ -400,7 +400,7 @@ namespace CityHighways.Presentation
                     Profiles.SetGender(profile, chosen);
                     _tryOn = null;
                     _animateSlot = "body";
-                    _status = chosen == CharacterCatalog.Female ? "Женский персонаж и женский гардероб." : "Мужской персонаж и мужской гардероб.";
+                    _status = chosen == CharacterCatalog.Female ? LocalizationService.Get("menu.profile.019") : LocalizationService.Get("menu.profile.020");
                     Rebuild();
                 }, active ? ButtonKind.Primary : ButtonKind.Secondary, 14f);
                 button.style.marginRight = 6f;
@@ -441,7 +441,7 @@ namespace CityHighways.Presentation
             var mini = new CharacterView(60f, slot == "hat" || slot == "hair" || slot == "body");
             mini.Set(worn.With(slot, id));
             tile.Add(mini);
-            var name = Ui.Text(item?.name ?? "Без " + (slot == "hat" ? "головного убора" : "аксессуара"), 12f, Theme.Text, true);
+            var name = Ui.Text(item?.name ?? LocalizationService.Get("menu.profile.021") + (slot == "hat" ? LocalizationService.Get("menu.profile.022") : LocalizationService.Get("menu.profile.023")), 12f, Theme.Text, true);
             name.style.unityTextAlign = TextAnchor.MiddleCenter;
             name.style.marginTop = 4f;
             tile.Add(name);
@@ -455,11 +455,11 @@ namespace CityHighways.Presentation
             UnityEngine.UIElements.Button button;
             if (wearing)
             {
-                button = Btn("Надето", () => { }, ButtonKind.Ghost, 12f);
+                button = Btn(LocalizationService.Get("menu.profile.024"), () => { }, ButtonKind.Ghost, 12f);
                 Ui.SetEnabled(button, false);
             }
             else if (has)
-                button = Btn("Надеть", () => Apply(profile, item, slot, true), ButtonKind.Secondary, 12f);
+                button = Btn(LocalizationService.Get("menu.profile.025"), () => Apply(profile, item, slot, true), ButtonKind.Secondary, 12f);
             else
             {
                 button = Btn($"Купить · {item.price}", () =>
@@ -541,7 +541,7 @@ namespace CityHighways.Presentation
             _itemInfo.Clear();
             var head = Ui.Row();
             head.style.alignItems = Align.Center;
-            string title = item?.name ?? "Без " + (slot == "hat" ? "головного убора" : "аксессуара");
+            string title = item?.name ?? LocalizationService.Get("menu.profile.021") + (slot == "hat" ? LocalizationService.Get("menu.profile.022") : LocalizationService.Get("menu.profile.023"));
             var name = Ui.Text(title, 14f, Theme.Text, true);
             name.style.marginRight = 8f;
             head.Add(name);
@@ -551,13 +551,13 @@ namespace CityHighways.Presentation
                 tag.style.marginRight = 8f;
                 head.Add(tag);
                 bool has = profile.HasClothing(item);
-                head.Add(Ui.Text(has ? (shown.Get(slot) == item.id ? "надето" : "есть") : $"{item.price} влияния", 12f,
+                head.Add(Ui.Text(has ? (shown.Get(slot) == item.id ? LocalizationService.Get("menu.profile.026") : LocalizationService.Get("menu.profile.027")) : $"{item.price} влияния", 12f,
                     has ? Theme.TextDim : GameColors.Accent, !has));
             }
             _itemInfo.Add(head);
 
             string text = item == null
-                ? "Слот можно оставить пустым."
+                ? LocalizationService.Get("menu.profile.028")
                 : string.IsNullOrEmpty(item.description) ? CharacterCatalog.SlotTitle(slot) : item.description;
             var description = Ui.Text(text, 12f, Theme.TextDim);
             description.style.whiteSpace = WhiteSpace.Normal;
@@ -567,7 +567,7 @@ namespace CityHighways.Presentation
             if (item?.hides != null && item.hides.Length > 0)
             {
                 var names = item.hides.Select(h => CharacterCatalog.Item(h)?.name ?? CharacterCatalog.SlotTitle(h).ToLowerInvariant());
-                var line = Ui.Text("Под ней не видно: " + string.Join(", ", names) + " (вещь останется надетой).", 12f, GameColors.Warning);
+                var line = Ui.Text(LocalizationService.Get("menu.profile.029") + string.Join(", ", names) + LocalizationService.Get("menu.profile.030"), 12f, GameColors.Warning);
                 line.style.whiteSpace = WhiteSpace.Normal;
                 line.style.marginTop = 4f;
                 _itemInfo.Add(line);
@@ -638,7 +638,7 @@ namespace CityHighways.Presentation
                 Profiles.Wear(profile, slot, id);
                 if (_tryOn != null) _tryOn = _tryOn.With(slot, id);
                 if (_tryOn != null && _tryOn.Serialize() == profile.Outfit.Serialize()) _tryOn = null;
-                _status = item == null ? "Снято." : $"Надето: {item.name}.";
+                _status = item == null ? LocalizationService.Get("menu.profile.031") : $"Надето: {item.name}.";
             }
             else
             {
@@ -677,9 +677,9 @@ namespace CityHighways.Presentation
             var daily = Card(14f);
             daily.style.flexGrow = 1f;
             Ui.Border(daily, 2f, todayDone ? Theme.Line : GameColors.Accent);
-            daily.Add(Ui.Text("Задание дня", 13f, GameColors.Accent, true));
+            daily.Add(Ui.Text(LocalizationService.Get("menu.profile.032"), 13f, GameColors.Accent, true));
             daily.Add(Ui.Text(task.Title, 17f, Theme.Text, true));
-            daily.Add(Caption(todayDone ? "Выполнено сегодня" : $"Награда: +{Achievements.DailyReward} влияния · выполнено всего: {profile.dailyTotal}",
+            daily.Add(Caption(todayDone ? LocalizationService.Get("menu.profile.033") : $"Награда: +{Achievements.DailyReward} влияния · выполнено всего: {profile.dailyTotal}",
                 13f, todayDone ? GameColors.Success : Theme.TextDim, 0f, 4f));
             top.Add(daily);
             _content.Add(top);
@@ -687,15 +687,15 @@ namespace CityHighways.Presentation
             // Фильтры и сортировка.
             var controls = Ui.Row();
             controls.style.marginBottom = 10f;
-            controls.Add(Chip("Все", _achievementFilter == AchievementFilter.All, () => { _achievementFilter = AchievementFilter.All; Rebuild(); }));
-            controls.Add(Chip("Активные", _achievementFilter == AchievementFilter.Active, () => { _achievementFilter = AchievementFilter.Active; Rebuild(); }));
-            controls.Add(Chip("Завершённые", _achievementFilter == AchievementFilter.Done, () => { _achievementFilter = AchievementFilter.Done; Rebuild(); }));
+            controls.Add(Chip(LocalizationService.Get("menu.profile.034"), _achievementFilter == AchievementFilter.All, () => { _achievementFilter = AchievementFilter.All; Rebuild(); }));
+            controls.Add(Chip(LocalizationService.Get("menu.profile.035"), _achievementFilter == AchievementFilter.Active, () => { _achievementFilter = AchievementFilter.Active; Rebuild(); }));
+            controls.Add(Chip(LocalizationService.Get("menu.profile.036"), _achievementFilter == AchievementFilter.Done, () => { _achievementFilter = AchievementFilter.Done; Rebuild(); }));
             var space = Ui.Box();
             space.style.flexGrow = 1f;
             controls.Add(space);
-            controls.Add(Caption("Сортировка:", 13f, Theme.TextDim, 8f));
-            controls.Add(Chip("По прогрессу", !_sortByReward, () => { _sortByReward = false; Rebuild(); }));
-            controls.Add(Chip("По награде", _sortByReward, () => { _sortByReward = true; Rebuild(); }));
+            controls.Add(Caption(LocalizationService.Get("menu.profile.037"), 13f, Theme.TextDim, 8f));
+            controls.Add(Chip(LocalizationService.Get("menu.profile.038"), !_sortByReward, () => { _sortByReward = false; Rebuild(); }));
+            controls.Add(Chip(LocalizationService.Get("menu.profile.039"), _sortByReward, () => { _sortByReward = true; Rebuild(); }));
             _content.Add(controls);
 
             bool anyNew = false;
@@ -772,7 +772,7 @@ namespace CityHighways.Presentation
             head.Add(name);
             if (celebrate)
             {
-                var tag = Ui.Text("НОВОЕ", 10f, GameColors.AccentText, true);
+                var tag = Ui.Text(LocalizationService.Get("menu.profile.040"), 10f, GameColors.AccentText, true);
                 tag.style.backgroundColor = GameColors.Warning;
                 Ui.Radius(tag, 6f);
                 Ui.Padding(tag, 2f, 6f);
@@ -794,7 +794,7 @@ namespace CityHighways.Presentation
             count.style.marginLeft = 8f;
             progressRow.Add(count);
             card.Add(progressRow);
-            if (unlocked) card.Add(Caption("Получено", 11f, GameColors.Success, 0f, 4f));
+            if (unlocked) card.Add(Caption(LocalizationService.Get("menu.profile.041"), 11f, GameColors.Success, 0f, 4f));
             return card;
         }
 
@@ -804,15 +804,15 @@ namespace CityHighways.Presentation
         {
             switch (source)
             {
-                case "game": return "Партии";
-                case "achievement": return "Достижения";
-                case "daily": return "Задания дня";
-                case "shop": return "Оформление";
-                case "clothing": return "Одежда";
-                case "container": return "Контейнеры";
-                case "admin": return "От разработчика";
-                case "mastery": return "Мастерство";
-                default: return "Прочее";
+                case "game": return LocalizationService.Get("menu.profile.042");
+                case "achievement": return LocalizationService.Get("menu.profile.006");
+                case "daily": return LocalizationService.Get("menu.profile.043");
+                case "shop": return LocalizationService.Get("menu.profile.044");
+                case "clothing": return LocalizationService.Get("menu.profile.045");
+                case "container": return LocalizationService.Get("menu.profile.009");
+                case "admin": return LocalizationService.Get("menu.profile.046");
+                case "mastery": return LocalizationService.Get("menu.profile.010");
+                default: return LocalizationService.Get("menu.profile.047");
             }
         }
 
@@ -830,10 +830,10 @@ namespace CityHighways.Presentation
             balance.style.flexGrow = 1f;
             balance.style.flexBasis = 0f;
             balance.style.marginRight = 12f;
-            balance.Add(Ui.Text("В кошельке", 13f, Theme.TextDim, true));
+            balance.Add(Ui.Text(LocalizationService.Get("menu.profile.048"), 13f, Theme.TextDim, true));
             var amount = Ui.Number($"{profile.wallet}", 44f, GameColors.Accent, true);
             balance.Add(amount);
-            balance.Add(Caption("влияния — тратится на одежду персонажа и оформление", 13f, Theme.TextDim, 0f, 0f));
+            balance.Add(Caption(LocalizationService.Get("menu.profile.049"), 13f, Theme.TextDim, 0f, 0f));
             balance.Add(Caption($"Заработано всего: {profile.earnedTotal} · по истории: доход {income}, траты {spent}", 13f, Theme.Text, 0f, 8f));
             top.Add(balance);
 
@@ -843,7 +843,7 @@ namespace CityHighways.Presentation
             var forecast = Card(16f);
             forecast.style.flexGrow = 1f;
             forecast.style.flexBasis = 0f;
-            forecast.Add(Ui.Text("Прогноз уровня", 13f, Theme.TextDim, true));
+            forecast.Add(Ui.Text(LocalizationService.Get("menu.profile.050"), 13f, Theme.TextDim, true));
             var levelRow = Ui.Row();
             levelRow.Add(Ui.Number($"Lvl {level}", 30f, ProfileLevel.TierColor(level), true));
             var rank = Ui.Text(ProfileLevel.Rank(level), 15f, Theme.Text, true);
@@ -857,7 +857,7 @@ namespace CityHighways.Presentation
             int left = need - into;
             float perGame = profile.games > 0 ? xp / (float)profile.games : ProfileLevel.XpPerGame;
             int games = Mathf.Max(1, Mathf.CeilToInt(left / Mathf.Max(1f, perGame)));
-            forecast.Add(Caption($"До уровня {level + 1}: {left} опыта — примерно {games} {Plural(games, "партия", "партии", "партий")} (в среднем {perGame:0} опыта за партию).",
+            forecast.Add(Caption($"До уровня {level + 1}: {left} опыта — примерно {games} {Plural(games, "партия", LocalizationService.Get("menu.profile.051"), LocalizationService.Get("menu.profile.052"))} (в среднем {perGame:0} опыта за партию).",
                 13f, Theme.Text, 0f, 6f));
             forecast.Add(Caption($"Опыт: {ProfileLevel.XpPerGame} за партию, +{ProfileLevel.XpPerWin} за победу, +{ProfileLevel.XpPerAchievement} за достижение, +{ProfileLevel.XpPerDaily} за задание дня.",
                 11f, Theme.TextDim, 0f, 4f));
@@ -867,8 +867,8 @@ namespace CityHighways.Presentation
             // График по дням: последние 14 дней.
             var chartCard = Card(16f);
             chartCard.style.marginBottom = 12f;
-            chartCard.Add(Ui.Text("Влияние по дням · 14 дней", 16f, Theme.Text, true));
-            var chartLegend = Caption("зелёное — доход, красное — траты", 12f, Theme.TextDim, 0f, 2f);
+            chartCard.Add(Ui.Text(LocalizationService.Get("menu.profile.053"), 16f, Theme.Text, true));
+            var chartLegend = Caption(LocalizationService.Get("menu.profile.054"), 12f, Theme.TextDim, 0f, 2f);
             chartCard.Add(chartLegend);
             var chart = new EarningsChart(150f);
             chart.style.marginTop = 8f;
@@ -892,7 +892,7 @@ namespace CityHighways.Presentation
             var sources = Card(16f);
             sources.style.width = 340f;
             sources.style.marginRight = 12f;
-            sources.Add(Ui.Text("Источники влияния", 16f, Theme.Text, true));
+            sources.Add(Ui.Text(LocalizationService.Get("menu.profile.055"), 16f, Theme.Text, true));
             int maxSource = 1;
             var groups = history.GroupBy(h => h.source).Select(g => (source: g.Key, sum: g.Sum(h => h.amount))).ToList();
             foreach (var g in groups) maxSource = Mathf.Max(maxSource, Mathf.Abs(g.sum));
@@ -919,10 +919,10 @@ namespace CityHighways.Presentation
             list.style.flexGrow = 1f;
             list.style.flexShrink = 1f;
             var listHeader = Ui.Row();
-            var listTitle = Ui.Text("История", 16f, Theme.Text, true);
+            var listTitle = Ui.Text(LocalizationService.Get("menu.profile.056"), 16f, Theme.Text, true);
             listTitle.style.flexGrow = 1f;
             listHeader.Add(listTitle);
-            foreach (var (key, caption) in new[] { ("all", "Все"), ("income", "Доходы"), ("spent", "Траты"), ("game", "Партии"), ("achievement", "Достижения") })
+            foreach (var (key, caption) in new[] { ("all", LocalizationService.Get("menu.profile.034")), ("income", LocalizationService.Get("menu.profile.057")), ("spent", LocalizationService.Get("menu.profile.058")), ("game", LocalizationService.Get("menu.profile.042")), ("achievement", LocalizationService.Get("menu.profile.006")) })
             {
                 string chosen = key;
                 listHeader.Add(Chip(caption, _historyFilter == key, () => { _historyFilter = chosen; Rebuild(); }));
@@ -935,8 +935,8 @@ namespace CityHighways.Presentation
                 h.source == _historyFilter).Reverse().Take(60).ToList();
             if (filtered.Count == 0)
                 list.Add(Caption(history.Count == 0
-                    ? "История пуста. Она ведётся с этой версии игры: доходы с партий, награды и покупки появятся здесь."
-                    : "Под этот фильтр записей нет.", 13f, Theme.TextDim, 0f, 8f));
+                    ? LocalizationService.Get("menu.profile.059")
+                    : LocalizationService.Get("menu.profile.060"), 13f, Theme.TextDim, 0f, 8f));
             foreach (var entry in filtered)
             {
                 var line = Ui.Row();
@@ -984,15 +984,15 @@ namespace CityHighways.Presentation
             previewCard.style.alignItems = Align.Center;
             var side = Ui.Column();
             side.style.width = 260f;
-            side.Add(Ui.Text("Живое превью", 16f, Theme.Text, true));
+            side.Add(Ui.Text(LocalizationService.Get("menu.profile.061"), 16f, Theme.Text, true));
             side.Add(Caption(_preview == null
-                ? "Так вас видят за столом. Нажмите на предмет — он появится здесь до покупки."
+                ? LocalizationService.Get("menu.profile.062")
                 : profile.Owns(_preview.Id)
                     ? $"Превью: «{_preview.Name}» — уже куплено, можно надеть."
                     : $"Превью: «{_preview.Name}» — ещё не куплено ({_preview.Price} влияния).", 12f, _preview == null ? Theme.TextDim : GameColors.Accent, 0f, 4f));
             if (_preview != null)
             {
-                var reset = Btn("Показать надетое", () => { _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
+                var reset = Btn(LocalizationService.Get("menu.profile.063"), () => { _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
                 reset.style.marginTop = 6f;
                 reset.style.alignSelf = Align.FlexStart;
                 side.Add(reset);
@@ -1035,18 +1035,18 @@ namespace CityHighways.Presentation
 
             var filters = Ui.Row();
             filters.style.marginBottom = 10f;
-            filters.Add(Chip("Все", _styleFilter == StyleFilter.All, () => { _styleFilter = StyleFilter.All; Rebuild(); }));
-            filters.Add(Chip("Купленные", _styleFilter == StyleFilter.Owned, () => { _styleFilter = StyleFilter.Owned; Rebuild(); }));
-            filters.Add(Chip("Доступные для покупки", _styleFilter == StyleFilter.Affordable, () => { _styleFilter = StyleFilter.Affordable; Rebuild(); }));
+            filters.Add(Chip(LocalizationService.Get("menu.profile.034"), _styleFilter == StyleFilter.All, () => { _styleFilter = StyleFilter.All; Rebuild(); }));
+            filters.Add(Chip(LocalizationService.Get("menu.profile.064"), _styleFilter == StyleFilter.Owned, () => { _styleFilter = StyleFilter.Owned; Rebuild(); }));
+            filters.Add(Chip(LocalizationService.Get("menu.profile.065"), _styleFilter == StyleFilter.Affordable, () => { _styleFilter = StyleFilter.Affordable; Rebuild(); }));
             var space = Ui.Box();
             space.style.flexGrow = 1f;
             filters.Add(space);
             filters.Add(Ui.Text($"Кошелёк: {profile.wallet} влияния", 15f, GameColors.Accent, true));
             _content.Add(filters);
 
-            StyleSection(profile, ShopKind.Emblem, "Эмблемы — у имени");
-            StyleSection(profile, ShopKind.Title, "Титулы — под именем");
-            StyleSection(profile, ShopKind.Frame, "Рамки — вокруг строки игрока");
+            StyleSection(profile, ShopKind.Emblem, LocalizationService.Get("menu.profile.066"));
+            StyleSection(profile, ShopKind.Title, LocalizationService.Get("menu.profile.067"));
+            StyleSection(profile, ShopKind.Frame, LocalizationService.Get("menu.profile.068"));
         }
 
         void StyleSection(PlayerProfile profile, ShopKind kind, string caption)
@@ -1059,7 +1059,7 @@ namespace CityHighways.Presentation
             _content.Add(title);
             if (items.Count == 0)
             {
-                _content.Add(Caption(_styleFilter == StyleFilter.Owned ? "Пока ничего не куплено." : "Под этот фильтр ничего нет.", 13f, Theme.TextDim, 0f, 0f));
+                _content.Add(Caption(_styleFilter == StyleFilter.Owned ? LocalizationService.Get("menu.profile.069") : LocalizationService.Get("menu.profile.070"), 13f, Theme.TextDim, 0f, 0f));
                 return;
             }
             var grid = Ui.Row();
@@ -1120,20 +1120,20 @@ namespace CityHighways.Presentation
 
             UnityEngine.UIElements.Button button;
             if (equipped)
-                button = Btn("Снять", () => { profile.Equip(item.Kind, ""); Profiles.Save(); _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
+                button = Btn(LocalizationService.Get("menu.profile.071"), () => { profile.Equip(item.Kind, ""); Profiles.Save(); _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
             else if (owned)
-                button = Btn("Надеть", () => { profile.Equip(item.Kind, item.Id); Profiles.Save(); _preview = null; _status = $"Надето: {item.Name}."; Rebuild(); }, ButtonKind.Secondary, 13f);
+                button = Btn(LocalizationService.Get("menu.profile.025"), () => { profile.Equip(item.Kind, item.Id); Profiles.Save(); _preview = null; _status = $"Надето: {item.Name}."; Rebuild(); }, ButtonKind.Secondary, 13f);
             else if (item.Mastery)
             {
                 // Награда древа мастерства: ни купить, ни выиграть в контейнере.
-                button = Btn("За мастерство", () => { _tab = Tab.Mastery; Rebuild(); }, ButtonKind.Secondary, 13f);
-                button.tooltip = "Титул персонажа за ветку «Подмастерье» — вкладка «Мастерство».";
+                button = Btn(LocalizationService.Get("menu.profile.072"), () => { _tab = Tab.Mastery; Rebuild(); }, ButtonKind.Secondary, 13f);
+                button.tooltip = LocalizationService.Get("menu.profile.073");
             }
             else if (item.Exclusive)
             {
                 // В продаже не бывает: только из контейнеров.
-                button = Btn("Из контейнера", () => { _tab = Tab.Containers; Rebuild(); }, ButtonKind.Secondary, 13f);
-                button.tooltip = "Эта вещь выпадает только из контейнеров — вкладка «Контейнеры».";
+                button = Btn(LocalizationService.Get("menu.profile.074"), () => { _tab = Tab.Containers; Rebuild(); }, ButtonKind.Secondary, 13f);
+                button.tooltip = LocalizationService.Get("menu.profile.075");
             }
             else
             {
@@ -1191,22 +1191,22 @@ namespace CityHighways.Presentation
                 if (note != null) tile.Add(Caption(note, 11f, Theme.TextDim, 0f, 2f));
                 tiles.Add(tile);
             }
-            Tile("Уровень", $"{level}", ProfileLevel.TierColor(level), ProfileLevel.Rank(level));
-            Tile("Партий", $"{profile.games}", Theme.Text);
-            Tile("Побед", $"{profile.wins}", GameColors.Success, profile.games > 0 ? $"{100f * profile.wins / profile.games:0}% партий" : null);
-            Tile("Лучший счёт", games.Count > 0 ? $"{best}" : "—", GameColors.Accent, games.Count > 0 ? $"в среднем {average:0}" : "по журналу партий");
-            Tile("Контрактов выполнено", games.Count > 0 ? $"{contracts}" : "—", Theme.Text);
-            Tile("Получено за проезд", games.Count > 0 ? $"{tolls}" : "—", Theme.Text);
-            Tile("Достижений", $"{achievements}/{Achievements.All.Count}", GameColors.Accent);
+            Tile(LocalizationService.Get("menu.profile.076"), $"{level}", ProfileLevel.TierColor(level), ProfileLevel.Rank(level));
+            Tile(LocalizationService.Get("menu.profile.077"), $"{profile.games}", Theme.Text);
+            Tile(LocalizationService.Get("menu.profile.078"), $"{profile.wins}", GameColors.Success, profile.games > 0 ? $"{100f * profile.wins / profile.games:0}% партий" : null);
+            Tile(LocalizationService.Get("menu.profile.079"), games.Count > 0 ? $"{best}" : "—", GameColors.Accent, games.Count > 0 ? $"в среднем {average:0}" : LocalizationService.Get("menu.profile.080"));
+            Tile(LocalizationService.Get("menu.profile.081"), games.Count > 0 ? $"{contracts}" : "—", Theme.Text);
+            Tile(LocalizationService.Get("menu.profile.082"), games.Count > 0 ? $"{tolls}" : "—", Theme.Text);
+            Tile(LocalizationService.Get("menu.profile.083"), $"{achievements}/{Achievements.All.Count}", GameColors.Accent);
             Tile("Заданий дня", $"{profile.dailyTotal}", Theme.Text);
-            Tile("Влияния заработано", $"{profile.earnedTotal}", GameColors.Accent);
+            Tile(LocalizationService.Get("menu.profile.084"), $"{profile.earnedTotal}", GameColors.Accent);
             _content.Add(tiles);
 
             if (games.Count > 0)
             {
                 var recent = Card(14f);
                 recent.style.marginBottom = 12f;
-                recent.Add(Ui.Text("Последние партии", 16f, Theme.Text, true));
+                recent.Add(Ui.Text(LocalizationService.Get("menu.profile.085"), 16f, Theme.Text, true));
                 foreach (var (game, me) in games.AsEnumerable().Reverse().Take(8))
                 {
                     int place = game.results.Count(r => r.total > me.total) + 1;
@@ -1218,7 +1218,7 @@ namespace CityHighways.Presentation
                     var date = Ui.Number(game.date ?? "", 12f, Theme.TextDim);
                     date.style.width = 150f;
                     line.Add(date);
-                    var where = Ui.Text($"{place}-е место из {game.results.Length}" + (me.winner ? " · победа" : ""), 13f, me.winner ? GameColors.Success : Theme.Text, me.winner);
+                    var where = Ui.Text($"{place}-е место из {game.results.Length}" + (me.winner ? LocalizationService.Get("menu.profile.086") : ""), 13f, me.winner ? GameColors.Success : Theme.Text, me.winner);
                     where.style.flexGrow = 1f;
                     line.Add(where);
                     line.Add(Ui.Number($"{me.total} очк", 14f, GameColors.Accent, true));
@@ -1235,7 +1235,7 @@ namespace CityHighways.Presentation
         {
             var card = Card(14f);
             card.style.marginBottom = 12f;
-            card.Add(Ui.Text("Профиль и аватар", 16f, Theme.Text, true));
+            card.Add(Ui.Text(LocalizationService.Get("menu.profile.087"), 16f, Theme.Text, true));
 
             var avatarRow = Ui.Row();
             avatarRow.style.alignItems = Align.Center;
@@ -1252,7 +1252,7 @@ namespace CityHighways.Presentation
                 var renameField = Field(profile.name, 16);
                 renameField.style.width = 280f;
                 renameRow.Add(renameField);
-                var rename = Btn("Сохранить имя", () =>
+                var rename = Btn(LocalizationService.Get("menu.profile.088"), () =>
                 {
                     string oldName = profile.name;
                     var error = Profiles.Rename(profile, renameField.value);
@@ -1273,17 +1273,17 @@ namespace CityHighways.Presentation
             }
             else avatarSide.Add(Ui.Text(profile.name, 20f, Theme.Text, true));
             avatarSide.Add(Caption(profile.IsSteam
-                ? "Профиль Steam: ник и аватар берутся из Steam. Можно поставить и свою картинку — она заменит аватар Steam."
-                : "Загрузите картинку PNG или JPG — она обрежется до квадрата по центру.", 12f, Theme.TextDim, 0f, 4f));
+                ? LocalizationService.Get("menu.profile.089")
+                : LocalizationService.Get("menu.profile.090"), 12f, Theme.TextDim, 0f, 4f));
             var avatarButtons = Ui.Row();
             avatarButtons.style.marginTop = 8f;
             if (FilePicker.Supported)
             {
-                avatarButtons.Add(Btn("Загрузить картинку…", () =>
+                avatarButtons.Add(Btn(LocalizationService.Get("menu.profile.091"), () =>
                 {
                     string path = FilePicker.PickImage();
                     if (path == null) return;
-                    _status = Profiles.ImportAvatar(profile, path) ?? "Аватар обновлён.";
+                    _status = Profiles.ImportAvatar(profile, path) ?? LocalizationService.Get("menu.profile.092");
                     Rebuild();
                 }, ButtonKind.Primary, 14f));
             }
@@ -1292,9 +1292,9 @@ namespace CityHighways.Presentation
                 var pathField = Field("", 260);
                 pathField.style.width = 340f;
                 avatarButtons.Add(pathField);
-                var load = Btn("Загрузить по пути", () =>
+                var load = Btn(LocalizationService.Get("menu.profile.093"), () =>
                 {
-                    _status = Profiles.ImportAvatar(profile, pathField.value) ?? "Аватар обновлён.";
+                    _status = Profiles.ImportAvatar(profile, pathField.value) ?? LocalizationService.Get("menu.profile.092");
                     Rebuild();
                 }, ButtonKind.Primary, 14f);
                 load.style.marginLeft = 8f;
@@ -1302,10 +1302,10 @@ namespace CityHighways.Presentation
             }
             if (!string.IsNullOrEmpty(profile.avatar))
             {
-                var removeAvatar = Btn(profile.IsSteam ? "Вернуть аватар Steam" : "Убрать картинку", () =>
+                var removeAvatar = Btn(profile.IsSteam ? LocalizationService.Get("menu.profile.094") : LocalizationService.Get("menu.profile.095"), () =>
                 {
                     Profiles.RemoveAvatar(profile);
-                    _status = "Картинка убрана.";
+                    _status = LocalizationService.Get("menu.profile.096");
                     Rebuild();
                 }, ButtonKind.Ghost, 14f);
                 removeAvatar.style.marginLeft = 10f;
@@ -1321,7 +1321,7 @@ namespace CityHighways.Presentation
             var chips = Ui.Row();
             chips.style.flexWrap = Wrap.Wrap;
             chips.style.marginTop = 12f;
-            chips.Add(Caption("Профили:", 14f, Theme.TextDim, 10f));
+            chips.Add(Caption(LocalizationService.Get("menu.profile.097"), 14f, Theme.TextDim, 10f));
             foreach (var other in Profiles.Book.profiles)
             {
                 var chosen = other;
@@ -1338,20 +1338,20 @@ namespace CityHighways.Presentation
             createRow.style.marginTop = 6f;
             var nameField = Field("", 16);
             nameField.style.width = 260f;
-            nameField.textEdition.placeholder = "Имя нового профиля";
+            nameField.textEdition.placeholder = LocalizationService.Get("menu.profile.098");
             createRow.Add(nameField);
-            var create = Btn("Новый профиль", () =>
+            var create = Btn(LocalizationService.Get("menu.profile.099"), () =>
             {
                 string name = (nameField.value ?? "").Trim();
-                if (name.Length == 0) { _status = "Введите имя нового профиля."; Rebuild(); return; }
-                if (Profiles.Find(name) != null) { _status = "Такой профиль уже есть."; Rebuild(); return; }
+                if (name.Length == 0) { _status = LocalizationService.Get("menu.profile.100"); Rebuild(); return; }
+                if (Profiles.Find(name) != null) { _status = LocalizationService.Get("menu.profile.101"); Rebuild(); return; }
                 Profiles.SetActive(Profiles.GetOrCreate(name));
                 _status = $"Профиль «{name}» создан.";
                 Rebuild();
             }, ButtonKind.Secondary, 14f);
             create.style.marginLeft = 10f;
             createRow.Add(create);
-            var play = Btn("Играть под этим именем", () =>
+            var play = Btn(LocalizationService.Get("menu.profile.102"), () =>
             {
                 var first = _setup.players.FirstOrDefault(p => !p.isBot);
                 if (first != null) first.name = profile.name;
@@ -1364,13 +1364,13 @@ namespace CityHighways.Presentation
             createRow.Add(play);
             if (Profiles.Book.profiles.Count > 1)
             {
-                var remove = Btn("Удалить профиль", () => { Profiles.Remove(profile); _status = $"Профиль «{profile.name}» удалён."; Rebuild(); },
+                var remove = Btn(LocalizationService.Get("menu.profile.103"), () => { Profiles.Remove(profile); _status = $"Профиль «{profile.name}» удалён."; Rebuild(); },
                     ButtonKind.Ghost, 14f);
                 remove.style.marginLeft = 10f;
                 createRow.Add(remove);
             }
             card.Add(createRow);
-            card.Add(Caption("Влияние, которое осталось у вас к концу партии, попадает в кошелёк. За одним компьютером профиль узнаётся по имени игрока, в сетевой игре — это активный профиль.",
+            card.Add(Caption(LocalizationService.Get("menu.profile.104"),
                 12f, Theme.TextDim, 0f, 8f));
             _content.Add(card);
         }

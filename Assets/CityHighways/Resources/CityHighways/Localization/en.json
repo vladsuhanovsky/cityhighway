@@ -1859,6 +1859,422 @@
     {
       "key": "menu.stats.105",
       "value": "Are you sure? Click again"
+    },
+    {
+      "key": "menu.profile.001",
+      "value": "← Back"
+    },
+    {
+      "key": "menu.profile.002",
+      "value": "Profile"
+    },
+    {
+      "key": "menu.profile.003",
+      "value": "ID copied."
+    },
+    {
+      "key": "menu.profile.004",
+      "value": "Steam profile ID — click to copy"
+    },
+    {
+      "key": "menu.profile.005",
+      "value": "Character"
+    },
+    {
+      "key": "menu.profile.006",
+      "value": "Achievements"
+    },
+    {
+      "key": "menu.profile.007",
+      "value": "Wallet"
+    },
+    {
+      "key": "menu.profile.008",
+      "value": "Style"
+    },
+    {
+      "key": "menu.profile.009",
+      "value": "Containers"
+    },
+    {
+      "key": "menu.profile.010",
+      "value": "Mastery"
+    },
+    {
+      "key": "menu.profile.011",
+      "value": "Stats"
+    },
+    {
+      "key": "menu.profile.012",
+      "value": "Profile: "
+    },
+    {
+      "key": "menu.profile.013",
+      "value": "Drag to rotate. Drag an item onto the character to equip or preview."
+    },
+    {
+      "key": "menu.profile.014",
+      "value": "Preview — not yet equipped"
+    },
+    {
+      "key": "menu.profile.015",
+      "value": "Purchased and equipped."
+    },
+    {
+      "key": "menu.profile.016",
+      "value": "Equip Preview"
+    },
+    {
+      "key": "menu.profile.017",
+      "value": "Equipped."
+    },
+    {
+      "key": "menu.profile.018",
+      "value": "Clear Preview"
+    },
+    {
+      "key": "menu.profile.019",
+      "value": "Female character and wardrobe."
+    },
+    {
+      "key": "menu.profile.020",
+      "value": "Male character and wardrobe."
+    },
+    {
+      "key": "menu.profile.021",
+      "value": "Without "
+    },
+    {
+      "key": "menu.profile.022",
+      "value": "headwear"
+    },
+    {
+      "key": "menu.profile.023",
+      "value": "accessory"
+    },
+    {
+      "key": "menu.profile.024",
+      "value": "Equipped"
+    },
+    {
+      "key": "menu.profile.025",
+      "value": "Equip"
+    },
+    {
+      "key": "menu.profile.026",
+      "value": "equipped"
+    },
+    {
+      "key": "menu.profile.027",
+      "value": "owned"
+    },
+    {
+      "key": "menu.profile.028",
+      "value": "This slot can be left empty."
+    },
+    {
+      "key": "menu.profile.029",
+      "value": "Hidden underneath: "
+    },
+    {
+      "key": "menu.profile.030",
+      "value": " (the item stays equipped)."
+    },
+    {
+      "key": "menu.profile.031",
+      "value": "Removed."
+    },
+    {
+      "key": "menu.profile.032",
+      "value": "Daily Challenge"
+    },
+    {
+      "key": "menu.profile.033",
+      "value": "Completed Today"
+    },
+    {
+      "key": "menu.profile.034",
+      "value": "All"
+    },
+    {
+      "key": "menu.profile.035",
+      "value": "Active"
+    },
+    {
+      "key": "menu.profile.036",
+      "value": "Completed"
+    },
+    {
+      "key": "menu.profile.037",
+      "value": "Sort by:"
+    },
+    {
+      "key": "menu.profile.038",
+      "value": "Progress"
+    },
+    {
+      "key": "menu.profile.039",
+      "value": "Reward"
+    },
+    {
+      "key": "menu.profile.040",
+      "value": "NEW"
+    },
+    {
+      "key": "menu.profile.041",
+      "value": "Claimed"
+    },
+    {
+      "key": "menu.profile.042",
+      "value": "Games"
+    },
+    {
+      "key": "menu.profile.043",
+      "value": "Daily Challenges"
+    },
+    {
+      "key": "menu.profile.044",
+      "value": "Customization"
+    },
+    {
+      "key": "menu.profile.045",
+      "value": "Clothes"
+    },
+    {
+      "key": "menu.profile.046",
+      "value": "From Developer"
+    },
+    {
+      "key": "menu.profile.047",
+      "value": "Other"
+    },
+    {
+      "key": "menu.profile.048",
+      "value": "In Wallet"
+    },
+    {
+      "key": "menu.profile.049",
+      "value": "influence — spent on character clothing and customization"
+    },
+    {
+      "key": "menu.profile.050",
+      "value": "Level Forecast"
+    },
+    {
+      "key": "menu.profile.051",
+      "value": "games"
+    },
+    {
+      "key": "menu.profile.052",
+      "value": "games"
+    },
+    {
+      "key": "menu.profile.053",
+      "value": "Influence by Day · 14 Days"
+    },
+    {
+      "key": "menu.profile.054",
+      "value": "green — income, red — spending"
+    },
+    {
+      "key": "menu.profile.055",
+      "value": "Sources of Influence"
+    },
+    {
+      "key": "menu.profile.056",
+      "value": "History"
+    },
+    {
+      "key": "menu.profile.057",
+      "value": "Income"
+    },
+    {
+      "key": "menu.profile.058",
+      "value": "Spending"
+    },
+    {
+      "key": "menu.profile.059",
+      "value": "History is empty. Income from games, rewards and purchases are tracked from this version onward."
+    },
+    {
+      "key": "menu.profile.060",
+      "value": "No entries match this filter."
+    },
+    {
+      "key": "menu.profile.061",
+      "value": "Live Preview"
+    },
+    {
+      "key": "menu.profile.062",
+      "value": "This is how others see you at the table. Select an item to preview it before buying."
+    },
+    {
+      "key": "menu.profile.063",
+      "value": "Show Equipped"
+    },
+    {
+      "key": "menu.profile.064",
+      "value": "Purchased"
+    },
+    {
+      "key": "menu.profile.065",
+      "value": "Available to Buy"
+    },
+    {
+      "key": "menu.profile.066",
+      "value": "Emblems — next to your name"
+    },
+    {
+      "key": "menu.profile.067",
+      "value": "Titles — below your name"
+    },
+    {
+      "key": "menu.profile.068",
+      "value": "Frames — around your player row"
+    },
+    {
+      "key": "menu.profile.069",
+      "value": "No purchases yet."
+    },
+    {
+      "key": "menu.profile.070",
+      "value": "Nothing matches this filter."
+    },
+    {
+      "key": "menu.profile.071",
+      "value": "Remove"
+    },
+    {
+      "key": "menu.profile.072",
+      "value": "From Mastery"
+    },
+    {
+      "key": "menu.profile.073",
+      "value": "Character title from the Apprentice mastery branch. See Mastery."
+    },
+    {
+      "key": "menu.profile.074",
+      "value": "From Container"
+    },
+    {
+      "key": "menu.profile.075",
+      "value": "This item drops only from containers. See Containers."
+    },
+    {
+      "key": "menu.profile.076",
+      "value": "Level"
+    },
+    {
+      "key": "menu.profile.077",
+      "value": "Games"
+    },
+    {
+      "key": "menu.profile.078",
+      "value": "Wins"
+    },
+    {
+      "key": "menu.profile.079",
+      "value": "Best Score"
+    },
+    {
+      "key": "menu.profile.080",
+      "value": "from match history"
+    },
+    {
+      "key": "menu.profile.081",
+      "value": "Contracts Completed"
+    },
+    {
+      "key": "menu.profile.082",
+      "value": "Tolls Earned"
+    },
+    {
+      "key": "menu.profile.083",
+      "value": "Achievements"
+    },
+    {
+      "key": "menu.profile.084",
+      "value": "Influence Earned"
+    },
+    {
+      "key": "menu.profile.085",
+      "value": "Recent Games"
+    },
+    {
+      "key": "menu.profile.086",
+      "value": " · victory"
+    },
+    {
+      "key": "menu.profile.087",
+      "value": "Profile & Avatar"
+    },
+    {
+      "key": "menu.profile.088",
+      "value": "Save Name"
+    },
+    {
+      "key": "menu.profile.089",
+      "value": "Steam profile: name and avatar are imported from Steam. You can override the avatar with your own image."
+    },
+    {
+      "key": "menu.profile.090",
+      "value": "Upload a PNG or JPG image; it will be cropped to a square."
+    },
+    {
+      "key": "menu.profile.091",
+      "value": "Upload Image…"
+    },
+    {
+      "key": "menu.profile.092",
+      "value": "Avatar updated."
+    },
+    {
+      "key": "menu.profile.093",
+      "value": "Load from Path"
+    },
+    {
+      "key": "menu.profile.094",
+      "value": "Restore Steam Avatar"
+    },
+    {
+      "key": "menu.profile.095",
+      "value": "Remove Image"
+    },
+    {
+      "key": "menu.profile.096",
+      "value": "Image removed."
+    },
+    {
+      "key": "menu.profile.097",
+      "value": "Profiles:"
+    },
+    {
+      "key": "menu.profile.098",
+      "value": "New Profile Name"
+    },
+    {
+      "key": "menu.profile.099",
+      "value": "New Profile"
+    },
+    {
+      "key": "menu.profile.100",
+      "value": "Enter a name for the new profile."
+    },
+    {
+      "key": "menu.profile.101",
+      "value": "A profile with this name already exists."
+    },
+    {
+      "key": "menu.profile.102",
+      "value": "Play under This Name"
+    },
+    {
+      "key": "menu.profile.103",
+      "value": "Delete Profile"
+    },
+    {
+      "key": "menu.profile.104",
+      "value": "Influence remaining after a match is added to your wallet. In local games, profiles are matched by player name; in online games, the active profile is used."
     }
   ]
 }

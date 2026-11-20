@@ -1859,6 +1859,422 @@
     {
       "key": "menu.stats.105",
       "value": "Точно сбросить? Нажмите ещё раз"
+    },
+    {
+      "key": "menu.profile.001",
+      "value": "← Назад"
+    },
+    {
+      "key": "menu.profile.002",
+      "value": "Профиль"
+    },
+    {
+      "key": "menu.profile.003",
+      "value": "ID скопирован."
+    },
+    {
+      "key": "menu.profile.004",
+      "value": "ID профиля Steam — нажмите, чтобы скопировать"
+    },
+    {
+      "key": "menu.profile.005",
+      "value": "Персонаж"
+    },
+    {
+      "key": "menu.profile.006",
+      "value": "Достижения"
+    },
+    {
+      "key": "menu.profile.007",
+      "value": "Кошелёк"
+    },
+    {
+      "key": "menu.profile.008",
+      "value": "Стиль"
+    },
+    {
+      "key": "menu.profile.009",
+      "value": "Контейнеры"
+    },
+    {
+      "key": "menu.profile.010",
+      "value": "Мастерство"
+    },
+    {
+      "key": "menu.profile.011",
+      "value": "Стата"
+    },
+    {
+      "key": "menu.profile.012",
+      "value": "Профиль: "
+    },
+    {
+      "key": "menu.profile.013",
+      "value": "Тяните мышью — повернуть. Перетащите вещь на персонажа — надеть или примерить."
+    },
+    {
+      "key": "menu.profile.014",
+      "value": "Примерка — ещё не надето"
+    },
+    {
+      "key": "menu.profile.015",
+      "value": "Куплено и надето."
+    },
+    {
+      "key": "menu.profile.016",
+      "value": "Надеть примеренное"
+    },
+    {
+      "key": "menu.profile.017",
+      "value": "Надето."
+    },
+    {
+      "key": "menu.profile.018",
+      "value": "Снять примерку"
+    },
+    {
+      "key": "menu.profile.019",
+      "value": "Женский персонаж и женский гардероб."
+    },
+    {
+      "key": "menu.profile.020",
+      "value": "Мужской персонаж и мужской гардероб."
+    },
+    {
+      "key": "menu.profile.021",
+      "value": "Без "
+    },
+    {
+      "key": "menu.profile.022",
+      "value": "головного убора"
+    },
+    {
+      "key": "menu.profile.023",
+      "value": "аксессуара"
+    },
+    {
+      "key": "menu.profile.024",
+      "value": "Надето"
+    },
+    {
+      "key": "menu.profile.025",
+      "value": "Надеть"
+    },
+    {
+      "key": "menu.profile.026",
+      "value": "надето"
+    },
+    {
+      "key": "menu.profile.027",
+      "value": "есть"
+    },
+    {
+      "key": "menu.profile.028",
+      "value": "Слот можно оставить пустым."
+    },
+    {
+      "key": "menu.profile.029",
+      "value": "Под ней не видно: "
+    },
+    {
+      "key": "menu.profile.030",
+      "value": " (вещь останется надетой)."
+    },
+    {
+      "key": "menu.profile.031",
+      "value": "Снято."
+    },
+    {
+      "key": "menu.profile.032",
+      "value": "Задание дня"
+    },
+    {
+      "key": "menu.profile.033",
+      "value": "Выполнено сегодня"
+    },
+    {
+      "key": "menu.profile.034",
+      "value": "Все"
+    },
+    {
+      "key": "menu.profile.035",
+      "value": "Активные"
+    },
+    {
+      "key": "menu.profile.036",
+      "value": "Завершённые"
+    },
+    {
+      "key": "menu.profile.037",
+      "value": "Сортировка:"
+    },
+    {
+      "key": "menu.profile.038",
+      "value": "По прогрессу"
+    },
+    {
+      "key": "menu.profile.039",
+      "value": "По награде"
+    },
+    {
+      "key": "menu.profile.040",
+      "value": "НОВОЕ"
+    },
+    {
+      "key": "menu.profile.041",
+      "value": "Получено"
+    },
+    {
+      "key": "menu.profile.042",
+      "value": "Партии"
+    },
+    {
+      "key": "menu.profile.043",
+      "value": "Задания дня"
+    },
+    {
+      "key": "menu.profile.044",
+      "value": "Оформление"
+    },
+    {
+      "key": "menu.profile.045",
+      "value": "Одежда"
+    },
+    {
+      "key": "menu.profile.046",
+      "value": "От разработчика"
+    },
+    {
+      "key": "menu.profile.047",
+      "value": "Прочее"
+    },
+    {
+      "key": "menu.profile.048",
+      "value": "В кошельке"
+    },
+    {
+      "key": "menu.profile.049",
+      "value": "влияния — тратится на одежду персонажа и оформление"
+    },
+    {
+      "key": "menu.profile.050",
+      "value": "Прогноз уровня"
+    },
+    {
+      "key": "menu.profile.051",
+      "value": "партии"
+    },
+    {
+      "key": "menu.profile.052",
+      "value": "партий"
+    },
+    {
+      "key": "menu.profile.053",
+      "value": "Влияние по дням · 14 дней"
+    },
+    {
+      "key": "menu.profile.054",
+      "value": "зелёное — доход, красное — траты"
+    },
+    {
+      "key": "menu.profile.055",
+      "value": "Источники влияния"
+    },
+    {
+      "key": "menu.profile.056",
+      "value": "История"
+    },
+    {
+      "key": "menu.profile.057",
+      "value": "Доходы"
+    },
+    {
+      "key": "menu.profile.058",
+      "value": "Траты"
+    },
+    {
+      "key": "menu.profile.059",
+      "value": "История пуста. Она ведётся с этой версии игры: доходы с партий, награды и покупки появятся здесь."
+    },
+    {
+      "key": "menu.profile.060",
+      "value": "Под этот фильтр записей нет."
+    },
+    {
+      "key": "menu.profile.061",
+      "value": "Живое превью"
+    },
+    {
+      "key": "menu.profile.062",
+      "value": "Так вас видят за столом. Нажмите на предмет — он появится здесь до покупки."
+    },
+    {
+      "key": "menu.profile.063",
+      "value": "Показать надетое"
+    },
+    {
+      "key": "menu.profile.064",
+      "value": "Купленные"
+    },
+    {
+      "key": "menu.profile.065",
+      "value": "Доступные для покупки"
+    },
+    {
+      "key": "menu.profile.066",
+      "value": "Эмблемы — у имени"
+    },
+    {
+      "key": "menu.profile.067",
+      "value": "Титулы — под именем"
+    },
+    {
+      "key": "menu.profile.068",
+      "value": "Рамки — вокруг строки игрока"
+    },
+    {
+      "key": "menu.profile.069",
+      "value": "Пока ничего не куплено."
+    },
+    {
+      "key": "menu.profile.070",
+      "value": "Под этот фильтр ничего нет."
+    },
+    {
+      "key": "menu.profile.071",
+      "value": "Снять"
+    },
+    {
+      "key": "menu.profile.072",
+      "value": "За мастерство"
+    },
+    {
+      "key": "menu.profile.073",
+      "value": "Титул персонажа за ветку «Подмастерье» — вкладка «Мастерство»."
+    },
+    {
+      "key": "menu.profile.074",
+      "value": "Из контейнера"
+    },
+    {
+      "key": "menu.profile.075",
+      "value": "Эта вещь выпадает только из контейнеров — вкладка «Контейнеры»."
+    },
+    {
+      "key": "menu.profile.076",
+      "value": "Уровень"
+    },
+    {
+      "key": "menu.profile.077",
+      "value": "Партий"
+    },
+    {
+      "key": "menu.profile.078",
+      "value": "Побед"
+    },
+    {
+      "key": "menu.profile.079",
+      "value": "Лучший счёт"
+    },
+    {
+      "key": "menu.profile.080",
+      "value": "по журналу партий"
+    },
+    {
+      "key": "menu.profile.081",
+      "value": "Контрактов выполнено"
+    },
+    {
+      "key": "menu.profile.082",
+      "value": "Получено за проезд"
+    },
+    {
+      "key": "menu.profile.083",
+      "value": "Достижений"
+    },
+    {
+      "key": "menu.profile.084",
+      "value": "Влияния заработано"
+    },
+    {
+      "key": "menu.profile.085",
+      "value": "Последние партии"
+    },
+    {
+      "key": "menu.profile.086",
+      "value": " · победа"
+    },
+    {
+      "key": "menu.profile.087",
+      "value": "Профиль и аватар"
+    },
+    {
+      "key": "menu.profile.088",
+      "value": "Сохранить имя"
+    },
+    {
+      "key": "menu.profile.089",
+      "value": "Профиль Steam: ник и аватар берутся из Steam. Можно поставить и свою картинку — она заменит аватар Steam."
+    },
+    {
+      "key": "menu.profile.090",
+      "value": "Загрузите картинку PNG или JPG — она обрежется до квадрата по центру."
+    },
+    {
+      "key": "menu.profile.091",
+      "value": "Загрузить картинку…"
+    },
+    {
+      "key": "menu.profile.092",
+      "value": "Аватар обновлён."
+    },
+    {
+      "key": "menu.profile.093",
+      "value": "Загрузить по пути"
+    },
+    {
+      "key": "menu.profile.094",
+      "value": "Вернуть аватар Steam"
+    },
+    {
+      "key": "menu.profile.095",
+      "value": "Убрать картинку"
+    },
+    {
+      "key": "menu.profile.096",
+      "value": "Картинка убрана."
+    },
+    {
+      "key": "menu.profile.097",
+      "value": "Профили:"
+    },
+    {
+      "key": "menu.profile.098",
+      "value": "Имя нового профиля"
+    },
+    {
+      "key": "menu.profile.099",
+      "value": "Новый профиль"
+    },
+    {
+      "key": "menu.profile.100",
+      "value": "Введите имя нового профиля."
+    },
+    {
+      "key": "menu.profile.101",
+      "value": "Такой профиль уже есть."
+    },
+    {
+      "key": "menu.profile.102",
+      "value": "Играть под этим именем"
+    },
+    {
+      "key": "menu.profile.103",
+      "value": "Удалить профиль"
+    },
+    {
+      "key": "menu.profile.104",
+      "value": "Влияние, которое осталось у вас к концу партии, попадает в кошелёк. За одним компьютером профиль узнаётся по имени игрока, в сетевой игре — это активный профиль."
     }
   ]
 }
