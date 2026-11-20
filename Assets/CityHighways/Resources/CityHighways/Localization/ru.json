@@ -5637,11 +5637,11 @@
       "value": "Сложность выбирается в «Новой игре» (строка «Сложность» видна только у магната). Она меняет частоту грузов, награды, события и штрафы:"
     },
     {
-      "key": "rules.magnate.cargo.Ordinary.name",
+      "key": "rules.magnate.cargo.Regular.name",
       "value": "Обычный груз"
     },
     {
-      "key": "rules.magnate.cargo.Ordinary.rule",
+      "key": "rules.magnate.cargo.Regular.rule",
       "value": "Без особых условий."
     },
     {
