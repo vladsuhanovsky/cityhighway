@@ -45,13 +45,13 @@ namespace CityHighways.Presentation
             var header = Ui.Row();
             header.style.alignItems = Align.Center;
             header.style.marginBottom = 14f;
-            var backButton = Ui.Button("← Назад", back, ButtonKind.Ghost, 15f);
+            var backButton = Ui.Button(LocalizationService.Get("menu.settings.back"), back, ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             header.Add(backButton);
-            var title = Ui.Text("Настройки", 34f, Theme.Gold, true);
+            var title = Ui.Text(LocalizationService.Get("menu.settings.title"), 34f, Theme.Gold, true);
             title.style.flexGrow = 1f;
             header.Add(title);
-            _reset = Ui.Button("Сбросить к заводским", ResetAll, ButtonKind.Ghost, 14f);
+            _reset = Ui.Button(LocalizationService.Get("menu.settings.reset"), ResetAll, ButtonKind.Ghost, 14f);
             header.Add(_reset);
             Root.Add(header);
 
@@ -73,11 +73,11 @@ namespace CityHighways.Presentation
             Ui.Radius(_nav, 12f);
             Ui.Padding(_nav, 8f, 8f);
             body.Add(_nav);
-            AddCategory(Category.Screen, MenuIcon.Glyph.Monitor, "Экран");
-            AddCategory(Category.Sound, MenuIcon.Glyph.Speaker, "Звук");
-            AddCategory(Category.Gameplay, MenuIcon.Glyph.Gamepad, "Геймплей");
-            AddCategory(Category.Controls, MenuIcon.Glyph.Keyboard, "Управление");
-            AddCategory(Category.Access, MenuIcon.Glyph.Access, "Доступность");
+            AddCategory(Category.Screen, MenuIcon.Glyph.Monitor, LocalizationService.Get("menu.settings.screen"));
+            AddCategory(Category.Sound, MenuIcon.Glyph.Speaker, LocalizationService.Get("menu.settings.sound"));
+            AddCategory(Category.Gameplay, MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.settings.gameplay"));
+            AddCategory(Category.Controls, MenuIcon.Glyph.Keyboard, LocalizationService.Get("menu.settings.controls"));
+            AddCategory(Category.Access, MenuIcon.Glyph.Access, LocalizationService.Get("menu.settings.access"));
             _indicator = Ui.Box();
             _indicator.pickingMode = PickingMode.Ignore;
             _indicator.style.position = Position.Absolute;
@@ -104,7 +104,7 @@ namespace CityHighways.Presentation
             previewCard.style.backgroundColor = Theme.Panel;
             Ui.Radius(previewCard, 12f);
             Ui.Padding(previewCard, 14f, 14f);
-            previewCard.Add(Ui.SectionTitle("Предпросмотр"));
+            previewCard.Add(Ui.SectionTitle(LocalizationService.Get("menu.settings.preview")));
             _preview = new SettingsPreview(312f, 250f);
             previewCard.Add(_preview);
             _previewNote = Ui.Text("", 12f, Theme.TextDim);
@@ -120,7 +120,7 @@ namespace CityHighways.Presentation
         public void Rebuild()
         {
             _resetArmed = false;
-            _reset.text = "Сбросить к заводским";
+            _reset.text = LocalizationService.Get("menu.settings.reset");
             foreach (var pair in _items)
             {
                 bool active = pair.Key == _category;
@@ -240,7 +240,7 @@ namespace CityHighways.Presentation
 
         void ScreenSection(VisualElement s)
         {
-            s.Add(SectionHead(MenuIcon.Glyph.Monitor, "Экран"));
+            s.Add(SectionHead(MenuIcon.Glyph.Monitor, LocalizationService.Get("menu.settings.screen")));
             // First localization slice: language choice is available from Settings too.
             // Rebuild the menu to refresh labels created programmatically by UI Toolkit.
             s.Add(Row("Language / Язык", "Switch the home screen language / Сменить язык главной страницы.",
@@ -310,7 +310,7 @@ namespace CityHighways.Presentation
 
         void SoundSection(VisualElement s)
         {
-            s.Add(SectionHead(MenuIcon.Glyph.Speaker, "Звук"));
+            s.Add(SectionHead(MenuIcon.Glyph.Speaker, LocalizationService.Get("menu.settings.sound")));
             s.Add(Row("Звук в игре", "Все звуки: карты, стройка, фанфары.", new SwitchToggle(_setup.sound, on =>
             {
                 _setup.sound = on;
@@ -368,7 +368,7 @@ namespace CityHighways.Presentation
 
         void GameplaySection(VisualElement s)
         {
-            s.Add(SectionHead(MenuIcon.Glyph.Gamepad, "Геймплей"));
+            s.Add(SectionHead(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.settings.gameplay")));
             s.Add(Row("Наклон поля (2.5D)", "Поле с лёгким наклоном и глубиной; выключено — плоская карта сверху.", new SwitchToggle(_display.tiltedBoard, on =>
             {
                 _display.tiltedBoard = on;
@@ -501,7 +501,7 @@ namespace CityHighways.Presentation
 
         void AccessSection(VisualElement s)
         {
-            s.Add(SectionHead(MenuIcon.Glyph.Access, "Доступность"));
+            s.Add(SectionHead(MenuIcon.Glyph.Access, LocalizationService.Get("menu.settings.access")));
             s.Add(Row("Меньше анимаций", "Переходы почти мгновенные, контент появляется без сдвига, машинки в превью стоят.", new SwitchToggle(_display.reducedMotion, on =>
             {
                 _display.reducedMotion = on;
@@ -632,7 +632,7 @@ namespace CityHighways.Presentation
             if (!_resetArmed)
             {
                 _resetArmed = true;
-                _reset.text = "Точно сбросить? Нажмите ещё раз";
+                _reset.text = LocalizationService.Get("menu.settings.reset_confirm");
                 return;
             }
             _display.CopyFrom(DisplaySettings.Defaults());

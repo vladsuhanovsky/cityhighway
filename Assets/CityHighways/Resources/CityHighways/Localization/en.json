@@ -99,6 +99,46 @@
     {
       "key": "menu.new_game.start",
       "value": "Start Game"
+    },
+    {
+      "key": "menu.settings.back",
+      "value": "← Back"
+    },
+    {
+      "key": "menu.settings.title",
+      "value": "Settings"
+    },
+    {
+      "key": "menu.settings.reset",
+      "value": "Restore Defaults"
+    },
+    {
+      "key": "menu.settings.reset_confirm",
+      "value": "Are you sure? Click again"
+    },
+    {
+      "key": "menu.settings.screen",
+      "value": "Display"
+    },
+    {
+      "key": "menu.settings.sound",
+      "value": "Sound"
+    },
+    {
+      "key": "menu.settings.gameplay",
+      "value": "Gameplay"
+    },
+    {
+      "key": "menu.settings.controls",
+      "value": "Controls"
+    },
+    {
+      "key": "menu.settings.access",
+      "value": "Accessibility"
+    },
+    {
+      "key": "menu.settings.preview",
+      "value": "Preview"
     }
   ]
 }

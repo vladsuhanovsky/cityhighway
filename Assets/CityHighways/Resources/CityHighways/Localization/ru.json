@@ -99,6 +99,46 @@
     {
       "key": "menu.new_game.start",
       "value": "Начать игру"
+    },
+    {
+      "key": "menu.settings.back",
+      "value": "← Назад"
+    },
+    {
+      "key": "menu.settings.title",
+      "value": "Настройки"
+    },
+    {
+      "key": "menu.settings.reset",
+      "value": "Сбросить к заводским"
+    },
+    {
+      "key": "menu.settings.reset_confirm",
+      "value": "Точно сбросить? Нажмите ещё раз"
+    },
+    {
+      "key": "menu.settings.screen",
+      "value": "Экран"
+    },
+    {
+      "key": "menu.settings.sound",
+      "value": "Звук"
+    },
+    {
+      "key": "menu.settings.gameplay",
+      "value": "Геймплей"
+    },
+    {
+      "key": "menu.settings.controls",
+      "value": "Управление"
+    },
+    {
+      "key": "menu.settings.access",
+      "value": "Доступность"
+    },
+    {
+      "key": "menu.settings.preview",
+      "value": "Предпросмотр"
     }
   ]
 }
