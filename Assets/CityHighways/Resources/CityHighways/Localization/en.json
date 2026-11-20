@@ -4703,6 +4703,162 @@
     {
       "key": "daily.d_clean.title",
       "value": "Complete 2 contracts without failing any"
+    },
+    {
+      "key": "shop.emblem_star.name",
+      "value": "Star"
+    },
+    {
+      "key": "shop.emblem_diamond.name",
+      "value": "Diamond"
+    },
+    {
+      "key": "shop.emblem_gear.name",
+      "value": "Gear"
+    },
+    {
+      "key": "shop.emblem_flag.name",
+      "value": "Flag"
+    },
+    {
+      "key": "shop.emblem_bolt.name",
+      "value": "Lightning Bolt"
+    },
+    {
+      "key": "shop.emblem_crown.name",
+      "value": "Crown"
+    },
+    {
+      "key": "shop.title_foreman.name",
+      "value": "Foreman of the Year"
+    },
+    {
+      "key": "shop.title_friend.name",
+      "value": "Friend of City Hall"
+    },
+    {
+      "key": "shop.title_bridges.name",
+      "value": "Bridge Builder"
+    },
+    {
+      "key": "shop.title_asphalt.name",
+      "value": "Asphalt King"
+    },
+    {
+      "key": "shop.title_honest.name",
+      "value": "Incorruptible"
+    },
+    {
+      "key": "shop.title_cardinal.name",
+      "value": "Power Behind the Throne"
+    },
+    {
+      "key": "shop.frame_steel.name",
+      "value": "Steel Frame"
+    },
+    {
+      "key": "shop.frame_neon.name",
+      "value": "Neon Frame"
+    },
+    {
+      "key": "shop.frame_gold.name",
+      "value": "Gold Frame"
+    },
+    {
+      "key": "shop.emblem_truck.name",
+      "value": "Truck"
+    },
+    {
+      "key": "shop.emblem_cup.name",
+      "value": "Trophy"
+    },
+    {
+      "key": "shop.title_logist.name",
+      "value": "Born Logistician"
+    },
+    {
+      "key": "shop.title_highway.name",
+      "value": "Highway Master"
+    },
+    {
+      "key": "shop.title_mayor.name",
+      "value": "Almost Mayor"
+    },
+    {
+      "key": "shop.frame_violet.name",
+      "value": "Violet Frame"
+    },
+    {
+      "key": "shop.frame_ruby.name",
+      "value": "Ruby Frame"
+    },
+    {
+      "key": "shop.frame_platinum.name",
+      "value": "Platinum Frame"
+    },
+    {
+      "key": "shop.title_m_lucky.name",
+      "value": "Fortune's Favorite"
+    },
+    {
+      "key": "shop.title_m_foreman.name",
+      "value": "Foreman of the Year"
+    },
+    {
+      "key": "shop.title_m_insurer.name",
+      "value": "Risk-Free"
+    },
+    {
+      "key": "shop.title_m_tollman.name",
+      "value": "Tollgate King"
+    },
+    {
+      "key": "shop.title_m_official.name",
+      "value": "City Hall Insider"
+    },
+    {
+      "key": "shop.title_m_bridger.name",
+      "value": "Master of Bridges"
+    },
+    {
+      "key": "container.box_foreman.name",
+      "value": "Foreman's Crate"
+    },
+    {
+      "key": "container.box_foreman.description",
+      "value": "Mostly common items, sometimes rare ones."
+    },
+    {
+      "key": "container.box_mayor.name",
+      "value": "City Hall Safe"
+    },
+    {
+      "key": "container.box_mayor.description",
+      "value": "Mostly rare and epic items."
+    },
+    {
+      "key": "container.box_gold.name",
+      "value": "Golden Container"
+    },
+    {
+      "key": "container.box_gold.description",
+      "value": "No common items; epic and legendary items are most likely."
+    },
+    {
+      "key": "rarity.plural.0",
+      "value": "Common"
+    },
+    {
+      "key": "rarity.plural.1",
+      "value": "Rare"
+    },
+    {
+      "key": "rarity.plural.2",
+      "value": "Epic"
+    },
+    {
+      "key": "rarity.plural.3",
+      "value": "Legendary"
     }
   ]
 }

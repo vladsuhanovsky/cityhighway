@@ -988,8 +988,8 @@ namespace CityHighways.Presentation
             side.Add(Caption(_preview == null
                 ? LocalizationService.Get("menu.profile.062")
                 : profile.Owns(_preview.Id)
-                    ? $"Превью: «{_preview.Name}» — уже куплено, можно надеть."
-                    : $"Превью: «{_preview.Name}» — ещё не куплено ({_preview.Price} влияния).", 12f, _preview == null ? Theme.TextDim : GameColors.Accent, 0f, 4f));
+                    ? $"Превью: «{_preview.DisplayName}» — уже куплено, можно надеть."
+                    : $"Превью: «{_preview.DisplayName}» — ещё не куплено ({_preview.Price} влияния).", 12f, _preview == null ? Theme.TextDim : GameColors.Accent, 0f, 4f));
             if (_preview != null)
             {
                 var reset = Btn(LocalizationService.Get("menu.profile.063"), () => { _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
@@ -1110,7 +1110,7 @@ namespace CityHighways.Presentation
                 _frames.Add(animated);
                 cell.Add(swatch);
             }
-            var name = Ui.Text(item.Name, 14f, item.Kind == ShopKind.Title ? GameColors.Warning : Theme.Text, true);
+            var name = Ui.Text(item.DisplayName, 14f, item.Kind == ShopKind.Title ? GameColors.Warning : Theme.Text, true);
             name.style.marginTop = 6f;
             name.style.unityTextAlign = TextAnchor.MiddleCenter;
             cell.Add(name);
@@ -1122,7 +1122,7 @@ namespace CityHighways.Presentation
             if (equipped)
                 button = Btn(LocalizationService.Get("menu.profile.071"), () => { profile.Equip(item.Kind, ""); Profiles.Save(); _preview = null; Rebuild(); }, ButtonKind.Ghost, 13f);
             else if (owned)
-                button = Btn(LocalizationService.Get("menu.profile.025"), () => { profile.Equip(item.Kind, item.Id); Profiles.Save(); _preview = null; _status = $"Надето: {item.Name}."; Rebuild(); }, ButtonKind.Secondary, 13f);
+                button = Btn(LocalizationService.Get("menu.profile.025"), () => { profile.Equip(item.Kind, item.Id); Profiles.Save(); _preview = null; _status = $"Надето: {item.DisplayName}."; Rebuild(); }, ButtonKind.Secondary, 13f);
             else if (item.Mastery)
             {
                 // Награда древа мастерства: ни купить, ни выиграть в контейнере.
@@ -1140,7 +1140,7 @@ namespace CityHighways.Presentation
                 button = Btn($"Купить · {item.Price}", () =>
                 {
                     var error = Profiles.Buy(profile, item);
-                    _status = error ?? $"Куплено: {item.Name}.";
+                    _status = error ?? $"Куплено: {item.DisplayName}.";
                     if (error == null) _preview = null;
                     Rebuild();
                 }, ButtonKind.Primary, 13f);

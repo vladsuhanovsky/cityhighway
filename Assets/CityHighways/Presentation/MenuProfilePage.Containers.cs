@@ -68,10 +68,10 @@ namespace CityHighways.Presentation
             var crate = new CrateIcon(116f, kind.Color);
             if (_spinActive && _lastResult != null && _lastResult.Container == kind) _spinCrate = crate;
             card.Add(crate);
-            var name = Ui.Text(kind.Name, 18f, Theme.Text, true);
+            var name = Ui.Text(kind.DisplayName, 18f, Theme.Text, true);
             name.style.marginTop = 6f;
             card.Add(name);
-            var description = Caption(kind.Description, 12f, Theme.TextDim, 0f, 2f);
+            var description = Caption(kind.DisplayDescription, 12f, Theme.TextDim, 0f, 2f);
             description.style.unityTextAlign = TextAnchor.MiddleCenter;
             card.Add(description);
 
@@ -93,7 +93,7 @@ namespace CityHighways.Presentation
                 Ui.Radius(dot, 4.5f);
                 dot.style.marginRight = 6f;
                 line.Add(dot);
-                var label = Ui.Text(Containers.RarityNames[i], 12f, Theme.Text);
+                var label = Ui.Text(LocalizationService.GetOrFallback("rarity.plural." + i, Containers.RarityNames[i]), 12f, Theme.Text);
                 label.style.flexGrow = 1f;
                 line.Add(label);
                 line.Add(Ui.Text($"{kind.Odds[i]}%", 12f, color, true));
@@ -132,7 +132,7 @@ namespace CityHighways.Presentation
             _spinJitter = (float)(random.NextDouble() - 0.5) * SpinCard * 0.7f;
             bool calm = DisplaySettings.Active != null && DisplaySettings.Active.reducedMotion;
             _spinDuration = calm ? 0.8f : 5.2f;
-            _status = $"Открываем «{kind.Name}»…";
+            _status = $"Открываем «{kind.DisplayName}»…";
             _setupChanged?.Invoke();
             Rebuild();
         }
@@ -248,7 +248,7 @@ namespace CityHighways.Presentation
             side.style.flexGrow = 1f;
             side.style.flexShrink = 1f;
             side.Add(Ui.Text(result.Duplicate ? "Уже есть в коллекции" : "Выпало!", 14f, Theme.TextDim, true));
-            side.Add(Ui.Text(item.Name, 24f, color, true));
+            side.Add(Ui.Text(item.DisplayName, 24f, color, true));
             var tags = Ui.Row();
             tags.style.marginTop = 4f;
             tags.style.alignItems = Align.Center;
@@ -274,7 +274,7 @@ namespace CityHighways.Presentation
                 var wear = Btn(worn ? "Надето" : "Надеть", () =>
                 {
                     Containers.Equip(profile, item);
-                    _status = $"Надето: {item.Name}.";
+                    _status = $"Надето: {item.DisplayName}.";
                     _setupChanged?.Invoke();
                     Rebuild();
                 }, ButtonKind.Secondary, 14f);
@@ -326,7 +326,7 @@ namespace CityHighways.Presentation
             {
                 var items = pool.Where(x => (int)x.Level == i).ToList();
                 if (items.Count == 0) continue;
-                Counter(Containers.RarityNames[i], Rarity.ColorOf((Rarity.Level)i), items.Count(x => Containers.Owns(profile, x)), items.Count);
+                Counter(LocalizationService.GetOrFallback("rarity.plural." + i, Containers.RarityNames[i]), Rarity.ColorOf((Rarity.Level)i), items.Count(x => Containers.Owns(profile, x)), items.Count);
             }
             var exclusives = pool.Where(x => x.Exclusive).ToList();
             Counter("Только из контейнеров", GameColors.Warning, exclusives.Count(x => Containers.Owns(profile, x)), exclusives.Count);
@@ -371,7 +371,7 @@ namespace CityHighways.Presentation
             }
             else if (item.Style.Kind == ShopKind.Title)
             {
-                var title = Ui.Text(item.Name, Mathf.Max(11f, width * 0.11f), GameColors.Warning, true);
+                var title = Ui.Text(item.DisplayName, Mathf.Max(11f, width * 0.11f), GameColors.Warning, true);
                 title.style.whiteSpace = WhiteSpace.Normal;
                 title.style.unityTextAlign = TextAnchor.MiddleCenter;
                 art.Add(title);
@@ -387,7 +387,7 @@ namespace CityHighways.Presentation
                 art.Add(swatch);
             }
             card.Add(art);
-            var name = Ui.Text(item.Name, width >= 140f ? 13f : 11f, Theme.Text, true);
+            var name = Ui.Text(item.DisplayName, width >= 140f ? 13f : 11f, Theme.Text, true);
             name.style.unityTextAlign = TextAnchor.MiddleCenter;
             name.style.whiteSpace = WhiteSpace.Normal;
             card.Add(name);

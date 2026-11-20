@@ -30,6 +30,8 @@ namespace CityHighways.Presentation
         public string Id;
         public string Name;
         public string Description;
+        public string DisplayName => LocalizationService.GetOrFallback("container." + Id + ".name", Name);
+        public string DisplayDescription => LocalizationService.GetOrFallback("container." + Id + ".description", Description);
         public int Price;
         public int[] Odds;
         public Color Color;

@@ -4703,6 +4703,162 @@
     {
       "key": "daily.d_clean.title",
       "value": "Выполните 2 контракта и ни одного не провалите"
+    },
+    {
+      "key": "shop.emblem_star.name",
+      "value": "Звезда"
+    },
+    {
+      "key": "shop.emblem_diamond.name",
+      "value": "Ромб"
+    },
+    {
+      "key": "shop.emblem_gear.name",
+      "value": "Шестерня"
+    },
+    {
+      "key": "shop.emblem_flag.name",
+      "value": "Флажок"
+    },
+    {
+      "key": "shop.emblem_bolt.name",
+      "value": "Молния"
+    },
+    {
+      "key": "shop.emblem_crown.name",
+      "value": "Корона"
+    },
+    {
+      "key": "shop.title_foreman.name",
+      "value": "Прораб года"
+    },
+    {
+      "key": "shop.title_friend.name",
+      "value": "Друг мэрии"
+    },
+    {
+      "key": "shop.title_bridges.name",
+      "value": "Мостостроитель"
+    },
+    {
+      "key": "shop.title_asphalt.name",
+      "value": "Король асфальта"
+    },
+    {
+      "key": "shop.title_honest.name",
+      "value": "Неподкупный"
+    },
+    {
+      "key": "shop.title_cardinal.name",
+      "value": "Серый кардинал"
+    },
+    {
+      "key": "shop.frame_steel.name",
+      "value": "Стальная рамка"
+    },
+    {
+      "key": "shop.frame_neon.name",
+      "value": "Неоновая рамка"
+    },
+    {
+      "key": "shop.frame_gold.name",
+      "value": "Золотая рамка"
+    },
+    {
+      "key": "shop.emblem_truck.name",
+      "value": "Фура"
+    },
+    {
+      "key": "shop.emblem_cup.name",
+      "value": "Кубок"
+    },
+    {
+      "key": "shop.title_logist.name",
+      "value": "Логист от бога"
+    },
+    {
+      "key": "shop.title_highway.name",
+      "value": "Хозяин трассы"
+    },
+    {
+      "key": "shop.title_mayor.name",
+      "value": "Почти мэр"
+    },
+    {
+      "key": "shop.frame_violet.name",
+      "value": "Фиолетовая рамка"
+    },
+    {
+      "key": "shop.frame_ruby.name",
+      "value": "Рубиновая рамка"
+    },
+    {
+      "key": "shop.frame_platinum.name",
+      "value": "Платиновая рамка"
+    },
+    {
+      "key": "shop.title_m_lucky.name",
+      "value": "Баловень судьбы"
+    },
+    {
+      "key": "shop.title_m_foreman.name",
+      "value": "Бригадир года"
+    },
+    {
+      "key": "shop.title_m_insurer.name",
+      "value": "Без рисков"
+    },
+    {
+      "key": "shop.title_m_tollman.name",
+      "value": "Король шлагбаумов"
+    },
+    {
+      "key": "shop.title_m_official.name",
+      "value": "Свой человек в мэрии"
+    },
+    {
+      "key": "shop.title_m_bridger.name",
+      "value": "Мастер мостов"
+    },
+    {
+      "key": "container.box_foreman.name",
+      "value": "Ящик прораба"
+    },
+    {
+      "key": "container.box_foreman.description",
+      "value": "Чаще всего — обычные вещи, иногда редкие."
+    },
+    {
+      "key": "container.box_mayor.name",
+      "value": "Сейф мэрии"
+    },
+    {
+      "key": "container.box_mayor.description",
+      "value": "В основном редкие и эпические вещи."
+    },
+    {
+      "key": "container.box_gold.name",
+      "value": "Золотой контейнер"
+    },
+    {
+      "key": "container.box_gold.description",
+      "value": "Без обычных вещей: эпические и легендарные — чаще всего."
+    },
+    {
+      "key": "rarity.plural.0",
+      "value": "Обычные"
+    },
+    {
+      "key": "rarity.plural.1",
+      "value": "Редкие"
+    },
+    {
+      "key": "rarity.plural.2",
+      "value": "Эпические"
+    },
+    {
+      "key": "rarity.plural.3",
+      "value": "Легендарные"
     }
   ]
 }

@@ -114,6 +114,7 @@ namespace CityHighways.Presentation
         public string Id { get; }
         public ShopKind Kind { get; }
         public string Name { get; }
+        public string DisplayName => LocalizationService.GetOrFallback("shop." + Id + ".name", Name);
         public int Price { get; }
         /// <summary>Только из контейнеров: в «Стиле» не продаётся. Цена — ценность (редкость и возврат за дубликат).</summary>
         public bool Exclusive { get; }
