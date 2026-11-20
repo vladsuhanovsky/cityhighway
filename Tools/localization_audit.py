@@ -62,7 +62,8 @@ def main():
             remaining.append({"file": str(path.relative_to(ROOT)).replace("\\", "/"),
                               "literal_lines": len(lines), "line_numbers": lines})
 
-    missing = sorted(references - set(ru))
+    # Concatenated keys such as "menu.scenario." are namespace prefixes, not full keys.
+    missing = sorted(key for key in references - set(ru) if not (key.endswith(".") and any(actual.startswith(key) for actual in ru)))
     if missing:
         errors.append("Referenced keys missing from catalogs: " + ", ".join(missing))
     count = sum(item["literal_lines"] for item in remaining)
