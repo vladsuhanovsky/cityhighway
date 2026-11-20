@@ -5691,6 +5691,34 @@
     {
       "key": "rules.magnate.cargo.Oversized.rule",
       "value": "Only wide roads; moves slowly and blocks following trucks on that segment this round."
+    },
+    {
+      "key": "rules.coop.meter",
+      "value": "Crisis: starts at {0}, limit {1}. The meter shows {2} of {1}."
+    },
+    {
+      "key": "rules.coop.orders",
+      "value": "City orders: {0} for two or three players and {1} for four or five. These are team contracts. When the road network connects the required districts, the closing player scores points and crisis falls by {2}. An expired order raises crisis by {3}."
+    },
+    {
+      "key": "rules.coop.deadlines",
+      "value": "Deadlines depend on order length and player count: a 10-point order lasts {0} rounds for two players or {1} rounds for four. Starting orders are staggered, with each next deadline extended by {2} rounds."
+    },
+    {
+      "key": "rules.coop.crisis",
+      "value": "Crisis increases by 1 every {0} rounds. Repairs, snowstorms and parades add another {1}."
+    },
+    {
+      "key": "rules.coop.win",
+      "value": "Complete city orders: {0} with two players, {1} with three, {2} with four and {3} with five."
+    },
+    {
+      "key": "rules.coop.lose",
+      "value": "Crisis reaches {0}, or a player runs out of road pieces and the final round ends before enough orders are completed."
+    },
+    {
+      "key": "rules.coop.team_contracts",
+      "value": "Personal contracts still count toward the team score: completed ones add points, failed ones subtract them. Allied bots prioritize city orders. Hover over an order in the top-right panel to highlight its districts."
     }
   ]
 }

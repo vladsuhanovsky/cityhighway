@@ -1113,24 +1113,24 @@ namespace CityHighways.Presentation
                 Ui.Radius(cell, 3f);
                 meter.Add(cell);
             }
-            Picture(s, meter, $"Кризис: старт {coop.CoopCrisisStart}, предел {coop.CoopCrisisMax}. На картинке — {coop.CoopCrisisStart + 3} из {coop.CoopCrisisMax}.");
+            Picture(s, meter, string.Format(LocalizationService.Get("rules.coop.meter"), coop.CoopCrisisStart, coop.CoopCrisisMax, coop.CoopCrisisStart + 3));
 
-            Paragraph(s, $"На столе — заказы города: вдвоём и втроём по {coop.CoopOpenOrdersFor(2)}, вчетвером и впятером по {coop.CoopOpenOrdersFor(4)}. Это контракты, общие для всей команды. Заказ выполнен, когда общая сеть связывает его районы: очки получает тот, чья дорога замкнула путь, а кризис падает на {coop.CoopCrisisReliefPerOrder}. Просроченный заказ поднимает кризис на {coop.CoopCrisisPerFailedOrder}.");
-            Paragraph(s, $"Срок заказа зависит от его длины и числа игроков: вдвоём на заказ в 10 очков — {coop.CoopOrderRoundsFor(10, 2)} кругов, вчетвером — {coop.CoopOrderRoundsFor(10, 4)} (ходов в круге больше). Стартовые заказы открываются в очередь: у каждого следующего срок на {coop.CoopStartStagger} круга больше, чтобы они не сгорели разом.");
-            Paragraph(s, $"Город растёт сам: кризис +1 каждые {coop.CoopCrisisEveryRounds} круга, а ремонт, снегопад и парад добавляют ещё +{coop.CoopCrisisPerBadEvent}.");
+            Paragraph(s, string.Format(LocalizationService.Get("rules.coop.orders"), coop.CoopOpenOrdersFor(2), coop.CoopOpenOrdersFor(4), coop.CoopCrisisReliefPerOrder, coop.CoopCrisisPerFailedOrder));
+            Paragraph(s, string.Format(LocalizationService.Get("rules.coop.deadlines"), coop.CoopOrderRoundsFor(10, 2), coop.CoopOrderRoundsFor(10, 4), coop.CoopStartStagger));
+            Paragraph(s, string.Format(LocalizationService.Get("rules.coop.crisis"), coop.CoopCrisisEveryRounds, coop.CoopCrisisPerBadEvent));
             var outcomes = Ui.Row();
             outcomes.style.marginTop = 10f;
             outcomes.style.justifyContent = Justify.SpaceBetween;
-            var win = Tile(LocalizationService.Get("menu.rules.048"), $"Выполнить заказы города: на двоих — {coop.CoopOrdersToWin(2)}, на троих — {coop.CoopOrdersToWin(3)}, на четверых — {coop.CoopOrdersToWin(4)}, на пятерых — {coop.CoopOrdersToWin(5)}.",
+            var win = Tile(LocalizationService.Get("menu.rules.048"), string.Format(LocalizationService.Get("rules.coop.win"), coop.CoopOrdersToWin(2), coop.CoopOrdersToWin(3), coop.CoopOrdersToWin(4), coop.CoopOrdersToWin(5)),
                 GameColors.Success, new MenuIcon(MenuIcon.Glyph.Trophy, 26f, GameColors.Success));
             win.style.width = 380f;
-            var lose = Tile(LocalizationService.Get("menu.rules.049"), $"Кризис дошёл до {coop.CoopCrisisMax} — или у кого-то кончились участки и последний круг прошёл, а заказов не хватило.",
+            var lose = Tile(LocalizationService.Get("menu.rules.049"), string.Format(LocalizationService.Get("rules.coop.lose"), coop.CoopCrisisMax),
                 GameColors.Danger, new MenuIcon(MenuIcon.Glyph.Flame, 26f, GameColors.Danger));
             lose.style.width = 380f;
             outcomes.Add(win);
             outcomes.Add(lose);
             s.Add(outcomes);
-            Paragraph(s, "Свои контракты тоже никуда не делись: выполненные дают очки, проваленные отнимают — это общий счёт команды. Боты-союзники видят заказы города и строят под них в первую очередь. Панель заказов — в правом верхнем углу поля; наведите на заказ, чтобы подсветить его районы.");
+            Paragraph(s, LocalizationService.Get("rules.coop.team_contracts"));
             return s;
         }
 
