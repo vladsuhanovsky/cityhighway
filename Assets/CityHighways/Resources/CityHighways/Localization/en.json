@@ -275,6 +275,106 @@
     {
       "key": "menu.new_game.difficulty_normal_help",
       "value": "Standard rules: one construction round and {0} transport rounds, {1} trucks, {2} starting construction points and +{3} per round."
+    },
+    {
+      "key": "menu.scenario.standard",
+      "value": "Standard Rules"
+    },
+    {
+      "key": "menu.scenario.winter",
+      "value": "Winter"
+    },
+    {
+      "key": "menu.scenario.greater",
+      "value": "Greater City"
+    },
+    {
+      "key": "menu.scenario.repairs",
+      "value": "Year of Repairs"
+    },
+    {
+      "key": "menu.scenario.elections",
+      "value": "Mayoral Elections"
+    },
+    {
+      "key": "menu.scenario.standard_summary",
+      "value": "Rules are unchanged."
+    },
+    {
+      "key": "menu.scenario.winter_summary",
+      "value": "Gravel roads cost more, snowstorms are more frequent, and asphalt is scarce."
+    },
+    {
+      "key": "menu.scenario.greater_summary",
+      "value": "Outlying districts are unlocked from the start, with more road pieces and contracts."
+    },
+    {
+      "key": "menu.scenario.repairs_summary",
+      "value": "Some roads undergo maintenance each round; upcoming closures are visible."
+    },
+    {
+      "key": "menu.scenario.elections_summary",
+      "value": "Two auctions, more influence, cheaper bribes and a Mayor's Friend bonus."
+    },
+    {
+      "key": "menu.scenario.winter_change_1",
+      "value": "Gravel roads cost {0} extra card for the whole game (a city permit removes the surcharge for one turn)."
+    },
+    {
+      "key": "menu.scenario.winter_change_2",
+      "value": "Snowstorms occur more often; concrete also costs {0} extra card during a snowstorm."
+    },
+    {
+      "key": "menu.scenario.winter_change_3",
+      "value": "No parades or bridge subsidies."
+    },
+    {
+      "key": "menu.scenario.winter_change_4",
+      "value": "The deck has {0} asphalt cards instead of 26, {1} gravel instead of 18 and {2} machinery cards instead of 14."
+    },
+    {
+      "key": "menu.scenario.greater_change_1",
+      "value": "Expansion districts open on the first turn (Moscow: Zelenograd, Nekrasovka, Troitsk; Amsterdam: Zaandam, IJburg, Amstelveen; Chongqing: Beibei, Banan, Changshou). No New District events."
+    },
+    {
+      "key": "menu.scenario.greater_change_2",
+      "value": "Each player receives {0} extra road pieces."
+    },
+    {
+      "key": "menu.scenario.greater_change_3",
+      "value": "Start with {0} contracts to choose from (keep at least {1})."
+    },
+    {
+      "key": "menu.scenario.repairs_change_1",
+      "value": "Every round {0} random unclaimed roads close for maintenance, in addition to events."
+    },
+    {
+      "key": "menu.scenario.repairs_change_2",
+      "value": "Roads scheduled to close next round are shown on the map beforehand."
+    },
+    {
+      "key": "menu.scenario.repairs_change_3",
+      "value": "A city permit allows building on a road under repair."
+    },
+    {
+      "key": "menu.scenario.repairs_change_4",
+      "value": "Gain +{0} influence for each of your roads with length {1} or more."
+    },
+    {
+      "key": "menu.scenario.elections_change_1",
+      "value": "Two city auctions occur when someone has built one third and then {0}% of their road pieces."
+    },
+    {
+      "key": "menu.scenario.elections_change_2",
+      "value": "Influence per contract +{0} (complex contract +{1}), and +{2} for a new district."
+    },
+    {
+      "key": "menu.scenario.elections_change_3",
+      "value": "Bribes cost {0} influence."
+    },
+    {
+      "key": "menu.scenario.elections_change_4",
+      "value": "Mayor's Friend: the player who spent the most influence gains +{0} points."
     }
   ]
 }

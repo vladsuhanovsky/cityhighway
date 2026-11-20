@@ -1042,10 +1042,10 @@ namespace CityHighways.Presentation
             if (_scenarioButton != null)
             {
                 var scenario = (ScenarioKind)Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1);
-                _scenarioButton.text = Scenarios.Title(scenario);
+                _scenarioButton.text = ScenarioMenuLocalization.Title(scenario);
                 _scenarioHint.text = scenario == ScenarioKind.Standard
-                    ? Scenarios.Summary(scenario)
-                    : string.Join("\n", Scenarios.Changes(scenario).Select(c => "• " + c));
+                    ? ScenarioMenuLocalization.Summary(scenario)
+                    : string.Join("\n", ScenarioMenuLocalization.Changes(scenario).Select(c => "• " + c));
             }
             _trainsValue.text = _setup.roadPieces > 0 ? _setup.roadPieces.ToString() : LocalizationService.Get("menu.new_game.default_pieces");
             _hideCardsButton.text = LocalizationService.Get(_setup.hideCardsBetweenTurns ? "common.yes" : "common.no");

@@ -275,6 +275,106 @@
     {
       "key": "menu.new_game.difficulty_normal_help",
       "value": "Обычные правила: раунд стройки и {0} раундов перевозок, {1} фуры, {2} очков стройки на старте и +{3} за раунд."
+    },
+    {
+      "key": "menu.scenario.standard",
+      "value": "Обычные правила"
+    },
+    {
+      "key": "menu.scenario.winter",
+      "value": "Зима"
+    },
+    {
+      "key": "menu.scenario.greater",
+      "value": "Большой город"
+    },
+    {
+      "key": "menu.scenario.repairs",
+      "value": "Год ремонта"
+    },
+    {
+      "key": "menu.scenario.elections",
+      "value": "Выборы мэра"
+    },
+    {
+      "key": "menu.scenario.standard_summary",
+      "value": "Правила без изменений."
+    },
+    {
+      "key": "menu.scenario.winter_summary",
+      "value": "Щебёнка дороже всю партию, снегопады чаще, асфальта мало."
+    },
+    {
+      "key": "menu.scenario.greater_summary",
+      "value": "Окраины открыты сразу, участков и контрактов больше — длинная партия."
+    },
+    {
+      "key": "menu.scenario.repairs_summary",
+      "value": "Каждый круг часть дорог на ремонте; следующие видны заранее."
+    },
+    {
+      "key": "menu.scenario.elections_summary",
+      "value": "Два аукциона, больше влияния, дешёвые взятки, «друг мэра»."
+    },
+    {
+      "key": "menu.scenario.winter_change_1",
+      "value": "Щебёночные дороги всю партию на {0} карту дороже (разрешение мэрии снимает надбавку на ход)."
+    },
+    {
+      "key": "menu.scenario.winter_change_2",
+      "value": "Снегопад чаще; в снегопад на {0} карту дороже и бетон."
+    },
+    {
+      "key": "menu.scenario.winter_change_3",
+      "value": "Нет парадов и субсидий на мосты."
+    },
+    {
+      "key": "menu.scenario.winter_change_4",
+      "value": "В колоде асфальта {0} вместо 26, щебня {1} вместо 18, техники {2} вместо 14."
+    },
+    {
+      "key": "menu.scenario.greater_change_1",
+      "value": "Районы-расширения (в Москве — Зеленоград, Некрасовка и Троицк, в Амстердаме — Заандам, Эйбург и Амстелвен, в Чунцине — Бэйбэй, Банань и Чаншоу) открыты с первого хода, событий «Новый район» нет."
+    },
+    {
+      "key": "menu.scenario.greater_change_2",
+      "value": "+{0} участков дороги каждому."
+    },
+    {
+      "key": "menu.scenario.greater_change_3",
+      "value": "В начале — {0} контракта на выбор (оставить не меньше {1})."
+    },
+    {
+      "key": "menu.scenario.repairs_change_1",
+      "value": "Каждый круг {0} случайных свободных участка закрыты на ремонт — сверх событий."
+    },
+    {
+      "key": "menu.scenario.repairs_change_2",
+      "value": "Какие участки закроют в следующем круге, видно на карте заранее."
+    },
+    {
+      "key": "menu.scenario.repairs_change_3",
+      "value": "Разрешение мэрии пускает строить на ремонтируемом участке."
+    },
+    {
+      "key": "menu.scenario.repairs_change_4",
+      "value": "+{0} влияния за каждую свою дорогу длиной {1} и больше."
+    },
+    {
+      "key": "menu.scenario.elections_change_1",
+      "value": "Два аукциона мэрии: когда кто-то построил треть и {0}% своих участков."
+    },
+    {
+      "key": "menu.scenario.elections_change_2",
+      "value": "Влияние за контракт +{0} (сложный +{1}), за новый район +{2}."
+    },
+    {
+      "key": "menu.scenario.elections_change_3",
+      "value": "Взятки стоят {0} влияния."
+    },
+    {
+      "key": "menu.scenario.elections_change_4",
+      "value": "«Друг мэра»: кто за партию потратил больше всех влияния, получает +{0} очков."
     }
   ]
 }
