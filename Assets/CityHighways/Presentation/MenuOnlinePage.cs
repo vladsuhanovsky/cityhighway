@@ -53,12 +53,12 @@ namespace CityHighways.Presentation
             // ------------------------------------------------------------ Подключение
             _connectView = Ui.Column();
             Root.Add(_connectView);
-            _connectView.Add(Title("Сетевая игра", Leave));
+            _connectView.Add(Title(LocalizationService.Get("menu.online.001"), Leave));
 
             var nameRow = Ui.Row();
             nameRow.style.alignItems = Align.Center;
             nameRow.style.marginBottom = 14f;
-            nameRow.Add(Ui.Text("Ваше имя", 16f, Theme.TextDim));
+            nameRow.Add(Ui.Text(LocalizationService.Get("menu.online.002"), 16f, Theme.TextDim));
             _nameField = Field(DefaultName(), 16);
             _nameField.style.width = 320f;
             _nameField.style.marginLeft = 14f;
@@ -74,15 +74,15 @@ namespace CityHighways.Presentation
             ugsCard.style.flexGrow = 1f;
             ugsCard.style.flexBasis = 0f;
             ugsCard.style.marginRight = 14f;
-            ugsCard.Add(Ui.Text("Через интернет", 22f, Theme.Gold, true));
+            ugsCard.Add(Ui.Text(LocalizationService.Get("menu.online.003"), 22f, Theme.Gold, true));
             if (NetPlatforms.Ugs == null)
             {
-                ugsCard.Add(Note("Нужен пакет Multiplayer Services и привязка проекта к Unity Cloud — как настроить, написано в README, раздел «Unity Relay и Lobby»."));
+                ugsCard.Add(Note(LocalizationService.Get("menu.online.004")));
             }
             else
             {
-                ugsCard.Add(Note("Серверы Unity (Relay): играть можно из разных сетей, без настройки роутера."));
-                var hostUgs = Ui.Button("Создать лобби", HostUgs, ButtonKind.Primary, 17f);
+                ugsCard.Add(Note(LocalizationService.Get("menu.online.005")));
+                var hostUgs = Ui.Button(LocalizationService.Get("menu.online.006"), HostUgs, ButtonKind.Primary, 17f);
                 hostUgs.style.marginTop = 10f;
                 ugsCard.Add(hostUgs);
                 var codeRow = Ui.Row();
@@ -91,21 +91,21 @@ namespace CityHighways.Presentation
                 _codeField = Field("", 12);
                 _codeField.style.flexGrow = 1f;
                 codeRow.Add(_codeField);
-                var byCode = Ui.Button("Войти по коду", () => JoinUgs(_codeField.value, true), ButtonKind.Secondary, 15f);
+                var byCode = Ui.Button(LocalizationService.Get("menu.online.007"), () => JoinUgs(_codeField.value, true), ButtonKind.Secondary, 15f);
                 byCode.style.marginLeft = 10f;
                 codeRow.Add(byCode);
                 ugsCard.Add(codeRow);
                 var listHeader = Ui.Row();
                 listHeader.style.alignItems = Align.Center;
                 listHeader.style.marginTop = 16f;
-                var listTitle = Ui.Text("Открытые игры", 15f, Theme.Text, true);
+                var listTitle = Ui.Text(LocalizationService.Get("menu.online.008"), 15f, Theme.Text, true);
                 listTitle.style.flexGrow = 1f;
                 listHeader.Add(listTitle);
-                listHeader.Add(Ui.Button("Обновить", RefreshOpenLobbies, ButtonKind.Ghost, 13f));
+                listHeader.Add(Ui.Button(LocalizationService.Get("menu.online.009"), RefreshOpenLobbies, ButtonKind.Ghost, 13f));
                 ugsCard.Add(listHeader);
                 _openLobbies = Ui.Column();
                 _openLobbies.style.marginTop = 6f;
-                _openLobbies.Add(Note("Нажмите «Обновить», чтобы найти игры."));
+                _openLobbies.Add(Note(LocalizationService.Get("menu.online.010")));
                 ugsCard.Add(_openLobbies);
             }
             columns.Add(ugsCard);
@@ -119,7 +119,7 @@ namespace CityHighways.Presentation
             var steam = NetPlatforms.Steam;
             if (steam == null)
             {
-                steamCard.Add(Note("Steamworks.NET не установлен в проект, поэтому Steam недоступен. Как подключить — в README, раздел «Сетевая игра». А пока можно играть по локальной сети."));
+                steamCard.Add(Note(LocalizationService.Get("menu.online.011")));
             }
             else if (!steam.Available)
             {
@@ -127,17 +127,17 @@ namespace CityHighways.Presentation
             }
             else
             {
-                steamCard.Add(Note("Лобби только для друзей. Друзья подключаются по приглашению из оверлея Steam или из списка ниже."));
-                var host = Ui.Button("Создать лобби в Steam", HostSteam, ButtonKind.Primary, 17f);
+                steamCard.Add(Note(LocalizationService.Get("menu.online.012")));
+                var host = Ui.Button(LocalizationService.Get("menu.online.013"), HostSteam, ButtonKind.Primary, 17f);
                 host.style.marginTop = 10f;
                 steamCard.Add(host);
                 var friendsHeader = Ui.Row();
                 friendsHeader.style.alignItems = Align.Center;
                 friendsHeader.style.marginTop = 16f;
-                var friendsTitle = Ui.Text("Друзья в лобби City Highways", 15f, Theme.Text, true);
+                var friendsTitle = Ui.Text(LocalizationService.Get("menu.online.014"), 15f, Theme.Text, true);
                 friendsTitle.style.flexGrow = 1f;
                 friendsHeader.Add(friendsTitle);
-                friendsHeader.Add(Ui.Button("Обновить", RefreshFriends, ButtonKind.Ghost, 13f));
+                friendsHeader.Add(Ui.Button(LocalizationService.Get("menu.online.009"), RefreshFriends, ButtonKind.Ghost, 13f));
                 steamCard.Add(friendsHeader);
                 _friends = Ui.Column();
                 _friends.style.marginTop = 6f;
@@ -149,9 +149,9 @@ namespace CityHighways.Presentation
             var lanCard = Ui.Card(18f);
             lanCard.style.flexGrow = 1f;
             lanCard.style.flexBasis = 0f;
-            lanCard.Add(Ui.Text("Локальная сеть", 22f, Theme.Gold, true));
+            lanCard.Add(Ui.Text(LocalizationService.Get("menu.online.015"), 22f, Theme.Gold, true));
             lanCard.Add(Note($"Компьютеры в одной сети (или два окна игры на одном компьютере). Хост открывает порт {TcpTransport.DefaultPort}; брандмауэр может спросить разрешение."));
-            var hostLan = Ui.Button("Создать игру", HostLan, ButtonKind.Primary, 17f);
+            var hostLan = Ui.Button(LocalizationService.Get("menu.online.016"), HostLan, ButtonKind.Primary, 17f);
             hostLan.style.marginTop = 10f;
             lanCard.Add(hostLan);
             var joinRow = Ui.Row();
@@ -160,11 +160,11 @@ namespace CityHighways.Presentation
             _addressField = Field(PlayerPrefs.GetString(AddressKey, "127.0.0.1"), 64);
             _addressField.style.flexGrow = 1f;
             joinRow.Add(_addressField);
-            var join = Ui.Button("Подключиться", JoinLan, ButtonKind.Secondary, 15f);
+            var join = Ui.Button(LocalizationService.Get("menu.online.017"), JoinLan, ButtonKind.Secondary, 15f);
             join.style.marginLeft = 10f;
             joinRow.Add(join);
             lanCard.Add(joinRow);
-            lanCard.Add(Note("Адрес хоста, например 192.168.1.5 (порт можно указать через двоеточие)."));
+            lanCard.Add(Note(LocalizationService.Get("menu.online.018")));
             columns.Add(lanCard);
 
             _status = Ui.Text("", 15f, Theme.Danger);
@@ -175,7 +175,7 @@ namespace CityHighways.Presentation
             // ------------------------------------------------------------ Лобби
             _lobbyView = Ui.Column();
             Root.Add(_lobbyView);
-            var lobbyHeader = Title("Лобби", Leave);
+            var lobbyHeader = Title(LocalizationService.Get("menu.online.019"), Leave);
             _lobbyTitle = lobbyHeader.Q<Label>();
             _lobbyView.Add(lobbyHeader);
             _lobbyHint = Note("");
@@ -183,7 +183,7 @@ namespace CityHighways.Presentation
             _lobbyView.Add(_lobbyHint);
 
             var seatsCard = Ui.Card(18f);
-            seatsCard.Add(Ui.Text("За столом", 18f, Theme.Text, true));
+            seatsCard.Add(Ui.Text(LocalizationService.Get("menu.online.020"), 18f, Theme.Text, true));
             _seatsList = Ui.Column();
             _seatsList.style.marginTop = 10f;
             seatsCard.Add(_seatsList);
@@ -192,13 +192,13 @@ namespace CityHighways.Presentation
             _hostControls = Ui.Row();
             _hostControls.style.marginTop = 14f;
             _hostControls.style.flexWrap = Wrap.Wrap;
-            _inviteButton = Ui.Button("Пригласить друга", () => _session?.Transport.Invite(), ButtonKind.Secondary, 15f);
-            _addBotButton = Ui.Button("Добавить бота", () => (_session as HostSession)?.AddBot(0), ButtonKind.Secondary, 15f);
+            _inviteButton = Ui.Button(LocalizationService.Get("menu.online.021"), () => _session?.Transport.Invite(), ButtonKind.Secondary, 15f);
+            _addBotButton = Ui.Button(LocalizationService.Get("menu.online.022"), () => (_session as HostSession)?.AddBot(0), ButtonKind.Secondary, 15f);
             _timerButton = Ui.Button("", CycleTimer, ButtonKind.Secondary, 15f);
             _scenarioButton = Ui.Button("", CycleScenario, ButtonKind.Secondary, 15f);
             _mapButton = Ui.Button("", CycleMap, ButtonKind.Secondary, 15f);
             _modeButton = Ui.Button("", () => { _setup.cooperative = !_setup.cooperative; _setup.Save(); RefreshLobby(); }, ButtonKind.Secondary, 15f);
-            _startButton = Ui.Button("Начать партию", StartGame, ButtonKind.Primary, 17f);
+            _startButton = Ui.Button(LocalizationService.Get("menu.online.023"), StartGame, ButtonKind.Primary, 17f);
             foreach (var b in new[] { _inviteButton, _addBotButton, _timerButton, _scenarioButton, _mapButton, _modeButton })
             {
                 b.style.marginRight = 10f;
@@ -210,7 +210,7 @@ namespace CityHighways.Presentation
             _hostControls.Add(_startButton);
             _lobbyView.Add(_hostControls);
 
-            _waitLabel = Ui.Text("Ждём, пока хост начнёт партию…", 16f, Theme.TextDim);
+            _waitLabel = Ui.Text(LocalizationService.Get("menu.online.024"), 16f, Theme.TextDim);
             _waitLabel.style.marginTop = 14f;
             _lobbyView.Add(_waitLabel);
 
@@ -227,16 +227,16 @@ namespace CityHighways.Presentation
             return Profiles.Active.name;
         }
 
-        string PlayerName => string.IsNullOrWhiteSpace(_nameField.value) ? "Игрок" : _nameField.value.Trim();
+        string PlayerName => string.IsNullOrWhiteSpace(_nameField.value) ? LocalizationService.Get("menu.online.025") : _nameField.value.Trim();
 
         // ================================================================== Подключение
 
-        void HostLan() => Open(new HostSession(TcpTransport.Host(), CityHighwaysApp.LoadMap, PlayerName), "Создаём игру…");
+        void HostLan() => Open(new HostSession(TcpTransport.Host(), CityHighwaysApp.LoadMap, PlayerName), LocalizationService.Get("menu.online.026"));
 
         void JoinLan()
         {
             PlayerPrefs.SetString(AddressKey, _addressField.value);
-            Open(new ClientSession(TcpTransport.Connect(_addressField.value), CityHighwaysApp.LoadMap, PlayerName), "Подключаемся…");
+            Open(new ClientSession(TcpTransport.Connect(_addressField.value), CityHighwaysApp.LoadMap, PlayerName), LocalizationService.Get("menu.online.027"));
         }
 
         void HostUgs()
@@ -244,44 +244,44 @@ namespace CityHighways.Presentation
             var transport = NetPlatforms.Ugs?.CreateHost($"{PlayerName} · City Highways", NetSession.MaxSeats);
             if (transport == null)
             {
-                ShowConnect("Unity Relay недоступен.");
+                ShowConnect(LocalizationService.Get("menu.online.028"));
                 return;
             }
-            Open(new HostSession(transport, CityHighwaysApp.LoadMap, PlayerName), "Создаём лобби на серверах Unity…");
+            Open(new HostSession(transport, CityHighwaysApp.LoadMap, PlayerName), LocalizationService.Get("menu.online.029"));
         }
 
         void JoinUgs(string codeOrId, bool byCode)
         {
             if (byCode && string.IsNullOrWhiteSpace(codeOrId))
             {
-                ShowConnect("Введите код лобби — его видит хост в своём лобби.");
+                ShowConnect(LocalizationService.Get("menu.online.030"));
                 return;
             }
             var transport = byCode ? NetPlatforms.Ugs?.JoinByCode(codeOrId) : NetPlatforms.Ugs?.JoinById(codeOrId);
             if (transport == null)
             {
-                ShowConnect("Unity Relay недоступен.");
+                ShowConnect(LocalizationService.Get("menu.online.028"));
                 return;
             }
-            Open(new ClientSession(transport, CityHighwaysApp.LoadMap, PlayerName), "Входим в лобби…");
+            Open(new ClientSession(transport, CityHighwaysApp.LoadMap, PlayerName), LocalizationService.Get("menu.online.031"));
         }
 
         void RefreshOpenLobbies()
         {
             if (_openLobbies == null || NetPlatforms.Ugs == null) return;
             _openLobbies.Clear();
-            _openLobbies.Add(Note("Ищем…"));
+            _openLobbies.Add(Note(LocalizationService.Get("menu.online.032")));
             NetPlatforms.Ugs.QueryLobbies((lobbies, error) =>
             {
                 _openLobbies.Clear();
                 if (error != null)
                 {
-                    _openLobbies.Add(Note("Не удалось получить список: " + error));
+                    _openLobbies.Add(Note(LocalizationService.Get("menu.online.033") + error));
                     return;
                 }
                 if (lobbies.Count == 0)
                 {
-                    _openLobbies.Add(Note("Открытых игр нет. Создайте свою или войдите по коду."));
+                    _openLobbies.Add(Note(LocalizationService.Get("menu.online.034")));
                     return;
                 }
                 foreach (var lobby in lobbies)
@@ -294,7 +294,7 @@ namespace CityHighways.Presentation
                     name.style.whiteSpace = WhiteSpace.Normal;
                     row.Add(name);
                     string id = lobby.Id;
-                    row.Add(Ui.Button("Войти", () => JoinUgs(id, false), ButtonKind.Secondary, 14f));
+                    row.Add(Ui.Button(LocalizationService.Get("menu.online.035"), () => JoinUgs(id, false), ButtonKind.Secondary, 14f));
                     _openLobbies.Add(row);
                 }
             });
@@ -305,10 +305,10 @@ namespace CityHighways.Presentation
             var transport = NetPlatforms.Steam?.CreateHost(NetSession.MaxSeats);
             if (transport == null)
             {
-                ShowConnect("Steam недоступен.");
+                ShowConnect(LocalizationService.Get("menu.online.036"));
                 return;
             }
-            Open(new HostSession(transport, CityHighwaysApp.LoadMap, PlayerName), "Создаём лобби в Steam…");
+            Open(new HostSession(transport, CityHighwaysApp.LoadMap, PlayerName), LocalizationService.Get("menu.online.037"));
         }
 
         /// <summary>Подключиться к лобби друга (из списка, по приглашению или с +connect_lobby).</summary>
@@ -317,10 +317,10 @@ namespace CityHighways.Presentation
             var transport = NetPlatforms.Steam?.Join(lobby);
             if (transport == null)
             {
-                ShowConnect("Steam недоступен.");
+                ShowConnect(LocalizationService.Get("menu.online.036"));
                 return;
             }
-            Open(new ClientSession(transport, CityHighwaysApp.LoadMap, PlayerName), "Входим в лобби друга…");
+            Open(new ClientSession(transport, CityHighwaysApp.LoadMap, PlayerName), LocalizationService.Get("menu.online.038"));
         }
 
         void Open(NetSession session, string status)
@@ -399,7 +399,7 @@ namespace CityHighways.Presentation
             var lobbies = steam != null && steam.Available ? steam.FriendsInLobbies() : new System.Collections.Generic.List<JoinableLobby>();
             if (lobbies.Count == 0)
             {
-                _friends.Add(Note("Пока никого. Попросите друга создать лобби и нажмите «Обновить» — или примите его приглашение в Steam."));
+                _friends.Add(Note(LocalizationService.Get("menu.online.039")));
                 return;
             }
             foreach (var lobby in lobbies)
@@ -411,7 +411,7 @@ namespace CityHighways.Presentation
                 name.style.flexGrow = 1f;
                 row.Add(name);
                 ulong id = lobby.Lobby;
-                row.Add(Ui.Button("Войти", () => JoinSteam(id), ButtonKind.Secondary, 14f));
+                row.Add(Ui.Button(LocalizationService.Get("menu.online.035"), () => JoinSteam(id), ButtonKind.Secondary, 14f));
                 _friends.Add(row);
             }
         }
@@ -456,15 +456,15 @@ namespace CityHighways.Presentation
                 var name = Ui.Text(seat.name + (!seat.isBot && !string.IsNullOrEmpty(seat.clubTag) ? $"  [{seat.clubTag}]" : ""), 17f, Theme.Text, true);
                 name.style.flexGrow = 1f;
                 row.Add(name);
-                string tag = i == 0 ? "хост" : seat.isBot ? "бот" : "игрок";
-                if (i == session.LocalSeat) tag += " · вы";
+                string tag = i == 0 ? LocalizationService.Get("menu.online.040") : seat.isBot ? LocalizationService.Get("menu.online.041") : LocalizationService.Get("menu.online.042");
+                if (i == session.LocalSeat) tag += LocalizationService.Get("menu.online.043");
                 var tagLabel = Ui.Text(tag, 14f, Theme.TextDim);
                 tagLabel.style.marginRight = 12f;
                 row.Add(tagLabel);
                 if (host && i > 0)
                 {
                     int index = i;
-                    row.Add(Ui.Button(seat.isBot ? "Убрать" : "Отключить", () => (_session as HostSession)?.RemoveSeat(index), ButtonKind.Ghost, 13f));
+                    row.Add(Ui.Button(seat.isBot ? LocalizationService.Get("menu.online.044") : LocalizationService.Get("menu.online.045"), () => (_session as HostSession)?.RemoveSeat(index), ButtonKind.Ghost, 13f));
                 }
                 _seatsList.Add(row);
             }
@@ -478,10 +478,10 @@ namespace CityHighways.Presentation
                 var hostSession = (HostSession)session;
                 Ui.Show(_inviteButton, session.Transport.CanInvite);
                 Ui.SetEnabled(_addBotButton, hostSession.CanAddSeat);
-                _timerButton.text = _turnSeconds > 0 ? $"Таймер хода: {_turnSeconds} с" : "Таймер хода: нет";
-                _scenarioButton.text = "Сценарий: " + Scenarios.Title((ScenarioKind)Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1));
-                _mapButton.text = "Карта: " + GameSetup.MapOf(_setup.mapResourcePath).Title;
-                _modeButton.text = _setup.cooperative ? "Режим: кооператив" : "Режим: соревнование";
+                _timerButton.text = _turnSeconds > 0 ? $"Таймер хода: {_turnSeconds} с" : LocalizationService.Get("menu.online.046");
+                _scenarioButton.text = LocalizationService.Get("menu.online.047") + Scenarios.Title((ScenarioKind)Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1));
+                _mapButton.text = LocalizationService.Get("menu.online.048") + GameSetup.MapOf(_setup.mapResourcePath).Title;
+                _modeButton.text = _setup.cooperative ? LocalizationService.Get("menu.online.049") : LocalizationService.Get("menu.online.050");
                 Ui.SetEnabled(_startButton, session.Seats.Count >= 2);
             }
         }
@@ -538,7 +538,7 @@ namespace CityHighways.Presentation
             catch (Exception e)
             {
                 Debug.LogException(e);
-                _status.text = "Не удалось начать: " + e.Message;
+                _status.text = LocalizationService.Get("menu.online.051") + e.Message;
             }
         }
 
@@ -549,7 +549,7 @@ namespace CityHighways.Presentation
             var row = Ui.Row();
             row.style.alignItems = Align.Center;
             row.style.marginBottom = 18f;
-            var backButton = Ui.Button("← Назад", back, ButtonKind.Ghost, 15f);
+            var backButton = Ui.Button(LocalizationService.Get("menu.online.052"), back, ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             row.Add(backButton);
             row.Add(Ui.Text(text, 34f, Theme.Gold, true));

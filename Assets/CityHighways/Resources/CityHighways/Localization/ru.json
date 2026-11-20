@@ -907,6 +907,214 @@
     {
       "key": "menu.settings.detail.108",
       "value": "Все настройки сброшены к заводским. Профили, статистика и сохранённая партия не тронуты."
+    },
+    {
+      "key": "menu.online.001",
+      "value": "Сетевая игра"
+    },
+    {
+      "key": "menu.online.002",
+      "value": "Ваше имя"
+    },
+    {
+      "key": "menu.online.003",
+      "value": "Через интернет"
+    },
+    {
+      "key": "menu.online.004",
+      "value": "Нужен пакет Multiplayer Services и привязка проекта к Unity Cloud — как настроить, написано в README, раздел «Unity Relay и Lobby»."
+    },
+    {
+      "key": "menu.online.005",
+      "value": "Серверы Unity (Relay): играть можно из разных сетей, без настройки роутера."
+    },
+    {
+      "key": "menu.online.006",
+      "value": "Создать лобби"
+    },
+    {
+      "key": "menu.online.007",
+      "value": "Войти по коду"
+    },
+    {
+      "key": "menu.online.008",
+      "value": "Открытые игры"
+    },
+    {
+      "key": "menu.online.009",
+      "value": "Обновить"
+    },
+    {
+      "key": "menu.online.010",
+      "value": "Нажмите «Обновить», чтобы найти игры."
+    },
+    {
+      "key": "menu.online.011",
+      "value": "Steamworks.NET не установлен в проект, поэтому Steam недоступен. Как подключить — в README, раздел «Сетевая игра». А пока можно играть по локальной сети."
+    },
+    {
+      "key": "menu.online.012",
+      "value": "Лобби только для друзей. Друзья подключаются по приглашению из оверлея Steam или из списка ниже."
+    },
+    {
+      "key": "menu.online.013",
+      "value": "Создать лобби в Steam"
+    },
+    {
+      "key": "menu.online.014",
+      "value": "Друзья в лобби City Highways"
+    },
+    {
+      "key": "menu.online.015",
+      "value": "Локальная сеть"
+    },
+    {
+      "key": "menu.online.016",
+      "value": "Создать игру"
+    },
+    {
+      "key": "menu.online.017",
+      "value": "Подключиться"
+    },
+    {
+      "key": "menu.online.018",
+      "value": "Адрес хоста, например 192.168.1.5 (порт можно указать через двоеточие)."
+    },
+    {
+      "key": "menu.online.019",
+      "value": "Лобби"
+    },
+    {
+      "key": "menu.online.020",
+      "value": "За столом"
+    },
+    {
+      "key": "menu.online.021",
+      "value": "Пригласить друга"
+    },
+    {
+      "key": "menu.online.022",
+      "value": "Добавить бота"
+    },
+    {
+      "key": "menu.online.023",
+      "value": "Начать партию"
+    },
+    {
+      "key": "menu.online.024",
+      "value": "Ждём, пока хост начнёт партию…"
+    },
+    {
+      "key": "menu.online.025",
+      "value": "Игрок"
+    },
+    {
+      "key": "menu.online.026",
+      "value": "Создаём игру…"
+    },
+    {
+      "key": "menu.online.027",
+      "value": "Подключаемся…"
+    },
+    {
+      "key": "menu.online.028",
+      "value": "Unity Relay недоступен."
+    },
+    {
+      "key": "menu.online.029",
+      "value": "Создаём лобби на серверах Unity…"
+    },
+    {
+      "key": "menu.online.030",
+      "value": "Введите код лобби — его видит хост в своём лобби."
+    },
+    {
+      "key": "menu.online.031",
+      "value": "Входим в лобби…"
+    },
+    {
+      "key": "menu.online.032",
+      "value": "Ищем…"
+    },
+    {
+      "key": "menu.online.033",
+      "value": "Не удалось получить список: "
+    },
+    {
+      "key": "menu.online.034",
+      "value": "Открытых игр нет. Создайте свою или войдите по коду."
+    },
+    {
+      "key": "menu.online.035",
+      "value": "Войти"
+    },
+    {
+      "key": "menu.online.036",
+      "value": "Steam недоступен."
+    },
+    {
+      "key": "menu.online.037",
+      "value": "Создаём лобби в Steam…"
+    },
+    {
+      "key": "menu.online.038",
+      "value": "Входим в лобби друга…"
+    },
+    {
+      "key": "menu.online.039",
+      "value": "Пока никого. Попросите друга создать лобби и нажмите «Обновить» — или примите его приглашение в Steam."
+    },
+    {
+      "key": "menu.online.040",
+      "value": "хост"
+    },
+    {
+      "key": "menu.online.041",
+      "value": "бот"
+    },
+    {
+      "key": "menu.online.042",
+      "value": "игрок"
+    },
+    {
+      "key": "menu.online.043",
+      "value": " · вы"
+    },
+    {
+      "key": "menu.online.044",
+      "value": "Убрать"
+    },
+    {
+      "key": "menu.online.045",
+      "value": "Отключить"
+    },
+    {
+      "key": "menu.online.046",
+      "value": "Таймер хода: нет"
+    },
+    {
+      "key": "menu.online.047",
+      "value": "Сценарий: "
+    },
+    {
+      "key": "menu.online.048",
+      "value": "Карта: "
+    },
+    {
+      "key": "menu.online.049",
+      "value": "Режим: кооператив"
+    },
+    {
+      "key": "menu.online.050",
+      "value": "Режим: соревнование"
+    },
+    {
+      "key": "menu.online.051",
+      "value": "Не удалось начать: "
+    },
+    {
+      "key": "menu.online.052",
+      "value": "← Назад"
     }
   ]
 }

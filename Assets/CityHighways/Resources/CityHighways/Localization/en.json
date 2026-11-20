@@ -907,6 +907,214 @@
     {
       "key": "menu.settings.detail.108",
       "value": "All settings were reset. Profiles, statistics and saved games were preserved."
+    },
+    {
+      "key": "menu.online.001",
+      "value": "Online Game"
+    },
+    {
+      "key": "menu.online.002",
+      "value": "Your Name"
+    },
+    {
+      "key": "menu.online.003",
+      "value": "Over the Internet"
+    },
+    {
+      "key": "menu.online.004",
+      "value": "Multiplayer Services and a linked Unity Cloud project are required. See README: Unity Relay and Lobby."
+    },
+    {
+      "key": "menu.online.005",
+      "value": "Unity Relay servers allow cross-network play without router configuration."
+    },
+    {
+      "key": "menu.online.006",
+      "value": "Create Lobby"
+    },
+    {
+      "key": "menu.online.007",
+      "value": "Join with Code"
+    },
+    {
+      "key": "menu.online.008",
+      "value": "Public Games"
+    },
+    {
+      "key": "menu.online.009",
+      "value": "Refresh"
+    },
+    {
+      "key": "menu.online.010",
+      "value": "Select Refresh to find games."
+    },
+    {
+      "key": "menu.online.011",
+      "value": "Steamworks.NET is not installed; Steam play is unavailable. See README: Online Game. Local network play is still available."
+    },
+    {
+      "key": "menu.online.012",
+      "value": "Friends-only lobby. Invite friends through the Steam overlay or the list below."
+    },
+    {
+      "key": "menu.online.013",
+      "value": "Create Steam Lobby"
+    },
+    {
+      "key": "menu.online.014",
+      "value": "Friends in City Highways Lobby"
+    },
+    {
+      "key": "menu.online.015",
+      "value": "Local Network"
+    },
+    {
+      "key": "menu.online.016",
+      "value": "Host Game"
+    },
+    {
+      "key": "menu.online.017",
+      "value": "Connect"
+    },
+    {
+      "key": "menu.online.018",
+      "value": "Host address, e.g. 192.168.1.5 (optional port after a colon)."
+    },
+    {
+      "key": "menu.online.019",
+      "value": "Lobby"
+    },
+    {
+      "key": "menu.online.020",
+      "value": "At the Table"
+    },
+    {
+      "key": "menu.online.021",
+      "value": "Invite Friend"
+    },
+    {
+      "key": "menu.online.022",
+      "value": "Add Bot"
+    },
+    {
+      "key": "menu.online.023",
+      "value": "Start Game"
+    },
+    {
+      "key": "menu.online.024",
+      "value": "Waiting for the host to start the game…"
+    },
+    {
+      "key": "menu.online.025",
+      "value": "Player"
+    },
+    {
+      "key": "menu.online.026",
+      "value": "Creating game…"
+    },
+    {
+      "key": "menu.online.027",
+      "value": "Connecting…"
+    },
+    {
+      "key": "menu.online.028",
+      "value": "Unity Relay is unavailable."
+    },
+    {
+      "key": "menu.online.029",
+      "value": "Creating lobby on Unity servers…"
+    },
+    {
+      "key": "menu.online.030",
+      "value": "Enter the lobby code displayed to the host."
+    },
+    {
+      "key": "menu.online.031",
+      "value": "Joining lobby…"
+    },
+    {
+      "key": "menu.online.032",
+      "value": "Searching…"
+    },
+    {
+      "key": "menu.online.033",
+      "value": "Could not retrieve list: "
+    },
+    {
+      "key": "menu.online.034",
+      "value": "No public games found. Host a game or join with a code."
+    },
+    {
+      "key": "menu.online.035",
+      "value": "Join"
+    },
+    {
+      "key": "menu.online.036",
+      "value": "Steam is unavailable."
+    },
+    {
+      "key": "menu.online.037",
+      "value": "Creating Steam lobby…"
+    },
+    {
+      "key": "menu.online.038",
+      "value": "Joining friend's lobby…"
+    },
+    {
+      "key": "menu.online.039",
+      "value": "No one is here yet. Ask a friend to create a lobby and select Refresh, or accept a Steam invitation."
+    },
+    {
+      "key": "menu.online.040",
+      "value": "host"
+    },
+    {
+      "key": "menu.online.041",
+      "value": "bot"
+    },
+    {
+      "key": "menu.online.042",
+      "value": "player"
+    },
+    {
+      "key": "menu.online.043",
+      "value": " · you"
+    },
+    {
+      "key": "menu.online.044",
+      "value": "Remove"
+    },
+    {
+      "key": "menu.online.045",
+      "value": "Disconnect"
+    },
+    {
+      "key": "menu.online.046",
+      "value": "Turn Timer: None"
+    },
+    {
+      "key": "menu.online.047",
+      "value": "Scenario: "
+    },
+    {
+      "key": "menu.online.048",
+      "value": "Map: "
+    },
+    {
+      "key": "menu.online.049",
+      "value": "Mode: Cooperative"
+    },
+    {
+      "key": "menu.online.050",
+      "value": "Mode: Competitive"
+    },
+    {
+      "key": "menu.online.051",
+      "value": "Could not start: "
+    },
+    {
+      "key": "menu.online.052",
+      "value": "← Back"
     }
   ]
 }
