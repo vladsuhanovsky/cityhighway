@@ -239,6 +239,42 @@
     {
       "key": "menu.new_game.character_random",
       "value": "Character: random"
+    },
+    {
+      "key": "menu.new_game.character_help",
+      "value": "Character: select the character button to view heroes, abilities and statistics. “Choose one of two” lets you pick between two random heroes and starting contracts; “Random” assigns one immediately."
+    },
+    {
+      "key": "menu.new_game.magnate_mode_help",
+      "value": "“Logistics Magnate”: companies transport perishable, heavy and hazardous cargo from hubs. One construction round and {0} transport rounds. Moves are planned in secret; trucks move together, and overloaded roads become congested."
+    },
+    {
+      "key": "menu.new_game.coop_mode_help",
+      "value": "“City Against All”: everyone is on the same team. Complete {0} city orders before the crisis reaches {1}. Travel on allies’ roads is free."
+    },
+    {
+      "key": "menu.new_game.magnate_hotseat_help",
+      "value": "Hot-seat game: a transition screen hides your routes from opponents between turns."
+    },
+    {
+      "key": "menu.new_game.magnate_solo_help",
+      "value": "Hover over a road or station to see its capacity, owner and cargo."
+    },
+    {
+      "key": "menu.new_game.difficulty_easy_help",
+      "value": "More cargo, 1.2× rewards, fewer events and thefts; start with 8 construction points."
+    },
+    {
+      "key": "menu.new_game.difficulty_hard_help",
+      "value": "Less cargo, 0.9× rewards, more events, and congestion costs −2."
+    },
+    {
+      "key": "menu.new_game.difficulty_expert_help",
+      "value": "Very little cargo, 0.8× rewards, frequent events and thefts, congestion −2; start with 4 construction points and gain 3 per round."
+    },
+    {
+      "key": "menu.new_game.difficulty_normal_help",
+      "value": "Standard rules: one construction round and {0} transport rounds, {1} trucks, {2} starting construction points and +{3} per round."
     }
   ]
 }

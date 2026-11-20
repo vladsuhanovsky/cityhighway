@@ -1019,7 +1019,7 @@ namespace CityHighways.Presentation
                 var kind = (CharacterKind)_setup.players[_lastCharacterSlot].character;
                 _characterHint.text = $"{Characters.Title(kind)}: {Characters.Ability(kind, config)}";
             }
-            else _characterHint.text = "Персонаж: нажмите на кнопку персонажа — откроется карточка с героями, их способностями и статистикой. «Выбор из двух» — в начале партии игрок видит двух случайных персонажей и стартовые контракты и выбирает одного; «случайный» раздаёт сразу.";
+            else _characterHint.text = LocalizationService.Get("menu.new_game.character_help");
             if (_mapButton != null)
             {
                 var map = GameSetup.MapOf(_setup.mapResourcePath);
@@ -1034,9 +1034,9 @@ namespace CityHighways.Presentation
                     _mapHint.text = LocalizationService.Get("menu.new_game.generated_city_hint");
                 }
                 _modeHint.text = _setup.magnate
-                    ? $"«Логистический магнат»: компании возят грузы с хабов — скоропорт, тяжеловес, опасный. Раунд стройки и {magnateRules.Rounds} раундов перевозок, ходы планируются тайно, фуры едут разом; перегруженная дорога — пробка."
+                    ? string.Format(LocalizationService.Get("menu.new_game.magnate_mode_help"), magnateRules.Rounds)
                     : _setup.cooperative
-                    ? $"«Город против всех»: все — одна команда. Выполните {rules.CoopOrdersToWin(_setup.players.Count)} заказов города, пока кризис не дошёл до {rules.CoopCrisisMax}. Проезд между союзниками бесплатный."
+                    ? string.Format(LocalizationService.Get("menu.new_game.coop_mode_help"), rules.CoopOrdersToWin(_setup.players.Count), rules.CoopCrisisMax)
                     : LocalizationService.Get("menu.new_game.competitive_hint");
             }
             if (_scenarioButton != null)
@@ -1070,7 +1070,7 @@ namespace CityHighways.Presentation
 
             int humans = _setup.players.Count(p => !p.isBot);
             _hint.text = _setup.magnate
-                ? (humans > 1 ? "Игра за одним компьютером: перед каждым ходом заставка — соперники не видят ваши маршруты." : "Наведите на дорогу или станцию — подсказка покажет пропускную способность, владельца и грузы.")
+                ? LocalizationService.Get(humans > 1 ? "menu.new_game.magnate_hotseat_help" : "menu.new_game.magnate_solo_help")
                 : humans == 0
                 ? LocalizationService.Get("menu.new_game.all_bots_hint")
                 : humans == 1
@@ -1225,13 +1225,12 @@ namespace CityHighways.Presentation
         {
             switch (difficulty)
             {
-                case MagnateDifficulty.Easy: return "Грузов больше, награды ×1,2, событий и краж меньше, на старте 8 очков стройки.";
-                case MagnateDifficulty.Hard: return "Грузов меньше, награды ×0,9, событий больше, пробка стоит −2.";
-                case MagnateDifficulty.Expert: return "Мало грузов, награды ×0,8, частые события и кражи, пробка −2, на старте 4 очка стройки и +3 за раунд.";
+                case MagnateDifficulty.Easy: return LocalizationService.Get("menu.new_game.difficulty_easy_help");
+                case MagnateDifficulty.Hard: return LocalizationService.Get("menu.new_game.difficulty_hard_help");
+                case MagnateDifficulty.Expert: return LocalizationService.Get("menu.new_game.difficulty_expert_help");
                 default:
                     var normal = new MagnateConfig();
-                    return $"Обычные правила: раунд стройки и {normal.Rounds} раундов перевозок, {normal.TrucksPerPlayer} фуры, " +
-                           $"{normal.StartBuildPoints} очков стройки на старте и +{normal.BuildPointsPerRound} за раунд.";
+                    return string.Format(LocalizationService.Get("menu.new_game.difficulty_normal_help"), normal.Rounds, normal.TrucksPerPlayer, normal.StartBuildPoints, normal.BuildPointsPerRound);
             }
         }
 
