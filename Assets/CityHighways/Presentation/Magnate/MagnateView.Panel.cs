@@ -77,7 +77,7 @@ namespace CityHighways.Presentation
             _popupTitle = Ui.Text("", 15f, Theme.Text, true);
             _popupTitle.style.flexShrink = 1f;
             _popupHead.Add(_popupTitle);
-            var close = Ui.Button("Закрыть ✕", ClosePopup, ButtonKind.Ghost, 12f);
+            var close = Ui.Button(LocalizationService.Get("magnate.panel.001"), ClosePopup, ButtonKind.Ghost, 12f);
             _popupHead.Add(close);
             _popup.Add(_popupHead);
             var scroll = new ScrollView(ScrollViewMode.Vertical);
@@ -166,7 +166,7 @@ namespace CityHighways.Presentation
 
             // 0. Игроки: все компании — цвет, имя и очки; клик — панель «Игроки» справа на поле.
             var players = Section(PlayersSection, 1f, () => TogglePopup("players", PlayersSection));
-            players.Add(Header("Игроки", Theme.Text, _game.Players.Count.ToString()));
+            players.Add(Header(LocalizationService.Get("magnate.panel.002"), Theme.Text, _game.Players.Count.ToString()));
             var list = Ui.Row();
             list.style.flexWrap = UnityEngine.UIElements.Wrap.Wrap;
             list.style.marginTop = 4f;
@@ -192,7 +192,7 @@ namespace CityHighways.Presentation
                 list.Add(chip);
             }
             players.Add(list);
-            players.Add(Ui.Text("Открыть →", 12f, Theme.TextDim));
+            players.Add(Ui.Text(LocalizationService.Get("magnate.panel.003"), 12f, Theme.TextDim));
             _sections.Add(players);
             _bottom.Add(players);
 
@@ -205,7 +205,7 @@ namespace CityHighways.Presentation
             // 2. Грузы.
             var waiting = _game.AllCargo.Where(c => c.Truck < 0 && !_hiddenKinds.Contains(c.Kind) && _game.HubAt(c.From) != null).ToList();
             var cargo = Section(CargoSection, 1f, () => TogglePopup("cargo", CargoSection));
-            cargo.Add(Header("Грузы", Theme.Text, waiting.Count.ToString()));
+            cargo.Add(Header(LocalizationService.Get("magnate.panel.004"), Theme.Text, waiting.Count.ToString()));
             var kinds = Ui.Row();
             kinds.style.flexWrap = UnityEngine.UIElements.Wrap.Wrap;
             kinds.style.marginTop = 4f;
@@ -224,7 +224,7 @@ namespace CityHighways.Presentation
             }
             cargo.Add(kinds);
             int urgent = waiting.Count(Urgent);
-            cargo.Add(Ui.Text(urgent > 0 ? $"срочных: {urgent}" : waiting.Count == 0 ? "пока пусто" : "Открыть список →",
+            cargo.Add(Ui.Text(urgent > 0 ? $"срочных: {urgent}" : waiting.Count == 0 ? LocalizationService.Get("magnate.panel.005") : LocalizationService.Get("magnate.panel.006"),
                 12f, urgent > 0 ? new Color(1f, 0.45f, 0.4f) : Theme.TextDim, urgent > 0));
             _sections.Add(cargo);
             _bottom.Add(cargo);
@@ -232,7 +232,7 @@ namespace CityHighways.Presentation
             // 3. Заказы мэрии.
             var active = _game.Contracts.Where(c => c.OpenFor(player.Index)).ToList();
             var orders = Section(OrdersSection, 1f, () => TogglePopup("contracts", OrdersSection));
-            orders.Add(Header("Заказы мэрии", Theme.Text, active.Count.ToString()));
+            orders.Add(Header(LocalizationService.Get("magnate.panel.007"), Theme.Text, active.Count.ToString()));
             if (active.Count > 0)
             {
                 var first = active.OrderBy(c => c.EndRound).First();
@@ -242,7 +242,7 @@ namespace CityHighways.Presentation
                 orders.Add(line);
                 orders.Add(ProgressBar(first.Progress[player.Index], first.Needed, Palette.PlayerColor(player.Index)));
             }
-            orders.Add(Ui.Text(active.Count == 0 ? "заказов нет" : "Открыть →", 12f, Theme.TextDim));
+            orders.Add(Ui.Text(active.Count == 0 ? LocalizationService.Get("magnate.panel.008") : LocalizationService.Get("magnate.panel.003"), 12f, Theme.TextDim));
             _sections.Add(orders);
             _bottom.Add(orders);
         }
@@ -253,26 +253,26 @@ namespace CityHighways.Presentation
             var color = Palette.PlayerColor(player.Index);
             if (_game.Phase == MagnatePhase.GameOver)
             {
-                card.Add(Header("Партия окончена", Theme.Text));
+                card.Add(Header(LocalizationService.Get("magnate.panel.009"), Theme.Text));
                 return;
             }
             if (_animating != null)
             {
                 card.Add(Header($"Раунд {_animating.Round}: фуры в пути…", Theme.Text));
-                card.Add(Hint("Все компании едут одновременно. Скоропорт быстрее, тяжёлые медленнее, у пробок — часы."));
+                card.Add(Hint(LocalizationService.Get("magnate.panel.010")));
                 return;
             }
             if (player.IsBot)
             {
                 card.Add(Header(player.Name, color));
-                card.Add(Hint(_game.IsOpeningRound ? "Раунд стройки: выбирает, где построить дорогу…"
-                    : _game.Phase == MagnatePhase.Build ? "Строит дороги и развивает хабы…" : "Планирует маршруты…"));
+                card.Add(Hint(_game.IsOpeningRound ? LocalizationService.Get("magnate.panel.011")
+                    : _game.Phase == MagnatePhase.Build ? LocalizationService.Get("magnate.panel.012") : LocalizationService.Get("magnate.panel.013")));
                 return;
             }
             if (_awaitingHandoff)
             {
                 card.Add(Header($"Ход: {player.Name}", color));
-                card.Add(Hint("Нажмите «Начать ход»."));
+                card.Add(Hint(LocalizationService.Get("magnate.panel.014")));
                 return;
             }
 
@@ -282,10 +282,10 @@ namespace CityHighways.Presentation
                 bool built = _game.OpeningRoadsLeft <= 0;
                 card.Add(Header($"{player.Name} · Раунд стройки · {player.BuildPoints} очков стройки", color));
                 card.Add(Hint(built
-                    ? "Дорога построена. Остальные очки стройки перейдут на следующий раунд."
+                    ? LocalizationService.Get("magnate.panel.015")
                     : $"Первый раунд — только стройка: каждая компания строит {(_game.Config.OpeningRoads == 1 ? "одну дорогу" : _game.Config.OpeningRoads + " дороги")} (без магистралей и хабов). " +
-                      "Посмотрите, где лежат грузы, и проложите дорогу к ним. Фуры берут грузы со второго раунда."));
-                var pass = Ui.Button(_game.IsLastTurnInRound ? "Готово — начать перевозки" : "Готово — передать ход", () =>
+                      LocalizationService.Get("magnate.panel.016")));
+                var pass = Ui.Button(_game.IsLastTurnInRound ? LocalizationService.Get("magnate.panel.017") : LocalizationService.Get("magnate.panel.018"), () =>
                 {
                     _game.FinishBuild();
                     _app.Sound.Play(Sfx.Ticket, 0.6f);
@@ -301,7 +301,7 @@ namespace CityHighways.Presentation
                 card.Add(Header($"{player.Name} · Стройка · {player.BuildPoints} очков стройки", color));
                 card.Add(Hint($"Клик по пунктирной дороге — купить: цифра на ней — цена в очках стройки (длина, мост +{_game.Config.BridgeExtraCost}; серая — не хватает). По своей — магистраль, по хабу — развить. " +
                               $"Каждый раунд +{_game.Config.BuildPointsPerRound} очков."));
-                var next = Ui.Button("Дальше: маршруты фур →", () => { _game.FinishBuild(); _app.Sound.Play(Sfx.Click, 0.6f); }, ButtonKind.Primary, 14f);
+                var next = Ui.Button(LocalizationService.Get("magnate.panel.019"), () => { _game.FinishBuild(); _app.Sound.Play(Sfx.Click, 0.6f); }, ButtonKind.Primary, 14f);
                 next.style.alignSelf = Align.FlexStart;
                 next.style.marginTop = 4f;
                 if (_coachTarget == "next") Highlight(next);
@@ -324,7 +324,7 @@ namespace CityHighways.Presentation
             var bottom = Ui.Row();
             bottom.style.alignItems = Align.Center;
             bottom.style.marginTop = 4f;
-            var done = Ui.Button(_game.IsLastTurnInRound ? "Готово — фуры поедут" : "Готово — передать ход", () =>
+            var done = Ui.Button(_game.IsLastTurnInRound ? LocalizationService.Get("magnate.panel.020") : LocalizationService.Get("magnate.panel.018"), () =>
             {
                 ClosePopup(false);
                 _game.FinishPlanning();
@@ -333,7 +333,7 @@ namespace CityHighways.Presentation
             }, ButtonKind.Primary, 14f);
             if (_coachTarget == "done") Highlight(done);
             bottom.Add(done);
-            var tip = Hint("  Выберите фуру, затем груз в окне фуры или в «Грузах», или кликните станцию на карте.");
+            var tip = Hint(LocalizationService.Get("magnate.panel.021"));
             tip.style.flexShrink = 1f;
             bottom.Add(tip);
             card.Add(bottom);
@@ -534,7 +534,7 @@ namespace CityHighways.Presentation
 
         void FillCargoList()
         {
-            _popupTitle.text = "Грузы на хабах";
+            _popupTitle.text = LocalizationService.Get("magnate.panel.022");
             // Фильтры видов: на карте, мини-карте, в панели и здесь.
             var filters = Ui.Row();
             filters.style.flexWrap = UnityEngine.UIElements.Wrap.Wrap;
@@ -545,7 +545,7 @@ namespace CityHighways.Presentation
                 var chip = Chip(kind, CargoIconPanel);
                 chip.style.opacity = hidden ? 0.25f : 1f;
                 chip.style.marginBottom = 4f;
-                chip.tooltip = LogisticsGame.KindTitle(kind) + (hidden ? " — скрыт, клик — показать" : " — клик, чтобы скрыть");
+                chip.tooltip = LogisticsGame.KindTitle(kind) + (hidden ? LocalizationService.Get("magnate.panel.023") : LocalizationService.Get("magnate.panel.024"));
                 chip.pickingMode = PickingMode.Position;
                 chip.RegisterCallback<ClickEvent>(_ =>
                 {
@@ -561,7 +561,7 @@ namespace CityHighways.Presentation
                 var waiting = _game.WaitingAt(hub.LocationId).Where(x => !_hiddenKinds.Contains(x.Kind)).ToList();
                 if (waiting.Count == 0) continue;
                 any = true;
-                string kindName = hub.Kind == HubKind.Airport ? "аэропорт" : hub.Kind == HubKind.Port ? "порт" : "вокзал";
+                string kindName = hub.Kind == HubKind.Airport ? LocalizationService.Get("magnate.panel.025") : hub.Kind == HubKind.Port ? LocalizationService.Get("magnate.panel.026") : LocalizationService.Get("magnate.panel.027");
                 var title = Ui.Row();
                 title.style.alignItems = Align.Center;
                 title.style.marginTop = 6f;
@@ -575,7 +575,7 @@ namespace CityHighways.Presentation
                 _popupBody.Add(Pad(title));
                 foreach (var cargo in waiting) _popupBody.Add(Pad(CargoRow(cargo, true)));
             }
-            if (!any) _popupBody.Add(Pad(Hint(_hiddenKinds.Count > 0 ? "Нет грузов выбранных видов." : "Пусто — новые грузы появятся в следующем раунде.")));
+            if (!any) _popupBody.Add(Pad(Hint(_hiddenKinds.Count > 0 ? LocalizationService.Get("magnate.panel.028") : LocalizationService.Get("magnate.panel.029"))));
         }
 
         /// <summary>Строка груза: клик — карточка груза; «Выбрать» — назначить ближайшую свободную фуру.</summary>
@@ -607,7 +607,7 @@ namespace CityHighways.Presentation
             });
             if (withPick)
             {
-                var pick = Ui.Button("Выбрать", () => AssignCargo(cargo), ButtonKind.Secondary, 12f);
+                var pick = Ui.Button(LocalizationService.Get("magnate.panel.030"), () => AssignCargo(cargo), ButtonKind.Secondary, 12f);
                 pick.style.marginLeft = 6f;
                 pick.style.flexShrink = 0f;
                 pick.RegisterCallback<ClickEvent>(e => e.StopPropagation());
@@ -643,13 +643,13 @@ namespace CityHighways.Presentation
         {
             if (!HumanTurn || _game.Phase != MagnatePhase.Plan)
             {
-                Toast(_game.IsOpeningRound ? "Сейчас раунд стройки: фуры берут грузы со второго раунда."
-                    : _game.Phase == MagnatePhase.Build ? "Грузы назначаются в фазе маршрутов — сначала «Дальше: маршруты фур»." : "Сейчас не ваш ход.");
+                Toast(_game.IsOpeningRound ? LocalizationService.Get("magnate.panel.031")
+                    : _game.Phase == MagnatePhase.Build ? LocalizationService.Get("magnate.panel.032") : LocalizationService.Get("magnate.panel.033"));
                 _app.Sound.Play(Sfx.Error, 0.5f);
                 return;
             }
             var truck = BestTruckFor(cargo, out var toHub);
-            if (truck == null) { Toast("Нет свободной фуры, которая доедет до этого хаба."); _app.Sound.Play(Sfx.Error, 0.5f); return; }
+            if (truck == null) { Toast(LocalizationService.Get("magnate.panel.034")); _app.Sound.Play(Sfx.Error, 0.5f); return; }
             string error;
             if (truck.Location == cargo.From && _game.FindRoute(truck.Owner, cargo.From, cargo.To, cargo.Kind) == null)
             {
@@ -681,7 +681,7 @@ namespace CityHighways.Presentation
         {
             if (cargo == null) { FillCargoList(); return; }
             _popupTitle.text = $"{_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)}";
-            var back = Ui.Button("← Все грузы", () => { _popupKind = "cargo"; _dirty = true; }, ButtonKind.Ghost, 12f);
+            var back = Ui.Button(LocalizationService.Get("magnate.panel.035"), () => { _popupKind = "cargo"; _dirty = true; }, ButtonKind.Ghost, 12f);
             back.style.alignSelf = Align.FlexStart;
             _popupBody.Add(Pad(back));
 
@@ -702,7 +702,7 @@ namespace CityHighways.Presentation
             };
             if (cargo.Kind == CargoKind.Perishable)
                 lines.Add($"Норма: ещё {Mathf.Max(0, cargo.SpawnRound + cargo.Norm - _game.Round)} р., дальше −{_game.Config.PerishableLatePenalty} за каждый раунд опоздания");
-            if (ForContract(cargo)) lines.Add("Засчитывается в заказ мэрии");
+            if (ForContract(cargo)) lines.Add(LocalizationService.Get("magnate.panel.036"));
             var delivery = _game.FindRoute(_game.CurrentPlayerIndex, cargo.From, cargo.To, cargo.Kind);
             if (delivery != null)
             {
@@ -715,8 +715,8 @@ namespace CityHighways.Presentation
             else
             {
                 lines.Add(cargo.Kind == CargoKind.Heavy || cargo.Kind == CargoKind.Oversized
-                    ? "Сейчас не довезти: нужны широкие дороги — бетон, мосты, магистрали"
-                    : "Сейчас не довезти по открытым дорогам");
+                    ? LocalizationService.Get("magnate.panel.037")
+                    : LocalizationService.Get("magnate.panel.038"));
                 // Путь всё равно показываем — красным: где он пройдёт и какие дороги мешают (ярче).
                 List<string> ideal = ShortestRouteAnyRoads(cargo.From, cargo.To);
                 if (ideal != null && ideal.Count > 0)
@@ -782,7 +782,7 @@ namespace CityHighways.Presentation
                 _popupBody.Add(Pad(take));
             }
             else if (_game.Phase == MagnatePhase.Build && HumanTurn)
-                _popupBody.Add(Pad(Hint("Фуры назначаются в фазе маршрутов.")));
+                _popupBody.Add(Pad(Hint(LocalizationService.Get("magnate.panel.039"))));
         }
 
         // ---------------------------------------------------------------- Фура
@@ -801,7 +801,7 @@ namespace CityHighways.Presentation
                   (cargo.Kind == CargoKind.Valuable ? (cargo.Escorted ? " · с охраной" : " · без охраны!") : "")
                 : planned != null ? $"Берёт ({LogisticsGame.KindTitle(planned.Kind).ToLowerInvariant()}): {_game.Map.LocationName(planned.From)} → {_game.Map.LocationName(planned.To)}"
                 : truck.Target != null ? $"Пустая → {_game.Map.LocationName(truck.Target)}"
-                : "Стоит, ждёт задания";
+                : LocalizationService.Get("magnate.panel.040");
             var statusLabel = Ui.Text(status, 13f, Theme.Text, true);
             statusLabel.style.whiteSpace = WhiteSpace.Normal;
             _popupBody.Add(Pad(statusLabel));
@@ -815,7 +815,7 @@ namespace CityHighways.Presentation
             if (cargo == null)
             {
                 var waiting = _game.WaitingAt(truck.Location).ToList();
-                var caption = Ui.Text(waiting.Count > 0 ? "Грузы на этом хабе — клик по «Взять»:" : "Здесь грузов нет.", 13f, Theme.TextDim, true);
+                var caption = Ui.Text(waiting.Count > 0 ? LocalizationService.Get("magnate.panel.041") : LocalizationService.Get("magnate.panel.042"), 13f, Theme.TextDim, true);
                 caption.style.marginTop = 8f;
                 _popupBody.Add(Pad(caption));
                 foreach (var item in waiting)
@@ -823,7 +823,7 @@ namespace CityHighways.Presentation
                     var row = CargoRow(item, false);
                     var path = _game.FindRoute(truck.Owner, truck.Location, item.To, item.Kind);
                     bool wide = item.Kind == CargoKind.Heavy || item.Kind == CargoKind.Oversized;
-                    var takeButton = Ui.Button(path != null ? $"Взять · {_game.RouteRounds(path, item.Kind)} р." : wide ? "Нужен широкий путь" : "Не проехать", () =>
+                    var takeButton = Ui.Button(path != null ? $"Взять · {_game.RouteRounds(path, item.Kind)} р." : wide ? LocalizationService.Get("magnate.panel.043") : LocalizationService.Get("magnate.panel.044"), () =>
                     {
                         var error = _game.PlanTruck(truck.Id, item.Id, null);
                         if (error != null) { Toast(error); _app.Sound.Play(Sfx.Error, 0.5f); }
@@ -837,12 +837,12 @@ namespace CityHighways.Presentation
                     row.Add(takeButton);
                     _popupBody.Add(Pad(row));
                 }
-                _popupBody.Add(Pad(Hint("Или кликните станцию на карте — фура поедет туда (при наведении видны путь, время и плата). " +
-                                        "Грузы на других хабах — в разделе «Грузы», кнопка «Выбрать».")));
+                _popupBody.Add(Pad(Hint(LocalizationService.Get("magnate.panel.045") +
+                                        LocalizationService.Get("magnate.panel.046"))));
             }
             if (truck.Route.Count > 0 || truck.PlannedCargo != null)
             {
-                var clear = Ui.Button("Отменить маршрут", () => _game.ClearTruck(truck.Id), ButtonKind.Ghost, 12f);
+                var clear = Ui.Button(LocalizationService.Get("magnate.panel.047"), () => _game.ClearTruck(truck.Id), ButtonKind.Ghost, 12f);
                 clear.style.marginTop = 8f;
                 clear.style.alignSelf = Align.FlexStart;
                 _popupBody.Add(Pad(clear));
@@ -854,7 +854,7 @@ namespace CityHighways.Presentation
         /// <summary>Панель «Игроки»: все компании — очки, репутация, влияние, стройка, фуры, дороги и хабы; чей ход — в рамке.</summary>
         void FillPlayers()
         {
-            _popupTitle.text = "Игроки";
+            _popupTitle.text = LocalizationService.Get("magnate.panel.002");
             foreach (var p in _game.Players.OrderByDescending(x => x.Score).ThenBy(x => x.Index))
             {
                 var color = Palette.PlayerColor(p.Index);
@@ -871,7 +871,7 @@ namespace CityHighways.Presentation
                 var head = Ui.Row();
                 head.style.alignItems = Align.Center;
                 int turn = _game.TurnOrder.ToList().IndexOf(p.Index) + 1;
-                var name = Ui.Text(p.Name + (p.IsBot ? " · бот" : "") + (current ? " · ходит" : $" · ход {turn}-й"), 15f, color, true);
+                var name = Ui.Text(p.Name + (p.IsBot ? LocalizationService.Get("magnate.panel.048") : "") + (current ? LocalizationService.Get("magnate.panel.049") : $" · ход {turn}-й"), 15f, color, true);
                 name.style.flexGrow = 1f;
                 name.style.flexShrink = 1f;
                 head.Add(name);
@@ -897,8 +897,8 @@ namespace CityHighways.Presentation
 
         void FillContracts()
         {
-            _popupTitle.text = "Заказы мэрии";
-            if (_game.Contracts.Count == 0) { _popupBody.Add(Pad(Hint("Заказов нет — новые появятся позже."))); return; }
+            _popupTitle.text = LocalizationService.Get("magnate.panel.007");
+            if (_game.Contracts.Count == 0) { _popupBody.Add(Pad(Hint(LocalizationService.Get("magnate.panel.050")))); return; }
             foreach (var contract in _game.Contracts)
             {
                 var card = Ui.Card(10f);
@@ -941,7 +941,7 @@ namespace CityHighways.Presentation
 
         void FillRules()
         {
-            _popupTitle.text = "Правила коротко";
+            _popupTitle.text = LocalizationService.Get("magnate.panel.051");
             foreach (CargoKind kind in Enum.GetValues(typeof(CargoKind)))
             {
                 var row = Ui.Row();
@@ -965,8 +965,8 @@ namespace CityHighways.Presentation
 
         void FillLog()
         {
-            _popupTitle.text = "Журнал";
-            if (_log.Count == 0) _popupBody.Add(Pad(Hint("Пока пусто.")));
+            _popupTitle.text = LocalizationService.Get("magnate.panel.052");
+            if (_log.Count == 0) _popupBody.Add(Pad(Hint(LocalizationService.Get("magnate.panel.053"))));
             foreach (var line in _log.Skip(Math.Max(0, _log.Count - 40)).Reverse())
             {
                 var label = Hint(line);

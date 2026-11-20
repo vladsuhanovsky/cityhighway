@@ -3675,6 +3675,218 @@
     {
       "key": "magnate.ui.046",
       "value": "Back to Menu"
+    },
+    {
+      "key": "magnate.panel.001",
+      "value": "Close ✕"
+    },
+    {
+      "key": "magnate.panel.002",
+      "value": "Players"
+    },
+    {
+      "key": "magnate.panel.003",
+      "value": "Open →"
+    },
+    {
+      "key": "magnate.panel.004",
+      "value": "Cargo"
+    },
+    {
+      "key": "magnate.panel.005",
+      "value": "empty for now"
+    },
+    {
+      "key": "magnate.panel.006",
+      "value": "Open List →"
+    },
+    {
+      "key": "magnate.panel.007",
+      "value": "City Orders"
+    },
+    {
+      "key": "magnate.panel.008",
+      "value": "no orders"
+    },
+    {
+      "key": "magnate.panel.009",
+      "value": "Game Over"
+    },
+    {
+      "key": "magnate.panel.010",
+      "value": "All companies drive simultaneously. Perishables move faster, heavy loads slower; traffic jams are marked with clocks."
+    },
+    {
+      "key": "magnate.panel.011",
+      "value": "Construction round: choosing where to build…"
+    },
+    {
+      "key": "magnate.panel.012",
+      "value": "Building roads and upgrading hubs…"
+    },
+    {
+      "key": "magnate.panel.013",
+      "value": "Planning routes…"
+    },
+    {
+      "key": "magnate.panel.014",
+      "value": "Select Start Turn."
+    },
+    {
+      "key": "magnate.panel.015",
+      "value": "Road built. Unused construction points carry over to the next round."
+    },
+    {
+      "key": "magnate.panel.016",
+      "value": "Check cargo locations and build a road toward them. Trucks can collect cargo starting in round two."
+    },
+    {
+      "key": "magnate.panel.017",
+      "value": "Done — Start Transport"
+    },
+    {
+      "key": "magnate.panel.018",
+      "value": "Done — Pass Turn"
+    },
+    {
+      "key": "magnate.panel.019",
+      "value": "Next: Truck Routes →"
+    },
+    {
+      "key": "magnate.panel.020",
+      "value": "Done — Dispatch Trucks"
+    },
+    {
+      "key": "magnate.panel.021",
+      "value": "  Select a truck, then cargo in its details or the Cargo panel, or click a station on the map."
+    },
+    {
+      "key": "magnate.panel.022",
+      "value": "Cargo at Hubs"
+    },
+    {
+      "key": "magnate.panel.023",
+      "value": " — hidden, click to show"
+    },
+    {
+      "key": "magnate.panel.024",
+      "value": " — click to hide"
+    },
+    {
+      "key": "magnate.panel.025",
+      "value": "airport"
+    },
+    {
+      "key": "magnate.panel.026",
+      "value": "port"
+    },
+    {
+      "key": "magnate.panel.027",
+      "value": "rail station"
+    },
+    {
+      "key": "magnate.panel.028",
+      "value": "No cargo of the selected types."
+    },
+    {
+      "key": "magnate.panel.029",
+      "value": "Empty — new cargo will arrive next round."
+    },
+    {
+      "key": "magnate.panel.030",
+      "value": "Choose"
+    },
+    {
+      "key": "magnate.panel.031",
+      "value": "It's the construction round. Trucks can collect cargo starting in round two."
+    },
+    {
+      "key": "magnate.panel.032",
+      "value": "Cargo is assigned during the routing phase. First select Next: Truck Routes."
+    },
+    {
+      "key": "magnate.panel.033",
+      "value": "It is not your turn."
+    },
+    {
+      "key": "magnate.panel.034",
+      "value": "No available truck can reach this hub."
+    },
+    {
+      "key": "magnate.panel.035",
+      "value": "← All Cargo"
+    },
+    {
+      "key": "magnate.panel.036",
+      "value": "Counts toward a city order"
+    },
+    {
+      "key": "magnate.panel.037",
+      "value": "Delivery requires wide roads: concrete, bridges or highways"
+    },
+    {
+      "key": "magnate.panel.038",
+      "value": "No delivery route is available on open roads"
+    },
+    {
+      "key": "magnate.panel.039",
+      "value": "Assign trucks during the routing phase."
+    },
+    {
+      "key": "magnate.panel.040",
+      "value": "Idle, awaiting assignment"
+    },
+    {
+      "key": "magnate.panel.041",
+      "value": "Cargo at this hub — select Pick Up:"
+    },
+    {
+      "key": "magnate.panel.042",
+      "value": "No cargo here."
+    },
+    {
+      "key": "magnate.panel.043",
+      "value": "Wide Route Required"
+    },
+    {
+      "key": "magnate.panel.044",
+      "value": "No Route"
+    },
+    {
+      "key": "magnate.panel.045",
+      "value": "Or click a station on the map to send a truck there (hover to see the route, time and tolls). "
+    },
+    {
+      "key": "magnate.panel.046",
+      "value": "Cargo at other hubs is listed under Cargo; select Choose."
+    },
+    {
+      "key": "magnate.panel.047",
+      "value": "Cancel Route"
+    },
+    {
+      "key": "magnate.panel.048",
+      "value": " · bot"
+    },
+    {
+      "key": "magnate.panel.049",
+      "value": " · playing"
+    },
+    {
+      "key": "magnate.panel.050",
+      "value": "No city orders yet. More will appear later."
+    },
+    {
+      "key": "magnate.panel.051",
+      "value": "Quick Rules"
+    },
+    {
+      "key": "magnate.panel.052",
+      "value": "Log"
+    },
+    {
+      "key": "magnate.panel.053",
+      "value": "Empty for now."
     }
   ]
 }
