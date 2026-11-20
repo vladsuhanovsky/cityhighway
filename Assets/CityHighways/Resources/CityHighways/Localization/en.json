@@ -4115,6 +4115,34 @@
     {
       "key": "menu.settings.dynamic.ui_scale",
       "value": "Interface scale: {0}%."
+    },
+    {
+      "key": "menu.online.dynamic.lan_help",
+      "value": "Computers on the same network (or two game windows on one PC). The host opens port {0}; your firewall may request permission."
+    },
+    {
+      "key": "menu.online.dynamic.lobby",
+      "value": "Lobby · {0}"
+    },
+    {
+      "key": "menu.online.dynamic.host",
+      "value": "Host: {0}. The host adds bots and starts the game."
+    },
+    {
+      "key": "menu.online.dynamic.club",
+      "value": "Builders' Club"
+    },
+    {
+      "key": "menu.online.dynamic.club_tag",
+      "value": "Builders' Club [{0}]"
+    },
+    {
+      "key": "menu.online.dynamic.free_seats",
+      "value": "Available seats: {0}. Each player will choose between two characters at the start."
+    },
+    {
+      "key": "menu.online.dynamic.turn_timer",
+      "value": "Turn timer: {0} sec"
     }
   ]
 }

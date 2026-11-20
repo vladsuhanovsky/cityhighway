@@ -150,7 +150,7 @@ namespace CityHighways.Presentation
             lanCard.style.flexGrow = 1f;
             lanCard.style.flexBasis = 0f;
             lanCard.Add(Ui.Text(LocalizationService.Get("menu.online.015"), 22f, Theme.Gold, true));
-            lanCard.Add(Note($"Компьютеры в одной сети (или два окна игры на одном компьютере). Хост открывает порт {TcpTransport.DefaultPort}; брандмауэр может спросить разрешение."));
+            lanCard.Add(Note(string.Format(LocalizationService.Get("menu.online.dynamic.lan_help"), TcpTransport.DefaultPort)));
             var hostLan = Ui.Button(LocalizationService.Get("menu.online.016"), HostLan, ButtonKind.Primary, 17f);
             hostLan.style.marginTop = 10f;
             lanCard.Add(hostLan);
@@ -427,8 +427,8 @@ namespace CityHighways.Presentation
             Ui.Show(_connectView, false);
             Ui.Show(_lobbyView, true);
 
-            _lobbyTitle.text = $"Лобби · {session.Transport.Kind}";
-            _lobbyHint.text = host ? session.Transport.ConnectHint : $"Хост: {session.Seats[0].name}. Он добавляет ботов и начинает партию.";
+            _lobbyTitle.text = string.Format(LocalizationService.Get("menu.online.dynamic.lobby"), session.Transport.Kind);
+            _lobbyHint.text = host ? session.Transport.ConnectHint : string.Format(LocalizationService.Get("menu.online.dynamic.host"), session.Seats[0].name);
 
             _seatsList.Clear();
             for (int i = 0; i < session.Seats.Count; i++)
@@ -449,7 +449,7 @@ namespace CityHighways.Presentation
                 {
                     var logo = new ClubLogo(seat.clubLogo, 26f);
                     logo.style.marginRight = 8f;
-                    logo.tooltip = string.IsNullOrEmpty(seat.clubTag) ? "Клуб строителей" : $"Клуб строителей [{seat.clubTag}]";
+                    logo.tooltip = string.IsNullOrEmpty(seat.clubTag) ? LocalizationService.Get("menu.online.dynamic.club") : string.Format(LocalizationService.Get("menu.online.dynamic.club_tag"), seat.clubTag);
                     logo.pickingMode = PickingMode.Position;
                     row.Add(logo);
                 }
@@ -469,7 +469,7 @@ namespace CityHighways.Presentation
                 _seatsList.Add(row);
             }
             var empty = NetSession.MaxSeats - session.Seats.Count;
-            if (empty > 0) _seatsList.Add(Note($"Свободных мест: {empty}. Персонажа каждый выберет из двух в начале партии."));
+            if (empty > 0) _seatsList.Add(Note(string.Format(LocalizationService.Get("menu.online.dynamic.free_seats"), empty)));
 
             Ui.Show(_hostControls, host);
             Ui.Show(_waitLabel, !host);
@@ -478,7 +478,7 @@ namespace CityHighways.Presentation
                 var hostSession = (HostSession)session;
                 Ui.Show(_inviteButton, session.Transport.CanInvite);
                 Ui.SetEnabled(_addBotButton, hostSession.CanAddSeat);
-                _timerButton.text = _turnSeconds > 0 ? $"Таймер хода: {_turnSeconds} с" : LocalizationService.Get("menu.online.046");
+                _timerButton.text = _turnSeconds > 0 ? string.Format(LocalizationService.Get("menu.online.dynamic.turn_timer"), _turnSeconds) : LocalizationService.Get("menu.online.046");
                 _scenarioButton.text = LocalizationService.Get("menu.online.047") + Scenarios.Title((ScenarioKind)Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1));
                 _mapButton.text = LocalizationService.Get("menu.online.048") + GameSetup.MapOf(_setup.mapResourcePath).Title;
                 _modeButton.text = _setup.cooperative ? LocalizationService.Get("menu.online.049") : LocalizationService.Get("menu.online.050");

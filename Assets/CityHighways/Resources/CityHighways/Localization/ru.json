@@ -4115,6 +4115,34 @@
     {
       "key": "menu.settings.dynamic.ui_scale",
       "value": "Масштаб интерфейса {0}%."
+    },
+    {
+      "key": "menu.online.dynamic.lan_help",
+      "value": "Компьютеры в одной сети (или два окна игры на одном компьютере). Хост открывает порт {0}; брандмауэр может спросить разрешение."
+    },
+    {
+      "key": "menu.online.dynamic.lobby",
+      "value": "Лобби · {0}"
+    },
+    {
+      "key": "menu.online.dynamic.host",
+      "value": "Хост: {0}. Он добавляет ботов и начинает партию."
+    },
+    {
+      "key": "menu.online.dynamic.club",
+      "value": "Клуб строителей"
+    },
+    {
+      "key": "menu.online.dynamic.club_tag",
+      "value": "Клуб строителей [{0}]"
+    },
+    {
+      "key": "menu.online.dynamic.free_seats",
+      "value": "Свободных мест: {0}. Персонажа каждый выберет из двух в начале партии."
+    },
+    {
+      "key": "menu.online.dynamic.turn_timer",
+      "value": "Таймер хода: {0} с"
     }
   ]
 }
