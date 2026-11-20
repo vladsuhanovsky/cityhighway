@@ -231,7 +231,7 @@ namespace CityHighways.Presentation
                 Save();
                 _backgroundChanged?.Invoke();
                 Rebuild();
-                UpdatePreview($"Пресет «{DisplaySettings.PresetTitle(preset)}» применён. Громкость, режим экрана и разрешение не менялись.");
+                UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.preset"), DisplaySettings.PresetTitle(preset)));
             });
             return card;
         }
@@ -274,7 +274,7 @@ namespace CityHighways.Presentation
                 {
                     _display.quality = i;
                     Save();
-                    UpdatePreview($"Качество: {levels[i]}.");
+                    UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.quality"), levels[i]));
                 })));
             }
 
@@ -293,7 +293,7 @@ namespace CityHighways.Presentation
                     _display.menuPalette = i;
                     Save();
                     _backgroundChanged?.Invoke();
-                    UpdatePreview($"Палитра «{MenuBackground.PaletteNames[i]}».");
+                    UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.palette"), MenuBackground.PaletteNames[i]));
                 })));
             if (GeneratedArt.Load(GeneratedArt.KeyArt) != null)
                 s.Add(Row(LocalizationService.Get("menu.settings.detail.022"), LocalizationService.Get("menu.settings.detail.023"),
@@ -343,7 +343,7 @@ namespace CityHighways.Presentation
             {
                 Save();
                 _app.Sound.Play(Sfx.Bell, 0.6f);
-                UpdatePreview($"Громкость {Mathf.RoundToInt(v * 100f)}% — прозвучал тестовый звонок.");
+                UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.volume_test"), Mathf.RoundToInt(v * 100f)));
             });
             volumeRow.Add(slider);
             volumeRow.Add(value);
@@ -387,14 +387,14 @@ namespace CityHighways.Presentation
                 {
                     _display.tiltDegrees = DisplaySettings.TiltOptions[i];
                     Save();
-                    UpdatePreview($"Камера наклонена на {DisplaySettings.TiltOptions[i]:0}°.");
+                    UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.camera_angle"), DisplaySettings.TiltOptions[i]));
                 })));
             s.Add(Row(LocalizationService.Get("menu.settings.detail.050"), LocalizationService.Get("menu.settings.detail.051"),
                 new Segmented(DisplaySettings.City3DQualityNames, Mathf.Clamp(_display.city3DQuality, 0, 2), i =>
                 {
                     _display.city3DQuality = i;
                     Save();
-                    UpdatePreview($"Качество 3D-города: {DisplaySettings.City3DQualityNames[i].ToLowerInvariant()}.");
+                    UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.city_quality"), DisplaySettings.City3DQualityNames[i].ToLowerInvariant()));
                 })));
             s.Add(Row(LocalizationService.Get("menu.settings.detail.052"), LocalizationService.Get("menu.settings.detail.053"), new SwitchToggle(_display.showMinimap, on =>
             {
@@ -422,7 +422,7 @@ namespace CityHighways.Presentation
                 {
                     _display.cameraSpeed = i;
                     Save();
-                    UpdatePreview($"Скорость камеры: {DisplaySettings.SpeedNames[i].ToLowerInvariant()}.");
+                    UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.camera_speed"), DisplaySettings.SpeedNames[i].ToLowerInvariant()));
                 })));
             s.Add(Row(LocalizationService.Get("menu.settings.detail.064"), LocalizationService.Get("menu.settings.detail.065"), new SwitchToggle(_display.smoothCamera, on =>
             {
@@ -516,7 +516,7 @@ namespace CityHighways.Presentation
                 {
                     _display.uiScale = scales[i];
                     Save();
-                    UpdatePreview($"Масштаб интерфейса {Mathf.RoundToInt(scales[i] * 100f)}%.");
+                    UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.ui_scale"), Mathf.RoundToInt(scales[i] * 100f)));
                 })));
             s.Add(Note(LocalizationService.Get("menu.settings.detail.107")));
         }

@@ -4083,6 +4083,38 @@
     {
       "key": "menu.characters.011",
       "value": "No Character"
+    },
+    {
+      "key": "menu.settings.dynamic.preset",
+      "value": "Preset “{0}” applied. Volume, screen mode and resolution were unchanged."
+    },
+    {
+      "key": "menu.settings.dynamic.quality",
+      "value": "Quality: {0}."
+    },
+    {
+      "key": "menu.settings.dynamic.palette",
+      "value": "Palette: “{0}”."
+    },
+    {
+      "key": "menu.settings.dynamic.volume_test",
+      "value": "Volume {0}% — a test bell has played."
+    },
+    {
+      "key": "menu.settings.dynamic.camera_angle",
+      "value": "Camera tilted to {0:0}°."
+    },
+    {
+      "key": "menu.settings.dynamic.city_quality",
+      "value": "3D city quality: {0}."
+    },
+    {
+      "key": "menu.settings.dynamic.camera_speed",
+      "value": "Camera speed: {0}."
+    },
+    {
+      "key": "menu.settings.dynamic.ui_scale",
+      "value": "Interface scale: {0}%."
     }
   ]
 }

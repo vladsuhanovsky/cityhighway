@@ -4083,6 +4083,38 @@
     {
       "key": "menu.characters.011",
       "value": "Без персонажа"
+    },
+    {
+      "key": "menu.settings.dynamic.preset",
+      "value": "Пресет «{0}» применён. Громкость, режим экрана и разрешение не менялись."
+    },
+    {
+      "key": "menu.settings.dynamic.quality",
+      "value": "Качество: {0}."
+    },
+    {
+      "key": "menu.settings.dynamic.palette",
+      "value": "Палитра «{0}»."
+    },
+    {
+      "key": "menu.settings.dynamic.volume_test",
+      "value": "Громкость {0}% — прозвучал тестовый звонок."
+    },
+    {
+      "key": "menu.settings.dynamic.camera_angle",
+      "value": "Камера наклонена на {0}°."
+    },
+    {
+      "key": "menu.settings.dynamic.city_quality",
+      "value": "Качество 3D-города: {0}."
+    },
+    {
+      "key": "menu.settings.dynamic.camera_speed",
+      "value": "Скорость камеры: {0}."
+    },
+    {
+      "key": "menu.settings.dynamic.ui_scale",
+      "value": "Масштаб интерфейса {0}%."
     }
   ]
 }
