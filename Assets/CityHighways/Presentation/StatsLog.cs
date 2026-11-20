@@ -63,6 +63,11 @@ namespace CityHighways.Presentation
         public string mode;
         /// <summary>Сложность магната (название).</summary>
         public string difficulty;
+        /// <summary>Id повтора партии (Replays); пусто — повтора нет (магнат, старые записи).</summary>
+        public string replay;
+        /// <summary>Рейд: чей рекорд побивали и сколько у него было (пусто — обычная партия).</summary>
+        public string ghost;
+        public int ghostScore;
     }
 
     /// <summary>Итоги каждой партии — по строке JSON в cityhighways_stats.jsonl (удобно смотреть баланс).</summary>
@@ -72,7 +77,7 @@ namespace CityHighways.Presentation
 
         /// <param name="achievementsByName">Открытые этой партией достижения по имени профиля (из Profiles.CreditAfterGame).</param>
         public static void Append(Game game, GameSetup setup, float seconds, bool online = false,
-            Dictionary<string, List<string>> achievementsByName = null)
+            Dictionary<string, List<string>> achievementsByName = null, string replayId = null, string ghost = null, int ghostScore = 0)
         {
             if (game?.Result == null) return;
             try
@@ -89,6 +94,9 @@ namespace CityHighways.Presentation
                     mode = game.IsCooperative ? "coop" : "classic",
                     scenario = setup != null ? Scenarios.Title((ScenarioKind)Mathf.Clamp(setup.scenario, 0, Scenarios.All.Count - 1)) : "",
                     mapPath = setup?.mapResourcePath ?? "",
+                    replay = replayId ?? "",
+                    ghost = ghost ?? "",
+                    ghostScore = ghostScore,
                     results = game.Result.Ranking.Select(s => new PlayerStat
                     {
                         name = s.PlayerName,

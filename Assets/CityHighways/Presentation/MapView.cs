@@ -631,6 +631,27 @@ namespace CityHighways.Presentation
             LocationHovered?.Invoke(location, position);
         }
 
+        /// <summary>
+        /// Подменить партию на той же карте, не сбрасывая камеру (повтор: перемотка назад пересобирает партию).
+        /// Если карта другая — обычный SetGame.
+        /// </summary>
+        public void SwapGame(Game game)
+        {
+            if (game == null) return;
+            if (_game == null || _game.Map != game.Map)
+            {
+                SetGame(game);
+                return;
+            }
+            _game = game;
+            Affordable.Clear();
+            PathRoads.Clear();
+            BuildProgress.Clear();
+            HoverRoad = null;
+            RefreshVisibility();
+            Repaint();
+        }
+
         public void SetGame(Game game)
         {
             _game = game;

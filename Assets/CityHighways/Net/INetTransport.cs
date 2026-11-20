@@ -42,6 +42,13 @@ namespace CityHighways.Net
         void SetJoinable(bool joinable);
     }
 
+    /// <summary>Друг в Steam (для рекордов друзей и рейдов).</summary>
+    public struct SteamFriend
+    {
+        public string SteamId;
+        public string Name;
+    }
+
     /// <summary>Друг, который сейчас в лобби City Highways (для списка «К кому подключиться»).</summary>
     public struct JoinableLobby
     {
@@ -72,6 +79,8 @@ namespace CityHighways.Net
         INetTransport CreateHost(int maxMembers);
         INetTransport Join(ulong lobby);
         List<JoinableLobby> FriendsInLobbies();
+        /// <summary>Все друзья из списка Steam (SteamID и ник) — по ним сервер находит рекорды друзей.</summary>
+        List<SteamFriend> Friends();
         /// <summary>Друг пригласил нас, и мы нажали «Принять» в Steam (или запустили игру с +connect_lobby).</summary>
         event Action<ulong> JoinRequested;
         /// <summary>Отложенное приглашение из командной строки; 0 — нет. Читается один раз.</summary>

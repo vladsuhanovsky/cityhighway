@@ -309,6 +309,8 @@ namespace CityHighways.Net
                 Seats[back].title = message.title ?? Seats[back].title;
                 Seats[back].frame = message.frame ?? Seats[back].frame;
                 Seats[back].outfit = message.outfit ?? Seats[back].outfit;
+                Seats[back].clubTag = message.clubTag ?? Seats[back].clubTag;
+                Seats[back].clubLogo = message.clubLogo ?? Seats[back].clubLogo;
                 Seats[back].isBot = false;
                 Send(peer, StartMessage(back));
                 RaiseNotice($"{name} вернулся в партию.");
@@ -324,7 +326,11 @@ namespace CityHighways.Net
             // Одинаковые имена путают — добавляем номер.
             string unique = name;
             for (int n = 2; Seats.Any(s => s.name == unique); n++) unique = Clean(name, "Игрок") + " " + n;
-            Seats.Add(new NetSeat { name = unique, peer = key, emblem = message.emblem ?? "", title = message.title ?? "", frame = message.frame ?? "", outfit = message.outfit ?? "" });
+            Seats.Add(new NetSeat
+            {
+                name = unique, peer = key, emblem = message.emblem ?? "", title = message.title ?? "", frame = message.frame ?? "", outfit = message.outfit ?? "",
+                clubTag = message.clubTag ?? "", clubLogo = message.clubLogo ?? ""
+            });
             BroadcastLobby();
         }
 
@@ -387,6 +393,8 @@ namespace CityHighways.Net
         public bool Joined => Seats.Count > 0;
         /// <summary>Оформление своего профиля — уходит хосту в hello.</summary>
         public string Emblem = "", Title = "", Frame = "", Outfit = "";
+        /// <summary>Клуб строителей — тег и логотип для лобби.</summary>
+        public string ClubTag = "", ClubLogo = "";
         public override bool AwaitingHost => _awaitingSince != DateTime.MinValue;
 
         void SendHello()
@@ -396,7 +404,7 @@ namespace CityHighways.Net
             Send(Transport.HostId, new NetMessage
             {
                 type = NetMessage.Hello, version = NetCodec.ProtocolVersion, name = _name,
-                emblem = Emblem, title = Title, frame = Frame, outfit = Outfit
+                emblem = Emblem, title = Title, frame = Frame, outfit = Outfit, clubTag = ClubTag, clubLogo = ClubLogo
             });
         }
 

@@ -77,6 +77,7 @@ namespace CityHighways.Presentation
             Ui.Hovered = () => { if (Display.uiSounds) Sound.Play(Sfx.Tick, 0.3f); };
             Ui.Changed = () => { if (Display.uiSounds) Sound.Play(Sfx.Tick, 0.55f); };
 
+            Replays.Play = replay => ShowReplay(replay);
             ShowMenu();
 
             // Steam: приглашение друга (оверлей) или запуск игры с +connect_lobby.
@@ -104,7 +105,9 @@ namespace CityHighways.Presentation
             Tweener.Tick(Time.deltaTime);
             _game?.Tick(Time.deltaTime);
             _magnate?.Tick(Time.deltaTime);
+            _replay?.Tick(Time.deltaTime);
             _menu?.Tick(Time.deltaTime);
+            SocialCloud.Tick();
         }
 
         void OnDestroy()
@@ -132,11 +135,33 @@ namespace CityHighways.Presentation
             _magnate = null;
             _game = null;
             _loading = null;
+            _replay = null;
             _root.Clear();
             var setup = GameSetup.Load();
             Sound.Enabled = setup.sound;
             _menu = new MainMenuView(this, setup);
             _root.Add(_menu.Root);
+        }
+
+        ReplayView _replay;
+
+        /// <summary>
+        /// Открыть повтор партии (из «Счётчика партий», рекордов друзей или клуба). «Назад» возвращает на страницу
+        /// меню, откуда повтор открыли.
+        /// </summary>
+        public void ShowReplay(ReplayFile replay)
+        {
+            if (_root == null || replay == null || _game != null || _magnate != null || _loading != null) return;
+            string page = _menu?.CurrentPageName ?? "home";
+            Tweener.Clear();
+            _root.Clear();
+            _menu = null;
+            _replay = new ReplayView(this, replay, () =>
+            {
+                ShowMenu();
+                _menu?.OpenPage(page);
+            });
+            _root.Add(_replay.Root);
         }
 
         /// <summary>Начать сетевую сессию (лобби); прежняя закрывается.</summary>
@@ -189,6 +214,42 @@ namespace CityHighways.Presentation
 
         /// <summary>Открытый экран загрузки (пока он есть, партия ещё не началась).</summary>
         LoadingScreen _loading;
+
+        /// <summary>
+        /// Рейд на рекорд призрака: те же карта, правила, зерно колоды и компании, что в его партии; вы садитесь на его
+        /// место, остальные места — умные боты. Настройки «Новой игры» не меняются.
+        /// </summary>
+        public void StartRaid(Ghost ghost)
+        {
+            var replay = ghost?.Replay;
+            if (replay?.start?.players == null || _game != null || _magnate != null || _loading != null) return;
+            var setup = GameSetup.Load();
+            setup.magnate = false;
+            setup.cooperative = replay.IsCoop;
+            setup.mapResourcePath = replay.mapPath;
+            setup.tutorial = false;
+            setup.players = new List<PlayerSlot>();
+            int seat = replay.authorSeat >= 0 && replay.authorSeat < replay.start.players.Length ? replay.authorSeat : 0;
+            string me = Profiles.Active?.name ?? "Игрок";
+            for (int i = 0; i < replay.start.players.Length; i++)
+            {
+                string name = replay.start.players[i];
+                // Имя соперника совпало с вашим — чтобы не путаться, боту другое имя.
+                if (i != seat && string.Equals(name, me, StringComparison.OrdinalIgnoreCase)) name += " (бот)";
+                setup.players.Add(i == seat ? new PlayerSlot(me, false) : new PlayerSlot(name, true, BotLevel.Smart));
+            }
+            Tweener.Clear();
+            _game?.Release3D();
+            _game = null;
+            _magnate?.Release3D();
+            _magnate = null;
+            _replay = null;
+            LaunchGameView(setup, null, LoadingFor(replay.IsCoop, "Рейд на рекорд"), replay.map, view =>
+            {
+                view.SetGhost(ghost);
+                view.StartRaid(replay.start);
+            });
+        }
 
         /// <summary>Экран загрузки по режиму: кооператив — свой фон и советы, иначе соревнование.</summary>
         static LoadingScreen LoadingFor(bool cooperative, string title = null) =>

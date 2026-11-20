@@ -40,10 +40,11 @@ namespace CityHighways.Presentation
         readonly Label _hint;
         readonly VisualElement _overlay;
 
-        enum Page { Home, NewGame, Online, Profile, Rules, Stats, Settings, Tutorial }
+        enum Page { Home, NewGame, Online, Profile, Rules, Stats, Settings, Tutorial, Club }
         readonly Dictionary<Page, VisualElement> _pages = new Dictionary<Page, VisualElement>();
         readonly VisualElement _pageHost;
         readonly MenuOnlinePage _online;
+        readonly MenuClubPage _club;
         readonly MenuProfilePage _profile;
         readonly RulesView _rules;
         /// <summary>Куда ведёт «Назад» со страницы правил: на главную или в «Обучение» (если открыли оттуда).</summary>
@@ -111,6 +112,8 @@ namespace CityHighways.Presentation
             _pages[Page.Stats] = MenuStatsPage.Build(() => ShowPage(Page.Home), () => ShowPage(Page.Stats), RebuildStats);
             _settings = new MenuSettingsPage(app, _setup, _display, () => ShowPage(Page.Home), ApplyBackgroundSettings);
             _pages[Page.Settings] = _settings.Root;
+            _club = new MenuClubPage(app, () => ShowPage(Page.Home));
+            _pages[Page.Club] = _club.Root;
             foreach (var page in _pages.Values) _pageHost.Add(page);
 
             _overlay = new VisualElement();
@@ -140,6 +143,21 @@ namespace CityHighways.Presentation
             _online.JoinSteam(lobby);
         }
 
+        /// <summary>Имя открытой страницы (чтобы вернуться на неё из повтора).</summary>
+        public string CurrentPageName => _page.ToString().ToLowerInvariant();
+
+        /// <summary>Открыть страницу по имени (home, stats, club…); неизвестное имя — главная.</summary>
+        public void OpenPage(string name)
+        {
+            foreach (Page page in Enum.GetValues(typeof(Page)))
+            {
+                if (!string.Equals(page.ToString(), name, StringComparison.OrdinalIgnoreCase) || !_pages.ContainsKey(page)) continue;
+                ShowPage(page);
+                return;
+            }
+            ShowPage(Page.Home);
+        }
+
         void ShowPage(Page page)
         {
             _page = page;
@@ -147,6 +165,8 @@ namespace CityHighways.Presentation
             // Единый переход: страница проявляется и чуть поднимается.
             if (page != Page.Home && _pages.TryGetValue(page, out var shown)) Ui.Appear(shown);
             if (page == Page.Settings) _settings.Rebuild();
+            if (page == Page.Club) _club.Rebuild();
+            if (page == Page.NewGame) RefreshGhostBanner();
             if (page == Page.Tutorial) RefreshTutorial();
             // На страницах с текстом фон приглушается, верхние значки и уведомления — только на главной.
             _background.Dim = page == Page.Home ? 0f : 1f;
@@ -308,6 +328,7 @@ namespace CityHighways.Presentation
             _onlineButton.Badge.Add(_onlineBadge);
             Add(MenuIcon.Glyph.Book, "Правила", () => OpenRules(null, Page.Home), false);
             Add(MenuIcon.Glyph.Chart, "Счётчик партий", () => ShowPage(Page.Stats), false);
+            Add(MenuIcon.Glyph.Flag, "Клубы и друзья", () => ShowPage(Page.Club), false);
             Add(MenuIcon.Glyph.Gear, "Настройки", () => ShowPage(Page.Settings), false);
 
             var summary = Ui.Text(StatsLog.Summary(), 14f, Theme.Text);
@@ -332,6 +353,7 @@ namespace CityHighways.Presentation
         /// <summary>Что нового в игре — короткие строки для ленты на главной.</summary>
         static readonly string[] News =
         {
+            "Повторы партий, рейды на рекорды друзей и клубы строителей с целями недели и уникальными логотипами",
             "Кооператив перебалансирован: сроки заказов по их длине, заказы в очередь, кризис растёт медленнее",
             "Экраны загрузки соревнования и кооператива: новые картины из Scenario и советы по правилам режима",
             "Магнат: настройки прямо в партии, а обучение и правила — в «Меню» справа вверху",
@@ -375,7 +397,7 @@ namespace CityHighways.Presentation
         };
 
         /// <summary>Номер выпуска новостей: если больше прочитанного — в уведомлениях «Что нового».</summary>
-        const int NewsVersion = 60;
+        const int NewsVersion = 61;
         const string NewsSeenKey = "CityHighways.NewsSeen";
 
         int _newsIndex;
@@ -670,6 +692,17 @@ namespace CityHighways.Presentation
                     RefreshNotifications();
                 }));
             if (!AnyTutorialDone) list.Add((MenuIcon.Glyph.Cap, "Обучение ещё не пройдено — выберите режим и начните с наставником", () => ShowPage(Page.Tutorial)));
+            // Итоги рейдов, рекорды и вклад в клуб после последних партий; клик — открыть «Клубы и друзья».
+            foreach (var news in SocialCloud.News.ToList())
+            {
+                string text = news;
+                list.Add((MenuIcon.Glyph.Flag, text, () =>
+                {
+                    SocialCloud.News.Remove(text);
+                    RefreshNotifications();
+                    ShowPage(Page.Club);
+                }));
+            }
             return list;
         }
 
@@ -916,6 +949,7 @@ namespace CityHighways.Presentation
             gameCard.Add(hint);
             cards.Add(gameCard);
 
+            page.Add(BuildGhostBanner());
             var start = Ui.Button(saved != null ? "Начать новую партию (сохранение удалится)" : "Начать игру", StartGame, ButtonKind.Primary, 22f);
             start.style.marginTop = 20f;
             start.style.height = 58f;
@@ -964,6 +998,7 @@ namespace CityHighways.Presentation
 
         void Refresh()
         {
+            RefreshGhostBanner();
             _playersList.Clear();
             for (int i = 0; i < _setup.players.Count; i++) _playersList.Add(PlayerRow(i));
 

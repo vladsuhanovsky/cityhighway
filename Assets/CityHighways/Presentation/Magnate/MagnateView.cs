@@ -921,6 +921,12 @@ namespace CityHighways.Presentation
             var unlocked = credits.Where(c => c.Unlocked != null && c.Unlocked.Count > 0)
                 .GroupBy(c => c.Profile).ToDictionary(g => g.Key, g => g.SelectMany(c => c.Unlocked).Select(a => a.Title).ToList());
             StatsLog.AppendMagnate(_game, _setup, _time, unlocked);
+            // Доставки и победа идут в цель недели клуба (если облако доступно). Игрок — первый человек за столом.
+            if (!_setup.practice)
+            {
+                int human = _setup.players.FindIndex(p => !p.isBot);
+                SocialCloud.ReportMagnate(_game, human);
+            }
             _results.Clear();
             var card = Ui.Card(26f);
             card.style.backgroundColor = Theme.Panel;

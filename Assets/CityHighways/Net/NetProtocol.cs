@@ -24,6 +24,9 @@ namespace CityHighways.Net
         public string frame = "";
         /// <summary>Наряд персонажа (строка «слот=вещь;…»).</summary>
         public string outfit = "";
+        /// <summary>Клуб строителей: тег и логотип («форма.знак.цвет.ранг») — показываются в лобби рядом с именем.</summary>
+        public string clubTag = "";
+        public string clubLogo = "";
 
         public ulong PeerId => ulong.TryParse(peer, out var id) ? id : 0UL;
     }
@@ -64,6 +67,9 @@ namespace CityHighways.Net
         public string title;
         public string frame;
         public string outfit;
+        /// <summary>hello: клуб подключающегося (тег и логотип).</summary>
+        public string clubTag;
+        public string clubLogo;
     }
 
     public static class NetCodec

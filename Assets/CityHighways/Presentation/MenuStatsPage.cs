@@ -608,6 +608,23 @@ namespace CityHighways.Presentation
             head.Add(Chip("Последняя неделя", _filter == HistoryFilter.Week, () => { _filter = HistoryFilter.Week; Rebuild(); }));
             card.Add(head);
 
+            // Повтор лучшей партии выбранного игрока в этом режиме (если повтор сохранился).
+            var best = _games.Where(g => Replays.Exists(g.replay) && Mine(g) != null)
+                .OrderByDescending(g => Mine(g).total).FirstOrDefault();
+            if (best != null)
+            {
+                var bestRow = Ui.Row();
+                bestRow.style.alignItems = Align.Center;
+                bestRow.style.marginBottom = 4f;
+                var bestText = Ui.Text($"Лучшая партия: {Mine(best).total} очк. · {best.map} · {ShortDate(best.date)}", 13f, Theme.Gold, true);
+                bestText.style.flexGrow = 1f;
+                bestRow.Add(bestText);
+                var watch = Ui.Button("▶ Смотреть повтор", () => Replays.Open(best.replay), ButtonKind.Secondary, 13f);
+                watch.style.minWidth = 170f;
+                bestRow.Add(watch);
+                card.Add(bestRow);
+            }
+
             var weekAgo = DateTime.Now.AddDays(-7);
             var list = Enumerable.Reverse(_games).Where(g =>
             {
@@ -623,7 +640,8 @@ namespace CityHighways.Presentation
             if (list.Count == 0)
                 card.Add(Caption(_filter == HistoryFilter.Online ? "Сетевых партий в журнале нет (отметка «сетевая» пишется с этой версии)." : "Под этот фильтр партий нет.", 13f, Theme.TextDim, 4f));
             foreach (var game in list) card.Add(HistoryRow(game));
-            card.Add(Caption("Нажмите на партию — откроется её обзор: итог по категориям и ключевые моменты.", 11f, Theme.TextDim, 8f));
+            card.Add(Caption("Нажмите на партию — откроется её обзор: итог по категориям и ключевые моменты. Значок ▶ — у партии есть повтор: " +
+                             "его можно посмотреть ход за ходом, с картами всех игроков.", 11f, Theme.TextDim, 8f));
             return card;
         }
 
@@ -690,6 +708,13 @@ namespace CityHighways.Presentation
                 icon.style.marginLeft = 8f;
                 row.Add(icon);
             }
+            if (Replays.Exists(game.replay))
+            {
+                var play = new MenuIcon(MenuIcon.Glyph.Play, 16f, Theme.Gold);
+                play.style.marginLeft = 10f;
+                play.tooltip = "Есть повтор партии";
+                row.Add(play);
+            }
             var arrow = new MenuIcon(MenuIcon.Glyph.Chevron, 16f, Theme.TextDim);
             arrow.style.marginLeft = 10f;
             row.Add(arrow);
@@ -741,6 +766,16 @@ namespace CityHighways.Presentation
             var title = Ui.Text($"Партия {ShortDate(game.date)}", 22f, Theme.Gold, true);
             title.style.flexGrow = 1f;
             head.Add(title);
+            if (Replays.Exists(game.replay))
+            {
+                var watch = Ui.Button("▶ Смотреть повтор", () =>
+                {
+                    CloseSummary();
+                    Replays.Open(game.replay);
+                }, ButtonKind.Primary, 14f);
+                watch.style.marginRight = 8f;
+                head.Add(watch);
+            }
             head.Add(Ui.Button("Закрыть", CloseSummary, ButtonKind.Ghost, 14f));
             window.Add(head);
             var facts = new List<string>();

@@ -185,6 +185,19 @@ namespace CityHighways.Steam
             return result;
         }
 
+        public List<SteamFriend> Friends()
+        {
+            var result = new List<SteamFriend>();
+            if (!Available) return result;
+            int count = SteamFriends.GetFriendCount(EFriendFlags.k_EFriendFlagImmediate);
+            for (int i = 0; i < count; i++)
+            {
+                var friend = SteamFriends.GetFriendByIndex(i, EFriendFlags.k_EFriendFlagImmediate);
+                result.Add(new SteamFriend { SteamId = friend.m_SteamID.ToString(), Name = SteamFriends.GetFriendPersonaName(friend) });
+            }
+            return result;
+        }
+
         public void Poll()
         {
             if (_initialized) SteamAPI.RunCallbacks();

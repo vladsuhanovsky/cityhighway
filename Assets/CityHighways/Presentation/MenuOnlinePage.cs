@@ -333,11 +333,15 @@ namespace CityHighways.Presentation
                 session.Seats[0].title = look.Title;
                 session.Seats[0].frame = look.Frame;
                 session.Seats[0].outfit = look.Outfit;
+                session.Seats[0].clubTag = SocialCloud.ClubTag;
+                session.Seats[0].clubLogo = SocialCloud.ClubLogoId;
             }
             else if (session is ClientSession client)
             {
                 client.Emblem = look.Emblem;
                 client.Title = look.Title;
+                client.ClubTag = SocialCloud.ClubTag;
+                client.ClubLogo = SocialCloud.ClubLogoId;
                 client.Frame = look.Frame;
                 client.Outfit = look.Outfit;
             }
@@ -440,7 +444,16 @@ namespace CityHighways.Presentation
                 chip.style.backgroundColor = Palette.PlayerColor(i);
                 Ui.Radius(chip, 4f);
                 row.Add(chip);
-                var name = Ui.Text(seat.name, 17f, Theme.Text, true);
+                // Логотип клуба строителей — рядом с именем (награда за цели недели).
+                if (!seat.isBot && !string.IsNullOrEmpty(seat.clubLogo))
+                {
+                    var logo = new ClubLogo(seat.clubLogo, 26f);
+                    logo.style.marginRight = 8f;
+                    logo.tooltip = string.IsNullOrEmpty(seat.clubTag) ? "Клуб строителей" : $"Клуб строителей [{seat.clubTag}]";
+                    logo.pickingMode = PickingMode.Position;
+                    row.Add(logo);
+                }
+                var name = Ui.Text(seat.name + (!seat.isBot && !string.IsNullOrEmpty(seat.clubTag) ? $"  [{seat.clubTag}]" : ""), 17f, Theme.Text, true);
                 name.style.flexGrow = 1f;
                 row.Add(name);
                 string tag = i == 0 ? "хост" : seat.isBot ? "бот" : "игрок";

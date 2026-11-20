@@ -13,7 +13,7 @@ namespace CityHighways.Presentation
     /// Анимации строятся по разнице состояний до и после каждого хода, поэтому
     /// одинаково работают и для людей, и для ботов.
     /// </summary>
-    public sealed class GameView
+    public sealed partial class GameView
     {
         const float TopBarHeight = 60f;
         const float BottomBarHeight = 72f;
@@ -1624,7 +1624,13 @@ namespace CityHighways.Presentation
                         if (credit.Unlocked != null && credit.Unlocked.Count > 0)
                             achievements[Online && _net.LocalSeat >= 0 && _net.LocalSeat < _game.Players.Count ? _game.Players[_net.LocalSeat].Name : credit.Profile] =
                                 credit.Unlocked.Select(a => a.Title).ToList();
-                    StatsLog.Append(_game, _setup, _playSeconds, Online, achievements);
+                    // Повтор партии — для «Счётчика партий», рекордов друзей и клуба.
+                    int localSeat = Online ? _net.LocalSeat : -1;
+                    var replay = Replays.Capture(_game, _setup, _playSeconds, Online, localSeat);
+                    string replayId = replay != null && Replays.Store(replay) ? replay.id : null;
+                    StatsLog.Append(_game, _setup, _playSeconds, Online, achievements, replayId, _ghost?.Name, _ghost?.Score ?? 0);
+                    SocialCloud.ReportGame(_game, _setup, replay, _ghost);
+                    RaidFinished(replay);
                 }
                 else TutorialCoach.MarkDone();
             }
@@ -2256,6 +2262,7 @@ namespace CityHighways.Presentation
                               + (_game.IsCooperative ? " · Кооператив" : "");
             RefreshEvent();
             RefreshGoals();
+            RefreshGhost();
             _coopPanel?.Set(_game);
             RefreshTabs();
             _map.RefreshVisibility();
