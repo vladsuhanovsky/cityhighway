@@ -1183,6 +1183,262 @@
     {
       "key": "game.notice.contract_completed",
       "value": "Contract completed: {0}  +{1}{2}"
+    },
+    {
+      "key": "menu.clubs.001",
+      "value": "← Back"
+    },
+    {
+      "key": "menu.clubs.002",
+      "value": "Clubs & Friends"
+    },
+    {
+      "key": "menu.clubs.003",
+      "value": "Refresh"
+    },
+    {
+      "key": "menu.clubs.004",
+      "value": "Refreshing…"
+    },
+    {
+      "key": "menu.clubs.005",
+      "value": "My Club"
+    },
+    {
+      "key": "menu.clubs.006",
+      "value": "Friends' Records"
+    },
+    {
+      "key": "menu.clubs.007",
+      "value": "Without Steam you can compete against other profiles on this PC. Their records are shown in New Game above the Start Game button, "
+    },
+    {
+      "key": "menu.clubs.008",
+      "value": "and replays are available in Game Statistics."
+    },
+    {
+      "key": "menu.clubs.009",
+      "value": "Loading club…"
+    },
+    {
+      "key": "menu.clubs.010",
+      "value": "Could not load club: "
+    },
+    {
+      "key": "menu.clubs.011",
+      "value": " Select Refresh to try again."
+    },
+    {
+      "key": "menu.clubs.012",
+      "value": " · open to everyone"
+    },
+    {
+      "key": "menu.clubs.013",
+      "value": " · invite code only"
+    },
+    {
+      "key": "menu.clubs.014",
+      "value": "Copy Code"
+    },
+    {
+      "key": "menu.clubs.015",
+      "value": "Code copied — share it with your friends."
+    },
+    {
+      "key": "menu.clubs.016",
+      "value": "Close Recruitment"
+    },
+    {
+      "key": "menu.clubs.017",
+      "value": "Open Recruitment"
+    },
+    {
+      "key": "menu.clubs.018",
+      "value": "Leave Club"
+    },
+    {
+      "key": "menu.clubs.019",
+      "value": "Weekly Goal: "
+    },
+    {
+      "key": "menu.clubs.020",
+      "value": " The reward is a unique club emblem displayed alongside members' names in online lobbies."
+    },
+    {
+      "key": "menu.clubs.021",
+      "value": " (you)"
+    },
+    {
+      "key": "menu.clubs.022",
+      "value": "Club Emblems"
+    },
+    {
+      "key": "menu.clubs.023",
+      "value": "starter"
+    },
+    {
+      "key": "menu.clubs.024",
+      "value": "club emblem"
+    },
+    {
+      "key": "menu.clubs.025",
+      "value": "Set as Emblem"
+    },
+    {
+      "key": "menu.clubs.026",
+      "value": "Each completed weekly goal unlocks an emblem. Its shape, mark and color depend on club and week IDs, "
+    },
+    {
+      "key": "menu.clubs.027",
+      "value": "making each emblem unique. The more goals you complete, the higher your rank: bronze, silver or gold."
+    },
+    {
+      "key": "menu.clubs.028",
+      "value": "Members' Records"
+    },
+    {
+      "key": "menu.clubs.029",
+      "value": "You Are Not in a Club"
+    },
+    {
+      "key": "menu.clubs.030",
+      "value": "A club includes up to 30 builders with a shared weekly goal: build roads, fulfill contracts or city orders, "
+    },
+    {
+      "key": "menu.clubs.031",
+      "value": "or deliver cargo. Every match contributes to the total. Completing the goal earns a unique club emblem — "
+    },
+    {
+      "key": "menu.clubs.032",
+      "value": "displayed beside members' names in online lobbies."
+    },
+    {
+      "key": "menu.clubs.033",
+      "value": "Join with Invite Code"
+    },
+    {
+      "key": "menu.clubs.034",
+      "value": "6-character code"
+    },
+    {
+      "key": "menu.clubs.035",
+      "value": "Join"
+    },
+    {
+      "key": "menu.clubs.036",
+      "value": "Enter an invite code."
+    },
+    {
+      "key": "menu.clubs.037",
+      "value": "Joining…"
+    },
+    {
+      "key": "menu.clubs.038",
+      "value": "Public Clubs"
+    },
+    {
+      "key": "menu.clubs.039",
+      "value": "Name or Tag"
+    },
+    {
+      "key": "menu.clubs.040",
+      "value": "Find"
+    },
+    {
+      "key": "menu.clubs.041",
+      "value": "Searching…"
+    },
+    {
+      "key": "menu.clubs.042",
+      "value": "No public clubs found — create your own!"
+    },
+    {
+      "key": "menu.clubs.043",
+      "value": "Create Club"
+    },
+    {
+      "key": "menu.clubs.044",
+      "value": "Name (3–32 characters)"
+    },
+    {
+      "key": "menu.clubs.045",
+      "value": "Tag"
+    },
+    {
+      "key": "menu.clubs.046",
+      "value": "Open to Everyone"
+    },
+    {
+      "key": "menu.clubs.047",
+      "value": "Invite Code Only"
+    },
+    {
+      "key": "menu.clubs.048",
+      "value": "Club name must have at least 3 characters."
+    },
+    {
+      "key": "menu.clubs.049",
+      "value": "Tag must be 2–4 letters or digits."
+    },
+    {
+      "key": "menu.clubs.050",
+      "value": "Creating club…"
+    },
+    {
+      "key": "menu.clubs.051",
+      "value": "Steam Friends' Records"
+    },
+    {
+      "key": "menu.clubs.052",
+      "value": "None of your friends have records yet. Records appear after competitive or cooperative matches — "
+    },
+    {
+      "key": "menu.clubs.053",
+      "value": "invite friends to play and their best results will appear here."
+    },
+    {
+      "key": "menu.clubs.054",
+      "value": "co-op"
+    },
+    {
+      "key": "menu.clubs.055",
+      "value": "competitive"
+    },
+    {
+      "key": "menu.clubs.056",
+      "value": "Records on This PC"
+    },
+    {
+      "key": "menu.clubs.057",
+      "value": "You"
+    },
+    {
+      "key": "menu.clubs.058",
+      "value": " · victory"
+    },
+    {
+      "key": "menu.clubs.059",
+      "value": "▶ Replay"
+    },
+    {
+      "key": "menu.clubs.060",
+      "value": "Loading replay…"
+    },
+    {
+      "key": "menu.clubs.061",
+      "value": "Beat Your Record"
+    },
+    {
+      "key": "menu.clubs.062",
+      "value": "Challenge"
+    },
+    {
+      "key": "menu.clubs.063",
+      "value": "Preparing challenge…"
+    },
+    {
+      "key": "menu.clubs.064",
+      "value": "less than an hour left this week"
     }
   ]
 }

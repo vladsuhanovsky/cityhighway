@@ -40,26 +40,26 @@ namespace CityHighways.Presentation
             var header = Ui.Row();
             header.style.alignItems = Align.Center;
             header.style.marginBottom = 14f;
-            var backButton = Ui.Button("← Назад", back, ButtonKind.Ghost, 15f);
+            var backButton = Ui.Button(LocalizationService.Get("menu.clubs.001"), back, ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
             Ui.MarkBack(Root, back);
             header.Add(backButton);
-            var title = Ui.Text("Клубы и друзья", 34f, Theme.Gold, true);
+            var title = Ui.Text(LocalizationService.Get("menu.clubs.002"), 34f, Theme.Gold, true);
             title.style.flexGrow = 1f;
             header.Add(title);
-            var refresh = Ui.Button("Обновить", () =>
+            var refresh = Ui.Button(LocalizationService.Get("menu.clubs.003"), () =>
             {
                 SocialCloud.RefreshClub();
                 SocialCloud.RefreshFriends();
-                SetStatus("Обновляем…", Theme.TextDim);
+                SetStatus(LocalizationService.Get("menu.clubs.004"), Theme.TextDim);
             }, ButtonKind.Secondary, 13f);
             header.Add(refresh);
             Root.Add(header);
 
             var tabs = Ui.Row();
             tabs.style.marginBottom = 12f;
-            AddTab(tabs, "Мой клуб", Tab.Club);
-            AddTab(tabs, "Рекорды друзей", Tab.Friends);
+            AddTab(tabs, LocalizationService.Get("menu.clubs.005"), Tab.Club);
+            AddTab(tabs, LocalizationService.Get("menu.clubs.006"), Tab.Friends);
             Root.Add(tabs);
 
             _status = Ui.Text("", 13f, Theme.TextDim);
@@ -128,8 +128,8 @@ namespace CityHighways.Presentation
             {
                 var card = Card();
                 card.Add(Ui.Text(SocialCloud.Unavailable, 16f, Theme.Text, true));
-                var hint = Ui.Text("Без Steam можно соревноваться с другими профилями этого компьютера: их рекорды видны в «Новой игре» над кнопкой «Начать игру», " +
-                                   "а повторы партий — в «Счётчике партий».", 13f, Theme.TextDim);
+                var hint = Ui.Text(LocalizationService.Get("menu.clubs.007") +
+                                   LocalizationService.Get("menu.clubs.008"), 13f, Theme.TextDim);
                 hint.style.whiteSpace = WhiteSpace.Normal;
                 hint.style.marginTop = 6f;
                 card.Add(hint);
@@ -158,8 +158,8 @@ namespace CityHighways.Presentation
             if (state == null)
             {
                 // Клуб подтягивается сам (SocialCloud.Tick); здесь только показываем, что идёт загрузка или что мешает.
-                if (string.IsNullOrEmpty(SocialCloud.Problem)) SetStatus("Загружаем клуб…", Theme.TextDim);
-                else Fail("Клуб не загрузился: " + SocialCloud.Problem + " Нажмите «Обновить», чтобы попробовать ещё раз.");
+                if (string.IsNullOrEmpty(SocialCloud.Problem)) SetStatus(LocalizationService.Get("menu.clubs.009"), Theme.TextDim);
+                else Fail(LocalizationService.Get("menu.clubs.010") + SocialCloud.Problem + LocalizationService.Get("menu.clubs.011"));
                 return;
             }
             if (!state.HasClub)
@@ -181,26 +181,26 @@ namespace CityHighways.Presentation
             titles.style.flexGrow = 1f;
             titles.Add(Ui.Text($"{club.name}  [{club.tag}]", 26f, Theme.Gold, true));
             titles.Add(Ui.Text($"Участников: {state.members?.Length ?? 0} из 30 · целей недели выполнено: {state.weeksDone}" +
-                               (club.open ? " · открыт для всех" : " · только по коду"), 13f, Theme.TextDim));
+                               (club.open ? LocalizationService.Get("menu.clubs.012") : LocalizationService.Get("menu.clubs.013")), 13f, Theme.TextDim));
             var code = Ui.Text($"Код приглашения: {club.code}", 15f, Theme.Text, true);
             code.style.marginTop = 6f;
             titles.Add(code);
             row.Add(titles);
             var buttons = Ui.Column();
-            var copy = Ui.Button("Скопировать код", () =>
+            var copy = Ui.Button(LocalizationService.Get("menu.clubs.014"), () =>
             {
                 GUIUtility.systemCopyBuffer = club.code;
-                SetStatus("Код скопирован — отправьте его друзьям.", Theme.Success);
+                SetStatus(LocalizationService.Get("menu.clubs.015"), Theme.Success);
             }, ButtonKind.Secondary, 13f);
             copy.style.marginBottom = 6f;
             buttons.Add(copy);
             if (club.owner)
             {
-                var open = Ui.Button(club.open ? "Закрыть набор" : "Открыть набор", () => SocialCloud.SetClubOpen(!club.open, Fail), ButtonKind.Ghost, 13f);
+                var open = Ui.Button(club.open ? LocalizationService.Get("menu.clubs.016") : LocalizationService.Get("menu.clubs.017"), () => SocialCloud.SetClubOpen(!club.open, Fail), ButtonKind.Ghost, 13f);
                 open.style.marginBottom = 6f;
                 buttons.Add(open);
             }
-            buttons.Add(Ui.Button("Выйти из клуба", () => SocialCloud.LeaveClub(Fail), ButtonKind.Ghost, 13f));
+            buttons.Add(Ui.Button(LocalizationService.Get("menu.clubs.018"), () => SocialCloud.LeaveClub(Fail), ButtonKind.Ghost, 13f));
             row.Add(buttons);
             head.Add(row);
             _body.Add(head);
@@ -215,12 +215,12 @@ namespace CityHighways.Presentation
                 var flag = new MenuIcon(MenuIcon.Glyph.Flag, 22f, week.completed ? Theme.Success : Theme.Gold);
                 flag.style.marginRight = 10f;
                 goalHead.Add(flag);
-                var goalTitle = Ui.Text("Цель недели: " + SocialCloud.GoalTitle(week.kind, week.target), 18f, Theme.Text, true);
+                var goalTitle = Ui.Text(LocalizationService.Get("menu.clubs.019") + SocialCloud.GoalTitle(week.kind, week.target), 18f, Theme.Text, true);
                 goalTitle.style.flexGrow = 1f;
                 goalHead.Add(goalTitle);
                 goalHead.Add(Ui.Text(EndsIn(week.endsAt), 13f, Theme.TextDim));
                 goal.Add(goalHead);
-                var hint = Ui.Text(SocialCloud.GoalHint(week.kind) + " Награда — уникальный клубный логотип, он виден в лобби сетевой игры рядом с именами участников.",
+                var hint = Ui.Text(SocialCloud.GoalHint(week.kind) + LocalizationService.Get("menu.clubs.020"),
                     12f, Theme.TextDim);
                 hint.style.whiteSpace = WhiteSpace.Normal;
                 hint.style.marginTop = 4f;
@@ -242,7 +242,7 @@ namespace CityHighways.Presentation
                     var line = Ui.Row();
                     line.style.alignItems = Align.Center;
                     line.style.marginBottom = 4f;
-                    var name = Ui.Text(member.name + (member.role == "owner" ? " ♛" : "") + (member.me ? " (вы)" : ""), 14f, member.me ? Theme.Gold : Theme.Text, member.me);
+                    var name = Ui.Text(member.name + (member.role == "owner" ? " ♛" : "") + (member.me ? LocalizationService.Get("menu.clubs.021") : ""), 14f, member.me ? Theme.Gold : Theme.Text, member.me);
                     name.style.width = 220f;
                     line.Add(name);
                     var bar = Ui.Box();
@@ -269,7 +269,7 @@ namespace CityHighways.Presentation
 
             // Логотипы клуба.
             var logos = Card();
-            logos.Add(Ui.SectionTitle("Логотипы клуба"));
+            logos.Add(Ui.SectionTitle(LocalizationService.Get("menu.clubs.022")));
             var logoRow = Ui.Row();
             logoRow.style.flexWrap = Wrap.Wrap;
             foreach (var item in state.logos ?? new SocialCloud.LogoInfo[0])
@@ -284,24 +284,24 @@ namespace CityHighways.Presentation
                 bool active = item.logo == club.logo;
                 cell.style.backgroundColor = active ? new Color(1f, 0.8f, 0.3f, 0.14f) : Theme.PanelLight;
                 cell.Add(new ClubLogo(item.logo, 56f));
-                var caption = Ui.Text(string.IsNullOrEmpty(item.week) ? "стартовый" : $"{ClubLogo.TierTitle(item.logo)} · {item.week}", 11f, Theme.TextDim);
+                var caption = Ui.Text(string.IsNullOrEmpty(item.week) ? LocalizationService.Get("menu.clubs.023") : $"{ClubLogo.TierTitle(item.logo)} · {item.week}", 11f, Theme.TextDim);
                 caption.style.marginTop = 4f;
                 caption.style.unityTextAlign = TextAnchor.MiddleCenter;
                 caption.style.whiteSpace = WhiteSpace.Normal;
                 cell.Add(caption);
-                if (active) cell.Add(Ui.Text("герб клуба", 11f, Theme.Gold, true));
+                if (active) cell.Add(Ui.Text(LocalizationService.Get("menu.clubs.024"), 11f, Theme.Gold, true));
                 else if (club.owner)
                 {
                     string logoId = item.logo;
-                    var use = Ui.Button("Сделать гербом", () => SocialCloud.SetClubLogo(logoId, Fail), ButtonKind.Ghost, 11f);
+                    var use = Ui.Button(LocalizationService.Get("menu.clubs.025"), () => SocialCloud.SetClubLogo(logoId, Fail), ButtonKind.Ghost, 11f);
                     use.style.marginTop = 2f;
                     cell.Add(use);
                 }
                 logoRow.Add(cell);
             }
             logos.Add(logoRow);
-            var logoHint = Ui.Text("Каждая выполненная цель недели приносит новый логотип — его форма, знак и цвет собраны из id клуба и недели, " +
-                                   "так что такого больше ни у кого нет. Чем больше целей выполнено, тем выше ранг: бронза, серебро, золото.", 12f, Theme.TextDim);
+            var logoHint = Ui.Text(LocalizationService.Get("menu.clubs.026") +
+                                   LocalizationService.Get("menu.clubs.027"), 12f, Theme.TextDim);
             logoHint.style.whiteSpace = WhiteSpace.Normal;
             logos.Add(logoHint);
             _body.Add(logos);
@@ -310,7 +310,7 @@ namespace CityHighways.Presentation
             if (state.records != null && state.records.Length > 0)
             {
                 var records = Card();
-                records.Add(Ui.SectionTitle("Рекорды участников"));
+                records.Add(Ui.SectionTitle(LocalizationService.Get("menu.clubs.028")));
                 foreach (var record in state.records.Take(15))
                     records.Add(RecordRow(record, record.name == state.members?.FirstOrDefault(m => m.me)?.name ? "self" : "club"));
                 _body.Add(records);
@@ -321,10 +321,10 @@ namespace CityHighways.Presentation
         {
             if (_statusTransient) SetStatus("", Theme.TextDim);
             var intro = Card();
-            intro.Add(Ui.Text("Вы пока не в клубе", 20f, Theme.Text, true));
-            var hint = Ui.Text("Клуб — до 30 строителей с общей целью на неделю: построить столько-то километров дорог, выполнить контракты или заказы города, " +
-                               "доставить грузы. Каждая ваша партия идёт в общий счёт. За выполненную цель клуб получает уникальный логотип — " +
-                               "он виден в лобби сетевой игры рядом с именами участников.", 13f, Theme.TextDim);
+            intro.Add(Ui.Text(LocalizationService.Get("menu.clubs.029"), 20f, Theme.Text, true));
+            var hint = Ui.Text(LocalizationService.Get("menu.clubs.030") +
+                               LocalizationService.Get("menu.clubs.031") +
+                               LocalizationService.Get("menu.clubs.032"), 13f, Theme.TextDim);
             hint.style.whiteSpace = WhiteSpace.Normal;
             hint.style.marginTop = 4f;
             intro.Add(hint);
@@ -332,17 +332,17 @@ namespace CityHighways.Presentation
 
             // Вступить по коду.
             var join = Card();
-            join.Add(Ui.SectionTitle("Вступить по коду приглашения"));
+            join.Add(Ui.SectionTitle(LocalizationService.Get("menu.clubs.033")));
             var joinRow = Ui.Row();
             joinRow.style.alignItems = Align.Center;
-            var codeField = Field(_code, 8, "Код из 6 символов");
+            var codeField = Field(_code, 8, LocalizationService.Get("menu.clubs.034"));
             codeField.style.width = 220f;
             codeField.RegisterValueChangedCallback(e => _code = e.newValue);
             joinRow.Add(codeField);
-            var joinButton = Ui.Button("Вступить", () =>
+            var joinButton = Ui.Button(LocalizationService.Get("menu.clubs.035"), () =>
             {
-                if (string.IsNullOrWhiteSpace(_code)) { Fail("Введите код приглашения."); return; }
-                SetStatus("Вступаем…", Theme.TextDim);
+                if (string.IsNullOrWhiteSpace(_code)) { Fail(LocalizationService.Get("menu.clubs.036")); return; }
+                SetStatus(LocalizationService.Get("menu.clubs.037"), Theme.TextDim);
                 SocialCloud.JoinClub(_code.Trim(), null, Fail);
             }, ButtonKind.Primary, 14f);
             joinButton.style.marginLeft = 10f;
@@ -352,21 +352,21 @@ namespace CityHighways.Presentation
 
             // Открытые клубы.
             var find = Card();
-            find.Add(Ui.SectionTitle("Открытые клубы"));
+            find.Add(Ui.SectionTitle(LocalizationService.Get("menu.clubs.038")));
             var searchRow = Ui.Row();
             searchRow.style.alignItems = Align.Center;
             searchRow.style.marginBottom = 8f;
-            var search = Field(_query, 32, "Название или тег");
+            var search = Field(_query, 32, LocalizationService.Get("menu.clubs.039"));
             search.style.width = 320f;
             search.RegisterValueChangedCallback(e => _query = e.newValue);
             searchRow.Add(search);
-            var searchButton = Ui.Button("Найти", Search, ButtonKind.Secondary, 14f);
+            var searchButton = Ui.Button(LocalizationService.Get("menu.clubs.040"), Search, ButtonKind.Secondary, 14f);
             searchButton.style.marginLeft = 10f;
             searchRow.Add(searchButton);
             find.Add(searchRow);
             if (_found == null && !_searching) Search();
-            if (_searching) find.Add(Ui.Text("Ищем…", 13f, Theme.TextDim));
-            else if (_found != null && _found.Length == 0) find.Add(Ui.Text("Открытых клубов не нашлось — создайте свой!", 13f, Theme.TextDim));
+            if (_searching) find.Add(Ui.Text(LocalizationService.Get("menu.clubs.041"), 13f, Theme.TextDim));
+            else if (_found != null && _found.Length == 0) find.Add(Ui.Text(LocalizationService.Get("menu.clubs.042"), 13f, Theme.TextDim));
             foreach (var club in _found ?? new SocialCloud.ClubBrief[0])
             {
                 var row = Ui.Row();
@@ -383,9 +383,9 @@ namespace CityHighways.Presentation
                 row.Add(name);
                 row.Add(Ui.Text($"{club.members} уч.", 13f, Theme.TextDim));
                 string id = club.id;
-                var enter = Ui.Button("Вступить", () =>
+                var enter = Ui.Button(LocalizationService.Get("menu.clubs.035"), () =>
                 {
-                    SetStatus("Вступаем…", Theme.TextDim);
+                    SetStatus(LocalizationService.Get("menu.clubs.037"), Theme.TextDim);
                     SocialCloud.JoinClub(null, id, Fail);
                 }, ButtonKind.Secondary, 13f);
                 enter.style.marginLeft = 10f;
@@ -396,19 +396,19 @@ namespace CityHighways.Presentation
 
             // Создать клуб.
             var create = Card();
-            create.Add(Ui.SectionTitle("Создать клуб"));
+            create.Add(Ui.SectionTitle(LocalizationService.Get("menu.clubs.043")));
             var fields = Ui.Row();
             fields.style.alignItems = Align.Center;
-            var nameField = Field(_newName, 32, "Название (3–32 символа)");
+            var nameField = Field(_newName, 32, LocalizationService.Get("menu.clubs.044"));
             nameField.style.width = 360f;
             nameField.RegisterValueChangedCallback(e => _newName = e.newValue);
             fields.Add(nameField);
-            var tagField = Field(_newTag, 4, "Тег");
+            var tagField = Field(_newTag, 4, LocalizationService.Get("menu.clubs.045"));
             tagField.style.width = 110f;
             tagField.style.marginLeft = 10f;
             tagField.RegisterValueChangedCallback(e => _newTag = e.newValue.ToUpperInvariant());
             fields.Add(tagField);
-            var openButton = Ui.Button(_newOpen ? "Открыт для всех" : "Только по коду", () => { _newOpen = !_newOpen; Rebuild(); }, ButtonKind.Ghost, 13f);
+            var openButton = Ui.Button(_newOpen ? LocalizationService.Get("menu.clubs.046") : LocalizationService.Get("menu.clubs.047"), () => { _newOpen = !_newOpen; Rebuild(); }, ButtonKind.Ghost, 13f);
             openButton.style.marginLeft = 10f;
             fields.Add(openButton);
             create.Add(fields);
@@ -434,11 +434,11 @@ namespace CityHighways.Presentation
                 logosRow.Add(cell);
             }
             create.Add(logosRow);
-            var createButton = Ui.Button("Создать клуб", () =>
+            var createButton = Ui.Button(LocalizationService.Get("menu.clubs.043"), () =>
             {
-                if ((_newName ?? "").Trim().Length < 3) { Fail("Название клуба — от 3 символов."); return; }
-                if ((_newTag ?? "").Trim().Length < 2) { Fail("Тег — 2–4 буквы или цифры."); return; }
-                SetStatus("Создаём клуб…", Theme.TextDim);
+                if ((_newName ?? "").Trim().Length < 3) { Fail(LocalizationService.Get("menu.clubs.048")); return; }
+                if ((_newTag ?? "").Trim().Length < 2) { Fail(LocalizationService.Get("menu.clubs.049")); return; }
+                SetStatus(LocalizationService.Get("menu.clubs.050"), Theme.TextDim);
                 SocialCloud.CreateClub(_newName.Trim(), _newTag.Trim(), _newLogo, _newOpen, Fail);
             }, ButtonKind.Primary, 16f);
             createButton.style.marginTop = 12f;
@@ -469,19 +469,19 @@ namespace CityHighways.Presentation
         void BuildFriends()
         {
             var card = Card();
-            card.Add(Ui.SectionTitle("Рекорды друзей из Steam"));
+            card.Add(Ui.SectionTitle(LocalizationService.Get("menu.clubs.051")));
             var records = SocialCloud.FriendRecords;
             if (records.Count == 0)
             {
-                var empty = Ui.Text("Пока ни у кого из друзей нет рекордов. Рекорд появляется после партии в соревновании или кооперативе — " +
-                                    "позовите друзей сыграть, и их лучшие результаты будут здесь.", 13f, Theme.TextDim);
+                var empty = Ui.Text(LocalizationService.Get("menu.clubs.052") +
+                                    LocalizationService.Get("menu.clubs.053"), 13f, Theme.TextDim);
                 empty.style.whiteSpace = WhiteSpace.Normal;
                 card.Add(empty);
             }
             foreach (var group in records.GroupBy(r => (r.mode, r.mapPath)).OrderBy(g => g.First().mapName))
             {
                 var first = group.First();
-                var groupTitle = Ui.Text($"{first.mapName} · {(first.mode == "coop" ? "кооператив" : "соревнование")}", 15f, Theme.Gold, true);
+                var groupTitle = Ui.Text($"{first.mapName} · {(first.mode == "coop" ? LocalizationService.Get("menu.clubs.054") : LocalizationService.Get("menu.clubs.055"))}", 15f, Theme.Gold, true);
                 groupTitle.style.marginTop = 10f;
                 groupTitle.style.marginBottom = 4f;
                 card.Add(groupTitle);
@@ -501,12 +501,12 @@ namespace CityHighways.Presentation
                 .OrderBy(e => e.map).ThenByDescending(e => e.authorScore).ToList();
             if (entries.Count == 0) return;
             var card = Card();
-            card.Add(Ui.SectionTitle("Рекорды на этом компьютере"));
+            card.Add(Ui.SectionTitle(LocalizationService.Get("menu.clubs.056")));
             foreach (var entry in entries.Take(20))
             {
                 bool self = string.Equals(entry.author, me, StringComparison.OrdinalIgnoreCase);
                 var ghost = Ghost.FromEntry(entry, self);
-                card.Add(GhostRow(ghost, $"{entry.map} · {(entry.mode == "coop" ? "кооператив" : "соревнование")}"));
+                card.Add(GhostRow(ghost, $"{entry.map} · {(entry.mode == "coop" ? LocalizationService.Get("menu.clubs.054") : LocalizationService.Get("menu.clubs.055"))}"));
             }
             _body.Add(card);
         }
@@ -514,7 +514,7 @@ namespace CityHighways.Presentation
         VisualElement RecordRow(SocialCloud.RecordInfo record, string source)
         {
             var ghost = Ghost.FromRecord(record, source);
-            return GhostRow(ghost, $"{record.mapName} · {(record.mode == "coop" ? "кооператив" : "соревнование")}");
+            return GhostRow(ghost, $"{record.mapName} · {(record.mode == "coop" ? LocalizationService.Get("menu.clubs.054") : LocalizationService.Get("menu.clubs.055"))}");
         }
 
         VisualElement GhostRow(Ghost ghost, string where)
@@ -527,19 +527,19 @@ namespace CityHighways.Presentation
             Ui.Padding(row, 6f, 12f);
             var texts = Ui.Column();
             texts.style.flexGrow = 1f;
-            texts.Add(Ui.Text($"{(ghost.Source == "self" ? "Вы" : ghost.Name)} — {ghost.Score} очк.{(ghost.Won ? " · победа" : "")}", 15f, Theme.Text, true));
+            texts.Add(Ui.Text($"{(ghost.Source == "self" ? LocalizationService.Get("menu.clubs.057") : ghost.Name)} — {ghost.Score} очк.{(ghost.Won ? LocalizationService.Get("menu.clubs.058") : "")}", 15f, Theme.Text, true));
             texts.Add(Ui.Text(where + (string.IsNullOrEmpty(ghost.Date) ? "" : " · " + ShortDate(ghost.Date)), 12f, Theme.TextDim));
             row.Add(texts);
-            var watch = Ui.Button("▶ Повтор", () =>
+            var watch = Ui.Button(LocalizationService.Get("menu.clubs.059"), () =>
             {
-                SetStatus("Загружаем повтор…", Theme.TextDim);
+                SetStatus(LocalizationService.Get("menu.clubs.060"), Theme.TextDim);
                 ghost.LoadReplay(replay => Replays.Play?.Invoke(replay), Fail);
             }, ButtonKind.Secondary, 13f);
             watch.style.marginLeft = 8f;
             row.Add(watch);
-            var raid = Ui.Button(ghost.Source == "self" ? "Побить свой рекорд" : "Бросить вызов", () =>
+            var raid = Ui.Button(ghost.Source == "self" ? LocalizationService.Get("menu.clubs.061") : LocalizationService.Get("menu.clubs.062"), () =>
             {
-                SetStatus("Готовим рейд…", Theme.TextDim);
+                SetStatus(LocalizationService.Get("menu.clubs.063"), Theme.TextDim);
                 ghost.LoadReplay(_ => _app.StartRaid(ghost), Fail);
             }, ButtonKind.Primary, 13f);
             raid.style.marginLeft = 8f;
@@ -585,7 +585,7 @@ namespace CityHighways.Presentation
         {
             if (!DateTime.TryParse(iso, null, System.Globalization.DateTimeStyles.RoundtripKind, out var end)) return "";
             var left = end.ToUniversalTime() - DateTime.UtcNow;
-            if (left.TotalHours < 1) return "до конца недели меньше часа";
+            if (left.TotalHours < 1) return LocalizationService.Get("menu.clubs.064");
             if (left.TotalDays < 1) return $"до конца недели {(int)left.TotalHours} ч";
             return $"до конца недели {(int)left.TotalDays} дн. {left.Hours} ч";
         }
