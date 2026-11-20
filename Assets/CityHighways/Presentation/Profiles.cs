@@ -198,7 +198,7 @@ namespace CityHighways.Presentation
 
         public static ShopItem Item(string id) => Catalog.FirstOrDefault(i => i.Id == id);
 
-        public static string TitleText(string id) => Item(id)?.Name ?? "";
+        public static string TitleText(string id) => Item(id)?.DisplayName ?? "";
 
         public static Color FrameColor(string id)
         {

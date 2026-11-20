@@ -17,10 +17,10 @@ namespace CityHighways.Presentation
         {
             switch (level)
             {
-                case Level.Rare: return "Редкий";
-                case Level.Epic: return "Эпический";
-                case Level.Legendary: return "Легендарный";
-                default: return "Обычный";
+                case Level.Rare: return LocalizationService.Get("rarity.singular.Rare");
+                case Level.Epic: return LocalizationService.Get("rarity.singular.Epic");
+                case Level.Legendary: return LocalizationService.Get("rarity.singular.Legendary");
+                default: return LocalizationService.Get("rarity.singular.Common");
             }
         }
 
