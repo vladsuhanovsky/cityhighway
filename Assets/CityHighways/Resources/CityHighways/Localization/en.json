@@ -2275,6 +2275,202 @@
     {
       "key": "menu.profile.104",
       "value": "Influence remaining after a match is added to your wallet. In local games, profiles are matched by player name; in online games, the active profile is used."
+    },
+    {
+      "key": "menu.rules.001",
+      "value": "← Back"
+    },
+    {
+      "key": "menu.rules.002",
+      "value": "Rules"
+    },
+    {
+      "key": "menu.rules.003",
+      "value": "Search Rules…"
+    },
+    {
+      "key": "menu.rules.004",
+      "value": "Team Play"
+    },
+    {
+      "key": "menu.rules.005",
+      "value": "Cooperative"
+    },
+    {
+      "key": "menu.rules.006",
+      "value": "Endgame & Scoring"
+    },
+    {
+      "key": "menu.rules.007",
+      "value": "General Rules"
+    },
+    {
+      "key": "menu.rules.008",
+      "value": "Goal & Turn"
+    },
+    {
+      "key": "menu.rules.009",
+      "value": "Resources"
+    },
+    {
+      "key": "menu.rules.010",
+      "value": "Contracts & Tolls"
+    },
+    {
+      "key": "menu.rules.011",
+      "value": "Trades & Highways"
+    },
+    {
+      "key": "menu.rules.012",
+      "value": "Events"
+    },
+    {
+      "key": "menu.rules.013",
+      "value": "Glossary"
+    },
+    {
+      "key": "menu.rules.014",
+      "value": "Basics"
+    },
+    {
+      "key": "menu.rules.015",
+      "value": "Roads & City"
+    },
+    {
+      "key": "menu.rules.016",
+      "value": "City Hall"
+    },
+    {
+      "key": "menu.rules.017",
+      "value": "City Goals & Luck"
+    },
+    {
+      "key": "menu.rules.018",
+      "value": "Influence"
+    },
+    {
+      "key": "menu.rules.019",
+      "value": "Companies"
+    },
+    {
+      "key": "menu.rules.020",
+      "value": "Characters"
+    },
+    {
+      "key": "menu.rules.021",
+      "value": "Scenarios"
+    },
+    {
+      "key": "menu.rules.022",
+      "value": "Close"
+    },
+    {
+      "key": "menu.rules.023",
+      "value": "Round Start"
+    },
+    {
+      "key": "menu.rules.024",
+      "value": "Before Main Action"
+    },
+    {
+      "key": "menu.rules.025",
+      "value": "One Main Action"
+    },
+    {
+      "key": "menu.rules.026",
+      "value": "Draw 2 Cards"
+    },
+    {
+      "key": "menu.rules.027",
+      "value": "Build a Road"
+    },
+    {
+      "key": "menu.rules.028",
+      "value": "Or Upgrade a Road"
+    },
+    {
+      "key": "menu.rules.029",
+      "value": "End of Turn"
+    },
+    {
+      "key": "menu.rules.030",
+      "value": "Completed Contracts"
+    },
+    {
+      "key": "menu.rules.031",
+      "value": "Toll Payments"
+    },
+    {
+      "key": "menu.rules.032",
+      "value": "City Goals — First to Finish"
+    },
+    {
+      "key": "menu.rules.033",
+      "value": "Streets"
+    },
+    {
+      "key": "menu.rules.034",
+      "value": "Avenues"
+    },
+    {
+      "key": "menu.rules.035",
+      "value": "Bridges"
+    },
+    {
+      "key": "menu.rules.036",
+      "value": "Rural Roads"
+    },
+    {
+      "key": "menu.rules.037",
+      "value": "Wildcard"
+    },
+    {
+      "key": "menu.rules.038",
+      "value": "City Events"
+    },
+    {
+      "key": "menu.rules.039",
+      "value": "Rush Hour"
+    },
+    {
+      "key": "menu.rules.040",
+      "value": "Repairs"
+    },
+    {
+      "key": "menu.rules.041",
+      "value": "City Subsidy"
+    },
+    {
+      "key": "menu.rules.042",
+      "value": "New District"
+    },
+    {
+      "key": "menu.rules.043",
+      "value": "Parade"
+    },
+    {
+      "key": "menu.rules.044",
+      "value": "Snowstorm"
+    },
+    {
+      "key": "menu.rules.045",
+      "value": "Investor"
+    },
+    {
+      "key": "menu.rules.046",
+      "value": "BUFF"
+    },
+    {
+      "key": "menu.rules.047",
+      "value": "DEBUFF"
+    },
+    {
+      "key": "menu.rules.048",
+      "value": "Team Victory"
+    },
+    {
+      "key": "menu.rules.049",
+      "value": "City Victory"
     }
   ]
 }
