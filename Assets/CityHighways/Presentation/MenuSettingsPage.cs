@@ -288,12 +288,12 @@ namespace CityHighways.Presentation
                     UpdatePreview(i == 0 ? LocalizationService.Get("menu.settings.detail.017") : i == 1 ? LocalizationService.Get("menu.settings.detail.018") : LocalizationService.Get("menu.settings.detail.019"));
                 })));
             s.Add(Row(LocalizationService.Get("menu.settings.detail.020"), LocalizationService.Get("menu.settings.detail.021"),
-                new Segmented(MenuBackground.PaletteNames, _display.menuPalette, i =>
+                new Segmented(new[] { LocalizationService.Get("menu.palette.0"), LocalizationService.Get("menu.palette.1"), LocalizationService.Get("menu.palette.2") }, _display.menuPalette, i =>
                 {
                     _display.menuPalette = i;
                     Save();
                     _backgroundChanged?.Invoke();
-                    UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.palette"), MenuBackground.PaletteNames[i]));
+                    UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.palette"), LocalizationService.Get("menu.palette." + i)));
                 })));
             if (GeneratedArt.Load(GeneratedArt.KeyArt) != null)
                 s.Add(Row(LocalizationService.Get("menu.settings.detail.022"), LocalizationService.Get("menu.settings.detail.023"),

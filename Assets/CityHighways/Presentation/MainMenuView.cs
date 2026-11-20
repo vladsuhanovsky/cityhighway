@@ -599,7 +599,7 @@ namespace CityHighways.Presentation
             Ui.Border(_moonButton, mode == MenuBackground.LightMode.Night ? 2f : 1f, mode == MenuBackground.LightMode.Night ? Theme.Accent : Theme.Line);
             Ui.Border(_sunButton, mode == MenuBackground.LightMode.Day ? 2f : 1f, mode == MenuBackground.LightMode.Day ? Theme.Accent : Theme.Line);
             string light = mode == MenuBackground.LightMode.Night ? LocalizationService.Get("menu.main.legacy.043") : mode == MenuBackground.LightMode.Day ? LocalizationService.Get("menu.main.legacy.044") : LocalizationService.Get("menu.main.legacy.045");
-            _lightCaption.text = string.Format(LocalizationService.Get("menu.home.light_status"), light, MenuBackground.PaletteNames[_background.PaletteIndex]);
+            _lightCaption.text = string.Format(LocalizationService.Get("menu.home.light_status"), light, LocalizationService.Get("menu.palette." + _background.PaletteIndex));
         }
 
         void ConfirmQuit()

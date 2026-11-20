@@ -5851,6 +5851,18 @@
     {
       "key": "profile.achievement.category.collections",
       "value": "Collections"
+    },
+    {
+      "key": "menu.palette.0",
+      "value": "Blue Hour"
+    },
+    {
+      "key": "menu.palette.1",
+      "value": "Sunset"
+    },
+    {
+      "key": "menu.palette.2",
+      "value": "Neon"
     }
   ]
 }

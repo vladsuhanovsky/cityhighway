@@ -5851,6 +5851,18 @@
     {
       "key": "profile.achievement.category.collections",
       "value": "Коллекции"
+    },
+    {
+      "key": "menu.palette.0",
+      "value": "Синий час"
+    },
+    {
+      "key": "menu.palette.1",
+      "value": "Закат"
+    },
+    {
+      "key": "menu.palette.2",
+      "value": "Неон"
     }
   ]
 }
