@@ -4439,6 +4439,270 @@
     {
       "key": "menu.main.legacy.063",
       "value": "Delete"
+    },
+    {
+      "key": "achievement.first_contract.title",
+      "value": "First Contract"
+    },
+    {
+      "key": "achievement.first_contract.description",
+      "value": "Complete a contract."
+    },
+    {
+      "key": "achievement.first_win.title",
+      "value": "First Victory"
+    },
+    {
+      "key": "achievement.first_win.description",
+      "value": "Win a game."
+    },
+    {
+      "key": "achievement.bridges5.title",
+      "value": "Bridge Builder"
+    },
+    {
+      "key": "achievement.bridges5.description",
+      "value": "Build 5 bridges in a game."
+    },
+    {
+      "key": "achievement.tolls15.title",
+      "value": "Toll King"
+    },
+    {
+      "key": "achievement.tolls15.description",
+      "value": "Earn 15 toll points from opponents in a single game."
+    },
+    {
+      "key": "achievement.clean4.title",
+      "value": "Perfect Contracts"
+    },
+    {
+      "key": "achievement.clean4.description",
+      "value": "Complete 4 contracts without failing any."
+    },
+    {
+      "key": "achievement.honest_win.title",
+      "value": "Clean Hands"
+    },
+    {
+      "key": "achievement.honest_win.description",
+      "value": "Win a game with at least 3 players without bribing anyone."
+    },
+    {
+      "key": "achievement.whistle.title",
+      "value": "Whistleblower"
+    },
+    {
+      "key": "achievement.whistle.description",
+      "value": "Correctly accuse an opponent of bribery."
+    },
+    {
+      "key": "achievement.final_order.title",
+      "value": "Final Order"
+    },
+    {
+      "key": "achievement.final_order.description",
+      "value": "Complete the city hall's final order."
+    },
+    {
+      "key": "achievement.mayor.title",
+      "value": "City Hall Favorite"
+    },
+    {
+      "key": "achievement.mayor.description",
+      "value": "Complete a contract won at auction."
+    },
+    {
+      "key": "achievement.network8.title",
+      "value": "The Whole City"
+    },
+    {
+      "key": "achievement.network8.description",
+      "value": "Connect a network of 8 districts."
+    },
+    {
+      "key": "achievement.traffic3.title",
+      "value": "Rush Hour"
+    },
+    {
+      "key": "achievement.traffic3.description",
+      "value": "Have 3 opponents' routes use one of your roads."
+    },
+    {
+      "key": "achievement.upgrades3.title",
+      "value": "Highways"
+    },
+    {
+      "key": "achievement.upgrades3.description",
+      "value": "Upgrade 3 roads to highways in one game."
+    },
+    {
+      "key": "achievement.score130.title",
+      "value": "Record Breaker"
+    },
+    {
+      "key": "achievement.score130.description",
+      "value": "Score 130 points in one game."
+    },
+    {
+      "key": "achievement.big_win.title",
+      "value": "Against All Odds"
+    },
+    {
+      "key": "achievement.big_win.description",
+      "value": "Win a five-player competitive game."
+    },
+    {
+      "key": "achievement.coop_win.title",
+      "value": "City Saved"
+    },
+    {
+      "key": "achievement.coop_win.description",
+      "value": "Win a City Against Everyone cooperative game."
+    },
+    {
+      "key": "achievement.coop_clean.title",
+      "value": "No Missed Orders"
+    },
+    {
+      "key": "achievement.coop_clean.description",
+      "value": "Win a co-op game without letting any city orders expire."
+    },
+    {
+      "key": "achievement.mg_first.title",
+      "value": "First Delivery"
+    },
+    {
+      "key": "achievement.mg_first.description",
+      "value": "Magnate: deliver your first cargo."
+    },
+    {
+      "key": "achievement.mg_win.title",
+      "value": "Logistics Magnate"
+    },
+    {
+      "key": "achievement.mg_win.description",
+      "value": "Magnate: win a game."
+    },
+    {
+      "key": "achievement.mg_nojam.title",
+      "value": "Green Wave"
+    },
+    {
+      "key": "achievement.mg_nojam.description",
+      "value": "Magnate: deliver 6 cargoes without getting stuck in traffic."
+    },
+    {
+      "key": "achievement.mg_cold.title",
+      "value": "Cold Chain"
+    },
+    {
+      "key": "achievement.mg_cold.description",
+      "value": "Magnate: deliver 4 perishables on time."
+    },
+    {
+      "key": "achievement.mg_hub.title",
+      "value": "Megahub"
+    },
+    {
+      "key": "achievement.mg_hub.description",
+      "value": "Magnate: own a level-5 hub at the end of a game (the largest investor controls a hub)."
+    },
+    {
+      "key": "achievement.mg_contracts.title",
+      "value": "City Contractor"
+    },
+    {
+      "key": "achievement.mg_contracts.description",
+      "value": "Magnate: complete 2 city orders first in one game."
+    },
+    {
+      "key": "achievement.mg_legend.title",
+      "value": "Road Legend"
+    },
+    {
+      "key": "achievement.mg_legend.description",
+      "value": "Magnate: reach Legendary reputation."
+    },
+    {
+      "key": "achievement.mg_expert.title",
+      "value": "Expert"
+    },
+    {
+      "key": "achievement.mg_expert.description",
+      "value": "Magnate: win on Expert difficulty."
+    },
+    {
+      "key": "achievement.seasons.title",
+      "value": "All Seasons"
+    },
+    {
+      "key": "achievement.seasons.description",
+      "value": "Win once in every scenario: Winter, Greater City, Year of Repairs and Mayoral Elections."
+    },
+    {
+      "key": "achievement.companies.title",
+      "value": "All Companies"
+    },
+    {
+      "key": "achievement.companies.description",
+      "value": "Win with every character."
+    },
+    {
+      "key": "achievement.travel.title",
+      "value": "World Tour"
+    },
+    {
+      "key": "achievement.travel.description",
+      "value": "Play a game on every map: Moscow, Amsterdam and Chongqing."
+    },
+    {
+      "key": "achievement.veteran.title",
+      "value": "Veteran"
+    },
+    {
+      "key": "achievement.veteran.description",
+      "value": "Play 25 games."
+    },
+    {
+      "key": "daily.d_contracts3.title",
+      "value": "Complete 3 contracts in a game"
+    },
+    {
+      "key": "daily.d_bridges2.title",
+      "value": "Build 2 bridges"
+    },
+    {
+      "key": "daily.d_tolls4.title",
+      "value": "Earn 4 toll points from opponents"
+    },
+    {
+      "key": "daily.d_upgrade.title",
+      "value": "Upgrade a road to a highway"
+    },
+    {
+      "key": "daily.d_win.title",
+      "value": "Win a game"
+    },
+    {
+      "key": "daily.d_long.title",
+      "value": "Build a road of length 4 or more"
+    },
+    {
+      "key": "daily.d_final.title",
+      "value": "Complete city hall's final order"
+    },
+    {
+      "key": "daily.d_network6.title",
+      "value": "Connect a 6-district network"
+    },
+    {
+      "key": "daily.d_scenario.title",
+      "value": "Play any non-standard scenario"
+    },
+    {
+      "key": "daily.d_clean.title",
+      "value": "Complete 2 contracts without failing any"
     }
   ]
 }

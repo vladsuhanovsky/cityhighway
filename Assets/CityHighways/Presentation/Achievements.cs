@@ -99,8 +99,18 @@ namespace CityHighways.Presentation
     public sealed class Achievement
     {
         public string Id;
-        public string Title;
-        public string Description;
+        string _title, _description;
+        // IDs and completion predicates are language independent; only displayed text changes.
+        public string Title
+        {
+            get => LocalizationService.GetOrFallback("achievement." + Id + ".title", _title);
+            set => _title = value;
+        }
+        public string Description
+        {
+            get => LocalizationService.GetOrFallback("achievement." + Id + ".description", _description);
+            set => _description = value;
+        }
         public int Reward;
         public Func<GameFacts, bool> Check;
         public Func<PlayerProfile, int> Progress;
@@ -112,7 +122,12 @@ namespace CityHighways.Presentation
     public sealed class DailyTask
     {
         public string Id;
-        public string Title;
+        string _title;
+        public string Title
+        {
+            get => LocalizationService.GetOrFallback("daily." + Id + ".title", _title);
+            set => _title = value;
+        }
         public Func<GameFacts, bool> Check;
     }
 

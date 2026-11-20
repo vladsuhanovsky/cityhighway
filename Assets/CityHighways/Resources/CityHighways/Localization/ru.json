@@ -4439,6 +4439,270 @@
     {
       "key": "menu.main.legacy.063",
       "value": "Удалить"
+    },
+    {
+      "key": "achievement.first_contract.title",
+      "value": "Первый подряд"
+    },
+    {
+      "key": "achievement.first_contract.description",
+      "value": "Выполните контракт."
+    },
+    {
+      "key": "achievement.first_win.title",
+      "value": "Первая победа"
+    },
+    {
+      "key": "achievement.first_win.description",
+      "value": "Выиграйте партию."
+    },
+    {
+      "key": "achievement.bridges5.title",
+      "value": "Мостостроитель"
+    },
+    {
+      "key": "achievement.bridges5.description",
+      "value": "Постройте за партию 5 мостов."
+    },
+    {
+      "key": "achievement.tolls15.title",
+      "value": "Король проезда"
+    },
+    {
+      "key": "achievement.tolls15.description",
+      "value": "Получите за партию 15 очков за проезд от соперников."
+    },
+    {
+      "key": "achievement.clean4.title",
+      "value": "Без провалов"
+    },
+    {
+      "key": "achievement.clean4.description",
+      "value": "Выполните 4 контракта и ни одного не провалите."
+    },
+    {
+      "key": "achievement.honest_win.title",
+      "value": "Чистые руки"
+    },
+    {
+      "key": "achievement.honest_win.description",
+      "value": "Выиграйте партию на троих и больше, не дав ни одной взятки."
+    },
+    {
+      "key": "achievement.whistle.title",
+      "value": "Разоблачитель"
+    },
+    {
+      "key": "achievement.whistle.description",
+      "value": "Верно обвините соперника во взятке."
+    },
+    {
+      "key": "achievement.final_order.title",
+      "value": "Финальный заказ"
+    },
+    {
+      "key": "achievement.final_order.description",
+      "value": "Выполните финальный заказ мэрии."
+    },
+    {
+      "key": "achievement.mayor.title",
+      "value": "Ставленник мэрии"
+    },
+    {
+      "key": "achievement.mayor.description",
+      "value": "Выполните контракт, выигранный на аукционе."
+    },
+    {
+      "key": "achievement.network8.title",
+      "value": "Весь город"
+    },
+    {
+      "key": "achievement.network8.description",
+      "value": "Соберите сеть на 8 районов."
+    },
+    {
+      "key": "achievement.traffic3.title",
+      "value": "Час пик"
+    },
+    {
+      "key": "achievement.traffic3.description",
+      "value": "Пусть по одной вашей дороге едут 3 маршрута соперников."
+    },
+    {
+      "key": "achievement.upgrades3.title",
+      "value": "Магистрали"
+    },
+    {
+      "key": "achievement.upgrades3.description",
+      "value": "Улучшите за партию 3 дороги до магистрали."
+    },
+    {
+      "key": "achievement.score130.title",
+      "value": "Рекордсмен"
+    },
+    {
+      "key": "achievement.score130.description",
+      "value": "Наберите за партию 130 очков."
+    },
+    {
+      "key": "achievement.big_win.title",
+      "value": "Против всех"
+    },
+    {
+      "key": "achievement.big_win.description",
+      "value": "Выиграйте партию на пятерых (в соревновании)."
+    },
+    {
+      "key": "achievement.coop_win.title",
+      "value": "Город спасён"
+    },
+    {
+      "key": "achievement.coop_win.description",
+      "value": "Выиграйте кооперативную партию «Город против всех»."
+    },
+    {
+      "key": "achievement.coop_clean.title",
+      "value": "Ни одного срыва"
+    },
+    {
+      "key": "achievement.coop_clean.description",
+      "value": "Выиграйте кооператив, не просрочив ни одного заказа города."
+    },
+    {
+      "key": "achievement.mg_first.title",
+      "value": "Первая доставка"
+    },
+    {
+      "key": "achievement.mg_first.description",
+      "value": "Магнат: доставьте первый груз."
+    },
+    {
+      "key": "achievement.mg_win.title",
+      "value": "Логистический магнат"
+    },
+    {
+      "key": "achievement.mg_win.description",
+      "value": "Магнат: выиграйте партию."
+    },
+    {
+      "key": "achievement.mg_nojam.title",
+      "value": "Зелёная волна"
+    },
+    {
+      "key": "achievement.mg_nojam.description",
+      "value": "Магнат: доставьте 6 грузов и ни разу не встаньте в пробку."
+    },
+    {
+      "key": "achievement.mg_cold.title",
+      "value": "Холодная цепь"
+    },
+    {
+      "key": "achievement.mg_cold.description",
+      "value": "Магнат: довезите вовремя 4 скоропортящихся груза."
+    },
+    {
+      "key": "achievement.mg_hub.title",
+      "value": "Мегахаб"
+    },
+    {
+      "key": "achievement.mg_hub.description",
+      "value": "Магнат: владейте хабом 5-го уровня в конце партии (владелец — кто вложил в хаб больше всех)."
+    },
+    {
+      "key": "achievement.mg_contracts.title",
+      "value": "Подрядчик мэрии"
+    },
+    {
+      "key": "achievement.mg_contracts.description",
+      "value": "Магнат: первым выполните 2 заказа мэрии за партию."
+    },
+    {
+      "key": "achievement.mg_legend.title",
+      "value": "Легенда дорог"
+    },
+    {
+      "key": "achievement.mg_legend.description",
+      "value": "Магнат: поднимите репутацию до уровня «Легенда»."
+    },
+    {
+      "key": "achievement.mg_expert.title",
+      "value": "Эксперт"
+    },
+    {
+      "key": "achievement.mg_expert.description",
+      "value": "Магнат: выиграйте на сложности «Эксперт»."
+    },
+    {
+      "key": "achievement.seasons.title",
+      "value": "Все сезоны"
+    },
+    {
+      "key": "achievement.seasons.description",
+      "value": "Выиграйте в каждом сценарии: Зима, Большой город, Год ремонта, Выборы мэра."
+    },
+    {
+      "key": "achievement.companies.title",
+      "value": "Все компании"
+    },
+    {
+      "key": "achievement.companies.description",
+      "value": "Выиграйте за каждого персонажа."
+    },
+    {
+      "key": "achievement.travel.title",
+      "value": "Турне"
+    },
+    {
+      "key": "achievement.travel.description",
+      "value": "Сыграйте партию на каждой карте: Москва, Амстердам, Чунцин."
+    },
+    {
+      "key": "achievement.veteran.title",
+      "value": "Ветеран"
+    },
+    {
+      "key": "achievement.veteran.description",
+      "value": "Сыграйте 25 партий."
+    },
+    {
+      "key": "daily.d_contracts3.title",
+      "value": "Выполните 3 контракта за партию"
+    },
+    {
+      "key": "daily.d_bridges2.title",
+      "value": "Постройте 2 моста"
+    },
+    {
+      "key": "daily.d_tolls4.title",
+      "value": "Получите 4 очка за проезд от соперников"
+    },
+    {
+      "key": "daily.d_upgrade.title",
+      "value": "Улучшите дорогу до магистрали"
+    },
+    {
+      "key": "daily.d_win.title",
+      "value": "Выиграйте партию"
+    },
+    {
+      "key": "daily.d_long.title",
+      "value": "Постройте дорогу длиной 4 и больше"
+    },
+    {
+      "key": "daily.d_final.title",
+      "value": "Выполните финальный заказ мэрии"
+    },
+    {
+      "key": "daily.d_network6.title",
+      "value": "Соберите сеть на 6 районов"
+    },
+    {
+      "key": "daily.d_scenario.title",
+      "value": "Сыграйте партию в любом сценарии, кроме обычных правил"
+    },
+    {
+      "key": "daily.d_clean.title",
+      "value": "Выполните 2 контракта и ни одного не провалите"
     }
   ]
 }

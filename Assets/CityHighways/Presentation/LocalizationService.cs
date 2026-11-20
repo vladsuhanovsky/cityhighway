@@ -99,6 +99,15 @@ namespace CityHighways.Presentation
             return text;
         }
 
+        /// <summary>Look up translated UI data by stable ID, preserving its Russian source as fallback.</summary>
+        public static string GetOrFallback(string key, string fallback)
+        {
+            EnsureLoaded();
+            if (_language == "en" && English.TryGetValue(key, out var english)) return english;
+            if (Russian.TryGetValue(key, out var russian)) return russian;
+            return fallback ?? "";
+        }
+
         public static string Get(string key)
         {
             EnsureLoaded();
