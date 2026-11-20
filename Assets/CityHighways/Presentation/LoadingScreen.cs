@@ -6,21 +6,25 @@ using UnityEngine.UIElements;
 namespace CityHighways.Presentation
 {
     /// <summary>
-    /// Экран загрузки «Логистического магната»: пока генерируется город и строится 3D, видно, что происходит.
+    /// Экран загрузки партии (магнат, соревнование, кооператив): пока готовится карта и строится 3D, видно, что происходит.
     /// Шаги выполняются по одному за кадр (между ними интерфейс успевает перерисоваться): полоса растёт,
-    /// подпись меняется, по полосе едет фура, внизу — советы по правилам (сменяются каждые 5 с). Фон — картина из
-    /// Scenario с медленным приближением, после первого шага под заголовком — название города.
+    /// подпись меняется, по полосе едет фура цвета режима, внизу — советы по правилам режима (сменяются каждые 5 с).
+    /// Фон — картина режима из Scenario с медленным приближением, после первого шага под заголовком — название города.
+    /// Готовые наборы: <see cref="Magnate"/>, <see cref="Competition"/>, <see cref="Cooperative"/>.
     /// Ошибка на любом шаге — сообщение и кнопка «В меню».
     /// </summary>
-    public sealed class MagnateLoading
+    public sealed class LoadingScreen
     {
         public VisualElement Root { get; }
         readonly Label _title, _subtitle, _stage, _tip;
         readonly VisualElement _bar, _truck, _art;
+        readonly string[] _tips;
+        readonly string _failText;
+        readonly Color _accent;
         int _tipIndex;
         float _time;
 
-        static readonly string[] Tips =
+        public static readonly string[] MagnateTips =
         {
             "Скоропорт приносит много очков, но за каждый лишний раунд в пути теряет по 2.",
             "Тяжеловес едет только по широким дорогам: бетон, мосты и магистрали.",
@@ -39,17 +43,65 @@ namespace CityHighways.Presentation
             "Тупики и единственные переправы строят только игроки — это ценные участки.",
         };
 
-        public MagnateLoading(string title)
+        public static readonly string[] CompetitionTips =
         {
+            "Длинные дороги приносят больше очков: дорога из 6 участков выгоднее трёх по 2.",
+            "Цвет дороги — её ресурс. Белую дорогу можно построить картами любого одного цвета.",
+            "Техника заменяет любую карту, но открытую технику можно взять только первой картой — и это весь ход.",
+            "Невыполненный контракт в конце партии отнимает очки — не набирайте лишних.",
+            "Контракт засчитается и через чужие дороги, если на пути есть хотя бы одна ваша, — но владельцу придётся заплатить.",
+            "Соперники платят вам за проезд по вашим дорогам — стройте там, где все захотят ехать.",
+            "Свою дорогу можно улучшить до магистрали: больше очков и дороже проезд для соперников.",
+            "Загруженная дорога встаёт в пробку — объезд может оказаться выгоднее.",
+            "Сделка не тратит ход: раз в ход предложите сопернику обмен картами.",
+            "Пропуск, проданный в сделке, позволяет сопернику до конца партии ездить по вашим дорогам бесплатно.",
+            "Влияние в очки не превращается — тратьте его во время партии.",
+            "Цель мэрии достаётся только первому, кто её выполнит.",
+            "Когда у кого-то остаётся мало участков дороги, начинается последний круг — следите за счётчиком.",
+            "Взятка в последнем круге — риск: перед итогами нераскрытые взятки могут всплыть.",
+            "Карта удачи может принести и баф, и дебаф — под кнопкой «Удача» видно, что осталось в колоде.",
+        };
+
+        public static readonly string[] CooperativeTips =
+        {
+            "Все компании — одна команда, противник — сам город. Побеждаете или проигрываете вместе.",
+            "Сеть общая: дорога любого союзника засчитывается в ваши заказы, и проезд по ней бесплатный.",
+            "Кризис растёт сам каждые несколько кругов, а ремонт, снегопад и парад добавляют ещё.",
+            "Если кризис дойдёт до предела — команда проиграла. Не тяните с заказами.",
+            "Сделки помогают делиться картами: отдайте союзнику ресурс, которого ему не хватает.",
+            "Взяток, аукциона и пропусков в кооперативе нет — только общая стройка.",
+            "Договоритесь, кто какой район тянет, чтобы не строить две дороги в одно место.",
+            "Длинная общая магистраль закрывает сразу несколько заказов.",
+            "Чем больше игроков, тем больше заказов нужно выполнить для победы.",
+            "Когда у кого-то кончаются участки, начинается последний круг — заказов к этому времени должно хватить.",
+        };
+
+        public static LoadingScreen Magnate() =>
+            new LoadingScreen("Логистический магнат", "Генерируем новый город", MagnateTips,
+                GeneratedArt.MagnateLoading, GameColors.Accent, "Не удалось построить город: ");
+
+        public static LoadingScreen Competition(string title = "Соревнование") =>
+            new LoadingScreen(title, "Готовим партию", CompetitionTips,
+                GeneratedArt.CompetitionLoading, GameColors.Accent, "Не удалось начать партию: ");
+
+        public static LoadingScreen Cooperative() =>
+            new LoadingScreen("Кооператив", "Собираем команду против города", CooperativeTips,
+                GeneratedArt.CooperativeLoading, Theme.Success, "Не удалось начать партию: ");
+
+        public LoadingScreen(string title, string subtitle, string[] tips, string artPath, Color accent, string failText)
+        {
+            _tips = tips != null && tips.Length > 0 ? tips : MagnateTips;
+            _accent = accent;
+            _failText = failText ?? "Ошибка: ";
             Root = new VisualElement();
             Ui.Fill(Root);
             Root.style.backgroundColor = new Color(0.07f, 0.09f, 0.12f, 1f);
             Root.style.alignItems = Align.Center;
             Root.style.justifyContent = Justify.Center;
             Root.pickingMode = PickingMode.Position;
-            // Картина из Scenario (логистический город на закате, если нет — ключевой арт меню): фоном, медленно
+            // Картина режима из Scenario (если нет — ключевой арт меню): фоном, медленно
             // приближается (эффект Кена Бёрнса). Сверху — лёгкое затемнение и тёмная плашка под текстом.
-            var art = GeneratedArt.Load(GeneratedArt.MagnateLoading) ?? GeneratedArt.Load(GeneratedArt.KeyArt);
+            var art = (artPath != null ? GeneratedArt.Load(artPath) : null) ?? GeneratedArt.Load(GeneratedArt.KeyArt);
             if (art != null)
             {
                 _art = new VisualElement();
@@ -79,7 +131,7 @@ namespace CityHighways.Presentation
             _title = Ui.Text(title, 34f, Theme.Text, true);
             _title.style.marginBottom = 6f;
             box.Add(_title);
-            _subtitle = Ui.Text("Генерируем новый город", 16f, Theme.TextDim);
+            _subtitle = Ui.Text(subtitle ?? "", 16f, Theme.TextDim);
             _subtitle.style.marginBottom = 34f;
             box.Add(_subtitle);
 
@@ -88,7 +140,7 @@ namespace CityHighways.Presentation
             lane.style.width = 520f;
             lane.style.height = 22f;
             box.Add(lane);
-            _truck = new TruckIcon();
+            _truck = new TruckIcon(_accent);
             _truck.style.position = Position.Absolute;
             _truck.style.bottom = 0f;
             _truck.style.left = Length.Percent(2f);
@@ -106,7 +158,7 @@ namespace CityHighways.Presentation
             _bar = new VisualElement();
             _bar.style.height = Length.Percent(100f);
             _bar.style.width = Length.Percent(2f);
-            _bar.style.backgroundColor = GameColors.Accent;
+            _bar.style.backgroundColor = _accent;
             Ui.Radius(_bar, 5f);
             Ui.Transitions(_bar, 0.25f, "width");
             track.Add(_bar);
@@ -115,8 +167,8 @@ namespace CityHighways.Presentation
             _stage.style.marginTop = 14f;
             box.Add(_stage);
 
-            _tipIndex = UnityEngine.Random.Range(0, Tips.Length);
-            _tip = Ui.Text("Совет: " + Tips[_tipIndex], 14f, Theme.TextDim);
+            _tipIndex = UnityEngine.Random.Range(0, _tips.Length);
+            _tip = Ui.Text("Совет: " + _tips[_tipIndex], 14f, Theme.TextDim);
             _tip.style.marginTop = 34f;
             _tip.style.whiteSpace = WhiteSpace.Normal;
             _tip.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -148,8 +200,8 @@ namespace CityHighways.Presentation
                 _tip.style.opacity = 0f;
                 _tip.schedule.Execute(() =>
                 {
-                    _tipIndex = (_tipIndex + 1) % Tips.Length;
-                    _tip.text = "Совет: " + Tips[_tipIndex];
+                    _tipIndex = (_tipIndex + 1) % _tips.Length;
+                    _tip.text = "Совет: " + _tips[_tipIndex];
                     _tip.style.opacity = 1f;
                 }).ExecuteLater(350);
             }
@@ -157,24 +209,33 @@ namespace CityHighways.Presentation
 
         int _shownSlot;
 
-        /// <summary>Город сгенерирован — показать его название под заголовком.</summary>
+        /// <summary>Город сгенерирован или карта загружена — показать его название под заголовком.</summary>
         public void SetCity(string name)
         {
             if (!string.IsNullOrEmpty(name)) _subtitle.text = $"Город «{name}»";
         }
 
-        /// <summary>Маленькая фура цвета акцента: прицеп, кабина с окном, колёса.</summary>
+        /// <summary>Своя подпись под заголовком (например, «Карта «Москва» · 4 компании»).</summary>
+        public void SetSubtitle(string text)
+        {
+            if (!string.IsNullOrEmpty(text)) _subtitle.text = text;
+        }
+
+        /// <summary>Маленькая фура цвета режима: прицеп, кабина с окном, колёса.</summary>
         sealed class TruckIcon : VisualElement
         {
-            public TruckIcon()
+            readonly Color _color;
+
+            public TruckIcon(Color color)
             {
+                _color = color;
                 style.width = 40f;
                 style.height = 20f;
                 pickingMode = PickingMode.Ignore;
                 generateVisualContent += Draw;
             }
 
-            static void Draw(MeshGenerationContext context)
+            void Draw(MeshGenerationContext context)
             {
                 var p = context.painter2D;
                 void Fill(float x, float y, float w, float h, Color color)
@@ -188,8 +249,8 @@ namespace CityHighways.Presentation
                     p.ClosePath();
                     p.Fill();
                 }
-                Fill(1f, 2f, 25f, 12f, GameColors.Accent);                       // прицеп
-                Fill(27f, 6f, 11f, 8f, GameColors.Accent * 0.85f);              // кабина
+                Fill(1f, 2f, 25f, 12f, _color);                       // прицеп
+                Fill(27f, 6f, 11f, 8f, new Color(_color.r * 0.85f, _color.g * 0.85f, _color.b * 0.85f, 1f));              // кабина
                 Fill(31f, 7.5f, 5f, 3.5f, new Color(0.75f, 0.88f, 1f, 1f));     // окно
                 p.fillColor = new Color(0.12f, 0.12f, 0.14f, 1f);
                 foreach (float x in new[] { 7f, 19f, 33f })
@@ -230,7 +291,7 @@ namespace CityHighways.Presentation
                     catch (Exception e)
                     {
                         Debug.LogException(e);
-                        Fail(app, "Не удалось построить город: " + e.Message, onError);
+                        Fail(app, _failText + e.Message, onError);
                         return;
                     }
                     index++;

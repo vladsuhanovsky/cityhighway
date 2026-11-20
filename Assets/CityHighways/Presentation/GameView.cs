@@ -1104,7 +1104,10 @@ namespace CityHighways.Presentation
 
             _map.TiltEnabled = _app.Display == null || _app.Display.tiltedBoard;
             _map.SetGame(_game);
-            Setup3D();
+            // Под экраном загрузки 3D-город строится отдельным шагом (Build3D), чтобы полоса загрузки двигалась.
+            bool deferred = DeferStart;
+            DeferStart = false;
+            if (!deferred) Setup3D();
             ApplyLayers();
             SetupAbilityMarks();
             _minimap.SetGame(_game);
@@ -1141,8 +1144,37 @@ namespace CityHighways.Presentation
             _coach = _setup.tutorial ? new TutorialCoach(_game, _map) : null;
             if (_coach != null) _fx.Add(_coach.Panel);
             bool showTutorial = !Online && !_setup.tutorial && HumanCount > 0 && PlayerPrefs.GetInt(TutorialPrefsKey, 0) == 0;
-            if (showTutorial) _app.Tweener.After(0.5f, () => ShowTutorialStep(0));
-            else _app.Tweener.After(0.4f, OnTurnStarted);
+            Action start = () =>
+            {
+                if (showTutorial) _app.Tweener.After(0.5f, () => ShowTutorialStep(0));
+                else _app.Tweener.After(0.4f, OnTurnStarted);
+            };
+            // Под экраном загрузки первый ход ждёт, пока экран не уберут (ReleaseStart): боты не ходят, таймер не идёт.
+            if (deferred) _pendingStart = start;
+            else start();
+        }
+
+        /// <summary>
+        /// Партия запускается под экраном загрузки: Begin не строит 3D и не начинает первый ход —
+        /// это делают Build3D и ReleaseStart отдельными шагами. Сбрасывается в первом же Begin.
+        /// </summary>
+        public bool DeferStart { get; set; }
+        Action _pendingStart;
+
+        /// <summary>Шаг загрузки: построить 3D-город для уже начатой партии.</summary>
+        public void Build3D()
+        {
+            if (_game == null) return;
+            Setup3D();
+            ApplyLayers();
+        }
+
+        /// <summary>Экран загрузки убран — начать первый ход (или первое знакомство с правилами).</summary>
+        public void ReleaseStart()
+        {
+            var start = _pendingStart;
+            _pendingStart = null;
+            start?.Invoke();
         }
 
         public void Tick(float deltaTime)

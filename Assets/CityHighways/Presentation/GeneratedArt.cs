@@ -16,6 +16,10 @@ namespace CityHighways.Presentation
         public const string KeyArt = "CityHighways/UI/key_art";
         /// <summary>Экран загрузки магната: логистический город на закате (Scenario, GPT Image 2.5).</summary>
         public const string MagnateLoading = "CityHighways/UI/magnate_loading";
+        /// <summary>Экран загрузки соревнования: стройка дорог наперегонки (Scenario, GPT Image 2.5).</summary>
+        public const string CompetitionLoading = "CityHighways/UI/competition_loading";
+        /// <summary>Экран загрузки кооператива: все компании строят одну сеть против кризиса (Scenario, GPT Image 2.5).</summary>
+        public const string CooperativeLoading = "CityHighways/UI/coop_loading";
         public const string GroundTexture = "CityHighways/City3D/Textures/ground";
         public const string AsphaltTexture = "CityHighways/City3D/Textures/asphalt";
         public const string PavingTexture = "CityHighways/City3D/Textures/paving";

@@ -91,7 +91,7 @@ namespace CityHighways.Presentation
 
         void OnSteamJoinRequested(ulong lobby)
         {
-            if (_game != null || _magnate != null) return; // посреди партии приглашения не принимаем
+            if (_game != null || _magnate != null || _loading != null) return; // посреди партии и загрузки приглашения не принимаем
             if (_menu == null) ShowMenu();
             _menu?.JoinSteamLobby(lobby);
         }
@@ -131,6 +131,7 @@ namespace CityHighways.Presentation
             _magnate?.Release3D();
             _magnate = null;
             _game = null;
+            _loading = null;
             _root.Clear();
             var setup = GameSetup.Load();
             Sound.Enabled = setup.sound;
@@ -179,11 +180,80 @@ namespace CityHighways.Presentation
             _root.Clear();
             _menu = null;
             _game?.Release3D();
+            _game = null;
             _magnate?.Release3D();
             _magnate = null;
-            _game = new GameView(this, setup, Net);
-            _root.Add(_game.Root);
-            _game.StartOnline();
+            var net = Net;
+            LaunchGameView(setup, net, LoadingFor(net.Game.Config.Cooperative), net.Game.Map.Name, view => view.StartOnline());
+        }
+
+        /// <summary>Открытый экран загрузки (пока он есть, партия ещё не началась).</summary>
+        LoadingScreen _loading;
+
+        /// <summary>Экран загрузки по режиму: кооператив — свой фон и советы, иначе соревнование.</summary>
+        static LoadingScreen LoadingFor(bool cooperative, string title = null) =>
+            cooperative ? LoadingScreen.Cooperative() : LoadingScreen.Competition(title ?? "Соревнование");
+
+        /// <summary>Название карты для подписи экрана загрузки (не загрузилась — без подписи, ошибку покажет партия).</summary>
+        static string MapNameOf(string resourcePath)
+        {
+            try
+            {
+                return LoadMap(resourcePath)?.Name;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Соревнование и кооператив (новая, продолженная, сетевая партия, обучение) — через экран загрузки:
+        /// интерфейс, раздача, 3D-город — по шагу за кадр; первый ход начинается, когда экран убран.
+        /// </summary>
+        void LaunchGameView(GameSetup setup, NetSession net, LoadingScreen loading, string mapName, Action<GameView> start)
+        {
+            _root.Clear();
+            _menu = null;
+            _loading = loading;
+            _root.Add(loading.Root);
+            int people = setup.players.Count;
+            if (!string.IsNullOrEmpty(mapName))
+                loading.SetSubtitle($"Карта «{mapName}» · {people} {Plural(people, "компания", "компании", "компаний")}");
+            GameView view = null;
+            var steps = new List<(string, Action)>
+            {
+                ("Раскладываем карту и правила…", () =>
+                {
+                    view = net != null ? new GameView(this, setup, net) : new GameView(this, setup);
+                    view.DeferStart = true;
+                    _root.Insert(0, view.Root);
+                }),
+                ("Тасуем колоды, раздаём контракты и ресурсы…", () => start(view)),
+                ("Поднимаем дома, прокладываем улицы, запускаем машины…", () => view.Build3D()),
+                ("Выдаём технику бригадам…", () => { }),
+            };
+            loading.Run(this, steps, () =>
+            {
+                if (_loading != loading) return;
+                _loading = null;
+                _game = view;
+                loading.Root.RemoveFromHierarchy();
+                view.ReleaseStart();
+            }, () =>
+            {
+                _loading = null;
+                view?.Release3D();
+                ShowMenu();
+            });
+        }
+
+        static string Plural(int n, string one, string few, string many)
+        {
+            int mod10 = n % 10, mod100 = n % 100;
+            if (mod10 == 1 && mod100 != 11) return one;
+            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+            return many;
         }
 
         public void StartGame(GameSetup setup)
@@ -200,11 +270,10 @@ namespace CityHighways.Presentation
             _root.Clear();
             _menu = null;
             _game?.Release3D();
+            _game = null;
             _magnate?.Release3D();
             _magnate = null;
-            _game = new GameView(this, setup);
-            _root.Add(_game.Root);
-            _game.StartNewGame();
+            LaunchGameView(setup, null, LoadingFor(setup.cooperative), MapNameOf(setup.mapResourcePath), view => view.StartNewGame());
         }
 
         /// <summary>
@@ -241,7 +310,7 @@ namespace CityHighways.Presentation
             _magnate?.Release3D();
             _magnate = null;
 
-            var loading = new MagnateLoading("Логистический магнат");
+            var loading = LoadingScreen.Magnate();
             _root.Add(loading.Root);
             int seed = Environment.TickCount & 0x7FFFFFFF;
             var names = setup.players.Select(p => p.name).ToList();
@@ -302,11 +371,10 @@ namespace CityHighways.Presentation
             _root.Clear();
             _menu = null;
             _game?.Release3D();
+            _game = null;
             _magnate?.Release3D();
             _magnate = null;
-            _game = new GameView(this, setup);
-            _root.Add(_game.Root);
-            _game.StartNewGame();
+            LaunchGameView(setup, null, LoadingFor(false, "Обучение"), MapNameOf(setup.mapResourcePath), view => view.StartNewGame());
         }
 
         public void ContinueGame(SaveFile file)
@@ -318,11 +386,10 @@ namespace CityHighways.Presentation
             _root.Clear();
             _menu = null;
             _game?.Release3D();
+            _game = null;
             _magnate?.Release3D();
             _magnate = null;
-            _game = new GameView(this, file.setup);
-            _root.Add(_game.Root);
-            _game.ContinueGame(file);
+            LaunchGameView(file.setup, null, LoadingFor(file.setup.cooperative), MapNameOf(file.setup.mapResourcePath), view => view.ContinueGame(file));
         }
 
         /// <summary>Загружает карту города из Resources (путь без расширения, например "CityHighways/Maps/moscow").</summary>
