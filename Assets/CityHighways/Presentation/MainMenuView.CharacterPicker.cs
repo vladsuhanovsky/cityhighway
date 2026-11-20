@@ -74,7 +74,7 @@ namespace CityHighways.Presentation
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning("Статистика персонажей не прочитана: " + e.Message);
+                Debug.LogWarning(LocalizationService.Get("menu.characters.001") + e.Message);
             }
             return result;
         }
@@ -124,10 +124,10 @@ namespace CityHighways.Presentation
             var head = Ui.Row();
             head.style.alignItems = Align.Center;
             head.style.marginBottom = 12f;
-            var back = Ui.Button("← Назад", CloseCharacterPicker, ButtonKind.Ghost, 14f);
+            var back = Ui.Button(LocalizationService.Get("menu.characters.002"), CloseCharacterPicker, ButtonKind.Ghost, 14f);
             back.style.marginRight = 12f;
             head.Add(back);
-            var title = Ui.Text("Выбор компании (персонажа)", 20f, Theme.Text, true);
+            var title = Ui.Text(LocalizationService.Get("menu.characters.003"), 20f, Theme.Text, true);
             title.style.flexGrow = 1f;
             head.Add(title);
             var who = Ui.Text(string.IsNullOrWhiteSpace(slot.name) ? $"Игрок {_pickerSlot + 1}" : slot.name, 14f, Palette.PlayerColor(_pickerSlot), true);
@@ -224,7 +224,7 @@ namespace CityHighways.Presentation
             right.Add(quote);
 
             right.Add(Divider());
-            right.Add(SectionTitle("СПОСОБНОСТЬ", accent));
+            right.Add(SectionTitle(LocalizationService.Get("menu.characters.004"), accent));
             var ability = Ui.Text(Characters.Ability(kind, config), 15f, Theme.Text);
             ability.style.whiteSpace = WhiteSpace.Normal;
             ability.style.marginTop = 4f;
@@ -235,10 +235,10 @@ namespace CityHighways.Presentation
             right.Add(hint);
 
             right.Add(Divider());
-            right.Add(SectionTitle("СТАТИСТИКА ПОБЕД", accent));
+            right.Add(SectionTitle(LocalizationService.Get("menu.characters.005"), accent));
             _pickerStats.TryGetValue(Characters.Title(kind), out var stat);
             string statText = stat.played == 0
-                ? "Ещё не играли этим персонажем."
+                ? LocalizationService.Get("menu.characters.006")
                 : $"Сыграно: {stat.played}  |  Побед: {stat.won} ({Mathf.RoundToInt(100f * stat.won / stat.played)}%)";
             var stats = Ui.Text(statText, 15f, Theme.Text);
             stats.style.marginTop = 4f;
@@ -274,21 +274,21 @@ namespace CityHighways.Presentation
             foot.style.alignItems = Align.Center;
             foot.style.marginTop = 16f;
             bool chosen = slot.character == (int)kind;
-            var choose = Ui.Button(chosen ? "Этот персонаж выбран" : "Выбрать этого персонажа", () => PickCharacter((int)kind), ButtonKind.Primary, 15f);
+            var choose = Ui.Button(chosen ? LocalizationService.Get("menu.characters.007") : LocalizationService.Get("menu.characters.008"), () => PickCharacter((int)kind), ButtonKind.Primary, 15f);
             choose.style.marginRight = 10f;
             foot.Add(choose);
-            var random = Ui.Button("Случайный выбор", () => PickCharacter(PlayerSlot.RandomCharacter),
+            var random = Ui.Button(LocalizationService.Get("menu.characters.009"), () => PickCharacter(PlayerSlot.RandomCharacter),
                 slot.character == PlayerSlot.RandomCharacter ? ButtonKind.Primary : ButtonKind.Secondary, 15f);
             random.style.marginRight = 10f;
             foot.Add(random);
             var spacer = new VisualElement();
             spacer.style.flexGrow = 1f;
             foot.Add(spacer);
-            var draft = Ui.Button("Выбор из двух в начале", () => PickCharacter(PlayerSlot.DraftCharacter),
+            var draft = Ui.Button(LocalizationService.Get("menu.characters.010"), () => PickCharacter(PlayerSlot.DraftCharacter),
                 slot.character == PlayerSlot.DraftCharacter ? ButtonKind.Secondary : ButtonKind.Ghost, 13f);
             draft.style.marginRight = 6f;
             foot.Add(draft);
-            foot.Add(Ui.Button("Без персонажа", () => PickCharacter(0), slot.character == 0 ? ButtonKind.Secondary : ButtonKind.Ghost, 13f));
+            foot.Add(Ui.Button(LocalizationService.Get("menu.characters.011"), () => PickCharacter(0), slot.character == 0 ? ButtonKind.Secondary : ButtonKind.Ghost, 13f));
             panel.Add(foot);
 
             Root.Add(overlay);

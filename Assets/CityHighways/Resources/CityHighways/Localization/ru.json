@@ -4039,6 +4039,50 @@
     {
       "key": "menu.tutorial.038",
       "value": "Правила кооператива"
+    },
+    {
+      "key": "menu.characters.001",
+      "value": "Статистика персонажей не прочитана: "
+    },
+    {
+      "key": "menu.characters.002",
+      "value": "← Назад"
+    },
+    {
+      "key": "menu.characters.003",
+      "value": "Выбор компании (персонажа)"
+    },
+    {
+      "key": "menu.characters.004",
+      "value": "СПОСОБНОСТЬ"
+    },
+    {
+      "key": "menu.characters.005",
+      "value": "СТАТИСТИКА ПОБЕД"
+    },
+    {
+      "key": "menu.characters.006",
+      "value": "Ещё не играли этим персонажем."
+    },
+    {
+      "key": "menu.characters.007",
+      "value": "Этот персонаж выбран"
+    },
+    {
+      "key": "menu.characters.008",
+      "value": "Выбрать этого персонажа"
+    },
+    {
+      "key": "menu.characters.009",
+      "value": "Случайный выбор"
+    },
+    {
+      "key": "menu.characters.010",
+      "value": "Выбор из двух в начале"
+    },
+    {
+      "key": "menu.characters.011",
+      "value": "Без персонажа"
     }
   ]
 }

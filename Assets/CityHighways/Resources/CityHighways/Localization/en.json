@@ -4039,6 +4039,50 @@
     {
       "key": "menu.tutorial.038",
       "value": "Co-op Rules"
+    },
+    {
+      "key": "menu.characters.001",
+      "value": "Could not load character statistics: "
+    },
+    {
+      "key": "menu.characters.002",
+      "value": "← Back"
+    },
+    {
+      "key": "menu.characters.003",
+      "value": "Choose Company (Character)"
+    },
+    {
+      "key": "menu.characters.004",
+      "value": "ABILITY"
+    },
+    {
+      "key": "menu.characters.005",
+      "value": "WIN STATISTICS"
+    },
+    {
+      "key": "menu.characters.006",
+      "value": "No games with this character yet."
+    },
+    {
+      "key": "menu.characters.007",
+      "value": "Character Selected"
+    },
+    {
+      "key": "menu.characters.008",
+      "value": "Choose This Character"
+    },
+    {
+      "key": "menu.characters.009",
+      "value": "Random Choice"
+    },
+    {
+      "key": "menu.characters.010",
+      "value": "Choose One of Two at Start"
+    },
+    {
+      "key": "menu.characters.011",
+      "value": "No Character"
     }
   ]
 }
