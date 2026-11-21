@@ -108,14 +108,14 @@ namespace CityHighways.Presentation
             _coachButtons.Clear();
             if (!info.action || step == CoachBuild)
             {
-                var next = Ui.Button(step == CoachEnd ? "Понятно" : info.action ? "Пропустить шаг" : "Дальше",
+                var next = Ui.Button(En ? (step == CoachEnd ? "Got it" : info.action ? "Skip Step" : "Next") : (step == CoachEnd ? "Понятно" : info.action ? "Пропустить шаг" : "Дальше"),
                     () => { _app.Sound.Play(Sfx.Click, 0.5f); if (step == CoachEnd) FinishCoach(); else SetCoachStep(step + 1); },
                     info.action ? ButtonKind.Secondary : ButtonKind.Primary, 13f);
                 next.style.marginRight = 8f;
                 _coachButtons.Add(next);
             }
             if (step != CoachEnd)
-                _coachButtons.Add(Ui.Button("Пропустить обучение", FinishCoach, ButtonKind.Ghost, 12f));
+                _coachButtons.Add(Ui.Button(En ? "Skip Tutorial" : "Пропустить обучение", FinishCoach, ButtonKind.Ghost, 12f));
             _dirty = true;
             UpdateCoachVisibility();
         }
