@@ -3462,6 +3462,16 @@ namespace CityHighways.Presentation
             _overlayPlayer = bidder;
         }
 
+        static string TradeSide(int count, Resource resource, int influence, bool pass = false)
+        {
+            if (!EnglishUi) return TradeOffer.Side(count, resource, influence, pass);
+            var parts = new List<string>();
+            if (count > 0) parts.Add($"{count} × {Palette.CardTitle(resource)}");
+            if (influence > 0) parts.Add($"{influence} influence");
+            if (pass) parts.Add("road pass");
+            return parts.Count > 0 ? string.Join(" and ", parts) : "nothing";
+        }
+
         // ================================================================== Сделки и улучшение
 
         /// <summary>Окно сделки: кому, что отдать и что попросить. Карты у вас — видны, у соперника — нет.</summary>
@@ -3499,11 +3509,15 @@ namespace CityHighways.Presentation
 
             void RefreshSummary()
             {
-                string passProblem = givePass && _game.HasPass(to, me.Index) ? $" У {_game.Players[to].Name} уже есть ваш пропуск."
-                    : getPass && _game.HasPass(me.Index, to) ? $" У вас уже есть пропуск {_game.Players[to].Name}." : "";
-                summary.text = $"{_game.Players[to].Name} получит {TradeOffer.Side(giveCount, give, giveInfluence, givePass)}, " +
-                               $"а вы — {TradeOffer.Side(getCount, get, getInfluence, getPass)}. У вас {Palette.CardTitle(give)}: {me.CardCount(give)}"
-                               + (influenceOn ? $", влияния: {me.Influence}." : ".") + passProblem;
+                string passProblem = givePass && _game.HasPass(to, me.Index)
+                    ? (EnglishUi ? $" {_game.Players[to].Name} already has your road pass." : $" У {_game.Players[to].Name} уже есть ваш пропуск.")
+                    : getPass && _game.HasPass(me.Index, to)
+                        ? (EnglishUi ? $" You already have {_game.Players[to].Name}'s road pass." : $" У вас уже есть пропуск {_game.Players[to].Name}.") : "";
+                summary.text = EnglishUi
+                    ? $"{_game.Players[to].Name} receives {TradeSide(giveCount, give, giveInfluence, givePass)}; you receive {TradeSide(getCount, get, getInfluence, getPass)}. Your {Palette.CardTitle(give)}: {me.CardCount(give)}" + (influenceOn ? $", influence: {me.Influence}." : ".") + passProblem
+                    : $"{_game.Players[to].Name} получит {TradeSide(giveCount, give, giveInfluence, givePass)}, " +
+                      $"а вы — {TradeSide(getCount, get, getInfluence, getPass)}. У вас {Palette.CardTitle(give)}: {me.CardCount(give)}" +
+                      (influenceOn ? $", влияния: {me.Influence}." : ".") + passProblem;
                 bool valid = (giveCount + giveInfluence > 0 || givePass) && (getCount + getInfluence > 0 || getPass)
                              && !(giveCount > 0 && getCount > 0 && give == get)
                              && me.CardCount(give) >= giveCount && me.Influence >= giveInfluence
@@ -3606,12 +3620,11 @@ namespace CityHighways.Presentation
             var who = Ui.Text(_game.Players[offer.From].Name, 30f, Palette.PlayerColor(offer.From), true);
             who.style.marginTop = 4f;
             box.Add(who);
-            string mine = offer.GetCount > 0 ? $"у вас {me.CardCount(offer.GetResource)} × {Palette.CardTitle(offer.GetResource)}" : "";
-            if (offer.GetInfluence > 0) mine += (mine.Length > 0 ? ", " : "") + $"влияния {me.Influence}";
+            string mine = offer.GetCount > 0 ? (EnglishUi ? $"you have {me.CardCount(offer.GetResource)} × {Palette.CardTitle(offer.GetResource)}" : $"у вас {me.CardCount(offer.GetResource)} × {Palette.CardTitle(offer.GetResource)}") : "";
+            if (offer.GetInfluence > 0) mine += (mine.Length > 0 ? ", " : "") + (EnglishUi ? $"influence {me.Influence}" : $"влияния {me.Influence}");
             string passNote = offer.GivePass || offer.GetPass
-                ? "\n<size=13>Пропуск — бесплатный проезд по всем дорогам продавца до конца партии.</size>" : "";
-            var text = Ui.Text($"Вы получите {TradeOffer.Side(offer.GiveCount, offer.GiveResource, offer.GiveInfluence, offer.GivePass)}\n" +
-                               $"и отдадите {TradeOffer.Side(offer.GetCount, offer.GetResource, offer.GetInfluence, offer.GetPass)}" +
+                ? (EnglishUi ? "\n<size=13>A road pass allows free travel on all roads owned by the seller until the game ends.</size>" : "\n<size=13>Пропуск — бесплатный проезд по всем дорогам продавца до конца партии.</size>") : "";
+            var text = Ui.Text((EnglishUi ? $"You receive {TradeSide(offer.GiveCount, offer.GiveResource, offer.GiveInfluence, offer.GivePass)}\n" + $"and give {TradeSide(offer.GetCount, offer.GetResource, offer.GetInfluence, offer.GetPass)}" : $"Вы получите {TradeSide(offer.GiveCount, offer.GiveResource, offer.GiveInfluence, offer.GivePass)}\n" + $"и отдадите {TradeSide(offer.GetCount, offer.GetResource, offer.GetInfluence, offer.GetPass)}") +
                                (mine.Length > 0 ? $" ({mine})" : "") + "." + passNote, 17f, Theme.Text);
             text.style.whiteSpace = WhiteSpace.Normal;
             text.style.unityTextAlign = TextAnchor.MiddleCenter;
