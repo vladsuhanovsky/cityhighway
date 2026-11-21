@@ -53,6 +53,15 @@ namespace CityHighways.Presentation
             return result.ToString();
         }
 
+        static string DisplayScenario(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return name;
+            foreach (ScenarioKind scenario in Enum.GetValues(typeof(ScenarioKind)))
+                if (name == Scenarios.Title(scenario))
+                    return ScenarioMenuLocalization.Title(scenario);
+            return name;
+        }
+
         enum HistoryFilter { All, Wins, Online, Week }
 
         readonly Action _rebuild;
@@ -742,7 +751,7 @@ namespace CityHighways.Presentation
             var tags = new List<string>();
             if (game.online) tags.Add(LocalizationService.Get("menu.stats.072"));
             if (!string.IsNullOrEmpty(game.difficulty)) tags.Add(DisplayDifficulty(game.difficulty));
-            if (!string.IsNullOrEmpty(game.scenario) && game.scenario != Scenarios.Title(ScenarioKind.Standard)) tags.Add(game.scenario);
+            if (!string.IsNullOrEmpty(game.scenario) && game.scenario != Scenarios.Title(ScenarioKind.Standard)) tags.Add(DisplayScenario(game.scenario));
             when.Add(Ui.Text(tags.Count > 0 ? string.Join(" · ", tags) : Duration(game.seconds), 11f, Theme.TextDim));
             row.Add(when);
 
@@ -849,8 +858,8 @@ namespace CityHighways.Presentation
             head.Add(Ui.Button(LocalizationService.Get("menu.stats.074"), CloseSummary, ButtonKind.Ghost, 14f));
             window.Add(head);
             var facts = new List<string>();
-            if (!string.IsNullOrEmpty(game.map)) facts.Add(game.map);
-            if (!string.IsNullOrEmpty(game.scenario)) facts.Add(game.scenario);
+            if (!string.IsNullOrEmpty(game.map)) facts.Add(PlaceLabel(game.map));
+            if (!string.IsNullOrEmpty(game.scenario)) facts.Add(DisplayScenario(game.scenario));
             bool magnateGame = ModeTabs.Of(game) == GameMode.Magnate;
             if (!string.IsNullOrEmpty(game.difficulty)) facts.Add((En ? $"difficulty: {DisplayDifficulty(game.difficulty)}" : $"сложность «{DisplayDifficulty(game.difficulty)}»"));
             if (game.turns > 0) facts.Add(En ? (magnateGame ? $"{game.turns} rounds" : $"{game.turns} turns") : (magnateGame ? $"{game.turns} раундов" : $"{game.turns} ходов"));
