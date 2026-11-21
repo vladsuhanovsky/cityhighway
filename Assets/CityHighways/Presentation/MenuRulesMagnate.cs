@@ -254,7 +254,7 @@ namespace CityHighways.Presentation
                 Ui.Radius(tile, 10f);
                 Ui.Padding(tile, 10f, 8f);
                 tile.Add(Ui.Text(new string('★', i + 1), 14f, Theme.Gold));
-                tile.Add(Ui.Text(LogisticsGame.LevelTitle(ranks[i]), 14f, Theme.Text, true));
+                tile.Add(Ui.Text(En ? new[] { "Novice", "Amateur", "Professional", "Master", "Legendary" }[i] : LogisticsGame.LevelTitle(ranks[i]), 14f, Theme.Text, true));
                 tile.Add(Ui.Text((En ? $"from {thresholds[i]}" : $"от {thresholds[i]}"), 11f, Theme.TextDim));
                 tile.Add(Ui.Text($"×{LogisticsGame.LevelMultiplier(ranks[i]):0.##}", 15f, Theme.Gold, true));
                 row.Add(tile);
@@ -294,7 +294,7 @@ namespace CityHighways.Presentation
                 var c = MagnateConfig.For(level);
                 var color = level == MagnateDifficulty.Easy ? GameColors.Success : level == MagnateDifficulty.Normal ? Theme.Gold
                     : level == MagnateDifficulty.Hard ? new Color(1f, 0.6f, 0.2f) : GameColors.Danger;
-                s.Add(PlainTile(MagnateConfig.Title(level),
+                s.Add(PlainTile(En ? (level == MagnateDifficulty.Easy ? "Easy" : level == MagnateDifficulty.Normal ? "Normal" : level == MagnateDifficulty.Hard ? "Hard" : "Expert") : MagnateConfig.Title(level),
                     (En ? $"cargo spawn chance {Mathf.RoundToInt((float)c.SpawnChance * 100f)}% · reward ×{c.RewardMultiplier:0.#} · " : $"грузы появляются с шансом {Mathf.RoundToInt((float)c.SpawnChance * 100f)}% · награды ×{c.RewardMultiplier:0.#} · ") +
                     (En ? $"events {Mathf.RoundToInt((float)c.EventChance * 100f)}% · valuable cargo theft {Mathf.RoundToInt((float)c.TheftChance * 100f)}% · " : $"события {Mathf.RoundToInt((float)c.EventChance * 100f)}% · кража ценного груза {Mathf.RoundToInt((float)c.TheftChance * 100f)}% · ") +
                     (En ? $"jam −{c.JamPenalty} · construction: {c.StartBuildPoints} initially, +{c.BuildPointsPerRound} each round" : $"пробка −{c.JamPenalty} · стройка: {c.StartBuildPoints} на старте, +{c.BuildPointsPerRound} за раунд"), color));
