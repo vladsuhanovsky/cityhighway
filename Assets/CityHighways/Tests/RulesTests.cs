@@ -66,6 +66,28 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void RulesSandboxes_TitlesFollowSelectedLanguage()
+        {
+            var original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                foreach (RuleSandbox.Kind kind in System.Enum.GetValues(typeof(RuleSandbox.Kind)))
+                    Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(RuleSandbox.Title(kind), "[а-яё]",
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+                        "Untranslated sandbox title: " + kind);
+                Assert.AreEqual("Sandbox: contracts and tolls", RuleSandbox.Title(RuleSandbox.Kind.Toll));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Песочница: контракт и проезд", RuleSandbox.Title(RuleSandbox.Kind.Toll));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
