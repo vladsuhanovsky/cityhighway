@@ -395,7 +395,8 @@ namespace CityHighways.Presentation
             if (string.IsNullOrEmpty(name)) return -1;
             for (int i = 0; i < ReputationOrder.Length; i++)
                 if (name == ReputationOrder[i] || name == RankLabel(i) ||
-                    name == (i == 0 ? "Novice" : i == 1 ? "Amateur" : i == 2 ? "Pro" : i == 3 ? "Master" : "Legend"))
+                    name == (i == 0 ? "Novice" : i == 1 ? "Amateur" : i == 2 ? "Pro" : i == 3 ? "Master" : "Legend") ||
+                    (i == 0 && name == "Beginner") || (i == 4 && name == "Legendary"))
                     return i;
             return -1;
         }
@@ -404,7 +405,8 @@ namespace CityHighways.Presentation
         {
             if (string.IsNullOrEmpty(name)) return -1;
             for (int i = 0; i < DifficultyOrder.Length; i++)
-                if (name == DifficultyOrder[i] || name == DifficultyLabel(i)) return i;
+                if (name == DifficultyOrder[i] || name == DifficultyLabel(i) ||
+                    name == (i == 0 ? "Easy" : i == 1 ? "Normal" : i == 2 ? "Hard" : "Expert")) return i;
             return -1;
         }
 
