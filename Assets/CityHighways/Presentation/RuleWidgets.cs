@@ -171,9 +171,13 @@ namespace CityHighways.Presentation
             bool upgrading = t >= buildEnd + Hold && t < buildEnd + Hold + Upgrade;
             bool upgraded = t >= buildEnd + Hold;
 
-            _caption.text = t < buildEnd ? $"Стройка: участок {Mathf.Min(_pieces, built + 1)} из {_pieces}"
-                : !upgraded ? "Дорога построена — очки за длину"
-                : "Улучшение до магистрали: оранжевая рамка, проезд дороже";
+            _caption.text = LocalizationService.Language == "en"
+                ? (t < buildEnd ? $"Construction: segment {Mathf.Min(_pieces, built + 1)} of {_pieces}"
+                    : !upgraded ? "Road built — score points for its length"
+                    : "Highway upgrade: orange outline and higher tolls")
+                : (t < buildEnd ? $"Стройка: участок {Mathf.Min(_pieces, built + 1)} из {_pieces}"
+                    : !upgraded ? "Дорога построена — очки за длину"
+                    : "Улучшение до магистрали: оранжевая рамка, проезд дороже");
 
             var p = context.painter2D;
             float y = r.height * 0.45f;
