@@ -3109,9 +3109,78 @@ namespace CityHighways.Presentation
             else if (hadShown && fresh > 0) Ui.Show(_logNewButton, true);
         }
 
-        static Label LogLine(string text)
+        string JournalDisplayText(string message)
         {
-            var line = Ui.Text(text, 12f, Theme.TextDim);
+            if (!EnglishUi || string.IsNullOrEmpty(message)) return message;
+            switch (message)
+            {
+                case "Ходов больше нет ни у кого.": return "No player has any turns left.";
+                case "Открыто слишком много техники — ряд выложен заново.":
+                    return "Too many face-up machinery cards: the market has been refreshed.";
+                case "Победа команды!": return "Team victory!";
+            }
+            var starting = System.Text.RegularExpressions.Regex.Match(message, @"^Игра началась\. Ходит (.*)\.$");
+            if (starting.Success) return $"Game started. {starting.Groups[1].Value} plays first.";
+            var defeat = System.Text.RegularExpressions.Regex.Match(message, @"^Игра окончена\. Победа: (.*)\.$");
+            if (defeat.Success) return $"Game over. Winner: {defeat.Groups[1].Value}.";
+            var crisis = System.Text.RegularExpressions.Regex.Match(message, @"^Город растёт: кризис \+1 → (\d+) из (\d+)\.$");
+            if (crisis.Success) return $"The city grows: crisis +1 → {crisis.Groups[1].Value} of {crisis.Groups[2].Value}.";
+            var eventCrisis = System.Text.RegularExpressions.Regex.Match(message, @"^Событие давит на город: кризис \+(\d+) → (\d+) из (\d+)\.$");
+            if (eventCrisis.Success) return $"A city event increases the crisis by {eventCrisis.Groups[1].Value} → {eventCrisis.Groups[2].Value} of {eventCrisis.Groups[3].Value}.";
+            if (_game == null) return message;
+            foreach (var player in _game.Players)
+            {
+                string prefix = player.Name + " ";
+                if (!message.StartsWith(prefix, StringComparison.Ordinal)) continue;
+                string action = message.Substring(prefix.Length);
+                var initial = System.Text.RegularExpressions.Regex.Match(action, @"^берёт стартовых контрактов: (\d+)\.$");
+                if (initial.Success) return $"{player.Name} keeps {initial.Groups[1].Value} starting contracts.";
+                var faceup = System.Text.RegularExpressions.Regex.Match(action, @"^берёт открытую карту: (.*)\.$");
+                if (faceup.Success)
+                    return $"{player.Name} draws a face-up {EnglishResourceName(faceup.Groups[1].Value)} card.";
+                if (action == "берёт карту из колоды.") return $"{player.Name} draws a card from the deck.";
+                var choice = System.Text.RegularExpressions.Regex.Match(action, @"^берёт контракты: (\d+) шт\.$");
+                if (choice.Success) return $"{player.Name} draws {choice.Groups[1].Value} contracts.";
+                var kept = System.Text.RegularExpressions.Regex.Match(action, @"^оставляет контрактов: (\d+)\.$");
+                if (kept.Success) return $"{player.Name} keeps {kept.Groups[1].Value} contracts.";
+                if (action == "пропускает ход.") return $"{player.Name} skips a turn.";
+                var road = System.Text.RegularExpressions.Regex.Match(action,
+                    @"^строит( бесплатно \(Прораб\))? (.*?) (.*?) — (.*?) \(\+(\d+)\)\.$");
+                if (road.Success)
+                    return $"{player.Name} builds {(road.Groups[1].Success ? "a free " : "")}{EnglishRoadType(road.Groups[2].Value)} {DisplayPlace(road.Groups[3].Value)} — {DisplayPlace(road.Groups[4].Value)} (+{road.Groups[5].Value} pts).";
+            }
+            return LocalizationService.TranslateLegacy(message);
+        }
+
+        static string EnglishResourceName(string name)
+        {
+            switch (name)
+            {
+                case "асфальт": return "asphalt";
+                case "бетон": return "concrete";
+                case "сталь": return "steel";
+                case "щебень": return "gravel";
+                case "техника": return "machinery";
+                default: return name;
+            }
+        }
+
+        static string EnglishRoadType(string name)
+        {
+            switch (name)
+            {
+                case "улица": return "street";
+                case "проспект": return "avenue";
+                case "мост": return "bridge";
+                case "загородная дорога": return "country road";
+                case "улица (любой ресурс)": return "street";
+                default: return name;
+            }
+        }
+
+        Label LogLine(string text)
+        {
+            var line = Ui.Text(JournalDisplayText(text), 12f, Theme.TextDim);
             line.style.whiteSpace = WhiteSpace.Normal;
             line.style.marginBottom = 4f;
             line.style.flexShrink = 0f;
@@ -3758,7 +3827,7 @@ namespace CityHighways.Presentation
                     report.Add(Ui.Text(EnglishUi ? $"…and {unseen.Count - maxLines} earlier events" : $"…и ещё {unseen.Count - maxLines} событий раньше", 12f, Theme.TextDim));
                 foreach (var line in unseen.Skip(Math.Max(0, unseen.Count - maxLines)))
                 {
-                    var label = Ui.Text("• " + line, 12f, Theme.Text);
+                    var label = Ui.Text("• " + JournalDisplayText(line), 12f, Theme.Text);
                     label.style.whiteSpace = WhiteSpace.Normal;
                     label.style.marginTop = 3f;
                     report.Add(label);
