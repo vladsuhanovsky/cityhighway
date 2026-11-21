@@ -63,6 +63,48 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ProgressJournal_CoversRoadsInfluenceAndFinaleInBothLanguages()
+        {
+            var original = LocalizationService.Language;
+            const string jam = "Пробка на дороге Север — Центр: дальше проезд по ней ещё +2 очк. городу. Владелец может улучшить её до магистрали.";
+            const string income = "Mira: +2 влияния (контракт Север — Центр выполнен).";
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                System.Func<string, string> place = x => x == "Север" ? "North" : x == "Центр" ? "Center" : x;
+                Assert.AreEqual("Traffic jam on North — Center: future trips pay an extra 2 pts to the city. The owner can upgrade the road to a highway.",
+                    LocalizationService.TranslateProgressJournal(jam, place));
+                Assert.AreEqual("Mira pays road tolls: Alex 2, Vera 1 pts, plus 3 pts to the city for traffic jams.",
+                    LocalizationService.TranslateProgressJournal("Mira платит за проезд: Alex 2, Vera 1 очк., пробка: ещё 3 городу."));
+                Assert.AreEqual("Mira upgrades North — Center to a highway (+3 pts).",
+                    LocalizationService.TranslateProgressJournal("Mira улучшает дорогу Север — Центр до магистрали (+3).", place));
+                Assert.AreEqual("Mira spends 2 influence to refresh the market (next refresh costs 3).",
+                    LocalizationService.TranslateProgressJournal("Mira тратит 2 влияния: рынок выложен заново (следующее обновление — 3)."));
+                Assert.AreEqual("Mira buys a City Hall permit for 2 influence: Snowfall does not restrict this turn.",
+                    LocalizationService.TranslateProgressJournal("Mira получает разрешение мэрии за 2 влияния: «Снегопад» в этот ход ему не мешает."));
+                Assert.AreEqual("Mira: +2 influence (contract North — Center completed).",
+                    LocalizationService.TranslateProgressJournal(income, place));
+                Assert.AreEqual("Mira: +1 influence (catch-up support).",
+                    LocalizationService.TranslateProgressJournal("Mira: +1 влияния (поддержка отстающих)."));
+                Assert.AreEqual("Final City Hall order: build North — Center during the final round for +5 pts.",
+                    LocalizationService.TranslateProgressJournal("Финальный заказ мэрии: дорога Север — Центр. Кто построит её в последнем круге, получит +5 очков.", place));
+                Assert.AreEqual("Mira completes the final City Hall order: +5 pts.",
+                    LocalizationService.TranslateProgressJournal("Mira выполняет финальный заказ мэрии: +5 очков."));
+                Assert.AreEqual("Final audit: 2 bribes exposed (Mira −4).",
+                    LocalizationService.TranslateProgressJournal("Проверка перед итогами: нашли взяток — 2 (Mira −4)."));
+                Assert.AreEqual("Final audit: no bribes were found.",
+                    LocalizationService.TranslateProgressJournal("Проверка перед итогами: взяток не нашли."));
+                Assert.IsNull(LocalizationService.TranslateProgressJournal("Unknown action"));
+                Assert.IsNull(LocalizationService.TranslateProgressJournal("Mira: +2 влияния (неизвестная причина)."));
+                LocalizationService.SetLanguage("ru");
+                Assert.IsNull(LocalizationService.TranslateProgressJournal(jam, place));
+                LocalizationService.SetLanguage("en");
+                Assert.IsNotNull(LocalizationService.TranslateProgressJournal(jam, place));
+            }
+            finally { LocalizationService.SetLanguage(original); }
+        }
+
+        [Test]
         public void LocalizationCatalogs_HaveMatchingUniqueCompleteKeys()
         {
             var russianAsset = UnityEngine.Resources.Load<UnityEngine.TextAsset>("CityHighways/Localization/ru");
