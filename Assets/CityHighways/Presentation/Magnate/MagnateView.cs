@@ -937,9 +937,9 @@ namespace CityHighways.Presentation
             card.style.backgroundColor = Theme.Panel;
             card.style.minWidth = 620f;
             var ranking = _game.Players.OrderByDescending(p => p.Score).ToList();
-            card.Add(Ui.Text($"Победил {ranking[0].Name}!", 28f, Palette.PlayerColor(ranking[0].Index), true));
-            string rounds = _game.Config.OpeningBuildRound ? $"раунд стройки и {_game.Config.Rounds} раундов перевозок" : $"{_game.Config.Rounds} раундов";
-            var sub = Ui.Text($"{_game.Map.Name}, {rounds}, сложность «{MagnateConfig.Title(_game.Config.Difficulty)}»", 14f, Theme.TextDim);
+            card.Add(Ui.Text(En ? $"Winner: {ranking[0].Name}!" : $"Победил {ranking[0].Name}!", 28f, Palette.PlayerColor(ranking[0].Index), true));
+            string rounds = En ? (_game.Config.OpeningBuildRound ? $"opening construction round + {_game.Config.Rounds} transport rounds" : $"{_game.Config.Rounds} rounds") : (_game.Config.OpeningBuildRound ? $"раунд стройки и {_game.Config.Rounds} раундов перевозок" : $"{_game.Config.Rounds} раундов");
+            var sub = Ui.Text(En ? $"{Place(_game.Map.Name)}, {rounds}, difficulty: {DifficultyName(_game.Config.Difficulty)}" : $"{_game.Map.Name}, {rounds}, сложность «{MagnateConfig.Title(_game.Config.Difficulty)}»", 14f, Theme.TextDim);
             sub.style.marginBottom = 16f;
             card.Add(sub);
             int place = 1;
@@ -947,8 +947,8 @@ namespace CityHighways.Presentation
             {
                 var row = Ui.Column();
                 row.style.marginBottom = 8f;
-                row.Add(Ui.Text($"{place++}. {p.Name} — {p.Score} очк. · {LogisticsGame.LevelTitle(p.Level)}", 17f, Palette.PlayerColor(p.Index), true));
-                row.Add(Ui.Text($"доставок {p.Delivered} · заказов мэрии {p.ContractsWon} · пробок {p.Jams} · проезд +{p.TollIn}/−{p.TollOut} · хабы +{p.HubFees}" +
+                row.Add(Ui.Text(En ? $"{place++}. {p.Name} — {p.Score} pts · {ReputationName(p.Level)}" : $"{place++}. {p.Name} — {p.Score} очк. · {LogisticsGame.LevelTitle(p.Level)}", 17f, Palette.PlayerColor(p.Index), true));
+                row.Add(Ui.Text(En ? $"deliveries {p.Delivered} · city orders {p.ContractsWon} · jams {p.Jams} · tolls +{p.TollIn}/−{p.TollOut} · hub fees +{p.HubFees}" + (p.Confiscated + p.Thefts > 0 ? $" · losses {p.Confiscated + p.Thefts}" : "") : $"доставок {p.Delivered} · заказов мэрии {p.ContractsWon} · пробок {p.Jams} · проезд +{p.TollIn}/−{p.TollOut} · хабы +{p.HubFees}" +
                                 (p.Confiscated + p.Thefts > 0 ? $" · потерь {p.Confiscated + p.Thefts}" : ""), 13f, Theme.TextDim));
                 card.Add(row);
             }
@@ -957,7 +957,7 @@ namespace CityHighways.Presentation
                 if (credit.Unlocked == null) continue;
                 foreach (var achievement in credit.Unlocked)
                 {
-                    var line = Ui.Text($"Достижение «{achievement.Title}» — {credit.Profile} (+{achievement.Reward} влияния в кошелёк)", 14f, Theme.Gold, true);
+                    var line = Ui.Text(En ? $"Achievement “{achievement.Title}” — {credit.Profile} (+{achievement.Reward} influence to wallet)" : $"Достижение «{achievement.Title}» — {credit.Profile} (+{achievement.Reward} влияния в кошелёк)", 14f, Theme.Gold, true);
                     line.style.marginTop = 4f;
                     card.Add(line);
                 }
