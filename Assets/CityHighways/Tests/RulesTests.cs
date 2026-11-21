@@ -491,6 +491,32 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void CityEvents_AllSevenTitlesTranslateOnLanguageSwitch()
+        {
+            var method = typeof(GameView).GetMethod("CityEventTitle",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            string initial = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                foreach (CityEventKind kind in System.Enum.GetValues(typeof(CityEventKind)))
+                {
+                    string label = (string)method.Invoke(null, new object[] { kind });
+                    Assert.IsFalse(Regex.IsMatch(label, "[а-яё]", RegexOptions.IgnoreCase),
+                        "City event title was not translated: " + kind);
+                }
+                Assert.AreEqual("Rush Hour", method.Invoke(null, new object[] { CityEventKind.RushHour }));
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Час пик", method.Invoke(null, new object[] { CityEventKind.RushHour }));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(initial);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
