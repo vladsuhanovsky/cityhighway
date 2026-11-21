@@ -475,8 +475,8 @@ namespace CityHighways.Presentation
             _animating = null;
             int delivered = report.Moves.Count(m => m.Delivered != null);
             Toast(delivered > 0 || report.Jams.Count > 0
-                ? $"Доставлено: {delivered}" + (report.Jams.Count > 0 ? $" · пробок: {report.Jams.Count}" : "")
-                : "Раунд прошёл спокойно", 2.2f);
+                ? (En ? $"Delivered: {delivered}" + (report.Jams.Count > 0 ? $" · traffic jams: {report.Jams.Count}" : "") : $"Доставлено: {delivered}" + (report.Jams.Count > 0 ? $" · пробок: {report.Jams.Count}" : ""))
+                : (En ? "The round passed without incidents" : "Раунд прошёл спокойно"), 2.2f);
             if (delivered > 0) _app.Sound.Play(Sfx.Coin, 0.7f);
             StartTurn();
         }
