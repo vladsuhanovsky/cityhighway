@@ -1879,8 +1879,12 @@ namespace CityHighways.Presentation
                 {
                     Toast(string.Format(LocalizationService.Get("game.notice.goal_claimed"), MayorGoalName(goal), who, goal.Points), Theme.Gold);
                     // Салют над серединой карты — цветом компании, взявшей цель.
-                    _map.Fireworks(_map.contentRect.center + new Vector2(-80f, -40f), Palette.PlayerColor(pair.Value), 48);
-                    _map.Fireworks(_map.contentRect.center + new Vector2(90f, 10f), Theme.Gold, 40);
+                    int goalBurst = GameFxTuning.FireworkCount(48, Ui.ReducedMotion);
+                    if (goalBurst > 0)
+                    {
+                        _map.Fireworks(_map.contentRect.center + new Vector2(-80f, -40f), Palette.PlayerColor(pair.Value), goalBurst);
+                        _map.Fireworks(_map.contentRect.center + new Vector2(90f, 10f), Theme.Gold, GameFxTuning.FireworkCount(40, false));
+                    }
                     _app.Sound.Play(Sfx.Fanfare, 0.7f);
                 });
             }
@@ -1952,8 +1956,10 @@ namespace CityHighways.Presentation
                     string toll = contractToll > 0 ? string.Format(LocalizationService.Get("game.notice.contract_toll"), contractToll, paidCheck.JamFee > 0 ? LocalizationService.Get("game.notice.contract_toll_jam") : "") : "";
                     Toast(string.Format(LocalizationService.Get("game.notice.contract_completed"), ContractTitle(contract), contract.Points, toll), Theme.Success);
                     // Салют над районами контракта.
-                    foreach (var district in contract.Districts)
-                        _map.Fireworks(_map.DistrictScreenCenter(district), Palette.PlayerColor(playerIndex), 30);
+                    int contractBurst = GameFxTuning.FireworkCount(30, Ui.ReducedMotion);
+                    if (contractBurst > 0)
+                        foreach (var district in contract.Districts)
+                            _map.Fireworks(_map.DistrictScreenCenter(district), Palette.PlayerColor(playerIndex), contractBurst);
                     _app.Sound.Play(Sfx.Ticket);
                 });
             }
@@ -2167,15 +2173,16 @@ namespace CityHighways.Presentation
             _toast.text = text;
             _toast.style.color = color;
             int version = ++_toastVersion;
+            bool reducedMotion = Ui.ReducedMotion;
+            _toastHolder.style.opacity = 0f;
+            _toastHolder.style.top = GameFxTuning.ToastTopAt(0f, reducedMotion);
             Ui.Show(_toastHolder, true);
 
             _app.Tweener.Add(2.4f, k =>
             {
                 if (version != _toastVersion) return;
-                float appear = Mathf.Clamp01(k / 0.1f);
-                float alpha = k > 0.8f ? (1f - k) / 0.2f : appear;
-                _toastHolder.style.opacity = alpha;
-                _toastHolder.style.top = 70f - 14f * (1f - Ui.EaseOutCubic(appear));
+                _toastHolder.style.opacity = GameFxTuning.ToastOpacity(k);
+                _toastHolder.style.top = GameFxTuning.ToastTopAt(k, reducedMotion);
             }, () =>
             {
                 if (version == _toastVersion) Ui.Show(_toastHolder, false);
@@ -4521,7 +4528,7 @@ namespace CityHighways.Presentation
             _app.Tweener.Add(2.0f, k =>
             {
                 if (version != _eventGlowVersion) return;
-                float s = Mathf.Sin(Mathf.Min(k, 1f) * Mathf.PI);
+                float s = GameFxTuning.EventGlowStrength(k, Ui.ReducedMotion);
                 var glow = Color.Lerp(Theme.PanelLight, Color.Lerp(Theme.PanelLight, start, 0.28f), s);
                 _eventCard.style.backgroundColor = glow;
                 _eventPill.style.backgroundColor = Color.Lerp(Theme.PanelLight, Color.Lerp(Theme.PanelLight, start, 0.45f), s);

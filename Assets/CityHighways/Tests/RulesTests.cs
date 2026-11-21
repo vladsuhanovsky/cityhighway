@@ -96,6 +96,23 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void GameplayEffects_RespectReducedMotionAndStayWithinSafeBounds()
+        {
+            Assert.AreEqual(0f, GameFxTuning.ToastOpacity(0f), 0.001f);
+            Assert.AreEqual(1f, GameFxTuning.ToastOpacity(0.5f), 0.001f);
+            Assert.AreEqual(0f, GameFxTuning.ToastOpacity(1f), 0.001f);
+            Assert.AreEqual(0f, GameFxTuning.ToastOpacity(-1f), 0.001f);
+            Assert.AreEqual(0f, GameFxTuning.ToastOpacity(2f), 0.001f);
+            Assert.AreEqual(GameFxTuning.ToastTop, GameFxTuning.ToastTopAt(0f, true), 0.001f);
+            Assert.AreEqual(GameFxTuning.ToastTop, GameFxTuning.ToastTopAt(1f, true), 0.001f);
+            Assert.Less(GameFxTuning.ToastTopAt(0f, false), GameFxTuning.ToastTopAt(1f, false));
+            Assert.AreEqual(0, GameFxTuning.FireworkCount(48, true));
+            Assert.AreEqual(48, GameFxTuning.FireworkCount(48, false));
+            Assert.AreEqual(0f, GameFxTuning.EventGlowStrength(0.5f, true), 0.001f);
+            Assert.Greater(GameFxTuning.EventGlowStrength(0.5f, false), 0.9f);
+        }
+
+        [Test]
         public void DynamicGameActionErrors_TranslateValuesWithoutChangingCoreMessages()
         {
             var original = LocalizationService.Language;
