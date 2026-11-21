@@ -370,7 +370,7 @@ namespace CityHighways.Presentation
     }
 
     /// <summary>Display-only transliteration; generated city/location IDs and saved data stay unchanged.</summary>
-    internal static class MagnateLocationText
+    public static class MagnateLocationText
     {
         static readonly string[] Latin =
         {
