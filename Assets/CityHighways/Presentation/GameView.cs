@@ -4604,9 +4604,9 @@ namespace CityHighways.Presentation
         {
             if (NeedsHandoff) return LocalizationService.Get("game.tooltip.hand_hidden");
             int count = _game.Players[Viewer].CardCount(resource);
-            string name = ResourceInfo.RussianName(resource);
-            string use = resource == Resource.Machinery ? LocalizationService.Get("game.ui.165") : LocalizationService.Get("game.ui.166") + ResourceInfo.RoadKind(resource);
-            return $"{char.ToUpper(name[0]) + name.Substring(1)}: {count} шт.\n{use}. Одно деление — одна карта.";
+            string name = EnglishUi ? Palette.CardTitle(resource) : ResourceInfo.RussianName(resource);
+            string use = resource == Resource.Machinery ? LocalizationService.Get("game.ui.165") : LocalizationService.Get("game.ui.166") + RoadKindLabel(resource);
+            return EnglishUi ? $"{name}: {count} cards\n{use}. Each segment represents one card." : $"{char.ToUpper(name[0]) + name.Substring(1)}: {count} шт.\n{use}. Одно деление — одна карта.";
         }
 
         string PiecesTooltip()
@@ -4646,7 +4646,7 @@ namespace CityHighways.Presentation
 
         string LocationTooltip(Location location)
         {
-            var lines = new List<string> { $"{location.Name} · {DistrictName(location.DistrictId)}" };
+            var lines = new List<string> { $"{DisplayPlace(location.Name)} · {DisplayPlace(DistrictName(location.DistrictId))}" };
             var roads = _game.Map.Roads.Where(r => (r.A == location.Id || r.B == location.Id) && _game.IsRoadOpen(r.Id)).ToList();
             int free = roads.Count(r => !_game.GetRoadOwner(r.Id).HasValue);
             lines.Add(string.Format(LocalizationService.Get("game.tooltip.location_roads"), roads.Count, free));
