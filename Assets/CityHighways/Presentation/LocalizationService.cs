@@ -99,6 +99,63 @@ namespace CityHighways.Presentation
             return text;
         }
 
+        // Core error strings are translated only when displayed, never in game state.
+        static readonly (string Pattern, string Key, bool ResourceName)[] DynamicErrorPatterns =
+        {
+            (@"^Нужно влияния: (\d+), у вас (\d+)\.$", "game.error.dynamic.001", false),
+            (@"^Взятки — только когда игроков (\d+) и больше\.$", "game.error.dynamic.002", false),
+            (@"^У вас только (\d+) влияния\.$", "game.error.dynamic.003", false),
+            (@"^Нужно оставить хотя бы (\d+) шт\.$", "game.error.dynamic.004", false),
+            (@"^В сделке до (\d+) карт с каждой стороны\.$", "game.error.dynamic.005", false),
+            (@"^В сделке до (\d+) влияния с каждой стороны\.$", "game.error.dynamic.006", false),
+            (@"^Сейчас ходит не игрок (\d+)\.$", "game.error.dynamic.007", false),
+            (@"^У (.+) уже есть ваш пропуск\.$", "game.error.dynamic.008", false),
+            (@"^У вас уже есть пропуск (.+)\.$", "game.error.dynamic.009", false),
+            (@"^Нужно (\d+) карт\(ы\) одного ресурса \(техника подходит вместо любой карты\)\.$", "game.error.dynamic.010", false),
+            (@"^Нужно (\d+) карт\(ы\) «([^»]+)» \(техника подходит вместо любой карты\)\.$", "game.error.dynamic.011", true),
+            (@"^Эту дорогу строят из ресурса «([^»]+)»\.$", "game.error.dynamic.012", true),
+            (@"^Не хватает карт «([^»]+)»\.$", "game.error.dynamic.013", true),
+        };
+
+        static string LocalizedErrorResource(string name)
+        {
+            switch (name)
+            {
+                case "асфальт": return Get("game.error.resource.asphalt");
+                case "бетон": return Get("game.error.resource.concrete");
+                case "сталь": return Get("game.error.resource.steel");
+                case "щебень": return Get("game.error.resource.gravel");
+                case "техника": return Get("game.error.resource.machinery");
+                default: return null;
+            }
+        }
+
+        /// <summary>Translate recognized parameterized errors; keep unknown text intact.</summary>
+        public static string TranslateGameError(string message)
+        {
+            if (string.IsNullOrEmpty(message) || Language != "en") return message;
+            string translated = TranslateLegacy(message);
+            if (translated != message) return translated;
+            foreach (var item in DynamicErrorPatterns)
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(
+                    message, item.Pattern, System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+                if (!match.Success) continue;
+                object[] arguments = new object[match.Groups.Count - 1];
+                for (int index = 0; index < arguments.Length; index++)
+                    arguments[index] = match.Groups[index + 1].Value;
+                if (item.ResourceName)
+                {
+                    int index = arguments.Length - 1;
+                    string resource = LocalizedErrorResource((string)arguments[index]);
+                    if (resource == null) return message;
+                    arguments[index] = resource;
+                }
+                return string.Format(System.Globalization.CultureInfo.InvariantCulture, Get(item.Key), arguments);
+            }
+            return message;
+        }
+
         /// <summary>Look up translated UI data by stable ID, preserving its Russian source as fallback.</summary>
         public static string GetOrFallback(string key, string fallback)
         {

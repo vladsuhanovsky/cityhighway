@@ -6051,6 +6051,78 @@
     {
       "key": "game.error.047",
       "value": "У вас нет столько карт."
+    },
+    {
+      "key": "game.error.dynamic.001",
+      "value": "Нужно влияния: {0}, у вас {1}."
+    },
+    {
+      "key": "game.error.dynamic.002",
+      "value": "Взятки — только когда игроков {0} и больше."
+    },
+    {
+      "key": "game.error.dynamic.003",
+      "value": "У вас только {0} влияния."
+    },
+    {
+      "key": "game.error.dynamic.004",
+      "value": "Нужно оставить хотя бы {0} шт."
+    },
+    {
+      "key": "game.error.dynamic.005",
+      "value": "В сделке до {0} карт с каждой стороны."
+    },
+    {
+      "key": "game.error.dynamic.006",
+      "value": "В сделке до {0} влияния с каждой стороны."
+    },
+    {
+      "key": "game.error.dynamic.007",
+      "value": "Сейчас ходит не игрок {0}."
+    },
+    {
+      "key": "game.error.dynamic.008",
+      "value": "У {0} уже есть ваш пропуск."
+    },
+    {
+      "key": "game.error.dynamic.009",
+      "value": "У вас уже есть пропуск {0}."
+    },
+    {
+      "key": "game.error.dynamic.010",
+      "value": "Нужно {0} карт(ы) одного ресурса (техника подходит вместо любой карты)."
+    },
+    {
+      "key": "game.error.dynamic.011",
+      "value": "Нужно {0} карт(ы) «{1}» (техника подходит вместо любой карты)."
+    },
+    {
+      "key": "game.error.dynamic.012",
+      "value": "Эту дорогу строят из ресурса «{0}»."
+    },
+    {
+      "key": "game.error.dynamic.013",
+      "value": "Не хватает карт «{0}»."
+    },
+    {
+      "key": "game.error.resource.asphalt",
+      "value": "асфальт"
+    },
+    {
+      "key": "game.error.resource.concrete",
+      "value": "бетон"
+    },
+    {
+      "key": "game.error.resource.steel",
+      "value": "сталь"
+    },
+    {
+      "key": "game.error.resource.gravel",
+      "value": "щебень"
+    },
+    {
+      "key": "game.error.resource.machinery",
+      "value": "техника"
     }
   ]
 }

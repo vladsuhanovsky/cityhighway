@@ -6051,6 +6051,78 @@
     {
       "key": "game.error.047",
       "value": "You do not have that many cards."
+    },
+    {
+      "key": "game.error.dynamic.001",
+      "value": "Influence required: {0}; you have {1}."
+    },
+    {
+      "key": "game.error.dynamic.002",
+      "value": "Bribes require at least {0} players."
+    },
+    {
+      "key": "game.error.dynamic.003",
+      "value": "You only have {0} influence."
+    },
+    {
+      "key": "game.error.dynamic.004",
+      "value": "You must keep at least {0} cards."
+    },
+    {
+      "key": "game.error.dynamic.005",
+      "value": "Each side can trade up to {0} cards."
+    },
+    {
+      "key": "game.error.dynamic.006",
+      "value": "Each side can trade up to {0} influence."
+    },
+    {
+      "key": "game.error.dynamic.007",
+      "value": "It is not player {0}'s turn."
+    },
+    {
+      "key": "game.error.dynamic.008",
+      "value": "{0} already has your pass."
+    },
+    {
+      "key": "game.error.dynamic.009",
+      "value": "You already have {0}'s pass."
+    },
+    {
+      "key": "game.error.dynamic.010",
+      "value": "You need {0} cards of the same resource (machinery can substitute for any card)."
+    },
+    {
+      "key": "game.error.dynamic.011",
+      "value": "You need {0} {1} cards (machinery can substitute for any card)."
+    },
+    {
+      "key": "game.error.dynamic.012",
+      "value": "This road requires {0}."
+    },
+    {
+      "key": "game.error.dynamic.013",
+      "value": "Not enough {0} cards."
+    },
+    {
+      "key": "game.error.resource.asphalt",
+      "value": "asphalt"
+    },
+    {
+      "key": "game.error.resource.concrete",
+      "value": "concrete"
+    },
+    {
+      "key": "game.error.resource.steel",
+      "value": "steel"
+    },
+    {
+      "key": "game.error.resource.gravel",
+      "value": "gravel"
+    },
+    {
+      "key": "game.error.resource.machinery",
+      "value": "machinery"
     }
   ]
 }

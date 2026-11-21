@@ -13,6 +13,43 @@ namespace CityHighways.Tests
             TestCities.Started(TestCities.Small(), players, config);
 
         [Test]
+        public void DynamicGameActionErrors_TranslateValuesWithoutChangingCoreMessages()
+        {
+            var original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Influence required: 4; you have 2.",
+                    LocalizationService.TranslateGameError("Нужно влияния: 4, у вас 2."));
+                Assert.AreEqual("Bribes require at least 3 players.",
+                    LocalizationService.TranslateGameError("Взятки — только когда игроков 3 и больше."));
+                Assert.AreEqual("You need 5 steel cards (machinery can substitute for any card).",
+                    LocalizationService.TranslateGameError("Нужно 5 карт(ы) «сталь» (техника подходит вместо любой карты)."));
+                Assert.AreEqual("Not enough asphalt cards.",
+                    LocalizationService.TranslateGameError("Не хватает карт «асфальт»."));
+                Assert.AreEqual("This road requires concrete.",
+                    LocalizationService.TranslateGameError("Эту дорогу строят из ресурса «бетон»."));
+                Assert.AreEqual("Masha already has your pass.",
+                    LocalizationService.TranslateGameError("У Masha уже есть ваш пропуск."));
+                Assert.AreEqual("You already have Alex's pass.",
+                    LocalizationService.TranslateGameError("У вас уже есть пропуск Alex."));
+                Assert.AreEqual("You only have 0 influence.",
+                    LocalizationService.TranslateGameError("У вас только 0 влияния."));
+                Assert.AreEqual("Внимание: не хватило 3 новых карт.",
+                    LocalizationService.TranslateGameError("Внимание: не хватило 3 новых карт."));
+                Assert.AreEqual("Не хватает карт «неизвестно».",
+                    LocalizationService.TranslateGameError("Не хватает карт «неизвестно»."));
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Не хватает карт «сталь».",
+                    LocalizationService.TranslateGameError("Не хватает карт «сталь»."));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void GameActionErrors_UseEnglishForKnownCoreFailures()
         {
             var original = LocalizationService.Language;
