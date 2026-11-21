@@ -3420,7 +3420,7 @@ namespace CityHighways.Presentation
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
             title.style.whiteSpace = WhiteSpace.Normal;
             box.Add(title);
-            var value = Ui.Text($"{contract.Points} очков, а выполнен к концу партии — ещё +{_game.Config.AuctionBonus}. Не выполнен — −{contract.Points}, как обычный контракт.", 15f, Theme.Text);
+            var value = Ui.Text(EnglishUi ? $"{contract.Points} points. Complete it by the end to earn another +{_game.Config.AuctionBonus}; fail and lose {contract.Points} points, just like a normal contract." : $"{contract.Points} очков, а выполнен к концу партии — ещё +{_game.Config.AuctionBonus}. Не выполнен — −{contract.Points}, как обычный контракт.", 15f, Theme.Text);
             value.style.whiteSpace = WhiteSpace.Normal;
             value.style.unityTextAlign = TextAnchor.MiddleCenter;
             value.style.marginTop = 8f;
@@ -3445,14 +3445,14 @@ namespace CityHighways.Presentation
             UnityEngine.UIElements.Button place = null;
             void Refresh()
             {
-                amount.text = bid + " вл.";
-                place.text = bid > 0 ? $"Поставить {bid}" : LocalizationService.Get("game.ui.112");
+                amount.text = bid + (EnglishUi ? " inf." : " вл.");
+                place.text = bid > 0 ? (EnglishUi ? $"Bid {bid}" : $"Поставить {bid}") : LocalizationService.Get("game.ui.112");
             }
             row.Add(Ui.Button("–", () => { bid = Math.Max(0, bid - 1); Refresh(); }, ButtonKind.Secondary, 20f));
             row.Add(amount);
             row.Add(Ui.Button("+", () => { bid = Math.Min(me.Influence, bid + 1); Refresh(); }, ButtonKind.Secondary, 20f));
             box.Add(row);
-            box.Add(Ui.Text($"Ваше влияние: {me.Influence}", 13f, Theme.TextDim));
+            box.Add(Ui.Text(EnglishUi ? $"Your influence: {me.Influence}" : $"Ваше влияние: {me.Influence}", 13f, Theme.TextDim));
 
             place = Ui.Button("", () => { HideOverlay(); Act(() => _game.Bid(bid)); }, ButtonKind.Primary, 17f);
             place.style.marginTop = 16f;
