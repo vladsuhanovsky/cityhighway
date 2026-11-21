@@ -852,6 +852,19 @@ namespace CityHighways.Presentation
         // ---------------------------------------------------------------- Заказы, правила, журнал
 
         /// <summary>Панель «Игроки»: все компании — очки, репутация, влияние, стройка, фуры, дороги и хабы; чей ход — в рамке.</summary>
+        static string ReputationName(ReputationLevel rank)
+        {
+            if (!En) return LogisticsGame.LevelTitle(rank);
+            switch (rank)
+            {
+                case ReputationLevel.Novice: return "Novice";
+                case ReputationLevel.Amateur: return "Amateur";
+                case ReputationLevel.Professional: return "Professional";
+                case ReputationLevel.Master: return "Master";
+                default: return "Legendary";
+            }
+        }
+
         void FillPlayers()
         {
             _popupTitle.text = LocalizationService.Get("magnate.panel.002");
@@ -871,14 +884,14 @@ namespace CityHighways.Presentation
                 var head = Ui.Row();
                 head.style.alignItems = Align.Center;
                 int turn = _game.TurnOrder.ToList().IndexOf(p.Index) + 1;
-                var name = Ui.Text(p.Name + (p.IsBot ? LocalizationService.Get("magnate.panel.048") : "") + (current ? LocalizationService.Get("magnate.panel.049") : $" · ход {turn}-й"), 15f, color, true);
+                var name = Ui.Text(p.Name + (p.IsBot ? LocalizationService.Get("magnate.panel.048") : "") + (current ? LocalizationService.Get("magnate.panel.049") : En ? $" · turn {turn}" : $" · ход {turn}-й"), 15f, color, true);
                 name.style.flexGrow = 1f;
                 name.style.flexShrink = 1f;
                 head.Add(name);
                 head.Add(Ui.Number(p.Score.ToString(), 22f, Theme.Text, true));
                 card.Add(head);
 
-                var stars = Ui.Text($"{new string('★', (int)p.Level + 1)} {LogisticsGame.LevelTitle(p.Level)} · репутация {p.Reputation} · очки за доставку ×{LogisticsGame.LevelMultiplier(p.Level):0.##}",
+                var stars = Ui.Text(En ? $"{new string('★', (int)p.Level + 1)} {ReputationName(p.Level)} · reputation {p.Reputation} · delivery score ×{LogisticsGame.LevelMultiplier(p.Level):0.##}" : $"{new string('★', (int)p.Level + 1)} {LogisticsGame.LevelTitle(p.Level)} · репутация {p.Reputation} · очки за доставку ×{LogisticsGame.LevelMultiplier(p.Level):0.##}",
                     12f, Theme.Gold);
                 stars.style.whiteSpace = WhiteSpace.Normal;
                 stars.style.marginTop = 2f;
@@ -887,7 +900,7 @@ namespace CityHighways.Presentation
                 int trucks = _game.Trucks.Count(t => t.Owner == p.Index);
                 int roads = _game.Map.Roads.Count(r => _game.Board.GetRoadOwner(r.Id) == p.Index);
                 int hubs = _game.Hubs.Count(h => h.Owner == p.Index);
-                var stats = Ui.Text($"Влияние {p.Influence} · стройка {p.BuildPoints} · фур {trucks} · дорог {roads} · хабов {hubs}", 12f, Theme.TextDim);
+                var stats = Ui.Text(En ? $"Influence {p.Influence} · construction {p.BuildPoints} · trucks {trucks} · roads {roads} · hubs {hubs}" : $"Влияние {p.Influence} · стройка {p.BuildPoints} · фур {trucks} · дорог {roads} · хабов {hubs}", 12f, Theme.TextDim);
                 stats.style.whiteSpace = WhiteSpace.Normal;
                 stats.style.marginTop = 4f;
                 card.Add(stats);
