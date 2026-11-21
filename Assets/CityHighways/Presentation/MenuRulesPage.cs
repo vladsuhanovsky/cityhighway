@@ -29,6 +29,34 @@ namespace CityHighways.Presentation
     /// </summary>
     sealed partial class RulesView
     {
+        internal static string RuleLuckTitle(LuckCardKind kind)
+        {
+            if (LocalizationService.Language != "en") return LuckInfo.Title(kind);
+            switch (kind)
+            {
+                case LuckCardKind.Grant: return "City Hall Grant";
+                case LuckCardKind.Supply: return "Unscheduled Delivery";
+                case LuckCardKind.Premium: return "Completion Bonus";
+                case LuckCardKind.Fine: return "Inspection";
+                case LuckCardKind.Theft: return "Warehouse Theft";
+                default: return "Contract Recall";
+            }
+        }
+
+        internal static string RuleLuckDescription(LuckCardKind kind, GameConfig config)
+        {
+            if (LocalizationService.Language != "en") return LuckInfo.Describe(kind, config);
+            switch (kind)
+            {
+                case LuckCardKind.Grant: return config.InfluenceEnabled ? $"+{config.LuckGrantInfluence} influence." : $"+{config.LuckGrant} points.";
+                case LuckCardKind.Supply: return $"+{config.LuckSupply} resource cards from the deck.";
+                case LuckCardKind.Premium: return $"+{config.LuckPremiumPerContract} points for each completed contract (maximum {config.LuckPremiumMax}).";
+                case LuckCardKind.Fine: return $"−{config.LuckFine} points.";
+                case LuckCardKind.Theft: return "A random card from your hand is discarded.";
+                default: return $"The cheapest uncompleted contract is returned to the bottom of the deck without penalty. If none remain, lose {config.LuckFine} points.";
+            }
+        }
+
         internal static string RuleInfluenceTitle(InfluenceAction action)
         {
             if (LocalizationService.Language != "en") return InfluenceInfo.Title(action);
@@ -994,8 +1022,8 @@ namespace CityHighways.Presentation
                 Ui.Radius(card, 10f);
                 Ui.Border(card, 2f, GameView.LuckColor(buff));
                 card.Add(Ui.Text((buff ? LocalizationService.Get("menu.rules.046") : LocalizationService.Get("menu.rules.047")) + (En ? $" · {LuckInfo.CountIn(_config, kind)} cards" : $" · {LuckInfo.CountIn(_config, kind)} шт."), 11f, GameView.LuckColor(buff), true));
-                card.Add(Ui.Text(LuckInfo.Title(kind), 15f, Theme.Text, true));
-                var text = Ui.Text(LuckInfo.Describe(kind, _config), 12f, Theme.TextDim);
+                card.Add(Ui.Text(RuleLuckTitle(kind), 15f, Theme.Text, true));
+                var text = Ui.Text(RuleLuckDescription(kind, _config), 12f, Theme.TextDim);
                 text.style.whiteSpace = WhiteSpace.Normal;
                 text.style.marginTop = 4f;
                 card.Add(text);
@@ -1068,12 +1096,12 @@ namespace CityHighways.Presentation
                 var icon = new MenuIcon(MenuIcon.Glyph.Globe, 20f, Theme.Gold);
                 icon.style.marginRight = 8f;
                 head.Add(icon);
-                head.Add(Ui.Text(Scenarios.Title(kind), 16f, Theme.Gold, true));
+                head.Add(Ui.Text(ScenarioMenuLocalization.Title(kind), 16f, Theme.Gold, true));
                 card.Add(head);
-                var summary = Rich(Scenarios.Summary(kind), 13f, Theme.Text);
+                var summary = Rich(ScenarioMenuLocalization.Summary(kind), 13f, Theme.Text);
                 summary.style.marginTop = 4f;
                 card.Add(summary);
-                foreach (var change in Scenarios.Changes(kind))
+                foreach (var change in ScenarioMenuLocalization.Changes(kind))
                 {
                     var line = Rich("• " + change, 12f, Theme.TextDim);
                     line.style.marginTop = 3f;
@@ -1091,7 +1119,7 @@ namespace CityHighways.Presentation
             int i = 0;
             foreach (var kind in Characters.All)
             {
-                s.Add(Tile(Characters.Title(kind), Characters.Ability(kind, _config) + " " + Characters.Hint(kind),
+                s.Add(Tile(CharacterLocalization.Title(kind), CharacterLocalization.Ability(kind, _config) + " " + CharacterLocalization.Hint(kind),
                     Palette.PlayerColor(i), new CharacterIcon(44f, kind, Palette.PlayerColor(i))));
                 i++;
             }
