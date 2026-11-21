@@ -800,6 +800,44 @@ namespace CityHighways.Presentation
 
         bool HumanTurn => _animating == null && !_awaitingHandoff && _game.Phase != MagnatePhase.GameOver && !_game.CurrentPlayer.IsBot;
 
+        string JournalText(string message)
+        {
+            if (!En || string.IsNullOrEmpty(message)) return message;
+            var round = System.Text.RegularExpressions.Regex.Match(message, @"^Раунд (\d+)\.$");
+            if (round.Success) return "Round " + round.Groups[1].Value + ".";
+            if (message.StartsWith("Очерёдность: "))
+                return "Turn order: " + message.Substring("Очерёдность: ".Length)
+                    .Replace(" (первыми ходят и грузятся отстающие).", " (trailing companies move and load first).");
+            if (message == "Стройка закончена: со следующего раунда фуры берут грузы.")
+                return "Construction is over: trucks start picking up cargo next round.";
+            if (message.StartsWith("Раунд стройки: "))
+                return "Opening construction round: companies each build a road. Trucks wait until round two.";
+            if (message.StartsWith("Событие: "))
+            {
+                foreach (var e in _game.Events)
+                    if (message.Contains(e.Title)) return "Event: " + EventTitle(e) + ". " + EventDescription(e);
+            }
+            var finished = System.Text.RegularExpressions.Regex.Match(message, @"^Партия окончена\. Победил (.*): (\d+) очков\.$");
+            if (finished.Success) return $"Game over. Winner: {finished.Groups[1].Value} ({finished.Groups[2].Value} pts).";
+            foreach (var p in _game.Players)
+            {
+                var initial = $"Жребий: первым ходит {p.Name}.";
+                if (message == initial) return $"First turn: {p.Name}.";
+                var subsidy = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^Субсидия мэрии: " + System.Text.RegularExpressions.Regex.Escape(p.Name) + @" отстаёт и получает \+(\d+) очко стройки\.$");
+                if (subsidy.Success) return $"City Hall subsidy: {p.Name} is trailing and gets +{subsidy.Groups[1].Value} build point(s).";
+                var build = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^" + System.Text.RegularExpressions.Regex.Escape(p.Name) + @" строит (мост|дорогу) (.*) — (.*)\.$");
+                if (build.Success)
+                    return $"{p.Name} builds a {(build.Groups[1].Value == "мост" ? "bridge" : "road")} between {Place(build.Groups[2].Value)} and {Place(build.Groups[3].Value)}.";
+                var highway = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^" + System.Text.RegularExpressions.Regex.Escape(p.Name) + @": магистраль (.*) — (.*)\.$");
+                if (highway.Success)
+                    return $"{p.Name} upgrades a highway between {Place(highway.Groups[1].Value)} and {Place(highway.Groups[2].Value)}.";
+            }
+            return message; // Unrecognized Core messages are left intact rather than guessed.
+        }
+
         string EventTitle(LogisticsEvent e)
         {
             if (!En || e == null) return e?.Title ?? "";
