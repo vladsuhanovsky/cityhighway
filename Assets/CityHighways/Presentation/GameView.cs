@@ -3006,7 +3006,7 @@ namespace CityHighways.Presentation
             line.Add(Ui.Text(DistrictName(contract.DistrictB), 14f, textColor));
             if (contract.IsComplex)
             {
-                line.Add(Ui.Text(contract.Kind == ContractKind.Transit ? " через " : " и ", 14f, Theme.TextDim));
+                line.Add(Ui.Text(EnglishUi ? (contract.Kind == ContractKind.Transit ? " via " : " and ") : (contract.Kind == ContractKind.Transit ? " через " : " и "), 14f, Theme.TextDim));
                 line.Add(DistrictChip(MapView.ThirdColor));
                 line.Add(Ui.Text(DistrictName(contract.DistrictC), 14f, textColor));
             }
@@ -3017,8 +3017,8 @@ namespace CityHighways.Presentation
         string ContractTitle(Contract contract)
         {
             string title = $"{DistrictName(contract.DistrictA)} — {DistrictName(contract.DistrictB)}";
-            if (contract.Kind == ContractKind.Transit) title += " через " + DistrictName(contract.DistrictC);
-            else if (contract.Kind == ContractKind.Hub) title += " и " + DistrictName(contract.DistrictC);
+            if (contract.Kind == ContractKind.Transit) title += (EnglishUi ? " via " : " через ") + DistrictName(contract.DistrictC);
+            else if (contract.Kind == ContractKind.Hub) title += (EnglishUi ? " and " : " и ") + DistrictName(contract.DistrictC);
             return title;
         }
 
@@ -3292,10 +3292,10 @@ namespace CityHighways.Presentation
             box.style.backgroundColor = Theme.Panel;
             Ui.Border(box, 2f, Theme.Gold);
 
-            box.Add(Ui.Text($"{LocationName(route.A)} — {LocationName(route.B)}: чем платить?", 15f, null, true));
+            box.Add(Ui.Text(EnglishUi ? $"{DisplayPlace(LocationName(route.A))} — {DisplayPlace(LocationName(route.B))}: how will you pay?" : $"{LocationName(route.A)} — {LocationName(route.B)}: чем платить?", 15f, null, true));
             if (canBuildFree)
             {
-                var free = Ui.Button($"Бесплатно — Прораб (осталось {_game.CurrentPlayer.FreeRoadsLeft})", () =>
+                var free = Ui.Button(EnglishUi ? $"Free — Foreman ({_game.CurrentPlayer.FreeRoadsLeft} left)" : $"Бесплатно — Прораб (осталось {_game.CurrentPlayer.FreeRoadsLeft})", () =>
                 {
                     HideOverlay();
                     Act(() => _game.BuildRoadFree(route.Id));
@@ -3665,8 +3665,8 @@ namespace CityHighways.Presentation
             box.style.backgroundColor = Theme.Panel;
             Ui.Border(box, 2f, new Color(1f, 0.60f, 0.20f));
 
-            box.Add(Ui.Text($"{LocationName(route.A)} — {LocationName(route.B)}: улучшить до магистрали?", 15f, null, true));
-            var info = Ui.Text($"Стоит {cost} карт(ы), занимает ход. +{_game.Config.UpgradePoints} очка, дальше проезд для соперников ×{_game.Config.RushHourTollMultiplier}" +
+            box.Add(Ui.Text(EnglishUi ? $"{DisplayPlace(LocationName(route.A))} — {DisplayPlace(LocationName(route.B))}: upgrade to highway?" : $"{LocationName(route.A)} — {LocationName(route.B)}: улучшить до магистрали?", 15f, null, true));
+            var info = Ui.Text(EnglishUi ? $"Costs {cost} cards and uses your turn. +{_game.Config.UpgradePoints} pts. Rivals pay ×{_game.Config.RushHourTollMultiplier} tolls afterward" + (_game.IsJammed(route.Id) ? "; this clears the traffic jam." : ". Highways do not suffer traffic jams.") : $"Стоит {cost} карт(ы), занимает ход. +{_game.Config.UpgradePoints} очка, дальше проезд для соперников ×{_game.Config.RushHourTollMultiplier}" +
                                (_game.IsJammed(route.Id) ? ", и пробка на ней исчезнет." : ". Магистраль не встаёт в пробку."), 12f, Theme.TextDim);
             info.style.whiteSpace = WhiteSpace.Normal;
             info.style.marginTop = 4f;
@@ -4721,7 +4721,7 @@ namespace CityHighways.Presentation
 
         string LocationName(string locationId) => _game.Map.LocationName(locationId);
 
-        string DistrictName(string districtId) => _game.Map.DistrictName(districtId);
+        string DistrictName(string districtId) => DisplayPlace(_game.Map.DistrictName(districtId));
 
         /// <summary>Подпись способа оплаты; cost — сколько карт стоит действие (с учётом скидок и событий).</summary>
         static string PaymentLabel(int cost, PaymentOption option)
