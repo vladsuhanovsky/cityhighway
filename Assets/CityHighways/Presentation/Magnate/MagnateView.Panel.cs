@@ -212,7 +212,7 @@ namespace CityHighways.Presentation
             foreach (var group in waiting.GroupBy(c => c.Kind).OrderBy(g => g.Key))
             {
                 var chip = Chip(group.Key, CargoIconBottom);
-                chip.tooltip = $"{LogisticsGame.KindTitle(group.Key)}: {group.Count()}";
+                chip.tooltip = $"{QuickCargoTitle(group.Key)}: {group.Count()}";
                 chip.style.marginRight = 3f;
                 chip.style.marginBottom = 2f;
                 kinds.Add(chip);
@@ -362,7 +362,7 @@ namespace CityHighways.Presentation
             }
             title.Add(Ui.Text(En ? $"Truck {number}" : $"Фура {number}", 12f, Theme.Text, true));
             chip.Add(title);
-            string status = truck.Cargo != null ? $"→ {_game.Map.LocationName(cargo?.To)}"
+            string status = truck.Cargo != null ? $"→ {Place(_game.Map.LocationName(cargo?.To))}"
                  : truck.PlannedCargo != null ? (En ? $"picking up → {Place(_game.Map.LocationName(cargo?.To))}" : $"берёт → {_game.Map.LocationName(cargo?.To)}")
                  : truck.Target != null ? (En ? $"empty → {Place(_game.Map.LocationName(truck.Target))}" : $"пустая → {_game.Map.LocationName(truck.Target)}")
                  : (En ? $"waiting · {Place(_game.Map.LocationName(truck.Location))}" : $"ждёт · {_game.Map.LocationName(truck.Location)}");
@@ -544,7 +544,7 @@ namespace CityHighways.Presentation
                 var chip = Chip(kind, CargoIconPanel);
                 chip.style.opacity = hidden ? 0.25f : 1f;
                 chip.style.marginBottom = 4f;
-                chip.tooltip = LogisticsGame.KindTitle(kind) + (hidden ? LocalizationService.Get("magnate.panel.023") : LocalizationService.Get("magnate.panel.024"));
+                chip.tooltip = QuickCargoTitle(kind) + (hidden ? LocalizationService.Get("magnate.panel.023") : LocalizationService.Get("magnate.panel.024"));
                 chip.pickingMode = PickingMode.Position;
                 chip.RegisterCallback<ClickEvent>(_ =>
                 {
