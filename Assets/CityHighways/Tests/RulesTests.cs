@@ -63,6 +63,25 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void MayorGoalInfluenceReward_ChangesLanguageWithoutChangingSource()
+        {
+            const string source = "Mira: +2 влияния (цель мэрии).";
+            var previous = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Mira: +2 influence (City Hall goal).",
+                    LocalizationService.TranslateProgressJournal(source));
+                LocalizationService.SetLanguage("ru");
+                Assert.IsNull(LocalizationService.TranslateProgressJournal(source));
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Mira: +2 influence (City Hall goal).",
+                    LocalizationService.TranslateProgressJournal(source));
+            }
+            finally { LocalizationService.SetLanguage(previous); }
+        }
+
+        [Test]
         public void HistoricalTradeOffers_TranslateMixedCardInfluenceAndPassOffers()
         {
             var previous = LocalizationService.Language;

@@ -331,6 +331,7 @@ namespace CityHighways.Presentation
         static string TranslateInfluenceReason(string reason, Func<string, string> place)
         {
             if (reason == "новый район") return "new district";
+            if (reason == "цель мэрии") return "City Hall goal";
             if (reason == "поддержка отстающих") return "catch-up support";
             var m = System.Text.RegularExpressions.Regex.Match(reason, @"^дорога длиной (\d+)$");
             if (m.Success) return $"road of length {m.Groups[1].Value}";
