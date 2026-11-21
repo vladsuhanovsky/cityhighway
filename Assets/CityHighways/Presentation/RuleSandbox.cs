@@ -13,16 +13,17 @@ namespace CityHighways.Presentation
     /// </summary>
     public static class RuleSandbox
     {
+        static bool En => LocalizationService.Language == "en";
         public enum Kind { Toll, Highway, Influence, Deal }
 
         public static string Title(Kind kind)
         {
             switch (kind)
             {
-                case Kind.Toll: return "Песочница: контракт и проезд";
-                case Kind.Highway: return "Песочница: магистраль и пробки";
-                case Kind.Influence: return "Песочница: влияние";
-                default: return "Песочница: сделка";
+                case Kind.Toll: return (En ? "Sandbox: contracts and tolls" : "Песочница: контракт и проезд");
+                case Kind.Highway: return (En ? "Sandbox: highways and traffic jams" : "Песочница: магистраль и пробки");
+                case Kind.Influence: return (En ? "Sandbox: influence" : "Песочница: влияние");
+                default: return (En ? "Sandbox: trade" : "Песочница: сделка");
             }
         }
 
@@ -77,14 +78,14 @@ namespace CityHighways.Presentation
         static VisualElement Toll(GameConfig config)
         {
             var root = Ui.Column();
-            root.Add(Hint($"Контракт «А — Б». Нажимайте на дороги — каждое нажатие меняет их по кругу: свободна, ваша, соперника, магистраль соперника. " +
-                          $"Засчитывается путь, где есть ваша дорога и не больше {config.MaxForeignRoadsPerContract} чужих; за каждую чужую — проезд."));
+            root.Add(Hint((En ? $"Contract A–B. Click roads to cycle them through: unclaimed, yours, rival’s, and rival’s highway. " : $"Контракт «А — Б». Нажимайте на дороги — каждое нажатие меняет их по кругу: свободна, ваша, соперника, магистраль соперника. ") +
+                          (En ? $"A route counts if it includes at least one of your roads and at most {config.MaxForeignRoadsPerContract} rival roads. Using rivals’ roads incurs tolls." : $"Засчитывается путь, где есть ваша дорога и не больше {config.MaxForeignRoadsPerContract} чужих; за каждую чужую — проезд.")));
             var board = new SandboxBoard(640f, 220f)
-                .Place("a", 0.07f, 0.52f, MapView.FromColor, "Район А")
+                .Place("a", 0.07f, 0.52f, MapView.FromColor, (En ? "District A" : "Район А"))
                 .Place("x", 0.33f, 0.18f, Spot, null)
                 .Place("y", 0.66f, 0.18f, Spot, null)
                 .Place("z", 0.50f, 0.84f, Spot, null)
-                .Place("b", 0.93f, 0.52f, MapView.ToColor, "Район Б");
+                .Place("b", 0.93f, 0.52f, MapView.ToColor, (En ? "District B" : "Район Б"));
             var roads = new[] { board.Road("ax", "a", "x"), board.Road("xy", "x", "y"), board.Road("yb", "y", "b"), board.Road("az", "a", "z"), board.Road("zb", "z", "b") };
             var state = new Dictionary<string, int> { ["ax"] = 1, ["xy"] = 2, ["yb"] = 2, ["az"] = 0, ["zb"] = 0 };
             root.Add(board);
@@ -101,7 +102,7 @@ namespace CityHighways.Presentation
                     link.Frame = s == 3;
                     link.Highlight = false;
                     int toll = s == 3 ? config.TollPerRoad * config.RushHourTollMultiplier : config.TollPerRoad;
-                    link.Label = s == 0 ? "свободна" : s == 1 ? "ваша" : $"чужая −{toll}";
+                    link.Label = s == 0 ? (En ? "unclaimed" : "свободна") : s == 1 ? (En ? "yours" : "ваша") : (En ? $"rival −{toll}" : $"чужая −{toll}");
                 }
                 var paths = new[] { new[] { "ax", "xy", "yb" }, new[] { "az", "zb" } };
                 string best = null;
@@ -112,19 +113,19 @@ namespace CityHighways.Presentation
                 {
                     if (path.Any(id => state[id] == 0))
                     {
-                        reasons.Add(path.Length == 3 ? "верхний путь не достроен" : "нижний путь не достроен");
+                        reasons.Add(path.Length == 3 ? (En ? "upper route incomplete" : "верхний путь не достроен") : (En ? "lower route incomplete" : "нижний путь не достроен"));
                         continue;
                     }
                     int own = path.Count(id => state[id] == 1);
                     int foreign = path.Length - own;
                     if (own == 0)
                     {
-                        reasons.Add((path.Length == 3 ? "на верхнем" : "на нижнем") + " пути нет ни одной вашей дороги");
+                        reasons.Add((path.Length == 3 ? (En ? "on the upper" : "на верхнем") : (En ? "on the lower" : "на нижнем")) + (En ? " route there are no roads of yours" : " пути нет ни одной вашей дороги"));
                         continue;
                     }
                     if (foreign > config.MaxForeignRoadsPerContract)
                     {
-                        reasons.Add((path.Length == 3 ? "на верхнем" : "на нижнем") + $" пути {foreign} чужих — больше {config.MaxForeignRoadsPerContract}");
+                        reasons.Add((path.Length == 3 ? (En ? "on the upper" : "на верхнем") : (En ? "on the lower" : "на нижнем")) + (En ? $" route there are {foreign} rival roads, exceeding {config.MaxForeignRoadsPerContract}" : $" пути {foreign} чужих — больше {config.MaxForeignRoadsPerContract}"));
                         continue;
                     }
                     int toll = path.Sum(id => state[id] == 2 ? config.TollPerRoad : state[id] == 3 ? config.TollPerRoad * config.RushHourTollMultiplier : 0);
@@ -132,23 +133,23 @@ namespace CityHighways.Presentation
                     {
                         bestToll = toll;
                         bestPath = path;
-                        best = path.Length == 3 ? "верхний путь" : "нижний путь";
+                        best = path.Length == 3 ? (En ? "upper route" : "верхний путь") : (En ? "lower route" : "нижний путь");
                     }
                 }
                 if (bestPath != null)
                 {
                     foreach (var link in roads) link.Highlight = bestPath.Contains(link.Id);
-                    title.text = "Контракт выполнен";
+                    title.text = (En ? "Contract completed" : "Контракт выполнен");
                     title.style.color = GameColors.Success;
                     result.style.borderLeftColor = GameColors.Success;
                     body.text = bestToll == 0
-                        ? $"Засчитан {best} — только ваши дороги, платить никому не нужно."
-                        : $"Засчитан {best}: проезд {bestToll} очк. владельцу чужих дорог. Игра сама выбирает самый дешёвый путь и закрепляет его — " +
-                          "если соперник потом улучшит дорогу, вы уже не переплатите.";
+                        ? (En ? $"The {best} counts: all roads are yours, so no tolls are due." : $"Засчитан {best} — только ваши дороги, платить никому не нужно.")
+                        : (En ? $"The {best} counts: pay {bestToll} points to rival road owners. The game locks in the cheapest route, " : $"Засчитан {best}: проезд {bestToll} очк. владельцу чужих дорог. Игра сама выбирает самый дешёвый путь и закрепляет его — ") +
+                          (En ? "so future rival upgrades cannot increase its cost." : "если соперник потом улучшит дорогу, вы уже не переплатите.");
                 }
                 else
                 {
-                    title.text = "Контракт пока не выполнен";
+                    title.text = (En ? "Contract not yet completed" : "Контракт пока не выполнен");
                     title.style.color = GameColors.Danger;
                     result.style.borderLeftColor = GameColors.Danger;
                     body.text = string.Join("; ", reasons) + ".";
@@ -171,8 +172,8 @@ namespace CityHighways.Presentation
         static VisualElement Highway(GameConfig config)
         {
             var root = Ui.Column();
-            root.Add(Hint("Своя дорога и соперники, которые по ней едут. Меняйте длину, улучшайте до магистрали и добавляйте контракты соперников — " +
-                          "справа видно, сколько получаете вы и сколько сгорает в пробке."));
+            root.Add(Hint((En ? "This is your road and the rivals using it. Change its length, upgrade to a highway, and add rival contracts. " : "Своя дорога и соперники, которые по ней едут. Меняйте длину, улучшайте до магистрали и добавляйте контракты соперников — ") +
+                          (En ? "On the right, see how many points you earn and how many are lost to jams." : "справа видно, сколько получаете вы и сколько сгорает в пробке.")));
             int length = Mathf.Min(3, config.MaxRoadLength);
             bool upgraded = false;
             int traffic = 1;
@@ -190,7 +191,7 @@ namespace CityHighways.Presentation
             controls.style.flexGrow = 1f;
             var lengthRow = Ui.Row();
             lengthRow.style.alignItems = Align.Center;
-            lengthRow.Add(Ui.Text("Длина:", 14f, Theme.Text, true));
+            lengthRow.Add(Ui.Text((En ? "Length:" : "Длина:"), 14f, Theme.Text, true));
             var lengthButtons = new List<UnityEngine.UIElements.Button>();
             var trafficLabel = Ui.Number("", 18f, Theme.Text, true);
             var upgradeButton = Ui.Button("", () => { }, ButtonKind.Primary, 14f);
@@ -206,12 +207,12 @@ namespace CityHighways.Presentation
                 }
                 trafficLabel.text = traffic.ToString();
                 int cost = (length + 1) / 2;
-                upgradeButton.text = upgraded ? "Снять улучшение" : $"Улучшить · {cost} карт{(cost == 1 ? "а" : "ы")}";
+                upgradeButton.text = En ? (upgraded ? "Remove upgrade" : $"Upgrade · {cost} cards") : (upgraded ? "Снять улучшение" : $"Улучшить · {cost} карт{(cost == 1 ? "а" : "ы")}");
                 bool jammed = !upgraded && config.JamThreshold > 0 && traffic >= config.JamThreshold;
                 road.Color = Own;
                 road.Dashed = false;
                 road.Frame = upgraded;
-                road.Label = upgraded ? "магистраль" : jammed ? "пробка!" : $"обычная · загрузка {traffic}";
+                road.Label = upgraded ? (En ? "highway" : "магистраль") : jammed ? (En ? "jam!" : "пробка!") : (En ? $"regular · traffic {traffic}" : $"обычная · загрузка {traffic}");
                 board.Refresh();
 
                 int toll = config.TollPerRoad * (upgraded ? config.RushHourTollMultiplier : 1);
@@ -222,14 +223,14 @@ namespace CityHighways.Presentation
                     for (int before = 0; before < traffic; before++)
                         if (before >= config.JamThreshold) burned += config.JamFee;
                 int points = config.PointsForLength(length) + (upgraded ? config.UpgradePoints : 0);
-                title.text = $"Дорога: +{points} очк. · проезд: +{income} вам";
+                title.text = (En ? $"Road: +{points} pts · toll income: +{income}" : $"Дорога: +{points} очк. · проезд: +{income} вам");
                 title.style.color = upgraded ? GameColors.Accent : GameColors.Success;
                 result.style.borderLeftColor = jammed ? GameColors.Danger : upgraded ? GameColors.Accent : GameColors.Success;
-                body.text = $"За длину {length}: {config.PointsForLength(length)} очк." + (upgraded ? $" Магистраль: ещё +{config.UpgradePoints}." : "") +
-                            $" Каждый из {traffic} соперничьих контрактов платит вам {toll}." +
-                            (burned > 0 ? $" Пробка: соперники дополнительно теряют {burned} очк. — они сгорают, вам не достаются. Улучшите дорогу или ждите объезда."
-                                : jammed ? " Дорога в пробке: следующий проезд будет стоить соперникам дороже."
-                                : upgraded ? " Магистраль в пробку не встаёт." : "");
+                body.text = (En ? $"Length {length}: {config.PointsForLength(length)} points." : $"За длину {length}: {config.PointsForLength(length)} очк.") + (upgraded ? (En ? $" Highway: +{config.UpgradePoints} more." : $" Магистраль: ещё +{config.UpgradePoints}.") : "") +
+                            (En ? $" Each of {traffic} rival contracts pays you {toll} points." : $" Каждый из {traffic} соперничьих контрактов платит вам {toll}.") +
+                            (burned > 0 ? (En ? $" Jam: rivals lose an additional {burned} points, which are not paid to you. Upgrade the road or wait for a detour." : $" Пробка: соперники дополнительно теряют {burned} очк. — они сгорают, вам не достаются. Улучшите дорогу или ждите объезда.")
+                                : jammed ? (En ? " Jammed road: the next crossing costs rivals more." : " Дорога в пробке: следующий проезд будет стоить соперникам дороже.")
+                                : upgraded ? (En ? " Highways cannot become jammed." : " Магистраль в пробку не встаёт.") : "");
             }
 
             for (int l = 1; l <= config.MaxRoadLength; l++)
@@ -246,7 +247,7 @@ namespace CityHighways.Presentation
             var trafficRow = Ui.Row();
             trafficRow.style.alignItems = Align.Center;
             trafficRow.style.marginTop = 10f;
-            trafficRow.Add(Ui.Text("Контрактов соперников по ней:", 14f, Theme.Text, true));
+            trafficRow.Add(Ui.Text((En ? "Rival contracts on this road:" : "Контрактов соперников по ней:"), 14f, Theme.Text, true));
             var less = Ui.Button("–", () => { traffic = Mathf.Max(0, traffic - 1); Ui.Changed?.Invoke(); Update(); }, ButtonKind.Secondary, 16f);
             less.style.width = 40f;
             less.style.marginLeft = 8f;
@@ -267,7 +268,7 @@ namespace CityHighways.Presentation
             upgradeButton.style.marginTop = 12f;
             upgradeButton.style.alignSelf = Align.FlexStart;
             controls.Add(upgradeButton);
-            controls.Add(Hint($"Улучшение — это ход и половина длины дороги в картах её ресурса (с округлением вверх). Пробка начинается с загрузки {config.JamThreshold}."));
+            controls.Add(Hint((En ? $"An upgrade takes a turn and cards of the road’s resource equal to half its length (rounded up). Jams start at traffic {config.JamThreshold}." : $"Улучшение — это ход и половина длины дороги в картах её ресурса (с округлением вверх). Пробка начинается с загрузки {config.JamThreshold}.")));
             row.Add(controls);
             root.Add(row);
             root.Add(result);
@@ -280,8 +281,8 @@ namespace CityHighways.Presentation
         static VisualElement Influence(GameConfig config)
         {
             var root = Ui.Column();
-            root.Add(Hint("Копите влияние и тратьте его: не больше одного раза за ход, до основного действия. " +
-                          "Здесь идёт снегопад, а в открытом ряду — пять карт."));
+            root.Add(Hint((En ? "Earn and spend influence, at most once per turn before the main action. " : "Копите влияние и тратьте его: не больше одного раза за ход, до основного действия. ") +
+                          (En ? "This example has a snowstorm and five face-up cards." : "Здесь идёт снегопад, а в открытом ряду — пять карт.")));
             int influence = 6, turn = 1, refreshes = 0;
             bool usedThisTurn = false, permit = false, snow = true;
             var random = new System.Random(7);
@@ -344,9 +345,9 @@ namespace CityHighways.Presentation
 
             void Update()
             {
-                wallet.text = $"{influence} вл.";
-                turnLabel.text = $"Ход {turn}" + (usedThisTurn ? " · влияние в этот ход уже потрачено" : " · можно потратить");
-                eventChip.text = snow ? (permit ? "Снегопад (у вас разрешение)" : "Снегопад: щебень дороже") : "Событий нет";
+                wallet.text = (En ? $"{influence} influence" : $"{influence} вл.");
+                turnLabel.text = (En ? $"Turn {turn}" : $"Ход {turn}") + (usedThisTurn ? (En ? " · influence already spent this turn" : " · влияние в этот ход уже потрачено") : (En ? " · you may spend influence" : " · можно потратить"));
+                eventChip.text = snow ? (permit ? (En ? "Snowfall (you have a permit)" : "Снегопад (у вас разрешение)") : (En ? "Snowfall: gravel costs more" : "Снегопад: щебень дороже")) : (En ? "No events" : "Событий нет");
                 eventChip.style.backgroundColor = snow ? GameView.EventColor(CityEventKind.Snow) : GameColors.Button;
                 for (int i = 0; i < cards.Count; i++) cards[i].Set(market[i]);
                 foreach (var pair in buttons)
@@ -372,18 +373,18 @@ namespace CityHighways.Presentation
                             refreshes++;
                             DealMarket();
                             foreach (var card in cards) Ui.Appear(card);
-                            Write($"−{cost}: ряд ушёл в сброс, выложены новые карты. Следующее ваше обновление дороже на {config.InfluenceRefreshStep}.", Theme.Text);
+                            Write((En ? $"−{cost}: the row was discarded and replaced. Your next refresh costs {config.InfluenceRefreshStep} more." : $"−{cost}: ряд ушёл в сброс, выложены новые карты. Следующее ваше обновление дороже на {config.InfluenceRefreshStep}."), Theme.Text);
                             break;
                         case InfluenceAction.ExtraContracts:
-                            Write($"−{cost}: вы берёте {config.ContractsDrawn + 1} контракта вместо {config.ContractsDrawn} — это и есть действие хода.", Theme.Text);
+                            Write((En ? $"−{cost}: draw {config.ContractsDrawn + 1} contracts instead of {config.ContractsDrawn}; this consumes your turn." : $"−{cost}: вы берёте {config.ContractsDrawn + 1} контракта вместо {config.ContractsDrawn} — это и есть действие хода."), Theme.Text);
                             break;
                         case InfluenceAction.Permit:
                             permit = true;
-                            Write($"−{cost}: разрешение мэрии — в этот ход снег и парад на вас не действуют.", Theme.Text);
+                            Write((En ? $"−{cost}: City Hall permit protects you from snow and parade effects this turn." : $"−{cost}: разрешение мэрии — в этот ход снег и парад на вас не действуют."), Theme.Text);
                             break;
                         default:
                             snow = false;
-                            Write($"−{cost}: событие отменено для всех.", Theme.Text);
+                            Write((En ? $"−{cost}: the event was cancelled for everyone." : $"−{cost}: событие отменено для всех."), Theme.Text);
                             break;
                     }
                     Update();
@@ -405,14 +406,14 @@ namespace CityHighways.Presentation
                 button.style.marginBottom = 6f;
                 income.Add(button);
             }
-            Income("Контракт выполнен", config.InfluencePerContract, "мэрия довольна выполненным контрактом.");
-            Income("Новый район в сети", config.InfluencePerNewDistrict, "ваша сеть дотянулась до нового района.");
-            var next = Ui.Button("Следующий ход", () =>
+            Income((En ? "Contract completed" : "Контракт выполнен"), config.InfluencePerContract, (En ? "City Hall rewards your completed contract." : "мэрия довольна выполненным контрактом."));
+            Income((En ? "New district reached" : "Новый район в сети"), config.InfluencePerNewDistrict, (En ? "your network expanded to a new district." : "ваша сеть дотянулась до нового района."));
+            var next = Ui.Button((En ? "Next turn" : "Следующий ход"), () =>
             {
                 turn++;
                 usedThisTurn = false;
                 permit = false;
-                Write($"Ход {turn}: влияние снова можно потратить один раз.", Theme.TextDim);
+                Write((En ? $"Turn {turn}: you can spend influence once again." : $"Ход {turn}: влияние снова можно потратить один раз."), Theme.TextDim);
                 Update();
             }, ButtonKind.Primary, 13f);
             next.style.marginBottom = 6f;
@@ -426,8 +427,8 @@ namespace CityHighways.Presentation
         static VisualElement Deal(GameConfig config)
         {
             var root = Ui.Column();
-            root.Add(Hint($"Предложите сопернику обмен: от 1 до {config.TradeMaxCards} карт одного ресурса на карты другого, можно доплатить влиянием " +
-                          $"(до {config.TradeMaxInfluence}). Соперник в песочнице соглашается, если получает не меньше, чем отдаёт. Сделка хода не тратит."));
+            root.Add(Hint((En ? $"Offer a rival 1–{config.TradeMaxCards} resource cards for another resource, optionally adding influence " : $"Предложите сопернику обмен: от 1 до {config.TradeMaxCards} карт одного ресурса на карты другого, можно доплатить влиянием ") +
+                          (En ? $"(up to {config.TradeMaxInfluence}). In this sandbox, the rival accepts if they receive at least as much as they give. A deal does not consume your turn." : $"(до {config.TradeMaxInfluence}). Соперник в песочнице соглашается, если получает не меньше, чем отдаёт. Сделка хода не тратит.")));
             var kinds = ResourceInfo.Building;
             var mine = new Dictionary<Resource, int> { [Resource.Asphalt] = 4, [Resource.Concrete] = 1, [Resource.Steel] = 0, [Resource.Gravel] = 3 };
             var theirs = new Dictionary<Resource, int> { [Resource.Asphalt] = 0, [Resource.Concrete] = 3, [Resource.Steel] = 2, [Resource.Gravel] = 1 };
@@ -460,8 +461,8 @@ namespace CityHighways.Presentation
             }
 
             var hands = Ui.Row();
-            hands.Add(Hand("Ваша рука", mine, out var refreshMine));
-            hands.Add(Hand("Рука соперника", theirs, out var refreshTheirs));
+            hands.Add(Hand((En ? "Your hand" : "Ваша рука"), mine, out var refreshMine));
+            hands.Add(Hand((En ? "Rival hand" : "Рука соперника"), theirs, out var refreshTheirs));
             root.Add(hands);
 
             var offer = Ui.Row();
@@ -471,16 +472,16 @@ namespace CityHighways.Presentation
             var giveButton = Ui.Button("", () => { }, ButtonKind.Secondary, 13f);
             var getButton = Ui.Button("", () => { }, ButtonKind.Secondary, 13f);
             var payButton = Ui.Button("", () => { }, ButtonKind.Secondary, 13f);
-            var propose = Ui.Button("Предложить", () => { }, ButtonKind.Primary, 14f);
+            var propose = Ui.Button((En ? "Propose" : "Предложить"), () => { }, ButtonKind.Primary, 14f);
             var result = ResultBox(out var title, out var body);
             var walletLabel = Ui.Text("", 13f, new Color(0.75f, 0.60f, 0.98f), true);
 
             void Update()
             {
-                giveButton.text = $"Отдаю: {giveCount} × {Palette.CardTitle(kinds[give])}";
-                getButton.text = $"Прошу: {getCount} × {Palette.CardTitle(kinds[get])}";
-                payButton.text = pay > 0 ? $"Доплата: {pay} вл." : "Без доплаты";
-                walletLabel.text = $"Ваше влияние: {myInfluence}";
+                giveButton.text = (En ? $"Offering: {giveCount} × {Palette.CardTitle(kinds[give])}" : $"Отдаю: {giveCount} × {Palette.CardTitle(kinds[give])}");
+                getButton.text = (En ? $"Requesting: {getCount} × {Palette.CardTitle(kinds[get])}" : $"Прошу: {getCount} × {Palette.CardTitle(kinds[get])}");
+                payButton.text = pay > 0 ? (En ? $"Payment: {pay} influence" : $"Доплата: {pay} вл.") : (En ? "No payment" : "Без доплаты");
+                walletLabel.text = (En ? $"Your influence: {myInfluence}" : $"Ваше влияние: {myInfluence}");
                 refreshMine();
                 refreshTheirs();
                 Ui.SetEnabled(propose, !done);
@@ -508,25 +509,25 @@ namespace CityHighways.Presentation
             {
                 var g = kinds[give];
                 var r = kinds[get];
-                if (mine[g] < giveCount) Verdict(false, $"У вас только {mine[g]} × {Palette.CardTitle(g)} — нельзя отдать {giveCount}.");
-                else if (theirs[r] < getCount) Verdict(false, $"У соперника только {theirs[r]} × {Palette.CardTitle(r)}.");
-                else if (myInfluence < pay) Verdict(false, "Не хватает влияния на доплату.");
-                else if (giveCount + pay * 0.5f < getCount) Verdict(false, $"Соперник отказался: получает {giveCount} карт" + (pay > 0 ? $" и {pay} вл." : "") + $", а отдаёт {getCount}. Добавьте карту или влияние.");
+                if (mine[g] < giveCount) Verdict(false, (En ? $"You have only {mine[g]} × {Palette.CardTitle(g)}, so you cannot give {giveCount}." : $"У вас только {mine[g]} × {Palette.CardTitle(g)} — нельзя отдать {giveCount}."));
+                else if (theirs[r] < getCount) Verdict(false, (En ? $"Your rival has only {theirs[r]} × {Palette.CardTitle(r)}." : $"У соперника только {theirs[r]} × {Palette.CardTitle(r)}."));
+                else if (myInfluence < pay) Verdict(false, (En ? "Not enough influence for the payment." : "Не хватает влияния на доплату."));
+                else if (giveCount + pay * 0.5f < getCount) Verdict(false, (En ? $"Rival declined: receives {giveCount} cards" : $"Соперник отказался: получает {giveCount} карт") + (pay > 0 ? (En ? $" and {pay} influence" : $" и {pay} вл.") : "") + (En ? $", but gives up {getCount}. Add cards or influence." : $", а отдаёт {getCount}. Добавьте карту или влияние."));
                 else
                 {
                     mine[g] -= giveCount; theirs[g] += giveCount;
                     theirs[r] -= getCount; mine[r] += getCount;
                     myInfluence -= pay;
                     done = true;
-                    Verdict(true, $"Сделка заключена: вы отдали {giveCount} × {Palette.CardTitle(g)}" + (pay > 0 ? $" и {pay} вл." : "") +
-                                  $", получили {getCount} × {Palette.CardTitle(r)}. Сделка — одна за ход, и ход ещё ваш: можно строить.");
+                    Verdict(true, (En ? $"Deal accepted: you gave {giveCount} × {Palette.CardTitle(g)}" : $"Сделка заключена: вы отдали {giveCount} × {Palette.CardTitle(g)}") + (pay > 0 ? (En ? $" and {pay} influence" : $" и {pay} вл.") : "") +
+                                  (En ? $", received {getCount} × {Palette.CardTitle(r)}. Only one deal per turn; you may still build." : $", получили {getCount} × {Palette.CardTitle(r)}. Сделка — одна за ход, и ход ещё ваш: можно строить."));
                 }
                 Update();
             };
 
             void Verdict(bool ok, string text)
             {
-                title.text = ok ? "Соперник согласился" : "Сделка не состоялась";
+                title.text = ok ? (En ? "Rival accepted" : "Соперник согласился") : (En ? "Deal failed" : "Сделка не состоялась");
                 title.style.color = ok ? GameColors.Success : GameColors.Danger;
                 result.style.borderLeftColor = ok ? GameColors.Success : GameColors.Danger;
                 body.text = text;
@@ -547,17 +548,17 @@ namespace CityHighways.Presentation
             var space = Ui.Box();
             space.style.flexGrow = 1f;
             bottom.Add(space);
-            bottom.Add(Ui.Button("Новый ход", () =>
+            bottom.Add(Ui.Button((En ? "New turn" : "Новый ход"), () =>
             {
                 done = false;
                 title.text = "";
-                body.text = "Новый ход — можно снова предложить одну сделку.";
+                body.text = (En ? "New turn: you may propose another deal." : "Новый ход — можно снова предложить одну сделку.");
                 result.style.borderLeftColor = GameColors.Button;
                 Update();
             }, ButtonKind.Ghost, 13f));
             root.Add(bottom);
             title.text = "";
-            body.text = "Кликайте по кнопкам «Отдаю» и «Прошу», чтобы выбрать количество и ресурс.";
+            body.text = (En ? "Click 'Offering' and 'Requesting' to choose card counts and resource types." : "Кликайте по кнопкам «Отдаю» и «Прошу», чтобы выбрать количество и ресурс.");
             result.style.borderLeftColor = GameColors.Button;
             root.Add(result);
             Update();
