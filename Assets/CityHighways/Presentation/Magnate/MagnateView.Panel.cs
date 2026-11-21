@@ -136,7 +136,7 @@ namespace CityHighways.Presentation
 
         void Refresh()
         {
-            _roundLabel.text = $"{_game.Map.Name} · раунд {_game.Round}/{_game.TotalRounds}{(_game.IsOpeningRound ? " · стройка" : "")} · {MagnateConfig.Title(_game.Config.Difficulty)}";
+            _roundLabel.text = En ? $"{Place(_game.Map.Name)} · round {_game.Round}/{_game.TotalRounds}{(_game.IsOpeningRound ? " · construction" : "")} · {DifficultyName(_game.Config.Difficulty)}" : $"{_game.Map.Name} · раунд {_game.Round}/{_game.TotalRounds}{(_game.IsOpeningRound ? " · стройка" : "")} · {MagnateConfig.Title(_game.Config.Difficulty)}";
             RefreshEventChip();
             RefreshPlayers();
             if (_popupKind == "truck" && (!HumanTurn || _game.Phase != MagnatePhase.Plan || _selectedTruck < 0)) ClosePopup(false);
@@ -224,7 +224,7 @@ namespace CityHighways.Presentation
             }
             cargo.Add(kinds);
             int urgent = waiting.Count(Urgent);
-            cargo.Add(Ui.Text(urgent > 0 ? $"срочных: {urgent}" : waiting.Count == 0 ? LocalizationService.Get("magnate.panel.005") : LocalizationService.Get("magnate.panel.006"),
+            cargo.Add(Ui.Text(urgent > 0 ? (En ? $"urgent: {urgent}" : $"срочных: {urgent}") : waiting.Count == 0 ? LocalizationService.Get("magnate.panel.005") : LocalizationService.Get("magnate.panel.006"),
                 12f, urgent > 0 ? new Color(1f, 0.45f, 0.4f) : Theme.TextDim, urgent > 0));
             _sections.Add(cargo);
             _bottom.Add(cargo);
@@ -258,7 +258,7 @@ namespace CityHighways.Presentation
             }
             if (_animating != null)
             {
-                card.Add(Header($"Раунд {_animating.Round}: фуры в пути…", Theme.Text));
+                card.Add(Header(En ? $"Round {_animating.Round}: trucks en route…" : $"Раунд {_animating.Round}: фуры в пути…", Theme.Text));
                 card.Add(Hint(LocalizationService.Get("magnate.panel.010")));
                 return;
             }
@@ -271,7 +271,7 @@ namespace CityHighways.Presentation
             }
             if (_awaitingHandoff)
             {
-                card.Add(Header($"Ход: {player.Name}", color));
+                card.Add(Header(En ? $"Turn: {player.Name}" : $"Ход: {player.Name}", color));
                 card.Add(Hint(LocalizationService.Get("magnate.panel.014")));
                 return;
             }
@@ -280,11 +280,11 @@ namespace CityHighways.Presentation
             {
                 // Раунд стройки: по одной дороге на компанию, фуры стоят; маршруты — со второго раунда.
                 bool built = _game.OpeningRoadsLeft <= 0;
-                card.Add(Header($"{player.Name} · Раунд стройки · {player.BuildPoints} очков стройки", color));
+                card.Add(Header(En ? $"{player.Name} · Opening construction · {player.BuildPoints} build points" : $"{player.Name} · Раунд стройки · {player.BuildPoints} очков стройки", color));
                 card.Add(Hint(built
                     ? LocalizationService.Get("magnate.panel.015")
-                    : $"Первый раунд — только стройка: каждая компания строит {(_game.Config.OpeningRoads == 1 ? "одну дорогу" : _game.Config.OpeningRoads + " дороги")} (без магистралей и хабов). " +
-                      LocalizationService.Get("magnate.panel.016")));
+                    : En ? $"Opening round: each company builds {(_game.Config.OpeningRoads == 1 ? "one road" : _game.Config.OpeningRoads + " roads")} (no highways or hubs). " + LocalizationService.Get("magnate.panel.016")
+                    : $"Первый раунд — только стройка: каждая компания строит {(_game.Config.OpeningRoads == 1 ? "одну дорогу" : _game.Config.OpeningRoads + " дороги")} (без магистралей и хабов). " + LocalizationService.Get("magnate.panel.016")));
                 var pass = Ui.Button(_game.IsLastTurnInRound ? LocalizationService.Get("magnate.panel.017") : LocalizationService.Get("magnate.panel.018"), () =>
                 {
                     _game.FinishBuild();
@@ -298,9 +298,8 @@ namespace CityHighways.Presentation
             }
             if (_game.Phase == MagnatePhase.Build)
             {
-                card.Add(Header($"{player.Name} · Стройка · {player.BuildPoints} очков стройки", color));
-                card.Add(Hint($"Клик по пунктирной дороге — купить: цифра на ней — цена в очках стройки (длина, мост +{_game.Config.BridgeExtraCost}; серая — не хватает). По своей — магистраль, по хабу — развить. " +
-                              $"Каждый раунд +{_game.Config.BuildPointsPerRound} очков."));
+                card.Add(Header(En ? $"{player.Name} · Construction · {player.BuildPoints} build points" : $"{player.Name} · Стройка · {player.BuildPoints} очков стройки", color));
+                card.Add(Hint(En ? $"Click a dashed road to buy it: its number is the construction cost (length, bridge +{_game.Config.BridgeExtraCost}; grey means insufficient points). Click your road to upgrade it or a hub to develop it. Gain +{_game.Config.BuildPointsPerRound} construction points each round." : $"Клик по пунктирной дороге — купить: цифра на ней — цена в очках стройки (длина, мост +{_game.Config.BridgeExtraCost}; серая — не хватает). По своей — магистраль, по хабу — развить. " + $"Каждый раунд +{_game.Config.BuildPointsPerRound} очков."));
                 var next = Ui.Button(LocalizationService.Get("magnate.panel.019"), () => { _game.FinishBuild(); _app.Sound.Play(Sfx.Click, 0.6f); }, ButtonKind.Primary, 14f);
                 next.style.alignSelf = Align.FlexStart;
                 next.style.marginTop = 4f;
@@ -310,7 +309,7 @@ namespace CityHighways.Presentation
             }
 
             // Маршруты: фуры кнопками, клик — выбрать (откроется карточка фуры), «Готово».
-            card.Add(Header($"{player.Name} · Маршруты фур", color));
+            card.Add(Header(En ? $"{player.Name} · Truck Routes" : $"{player.Name} · Маршруты фур", color));
             var trucks = Ui.Row();
             trucks.style.marginTop = 4f;
             int number = 0;
@@ -571,7 +570,7 @@ namespace CityHighways.Presentation
                     hubIcon.style.marginRight = 6f;
                     title.Add(hubIcon);
                 }
-                title.Add(Ui.Text($"{_game.Map.LocationName(hub.LocationId)} · {kindName}, ур. {hub.Level}", 13f, Theme.TextDim, true));
+                title.Add(Ui.Text(En ? $"{Place(_game.Map.LocationName(hub.LocationId))} · {kindName}, level {hub.Level}" : $"{_game.Map.LocationName(hub.LocationId)} · {kindName}, ур. {hub.Level}", 13f, Theme.TextDim, true));
                 _popupBody.Add(Pad(title));
                 foreach (var cargo in waiting) _popupBody.Add(Pad(CargoRow(cargo, true)));
             }
@@ -589,12 +588,13 @@ namespace CityHighways.Presentation
             row.style.backgroundColor = new Color(1f, 1f, 1f, 0.05f);
             if (Urgent(cargo)) Ui.Border(row, 1.5f, new Color(0.95f, 0.25f, 0.2f));
             row.pickingMode = PickingMode.Position;
-            row.tooltip = $"{LogisticsGame.KindTitle(cargo.Kind)} — подробнее о грузе";
+            row.tooltip = En ? "Click for cargo details" : $"{LogisticsGame.KindTitle(cargo.Kind)} — подробнее о грузе";
             row.Add(Chip(cargo.Kind, CargoIconPanel));
             int roundsLeft = cargo.Kind == CargoKind.Perishable ? Mathf.Max(0, cargo.SpawnRound + cargo.Norm - _game.Round) : -1;
             // Маршрут груза — откуда (станция, где он ждёт) и куда; вид груза показывает значок слева.
-            var text = Ui.Text($"{_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)} · {cargo.Value} очк." +
-                               (roundsLeft >= 0 ? $" · норма {roundsLeft} р." : "") + (ForContract(cargo) ? " · заказ мэрии" : ""), 12f, Theme.Text);
+            var text = Ui.Text(En
+                ? $"{Place(_game.Map.LocationName(cargo.From))} → {Place(_game.Map.LocationName(cargo.To))} · {cargo.Value} pts" + (roundsLeft >= 0 ? $" · due in {roundsLeft} rounds" : "") + (ForContract(cargo) ? " · city order" : "")
+                : $"{_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)} · {cargo.Value} очк." + (roundsLeft >= 0 ? $" · норма {roundsLeft} р." : "") + (ForContract(cargo) ? " · заказ мэрии" : ""), 12f, Theme.Text);
             text.style.whiteSpace = WhiteSpace.Normal;
             text.style.flexShrink = 1f;
             text.style.flexGrow = 1f;
