@@ -184,7 +184,7 @@ namespace CityHighways.Presentation
             var clock = new MenuIcon(MenuIcon.Glyph.Clock, 12f, urgent ? GameColors.Danger : Theme.TextDim);
             clock.style.marginRight = 3f;
             timer.Add(clock);
-            timer.Add(Ui.Text(LocalizationService.Language == "en" ? (order.RoundsLeft == 1 ? "final round" : $"{order.RoundsLeft} rounds") : (order.RoundsLeft == 1 ? "последний круг" : $"{order.RoundsLeft} {Plural(order.RoundsLeft)}"), 11f,
+            timer.Add(Ui.Text(RoundLabel(order.RoundsLeft), 11f,
                 urgent ? GameColors.Danger : Theme.TextDim, urgent));
             right.Add(timer);
             row.Add(right);
@@ -200,6 +200,13 @@ namespace CityHighways.Presentation
                 _hover?.Invoke(null);
             });
             return row;
+        }
+
+        static string RoundLabel(int rounds)
+        {
+            if (LocalizationService.Language == "en")
+                return rounds == 1 ? "final round" : $"{rounds} rounds";
+            return rounds == 1 ? "последний круг" : $"{rounds} {Plural(rounds)}";
         }
 
         static string Plural(int n)
