@@ -14,6 +14,7 @@ namespace CityHighways.Presentation
     /// </summary>
     public sealed partial class MenuProfilePage
     {
+        static bool IsEnglish => LocalizationService.Language == "en";
         enum Tab { Character, Achievements, Wallet, Style, Containers, Mastery, Stats }
         enum AchievementFilter { All, Active, Done }
         enum StyleFilter { All, Owned, Affordable }
@@ -387,7 +388,7 @@ namespace CityHighways.Presentation
             var row = Ui.Row();
             row.style.alignItems = Align.Center;
             row.style.marginBottom = 10f;
-            var caption = Ui.Text("Персонаж:", 14f, Theme.TextDim, true);
+            var caption = Ui.Text(IsEnglish ? "Character:" : "Персонаж:", 14f, Theme.TextDim, true);
             caption.style.marginRight = 10f;
             row.Add(caption);
             foreach (var g in new[] { CharacterCatalog.Male, CharacterCatalog.Female })
@@ -664,12 +665,12 @@ namespace CityHighways.Presentation
             var summary = Card(14f);
             summary.style.width = 300f;
             summary.style.marginRight = 12f;
-            summary.Add(Ui.Text($"Открыто {done} из {Achievements.All.Count}", 20f, Theme.Text, true));
+            summary.Add(Ui.Text((IsEnglish ? $"Unlocked {done} of {Achievements.All.Count}" : $"Открыто {done} из {Achievements.All.Count}"), 20f, Theme.Text, true));
             var bar = new ProgressBar(260f, 8f, GameColors.Accent);
             bar.Set(done / (float)Mathf.Max(1, Achievements.All.Count));
             bar.style.marginTop = 8f;
             summary.Add(bar);
-            summary.Add(Caption($"Получено наград: {rewardTaken} влияния", 13f, Theme.TextDim, 0f, 6f));
+            summary.Add(Caption((IsEnglish ? $"Rewards earned: {rewardTaken} influence" : $"Получено наград: {rewardTaken} влияния"), 13f, Theme.TextDim, 0f, 6f));
             top.Add(summary);
 
             var task = Achievements.Today;
@@ -679,7 +680,7 @@ namespace CityHighways.Presentation
             Ui.Border(daily, 2f, todayDone ? Theme.Line : GameColors.Accent);
             daily.Add(Ui.Text(LocalizationService.Get("menu.profile.032"), 13f, GameColors.Accent, true));
             daily.Add(Ui.Text(task.Title, 17f, Theme.Text, true));
-            daily.Add(Caption(todayDone ? LocalizationService.Get("menu.profile.033") : $"Награда: +{Achievements.DailyReward} влияния · выполнено всего: {profile.dailyTotal}",
+            daily.Add(Caption(todayDone ? LocalizationService.Get("menu.profile.033") : (IsEnglish ? $"Reward: +{Achievements.DailyReward} influence · completed: {profile.dailyTotal}" : $"Награда: +{Achievements.DailyReward} влияния · выполнено всего: {profile.dailyTotal}"),
                 13f, todayDone ? GameColors.Success : Theme.TextDim, 0f, 4f));
             top.Add(daily);
             _content.Add(top);
@@ -905,7 +906,7 @@ namespace CityHighways.Presentation
             var amount = Ui.Number($"{profile.wallet}", 44f, GameColors.Accent, true);
             balance.Add(amount);
             balance.Add(Caption(LocalizationService.Get("menu.profile.049"), 13f, Theme.TextDim, 0f, 0f));
-            balance.Add(Caption($"Заработано всего: {profile.earnedTotal} · по истории: доход {income}, траты {spent}", 13f, Theme.Text, 0f, 8f));
+            balance.Add(Caption((IsEnglish ? $"Total earned: {profile.earnedTotal} · history: income {income}, spending {spent}" : $"Заработано всего: {profile.earnedTotal} · по истории: доход {income}, траты {spent}"), 13f, Theme.Text, 0f, 8f));
             top.Add(balance);
 
             // Прогноз уровня: сколько опыта осталось и примерно сколько партий.
@@ -917,7 +918,7 @@ namespace CityHighways.Presentation
             forecast.Add(Ui.Text(LocalizationService.Get("menu.profile.050"), 13f, Theme.TextDim, true));
             var levelRow = Ui.Row();
             levelRow.Add(Ui.Number($"Lvl {level}", 30f, ProfileLevel.TierColor(level), true));
-            var rank = Ui.Text(ProfileLevel.Rank(level), 15f, Theme.Text, true);
+            var rank = Ui.Text((IsEnglish && ProfileLevel.Rank(level) == "Инженер" ? "Engineer" : ProfileLevel.Rank(level)), 15f, Theme.Text, true);
             rank.style.marginLeft = 10f;
             levelRow.Add(rank);
             forecast.Add(levelRow);
@@ -928,9 +929,9 @@ namespace CityHighways.Presentation
             int left = need - into;
             float perGame = profile.games > 0 ? xp / (float)profile.games : ProfileLevel.XpPerGame;
             int games = Mathf.Max(1, Mathf.CeilToInt(left / Mathf.Max(1f, perGame)));
-            forecast.Add(Caption($"До уровня {level + 1}: {left} опыта — примерно {games} {Plural(games, "партия", LocalizationService.Get("menu.profile.051"), LocalizationService.Get("menu.profile.052"))} (в среднем {perGame:0} опыта за партию).",
+            forecast.Add(Caption((IsEnglish ? $"Level {level + 1}: {left} XP remaining — about {games} games (average {perGame:0} XP per game)." : $"До уровня {level + 1}: {left} опыта — примерно {games} {Plural(games, "партия", LocalizationService.Get("menu.profile.051"), LocalizationService.Get("menu.profile.052"))} (в среднем {perGame:0} опыта за партию)."),
                 13f, Theme.Text, 0f, 6f));
-            forecast.Add(Caption($"Опыт: {ProfileLevel.XpPerGame} за партию, +{ProfileLevel.XpPerWin} за победу, +{ProfileLevel.XpPerAchievement} за достижение, +{ProfileLevel.XpPerDaily} за задание дня.",
+            forecast.Add(Caption((IsEnglish ? $"XP: {ProfileLevel.XpPerGame} per game, +{ProfileLevel.XpPerWin} per win, +{ProfileLevel.XpPerAchievement} per achievement, +{ProfileLevel.XpPerDaily} per daily challenge." : $"Опыт: {ProfileLevel.XpPerGame} за партию, +{ProfileLevel.XpPerWin} за победу, +{ProfileLevel.XpPerAchievement} за достижение, +{ProfileLevel.XpPerDaily} за задание дня."),
                 11f, Theme.TextDim, 0f, 4f));
             top.Add(forecast);
             _content.Add(top);
@@ -1262,14 +1263,14 @@ namespace CityHighways.Presentation
                 if (note != null) tile.Add(Caption(note, 11f, Theme.TextDim, 0f, 2f));
                 tiles.Add(tile);
             }
-            Tile(LocalizationService.Get("menu.profile.076"), $"{level}", ProfileLevel.TierColor(level), ProfileLevel.Rank(level));
+            Tile(LocalizationService.Get("menu.profile.076"), $"{level}", ProfileLevel.TierColor(level), (IsEnglish && ProfileLevel.Rank(level) == "Инженер" ? "Engineer" : ProfileLevel.Rank(level)));
             Tile(LocalizationService.Get("menu.profile.077"), $"{profile.games}", Theme.Text);
-            Tile(LocalizationService.Get("menu.profile.078"), $"{profile.wins}", GameColors.Success, profile.games > 0 ? $"{100f * profile.wins / profile.games:0}% партий" : null);
-            Tile(LocalizationService.Get("menu.profile.079"), games.Count > 0 ? $"{best}" : "—", GameColors.Accent, games.Count > 0 ? $"в среднем {average:0}" : LocalizationService.Get("menu.profile.080"));
+            Tile(LocalizationService.Get("menu.profile.078"), $"{profile.wins}", GameColors.Success, profile.games > 0 ? (IsEnglish ? $"{100f * profile.wins / profile.games:0}% of games" : $"{100f * profile.wins / profile.games:0}% партий") : null);
+            Tile(LocalizationService.Get("menu.profile.079"), games.Count > 0 ? $"{best}" : "—", GameColors.Accent, games.Count > 0 ? (IsEnglish ? $"average {average:0}" : $"в среднем {average:0}") : LocalizationService.Get("menu.profile.080"));
             Tile(LocalizationService.Get("menu.profile.081"), games.Count > 0 ? $"{contracts}" : "—", Theme.Text);
             Tile(LocalizationService.Get("menu.profile.082"), games.Count > 0 ? $"{tolls}" : "—", Theme.Text);
             Tile(LocalizationService.Get("menu.profile.083"), $"{achievements}/{Achievements.All.Count}", GameColors.Accent);
-            Tile("Заданий дня", $"{profile.dailyTotal}", Theme.Text);
+            Tile(IsEnglish ? "Daily challenges" : "Заданий дня", $"{profile.dailyTotal}", Theme.Text);
             Tile(LocalizationService.Get("menu.profile.084"), $"{profile.earnedTotal}", GameColors.Accent);
             _content.Add(tiles);
 
@@ -1289,10 +1290,10 @@ namespace CityHighways.Presentation
                     var date = Ui.Number(game.date ?? "", 12f, Theme.TextDim);
                     date.style.width = 150f;
                     line.Add(date);
-                    var where = Ui.Text($"{place}-е место из {game.results.Length}" + (me.winner ? LocalizationService.Get("menu.profile.086") : ""), 13f, me.winner ? GameColors.Success : Theme.Text, me.winner);
+                    var where = Ui.Text((IsEnglish ? $"Place {place} of {game.results.Length}" : $"{place}-е место из {game.results.Length}") + (me.winner ? LocalizationService.Get("menu.profile.086") : ""), 13f, me.winner ? GameColors.Success : Theme.Text, me.winner);
                     where.style.flexGrow = 1f;
                     line.Add(where);
-                    line.Add(Ui.Number($"{me.total} очк", 14f, GameColors.Accent, true));
+                    line.Add(Ui.Number((IsEnglish ? $"{me.total} pts" : $"{me.total} очк"), 14f, GameColors.Accent, true));
                     recent.Add(line);
                 }
                 _content.Add(recent);
