@@ -516,16 +516,16 @@ namespace CityHighways.Presentation
             var buttons = Ui.Row();
             buttons.style.marginTop = 6f;
             buttons.style.justifyContent = Justify.SpaceBetween;
-            var caption = Ui.Text("Мини-карта", 12f, Theme.TextDim, true);
+            var caption = Ui.Text(LocalizationService.Language == "en" ? "Minimap" : "Мини-карта", 12f, Theme.TextDim, true);
             caption.style.flexGrow = 1f;
             buttons.Add(caption);
             var zoomOut = new IconButton(IconButton.Glyph.Minus, "", () => _map.ZoomBy(1f / 1.4f), 12f);
-            zoomOut.tooltip = "Отдалить";
+            zoomOut.tooltip = LocalizationService.Language == "en" ? "Zoom out" : "Отдалить";
             var zoomIn = new IconButton(IconButton.Glyph.Plus, "", () => _map.ZoomBy(1.4f), 12f);
-            zoomIn.tooltip = "Приблизить";
+            zoomIn.tooltip = LocalizationService.Language == "en" ? "Zoom in" : "Приблизить";
             zoomIn.style.marginLeft = 4f;
             var fit = new IconButton(IconButton.Glyph.Fit, "", _map.ResetView, 12f);
-            fit.tooltip = "Показать всю карту";
+            fit.tooltip = LocalizationService.Language == "en" ? "Fit the entire map" : "Показать всю карту";
             fit.style.marginLeft = 4f;
             buttons.Add(zoomOut);
             buttons.Add(zoomIn);
@@ -536,9 +536,9 @@ namespace CityHighways.Presentation
             _cameraRow = Ui.Row();
             _cameraRow.style.marginTop = 6f;
             _cameraRow.style.justifyContent = Justify.SpaceBetween;
-            var cameraCaption = Ui.Text("Камера", 12f, Theme.TextDim, true);
+            var cameraCaption = Ui.Text(LocalizationService.Language == "en" ? "Camera" : "Камера", 12f, Theme.TextDim, true);
             cameraCaption.style.flexGrow = 1f;
-            cameraCaption.tooltip = $"Тяните {DisplaySettings.RotateButtonText} — крутить и наклонять, колесо — приближать. Q/E — поворот, R/F — наклон, Home — север.";
+            cameraCaption.tooltip = LocalizationService.Language == "en" ? $"Drag with {DisplaySettings.RotateButtonText} to rotate and tilt; scroll to zoom. Q/E: rotate, R/F: tilt, Home: north up." : $"Тяните {DisplaySettings.RotateButtonText} — крутить и наклонять, колесо — приближать. Q/E — поворот, R/F — наклон, Home — север.";
             cameraCaption.pickingMode = PickingMode.Position;
             _cameraRow.Add(cameraCaption);
             IconButton CameraButton(IconButton.Glyph glyph, string hint, Action click)
@@ -549,19 +549,19 @@ namespace CityHighways.Presentation
                 _cameraRow.Add(button);
                 return button;
             }
-            CameraButton(IconButton.Glyph.RotateLeft, "Повернуть влево (Q)", () => _map.RotateBy(-45f));
+            CameraButton(IconButton.Glyph.RotateLeft, (LocalizationService.Language == "en" ? "Rotate left (Q)" : "Повернуть влево (Q)"), () => _map.RotateBy(-45f));
             _compass = new VisualElement();
             _compass.style.width = 30f;
             _compass.style.height = 30f;
             _compass.style.marginLeft = 4f;
             _compass.pickingMode = PickingMode.Position;
-            _compass.tooltip = "Север сверху (Home)";
+            _compass.tooltip = LocalizationService.Language == "en" ? "North up (Home)" : "Север сверху (Home)";
             _compass.generateVisualContent += DrawCompass;
             _compass.RegisterCallback<ClickEvent>(_ => _map.ResetCamera());
             _cameraRow.Add(_compass);
-            CameraButton(IconButton.Glyph.RotateRight, "Повернуть вправо (E)", () => _map.RotateBy(45f));
-            CameraButton(IconButton.Glyph.TiltDown, "Ближе к виду сверху (F)", () => _map.TiltBy(-10f));
-            CameraButton(IconButton.Glyph.TiltUp, "Ближе к горизонту (R)", () => _map.TiltBy(10f));
+            CameraButton(IconButton.Glyph.RotateRight, (LocalizationService.Language == "en" ? "Rotate right (E)" : "Повернуть вправо (E)"), () => _map.RotateBy(45f));
+            CameraButton(IconButton.Glyph.TiltDown, (LocalizationService.Language == "en" ? "Tilt toward top-down (F)" : "Ближе к виду сверху (F)"), () => _map.TiltBy(-10f));
+            CameraButton(IconButton.Glyph.TiltUp, (LocalizationService.Language == "en" ? "Tilt toward horizon (R)" : "Ближе к горизонту (R)"), () => _map.TiltBy(10f));
             Add(_cameraRow);
             Ui.Show(_cameraRow, false);
 
