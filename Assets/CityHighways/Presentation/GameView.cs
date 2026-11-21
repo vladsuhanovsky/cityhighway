@@ -3145,7 +3145,7 @@ namespace CityHighways.Presentation
                 if (kept.Success) return $"{player.Name} keeps {kept.Groups[1].Value} contracts.";
                 if (action == "пропускает ход.") return $"{player.Name} skips a turn.";
                 var road = System.Text.RegularExpressions.Regex.Match(action,
-                    @"^строит( бесплатно \(Прораб\))? (.*?) (.*?) — (.*?) \(\+(\d+)\)\.$");
+                    @"^строит( бесплатно \\(Прораб\\))? (улица \\(любой ресурс\\)|загородная дорога|улица|проспект|мост|дорога) (.*?) — (.*?) \\(\\+(\\d+)\\)\\.$");
                 if (road.Success)
                     return $"{player.Name} builds {(road.Groups[1].Success ? "a free " : "")}{EnglishRoadType(road.Groups[2].Value)} {DisplayPlace(road.Groups[3].Value)} — {DisplayPlace(road.Groups[4].Value)} (+{road.Groups[5].Value} pts).";
             }
