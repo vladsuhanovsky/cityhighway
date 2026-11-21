@@ -517,6 +517,32 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ArchivedCityEvents_TranslateWithoutCurrentEvent()
+        {
+            var method = typeof(GameView).GetMethod("ArchivedCityEventText",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            var source = new[]
+            {
+                "Событие: Час пик. Дороги, построенные в этот круг, станут загруженными магистралями: проезд по ним — 4 очк. вместо 2.",
+                "Событие: Ремонт. Свободных участков для ремонта не нашлось.",
+                "Событие: Субсидия мэрии. Мосты в этот круг дешевле на 1 карт(у) стали (но не меньше одной).",
+                "Событие: Парад. Район «Центр» перекрыт: до конца круга нельзя строить дороги, которые его касаются.",
+                "Событие: Снегопад. Щебёночные дороги в этот круг на 2 карт(у) дороже.",
+                "Событие: Инвестор. Каждая дорога, построенная в этот круг, приносит ещё +3 очка.",
+                "Событие: Новый район. На окраине открылся район «Восток»: новые места, дороги и контракты."
+            };
+            foreach (var log in source)
+            {
+                string translated = method.Invoke(null, new object[] { log }) as string;
+                Assert.IsNotNull(translated, "Unrecognized event: " + log);
+                StringAssert.StartsWith("Event:", translated);
+                Assert.IsFalse(translated.Contains("Событие:"), "Untranslated event prefix: " + log);
+            }
+            Assert.IsNull(method.Invoke(null, new object[] { "Событие: неизвестный формат." }));
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
