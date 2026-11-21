@@ -769,7 +769,7 @@ namespace CityHighways.Presentation
                 int value = _game.ValueIfDelivered(cargo, rounds, truck.Owner);
                 string who = truck.Location == cargo.From
                     ? (En ? $"Truck {TruckNumber(truck)} is at the hub: ~{rounds} rounds to deliver for ~{value} pts." : $"Фура {TruckNumber(truck)} уже на хабе: привезёт за ~{rounds} р. и получит ~{value} очк.")
-                    : $"Ближайшая свободная — фура {TruckNumber(truck)}: до хаба ~{_game.RouteRounds(toHub)} р., с доставкой ~{rounds} р., ~{value} очк.";
+                    : (En ? $"Closest available truck: {TruckNumber(truck)}, ~{_game.RouteRounds(toHub)} rounds to the hub, ~{rounds} rounds including delivery, ~{value} pts." : $"Ближайшая свободная — фура {TruckNumber(truck)}: до хаба ~{_game.RouteRounds(toHub)} р., с доставкой ~{rounds} р., ~{value} очк.");
                 var info = Hint(who);
                 info.style.color = Theme.Gold;
                 info.style.marginTop = 8f;
@@ -808,7 +808,7 @@ namespace CityHighways.Presentation
             if (truck.Route.Count > 0)
             {
                 bool center = kind == CargoKind.Hazard && _game.RouteEntersBribeZone(truck.Location, truck.Route);
-                _popupBody.Add(Pad(Hint($"Маршрут (белый на карте): {_game.RouteLength(truck.Route)} участков, ~{_game.RouteRounds(truck.Route, kind)} р. · " +
+                _popupBody.Add(Pad(Hint(En ? $"Route (white on map): {_game.RouteLength(truck.Route)} segments, ~{_game.RouteRounds(truck.Route, kind)} rounds · tolls −{_game.RouteTolls(truck.Owner, truck.Route)} · congested roads: {_game.RouteRisk(truck.Route)}" + (center ? $" · Centre bribe: {_game.Config.HazardBribe}" : "") : $"Маршрут (белый на карте): {_game.RouteLength(truck.Route)} участков, ~{_game.RouteRounds(truck.Route, kind)} р. · " +
                                         $"проезд −{_game.RouteTolls(truck.Owner, truck.Route)} · забитых дорог: {_game.RouteRisk(truck.Route)}" +
                                         (center ? $" · через Центр: взятка {_game.Config.HazardBribe}" : ""))));
             }
@@ -922,14 +922,14 @@ namespace CityHighways.Presentation
                 var titleRow = Ui.Row();
                 titleRow.style.alignItems = Align.Center;
                 if (contract.Kind.HasValue) titleRow.Add(Chip(contract.Kind.Value, CargoIconPanel));
-                string status = contract.Second >= 0 ? $" — выполнили {_game.Players[contract.Winner].Name} и {_game.Players[contract.Second].Name}"
-                    : contract.Winner >= 0 ? $" — выполнил {_game.Players[contract.Winner].Name}, второе место открыто" : "";
+                string status = contract.Second >= 0 ? (En ? $" — completed by {_game.Players[contract.Winner].Name} and {_game.Players[contract.Second].Name}" : $" — выполнили {_game.Players[contract.Winner].Name} и {_game.Players[contract.Second].Name}")
+                    : contract.Winner >= 0 ? (En ? $" — completed by {_game.Players[contract.Winner].Name}, second place available" : $" — выполнил {_game.Players[contract.Winner].Name}, второе место открыто") : "";
                 var title = Ui.Text(contract.Title + status, 14f, Theme.Text, true);
                 title.style.whiteSpace = WhiteSpace.Normal;
                 title.style.flexShrink = 1f;
                 titleRow.Add(title);
                 card.Add(titleRow);
-                card.Add(Hint($"Первому: +{contract.RewardPoints} очков, +{contract.RewardInfluence} влияния и репутация. Второму — половина: +{contract.SecondPoints} очков" +
+                card.Add(Hint(En ? $"First place: +{contract.RewardPoints} pts, +{contract.RewardInfluence} influence and reputation. Second place: +{contract.SecondPoints} pts" + (contract.SecondInfluence > 0 ? $", +{contract.SecondInfluence} influence" : "") + $". Deadline: end of round {contract.EndRound}." : $"Первому: +{contract.RewardPoints} очков, +{contract.RewardInfluence} влияния и репутация. Второму — половина: +{contract.SecondPoints} очков" +
                               (contract.SecondInfluence > 0 ? $", +{contract.SecondInfluence} влияния" : "") + $". Срок — до конца раунда {contract.EndRound}."));
                 foreach (var company in _game.Players)
                 {
