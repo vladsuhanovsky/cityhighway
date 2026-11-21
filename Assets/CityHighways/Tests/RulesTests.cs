@@ -204,6 +204,40 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ArchivedMagnateEvents_TranslateWithoutActiveGameEvent()
+        {
+            var method = typeof(MagnateView).GetMethod("ArchivedEventMessage",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            Assert.IsNotNull(method);
+            string original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                string[] history =
+                {
+                    "Событие: ДТП. Фура сломалась на дороге Север — Юг: дорога закрыта на этот раунд — фуры объезжают.",
+                    "Событие: Ремонт дороги. Дорога Центр — Восток закрыта на ремонт на 2 раунда.",
+                    "Событие: Нехватка топлива. Все фуры проезжают на 2 участка меньше в этот раунд.",
+                    "Событие: Таможенная проверка. Опасные и ценные грузы в пути платят 2 влияния — иначе стоят раунд.",
+                    "Событие: Штормовое предупреждение. Мосты пропускают на одну фуру меньше, тяжеловесы и крупногабарит по мостам не едут.",
+                    "Событие: Фестиваль. Улицы Центра перекрыты на этот раунд."
+                };
+                foreach (string log in history)
+                {
+                    string result = method.Invoke(null, new object[] { log }) as string;
+                    Assert.IsNotNull(result, "Unrecognized archived event: " + log);
+                    Assert.IsFalse(Regex.IsMatch(result, "[а-яё]", RegexOptions.IgnoreCase),
+                        "Untranslated archived event: " + log);
+                }
+                Assert.IsNull(method.Invoke(null, new object[] { "Unrecognized event format" }));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
