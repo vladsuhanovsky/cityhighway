@@ -21,6 +21,38 @@ namespace CityHighways.Presentation
     sealed class StatsView
     {
         static bool En => LocalizationService.Language == "en";
+        // Names stored inside map assets remain in their original language; localize only UI display.
+        static string PlaceLabel(string name)
+        {
+            if (!En || string.IsNullOrEmpty(name)) return name;
+            switch (name)
+            {
+                case "Москва": return "Moscow";
+                case "Амстердам": return "Amsterdam";
+                case "Чунцин": return "Chongqing";
+                case "Центр": return "Centre";
+                case "Восток": return "East";
+                case "Запад": return "West";
+                case "Север": return "North";
+                case "Юг": return "South";
+                case "Музейный квартал": return "Museum Quarter";
+                case "Юго-Запад": return "Southwest";
+                case "Замоскворечье": return "Zamoskvorechye";
+            }
+            const string ru = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+            string[] latin = { "a", "b", "v", "g", "d", "e", "yo", "zh", "z", "i", "y", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u", "f", "kh", "ts", "ch", "sh", "shch", "", "y", "", "e", "yu", "ya" };
+            var result = new System.Text.StringBuilder();
+            foreach (char c in name)
+            {
+                int index = ru.IndexOf(char.ToLowerInvariant(c));
+                if (index < 0) { result.Append(c); continue; }
+                string part = latin[index];
+                result.Append(char.IsUpper(c) && part.Length > 0
+                    ? char.ToUpperInvariant(part[0]) + part.Substring(1) : part);
+            }
+            return result.ToString();
+        }
+
         enum HistoryFilter { All, Wins, Online, Week }
 
         readonly Action _rebuild;
@@ -463,14 +495,14 @@ namespace CityHighways.Presentation
             var space = Ui.Box();
             space.style.flexGrow = 1f;
             legend.Add(space);
-            legend.Add(Ui.Text($"{map.Name} · партий: {games}", 11f, Theme.TextDim));
+            legend.Add(Ui.Text((En ? $"{PlaceLabel(map.Name)} · games: {games}" : $"{map.Name} · партий: {games}"), 11f, Theme.TextDim));
             card.Add(legend);
             // Любимые районы — по концам самых частых дорог.
             var districts = counts.OrderByDescending(p => p.Value).Take(12)
                 .SelectMany(p => { var road = map.Roads.FirstOrDefault(r => r.Id == p.Key); return road == null ? new string[0] : new[] { road.A, road.B }; })
                 .Select(id => map.Locations.FirstOrDefault(l => l.Id == id)?.DistrictId).Where(d => d != null)
                 .GroupBy(d => d).OrderByDescending(g => g.Count()).Take(3)
-                .Select(g => map.Districts.FirstOrDefault(d => d.Id == g.Key)?.Name).Where(n => n != null).ToList();
+                .Select(g => PlaceLabel(map.Districts.FirstOrDefault(d => d.Id == g.Key)?.Name)).Where(n => n != null).ToList();
             if (districts.Count > 0) card.Add(Caption(LocalizationService.Get("menu.stats.054") + string.Join(", ", districts), 13f, Theme.Text, 6f));
             return card;
         }
