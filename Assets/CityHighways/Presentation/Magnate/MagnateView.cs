@@ -800,9 +800,66 @@ namespace CityHighways.Presentation
 
         bool HumanTurn => _animating == null && !_awaitingHandoff && _game.Phase != MagnatePhase.GameOver && !_game.CurrentPlayer.IsBot;
 
+        static string QuickCargoEnglishFromRussian(string russian)
+        {
+            switch (russian)
+            {
+                case "обычный груз": return "ordinary cargo";
+                case "скоропорт": return "perishables";
+                case "тяжеловес": return "heavy cargo";
+                case "опасный груз": return "hazardous cargo";
+                case "хрупкий груз": return "fragile cargo";
+                case "ценный груз": return "valuable cargo";
+                case "крупногабарит": return "oversized cargo";
+                default: return russian;
+            }
+        }
+
+        string ContractName(string title)
+        {
+            if (!En || string.IsNullOrEmpty(title)) return title;
+            string[] russian =
+            {
+                "Свежие продукты: ", "Стройка века: ", "Музейные экспонаты: ",
+                "Казначейство: ", "Химзавод: ", "Новый мост: ", "Снабжение города: "
+            };
+            string[] english =
+            {
+                "Fresh Produce: ", "Construction Project: ", "Museum Exhibits: ",
+                "Treasury: ", "Chemical Plant: ", "New Bridge: ", "City Supplies: "
+            };
+            for (int i = 0; i < russian.Length; i++)
+            {
+                if (!title.StartsWith(russian[i], StringComparison.Ordinal)) continue;
+                var count = System.Text.RegularExpressions.Regex.Match(
+                    title.Substring(russian[i].Length), @"^\d+");
+                if (!count.Success) return title;
+                string item = i == 0 ? "perishable shipments"
+                    : i == 1 ? "heavy shipments" : i == 2 ? "fragile shipments"
+                    : i == 3 ? "valuable shipments" : i == 4 ? "hazardous shipments"
+                    : i == 5 ? "oversized shipments" : "shipments of any kind";
+                return english[i] + count.Value + " " + item;
+            }
+            return title;
+        }
+
         string JournalText(string message)
         {
             if (!En || string.IsNullOrEmpty(message)) return message;
+            var city = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Город (.*): (\d+) мест, (\d+) хабов\. Сложность: (.*)\. Раунд 1\.$");
+            if (city.Success)
+                return $"City {Place(city.Groups[1].Value)}: {city.Groups[2].Value} locations, {city.Groups[3].Value} hubs. Difficulty: {DifficultyName(_game.Config.Difficulty)}. Round 1.";
+            var newOrder = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Новый заказ мэрии: «(.*)» до конца раунда (\d+)\.$");
+            if (newOrder.Success)
+                return $"New City Hall order: “{ContractName(newOrder.Groups[1].Value)}” due at the end of round {newOrder.Groups[2].Value}.";
+            var expired = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Заказ мэрии «(.*)» (никто не выполнил|закрыт: второго не нашлось)\.$");
+            if (expired.Success)
+                return expired.Groups[2].Value == "никто не выполнил"
+                    ? $"City Hall order “{ContractName(expired.Groups[1].Value)}” expired without completion."
+                    : $"City Hall order “{ContractName(expired.Groups[1].Value)}” closed without a second-place winner.";
             var round = System.Text.RegularExpressions.Regex.Match(message, @"^Раунд (\d+)\.$");
             if (round.Success) return "Round " + round.Groups[1].Value + ".";
             if (message.StartsWith("Очерёдность: "))
@@ -821,6 +878,45 @@ namespace CityHighways.Presentation
             if (finished.Success) return $"Game over. Winner: {finished.Groups[1].Value} ({finished.Groups[2].Value} pts).";
             foreach (var p in _game.Players)
             {
+                string player = System.Text.RegularExpressions.Regex.Escape(p.Name);
+                var bonusTruck = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^" + player + @" получает новую фуру за опасный груз \((\d+) из (\d+)\)\.$");
+                if (bonusTruck.Success)
+                    return $"{p.Name} receives a new truck for hazardous cargo ({bonusTruck.Groups[1].Value} of {bonusTruck.Groups[2].Value}).";
+                var delivery = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^" + player + @" доставил (.*?) в «(.*?)»: \+(\d+)\.$");
+                if (delivery.Success)
+                {
+                    string kindName = QuickCargoEnglishFromRussian(delivery.Groups[1].Value);
+                    return $"{p.Name} delivered {kindName} to {Place(delivery.Groups[2].Value)}: +{delivery.Groups[3].Value} pts.";
+                }
+                var firstOrder = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^" + player + @" выполнил заказ мэрии «(.*?)»: \+(\d+) очков и \+(\d+) влияния\. Второму — половина награды\.$");
+                if (firstOrder.Success)
+                    return $"{p.Name} completed City Hall order “{ContractName(firstOrder.Groups[1].Value)}”: +{firstOrder.Groups[2].Value} pts and +{firstOrder.Groups[3].Value} influence. Second place receives half the reward.";
+                var secondOrder = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^" + player + @" вторым выполнил заказ мэрии «(.*?)»: \+(\d+) очков(?: и \+(\d+) влияния)?\.$");
+                if (secondOrder.Success)
+                    return $"{p.Name} finished City Hall order “{ContractName(secondOrder.Groups[1].Value)}” in second place: +{secondOrder.Groups[2].Value} pts" +
+                        (secondOrder.Groups[3].Success ? $" and +{secondOrder.Groups[3].Value} influence." : ".");
+                var stolen = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^" + player + @": ценный груз украли в пути \(−(\d+)\)\.$");
+                if (stolen.Success) return $"{p.Name}: valuable cargo was stolen in transit (−{stolen.Groups[1].Value}).";
+                if (message == p.Name + ": опасный груз конфискован — не хватило влияния на взятку.")
+                    return $"{p.Name}: hazardous cargo confiscated due to insufficient influence for a bribe.";
+                var competing = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^" + player + @": груз на «(.*?)» забрал соперник — (.*)$");
+                if (competing.Success)
+                {
+                    string station = Place(competing.Groups[1].Value);
+                    string detail = competing.Groups[2].Value;
+                    if (detail == "другого нет, фура ждёт.")
+                        return $"{p.Name}: a rival took the cargo at {station}; no alternatives, truck waiting.";
+                    var alternative = System.Text.RegularExpressions.Regex.Match(detail,
+                        @"^фура взяла другой: (.*?) в «(.*?)»\.$");
+                    if (alternative.Success)
+                        return $"{p.Name}: a rival took the cargo at {station}; the truck selected another: {QuickCargoEnglishFromRussian(alternative.Groups[1].Value)} to {Place(alternative.Groups[2].Value)}.";
+                }
                 var initial = $"Жребий: первым ходит {p.Name}.";
                 if (message == initial) return $"First turn: {p.Name}.";
                 var subsidy = System.Text.RegularExpressions.Regex.Match(message,
