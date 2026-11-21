@@ -63,6 +63,32 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ScenarioAnnouncements_TranslateAllScenarioKindsAndLiveRuleValues()
+        {
+            var previous = LocalizationService.Language;
+            try
+            {
+                foreach (var kind in Scenarios.All)
+                {
+                    if (kind == ScenarioKind.Standard) continue;
+                    var config = Scenarios.Apply(new GameConfig(), kind);
+                    string original = "Сценарий «" + Scenarios.Title(kind) + "»: " +
+                        string.Join(" ", Scenarios.Changes(kind, config));
+                    LocalizationService.SetLanguage("en");
+                    string translated = ScenarioMenuLocalization.JournalAnnouncement(original, kind, config);
+                    Assert.IsNotNull(translated, "Missing scenario translation: " + kind);
+                    StringAssert.StartsWith("Scenario “", translated);
+                    Assert.IsFalse(Regex.IsMatch(translated, "[а-яё]", RegexOptions.IgnoreCase),
+                        "Untranslated scenario journal: " + kind);
+                    Assert.IsNull(ScenarioMenuLocalization.JournalAnnouncement(original + " extra", kind, config));
+                    LocalizationService.SetLanguage("ru");
+                    Assert.IsNull(ScenarioMenuLocalization.JournalAnnouncement(original, kind, config));
+                }
+            }
+            finally { LocalizationService.SetLanguage(previous); }
+        }
+
+        [Test]
         public void CityHallAuctionAndBriberyAccusations_AreLocalized()
         {
             var original = LocalizationService.Language;

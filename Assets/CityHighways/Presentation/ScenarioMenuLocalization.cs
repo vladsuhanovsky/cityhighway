@@ -35,10 +35,22 @@ namespace CityHighways.Presentation
             }
         }
 
-        public static IReadOnlyList<string> Changes(ScenarioKind kind)
+        // Translate only exact scenario announcements from Core, preserving custom rule values.
+        // Source journal entries are never rewritten, so RU/EN can switch mid-game.
+        public static string JournalAnnouncement(string message, ScenarioKind kind, GameConfig config)
         {
-            // The same config values as Core.Scenarios.Changes; only human-readable text is localized.
-            GameConfig c = Scenarios.Apply(new GameConfig(), kind);
+            if (LocalizationService.Language != "en" || kind == ScenarioKind.Standard || config == null)
+                return null;
+            string original = "Сценарий «" + Scenarios.Title(kind) + "»: " +
+                string.Join(" ", Scenarios.Changes(kind, config));
+            if (!string.Equals(message, original, System.StringComparison.Ordinal)) return null;
+            return "Scenario “" + Title(kind) + "”: " + string.Join(" ", Changes(kind, config));
+        }
+
+        public static IReadOnlyList<string> Changes(ScenarioKind kind, GameConfig config = null)
+        {
+            // Use actual game rules for historical journal lines; menus use scenario defaults.
+            GameConfig c = config ?? Scenarios.Apply(new GameConfig(), kind);
             switch (kind)
             {
                 case ScenarioKind.Winter:
