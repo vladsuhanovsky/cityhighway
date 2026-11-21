@@ -2464,7 +2464,7 @@ namespace CityHighways.Presentation
                 var bribeHeader = Ui.Text(LocalizationService.Get("game.ui.067"), 15f, Theme.Text, true);
                 bribeHeader.style.marginTop = 6f;
                 box.Add(bribeHeader);
-                var bribeNote = Ui.Text($"Сейчас никто ничего не увидит. В начале следующего круга объявят только, сколько было взяток, — без имён. " +
+                var bribeNote = Ui.Text(EnglishUi ? $"Bribes stay secret until next round, when only their number is announced. You can be accused before that round ends: a correct accusation costs you −{fine} per bribe and rewards the accuser +{_game.Config.BribeWhistleReward} influence. Clues include drawing three or more extra cards or building a road below its usual cost." : $"Сейчас никто ничего не увидит. В начале следующего круга объявят только, сколько было взяток, — без имён. " +
                                         $"До конца того круга вас могут обвинить: угадал — штраф −{fine} за каждую взятку, ему +{_game.Config.BribeWhistleReward} влияния. " +
                                         "Улики против вас — рука выросла на 3+ карты или дорога дешевле своей длины.", 12f, Theme.TextDim);
                 bribeNote.style.whiteSpace = WhiteSpace.Normal;
@@ -2490,9 +2490,9 @@ namespace CityHighways.Presentation
                 var accuseHeader = Ui.Text(LocalizationService.Get("game.ui.068"), 15f, Theme.Text, true);
                 accuseHeader.style.marginTop = 6f;
                 box.Add(accuseHeader);
-                var accuseNote = Ui.Text(_game.AnnouncedBribes > 0
-                    ? $"Нераскрытых взяток прошлого круга: {_game.AnnouncedBribes}. Взятку этого круга тоже можно угадать. Ошибка — −{_game.Config.FalseAccusationFine} вам."
-                    : $"О взятках прошлого круга не объявляли, но взятку этого круга угадать можно. Ошибка — −{_game.Config.FalseAccusationFine} вам.", 12f, Theme.TextDim);
+                var accuseNote = Ui.Text(EnglishUi
+                    ? (_game.AnnouncedBribes > 0 ? $"Unresolved bribes last round: {_game.AnnouncedBribes}. You can also guess this round’s bribes. Wrong accusation: −{_game.Config.FalseAccusationFine} points." : $"No bribes were announced last round, but you can still accuse someone this round. Wrong accusation: −{_game.Config.FalseAccusationFine} points.")
+                    : (_game.AnnouncedBribes > 0 ? $"Нераскрытых взяток прошлого круга: {_game.AnnouncedBribes}. Взятку этого круга тоже можно угадать. Ошибка — −{_game.Config.FalseAccusationFine} вам." : $"О взятках прошлого круга не объявляли, но взятку этого круга угадать можно. Ошибка — −{_game.Config.FalseAccusationFine} вам."), 12f, Theme.TextDim);
                 accuseNote.style.whiteSpace = WhiteSpace.Normal;
                 accuseNote.style.marginBottom = 6f;
                 box.Add(accuseNote);
