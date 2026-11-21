@@ -2281,7 +2281,8 @@ namespace CityHighways.Presentation
 
         void Flash(string message)
         {
-            _flash = message;
+            // Core remains language-neutral; translate its stable error messages at the UI boundary.
+            _flash = LocalizationService.TranslateLegacy(message);
             _flashUntil = Time.time + 3.5f;
             _app.Sound.Play(Sfx.Error, 0.7f);
             _dirty = true;

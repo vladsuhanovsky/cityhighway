@@ -13,6 +13,31 @@ namespace CityHighways.Tests
             TestCities.Started(TestCities.Small(), players, config);
 
         [Test]
+        public void GameActionErrors_UseEnglishForKnownCoreFailures()
+        {
+            var original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("You cannot build right now.",
+                    LocalizationService.TranslateLegacy("Сейчас нельзя строить."));
+                Assert.AreEqual("Not enough machinery cards.",
+                    LocalizationService.TranslateLegacy("Не хватает техники."));
+                Assert.AreEqual("The deck is empty.",
+                    LocalizationService.TranslateLegacy("Колода пуста."));
+                Assert.AreEqual("Unknown failure", LocalizationService.TranslateLegacy("Unknown failure"));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Сейчас нельзя строить.",
+                    LocalizationService.TranslateLegacy("Сейчас нельзя строить."));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void RulesGlossary_RebuildsForSelectedLanguage()
         {
             var original = LocalizationService.Language;

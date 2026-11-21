@@ -5863,6 +5863,194 @@
     {
       "key": "menu.palette.2",
       "value": "Neon"
+    },
+    {
+      "key": "game.error.001",
+      "value": "Game is over."
+    },
+    {
+      "key": "game.error.002",
+      "value": "Nothing to draw."
+    },
+    {
+      "key": "game.error.003",
+      "value": "Starting contracts have already been selected."
+    },
+    {
+      "key": "game.error.004",
+      "value": "Player not found."
+    },
+    {
+      "key": "game.error.005",
+      "value": "You cannot draw cards right now."
+    },
+    {
+      "key": "game.error.006",
+      "value": "There is no card in this slot."
+    },
+    {
+      "key": "game.error.007",
+      "value": "You cannot take a face-up machinery card as your second card."
+    },
+    {
+      "key": "game.error.008",
+      "value": "The deck is empty."
+    },
+    {
+      "key": "game.error.009",
+      "value": "You cannot build right now."
+    },
+    {
+      "key": "game.error.010",
+      "value": "Road not found."
+    },
+    {
+      "key": "game.error.011",
+      "value": "Invalid number of machinery cards."
+    },
+    {
+      "key": "game.error.012",
+      "value": "To pay with machinery only, you need as many machinery cards as the road costs."
+    },
+    {
+      "key": "game.error.013",
+      "value": "Not enough machinery cards."
+    },
+    {
+      "key": "game.error.014",
+      "value": "Only the Foreman can build for free."
+    },
+    {
+      "key": "game.error.015",
+      "value": "No free builds remaining."
+    },
+    {
+      "key": "game.error.016",
+      "value": "You cannot draw contracts right now."
+    },
+    {
+      "key": "game.error.017",
+      "value": "No contracts remaining."
+    },
+    {
+      "key": "game.error.018",
+      "value": "You do not need to select contracts right now."
+    },
+    {
+      "key": "game.error.019",
+      "value": "You cannot pass your turn right now."
+    },
+    {
+      "key": "game.error.020",
+      "value": "You can pass only when no other actions are available."
+    },
+    {
+      "key": "game.error.021",
+      "value": "Choose a company at the start of the game."
+    },
+    {
+      "key": "game.error.022",
+      "value": "This character is not among your choices."
+    },
+    {
+      "key": "game.error.023",
+      "value": "There is no auction right now."
+    },
+    {
+      "key": "game.error.024",
+      "value": "All bids have already been placed."
+    },
+    {
+      "key": "game.error.025",
+      "value": "A bid cannot be negative."
+    },
+    {
+      "key": "game.error.026",
+      "value": "Empty command."
+    },
+    {
+      "key": "game.error.027",
+      "value": "Unknown resource."
+    },
+    {
+      "key": "game.error.028",
+      "value": "Unknown influence action."
+    },
+    {
+      "key": "game.error.029",
+      "value": "Unknown bribe."
+    },
+    {
+      "key": "game.error.030",
+      "value": "Trades are disabled."
+    },
+    {
+      "key": "game.error.031",
+      "value": "You can offer a trade only at the start of your turn."
+    },
+    {
+      "key": "game.error.032",
+      "value": "You can offer only one trade per turn."
+    },
+    {
+      "key": "game.error.033",
+      "value": "Choose another player."
+    },
+    {
+      "key": "game.error.034",
+      "value": "Not enough cards or influence for this trade."
+    },
+    {
+      "key": "game.error.035",
+      "value": "Each side must offer something: cards, influence, or a pass."
+    },
+    {
+      "key": "game.error.036",
+      "value": "The resources being exchanged must be different."
+    },
+    {
+      "key": "game.error.037",
+      "value": "Luck cards replace resource draws, and none remain."
+    },
+    {
+      "key": "game.error.038",
+      "value": "You can draw only one luck card per turn."
+    },
+    {
+      "key": "game.error.039",
+      "value": "The luck deck is disabled."
+    },
+    {
+      "key": "game.error.040",
+      "value": "The luck deck is empty."
+    },
+    {
+      "key": "game.error.041",
+      "value": "You do not need to select a luck card right now."
+    },
+    {
+      "key": "game.error.042",
+      "value": "Passes are disabled."
+    },
+    {
+      "key": "game.error.043",
+      "value": "Card not found."
+    },
+    {
+      "key": "game.error.044",
+      "value": "There is no pending offer."
+    },
+    {
+      "key": "game.error.045",
+      "value": "You cannot pay for the upgrade this way."
+    },
+    {
+      "key": "game.error.046",
+      "value": "You do not have that much influence."
+    },
+    {
+      "key": "game.error.047",
+      "value": "You do not have that many cards."
     }
   ]
 }
