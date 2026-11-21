@@ -3300,6 +3300,8 @@ namespace CityHighways.Presentation
             string scenario = _game == null ? null :
                 ScenarioMenuLocalization.JournalAnnouncement(message, _game.Scenario, _game.Config);
             if (scenario != null) return scenario;
+            string trade = LocalizationService.TranslateTradeJournal(message);
+            if (trade != null) return trade;
             string progress = LocalizationService.TranslateProgressJournal(message, DisplayPlace);
             if (progress != null) return progress;
             string special = LocalizationService.TranslateSpecialJournal(message, DisplayPlace);

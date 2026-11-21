@@ -63,6 +63,30 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void HistoricalTradeOffers_TranslateMixedCardInfluenceAndPassOffers()
+        {
+            var previous = LocalizationService.Language;
+            const string offer = "Mira предлагает Alex: 3 × сталь и 2 влияния и пропуск по дорогам за 1 × бетон и пропуск по дорогам.";
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Mira offers Alex: 3 × steel and 2 influence and road pass for 1 × concrete and road pass.",
+                    LocalizationService.TranslateTradeJournal(offer));
+                Assert.AreEqual("Mira offers Alex: road pass for 2 × gravel.",
+                    LocalizationService.TranslateTradeJournal("Mira предлагает Alex: пропуск по дорогам за 2 × щебень."));
+                Assert.AreEqual("Mira offers Alex: nothing for 1 influence.",
+                    LocalizationService.TranslateTradeJournal("Mira предлагает Alex: ничего за 1 влияния."));
+                Assert.IsNull(LocalizationService.TranslateTradeJournal("Mira предлагает Alex: 2 × unknown за 1 × бетон."));
+                Assert.IsNull(LocalizationService.TranslateTradeJournal("Not a trade message"));
+                LocalizationService.SetLanguage("ru");
+                Assert.IsNull(LocalizationService.TranslateTradeJournal(offer));
+                LocalizationService.SetLanguage("en");
+                Assert.IsNotNull(LocalizationService.TranslateTradeJournal(offer));
+            }
+            finally { LocalizationService.SetLanguage(previous); }
+        }
+
+        [Test]
         public void ScenarioAnnouncements_TranslateAllScenarioKindsAndLiveRuleValues()
         {
             var previous = LocalizationService.Language;

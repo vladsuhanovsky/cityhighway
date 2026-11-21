@@ -339,6 +339,53 @@ namespace CityHighways.Presentation
             return null;
         }
 
+        /// <summary>
+        /// Decode historical trade offers without modifying gameplay or saved journal lines.
+        /// Any unrecognized item leaves the entry untranslated instead of partially translating it.
+        /// </summary>
+        public static string TranslateTradeJournal(string message)
+        {
+            if (string.IsNullOrEmpty(message) || Language != "en") return null;
+            var match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^(.+?) предлагает (.+?): (.+) за (.+)\.$");
+            if (!match.Success) return null;
+            string offered = TranslateTradeSide(match.Groups[3].Value);
+            string requested = TranslateTradeSide(match.Groups[4].Value);
+            if (offered == null || requested == null) return null;
+            return $"{match.Groups[1].Value} offers {match.Groups[2].Value}: {offered} for {requested}.";
+        }
+
+        static string TranslateTradeSide(string side)
+        {
+            if (side == "ничего") return "nothing";
+            var items = side.Split(new[] { " и " }, StringSplitOptions.None);
+            var translated = new List<string>();
+            foreach (string item in items)
+            {
+                if (item == "пропуск по дорогам")
+                {
+                    translated.Add("road pass");
+                    continue;
+                }
+                var influence = System.Text.RegularExpressions.Regex.Match(item, @"^(\d+) влияния$");
+                if (influence.Success)
+                {
+                    translated.Add(influence.Groups[1].Value + " influence");
+                    continue;
+                }
+                var resource = System.Text.RegularExpressions.Regex.Match(item, @"^(\d+) × (.+)$");
+                if (resource.Success)
+                {
+                    string name = LocalizedErrorResource(resource.Groups[2].Value);
+                    if (name == null) return null;
+                    translated.Add(resource.Groups[1].Value + " × " + name);
+                    continue;
+                }
+                return null;
+            }
+            return string.Join(" and ", translated);
+        }
+
         /// <summary>Look up translated UI data by stable ID, preserving its Russian source as fallback.</summary>
         public static string GetOrFallback(string key, string fallback)
         {
