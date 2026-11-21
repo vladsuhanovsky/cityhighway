@@ -54,6 +54,17 @@ namespace CityHighways.Presentation
 
         public static string CardTitle(Resource resource)
         {
+            if (LocalizationService.Language == "en")
+            {
+                switch (resource)
+                {
+                    case Resource.Asphalt: return "Asphalt";
+                    case Resource.Concrete: return "Concrete";
+                    case Resource.Steel: return "Steel";
+                    case Resource.Gravel: return "Gravel";
+                    case Resource.Machinery: return "Machinery";
+                }
+            }
             string name = ResourceInfo.RussianName(resource);
             return char.ToUpper(name[0]) + name.Substring(1);
         }
