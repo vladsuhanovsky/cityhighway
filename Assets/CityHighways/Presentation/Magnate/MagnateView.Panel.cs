@@ -952,6 +952,25 @@ namespace CityHighways.Presentation
             }
         }
 
+        static string QuickCargoTitle(CargoKind kind) =>
+            LocalizationService.Language == "en"
+                ? LocalizationService.Get("rules.magnate.cargo." + kind + ".name")
+                : LogisticsGame.KindTitle(kind);
+
+        string QuickCargoRule(CargoKind kind)
+        {
+            if (!En) return LogisticsGame.KindRule(kind, _game.Config);
+            string rule = LocalizationService.Get("rules.magnate.cargo." + kind + ".rule");
+            switch (kind)
+            {
+                case CargoKind.Perishable: return string.Format(rule, _game.Config.PerishableLatePenalty);
+                case CargoKind.Hazard: return string.Format(rule, _game.Config.HazardBribe, _game.Config.ConfiscationPenalty, _game.Config.MaxTrucksPerPlayer);
+                case CargoKind.Fragile: return string.Format(rule, _game.Config.FragileJamPenalty);
+                case CargoKind.Valuable: return string.Format(rule, _game.Config.EscortCost);
+                default: return rule;
+            }
+        }
+
         void FillRules()
         {
             _popupTitle.text = LocalizationService.Get("magnate.panel.051");
@@ -960,18 +979,24 @@ namespace CityHighways.Presentation
                 var row = Ui.Row();
                 row.style.marginBottom = 4f;
                 row.Add(Chip(kind, 18f));
-                var text = Ui.Text($"{LogisticsGame.KindTitle(kind)}: {LogisticsGame.KindRule(kind, _game.Config)}", 12f, Theme.Text);
+                var text = Ui.Text($"{QuickCargoTitle(kind)}: {QuickCargoRule(kind)}", 12f, Theme.Text);
                 text.style.whiteSpace = WhiteSpace.Normal;
                 text.style.flexShrink = 1f;
                 row.Add(text);
                 _popupBody.Add(Pad(row));
             }
-            var more = Hint($"Пропускная способность за раунд: улица {_game.Config.CapacityStreet}, широкая дорога и мост {_game.Config.CapacityWide}, " +
-                            $"магистраль {_game.Config.CapacityHighway}. Больше фур — пробка: все они стоят, каждая −{_game.Config.JamPenalty}. " +
-                            "Серые дороги — городские: общие и бесплатные. Свои дороги от 2 участков фура проходит на участок быстрее. " +
-                            "Хаб можно развить кликом в фазе стройки; владелец — кто вложил в него больше очков. " +
-                            "Первыми ходят и грузятся отстающие, компании с наименьшим счётом — +1 очко стройки. Если груз забрал соперник, фура возьмёт другой с того же хаба. " +
-                            "Репутация растёт за доставки вовремя и заказы мэрии, падает за пробки и потери; с уровнем растут очки за доставку (до ×1,5).");
+            var more = Hint(En
+                ? $"Road capacity per round: street {_game.Config.CapacityStreet}, wide road or bridge {_game.Config.CapacityWide}, highway {_game.Config.CapacityHighway}. Excess trucks cause a traffic jam: all must wait and each loses {_game.Config.JamPenalty} points. " +
+                  "Grey roads belong to the city and are free for everyone. Trucks travel faster on their own roads of length two or more. " +
+                  "Upgrade a hub during construction; whoever invests the most construction points owns it. " +
+                  "Trailing companies move and load first, with a construction bonus for the company in last place. If a rival takes a shipment, your truck tries another at the same hub. " +
+                  "Reputation increases for timely deliveries and city orders, and decreases due to traffic jams and lost cargo; higher reputation increases delivery scores (up to ×1.5)."
+                : $"Пропускная способность за раунд: улица {_game.Config.CapacityStreet}, широкая дорога и мост {_game.Config.CapacityWide}, " +
+                  $"магистраль {_game.Config.CapacityHighway}. Больше фур — пробка: все они стоят, каждая −{_game.Config.JamPenalty}. " +
+                  "Серые дороги — городские: общие и бесплатные. Свои дороги от 2 участков фура проходит на участок быстрее. " +
+                  "Хаб можно развить кликом в фазе стройки; владелец — кто вложил в него больше очков. " +
+                  "Первыми ходят и грузятся отстающие, компании с наименьшим счётом — +1 очко стройки. Если груз забрал соперник, фура возьмёт другой с того же хаба. " +
+                  "Репутация растёт за доставки вовремя и заказы мэрии, падает за пробки и потери; с уровнем растут очки за доставку (до ×1,5).");
             more.style.marginTop = 8f;
             _popupBody.Add(Pad(more));
         }
