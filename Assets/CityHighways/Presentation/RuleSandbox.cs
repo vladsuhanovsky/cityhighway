@@ -353,7 +353,7 @@ namespace CityHighways.Presentation
                 foreach (var pair in buttons)
                 {
                     int cost = CostOf(pair.Key);
-                    pair.Value.text = $"{InfluenceInfo.Title(pair.Key)} · {cost}";
+                    pair.Value.text = $"{RulesView.RuleInfluenceTitle(pair.Key)} · {cost}";
                     bool possible = !usedThisTurn && influence >= cost && (pair.Key != InfluenceAction.CancelEvent || snow);
                     Ui.SetEnabled(pair.Value, possible);
                 }
