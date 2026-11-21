@@ -2371,6 +2371,41 @@ namespace CityHighways.Presentation
             return row;
         }
 
+        static string InfluenceTitle(InfluenceAction action)
+        {
+            if (!EnglishUi) return InfluenceInfo.Title(action);
+            switch (action)
+            {
+                case InfluenceAction.RefreshMarket: return "Refresh Market";
+                case InfluenceAction.ExtraContracts: return "Choose Contracts";
+                case InfluenceAction.Permit: return "City Hall Permit";
+                default: return "Cancel Event";
+            }
+        }
+
+        string InfluenceDescription(InfluenceAction action)
+        {
+            if (!EnglishUi) return InfluenceInfo.Describe(action, _game.Config);
+            switch (action)
+            {
+                case InfluenceAction.RefreshMarket:
+                    return "Discard all face-up cards and deal a new market. Your turn continues.";
+                case InfluenceAction.ExtraContracts:
+                    return $"Draw {_game.Config.ContractsDrawn + 1} contracts instead of {_game.Config.ContractsDrawn}, then choose which to keep. This uses your turn.";
+                case InfluenceAction.Permit:
+                    return "Ignore parade closures and snow construction penalties this turn." +
+                           (_game.Config.ScheduledRepairs > 0 ? " You may also build on roads scheduled for repairs." : "");
+                default:
+                    return "End the current event immediately for all players (except New District).";
+            }
+        }
+
+        static string BribeTitle(BribeKind kind) => !EnglishUi ? BribeInfo.Title(kind)
+            : kind == BribeKind.Discount ? "Expedite Approval" : "Extra Delivery";
+
+        static string BribeDescription(BribeKind kind) => !EnglishUi ? BribeInfo.Describe(kind)
+            : kind == BribeKind.Discount ? "Roads cost one fewer card this turn (minimum one)." : "Draw one card immediately; your turn continues normally.";
+
         /// <summary>Траты влияния, взятки и разоблачения: у каждого — цена, описание и причина, если сейчас нельзя.</summary>
         void ShowInfluenceMenu()
         {
@@ -2378,8 +2413,8 @@ namespace CityHighways.Presentation
             var me = _game.CurrentPlayer;
             var box = DialogBox(600f);
             Ui.Border(box, 2f, Theme.Gold);
-            box.Add(Ui.Text($"Влияние: {me.Influence}", 26f, Theme.Gold, true));
-            var note = Ui.Text("Раз в ход, до основного действия; ход не тратится (кроме «Контрактов с выбором» — это и есть ход). " +
+            box.Add(Ui.Text(EnglishUi ? $"Influence: {me.Influence}" : $"Влияние: {me.Influence}", 26f, Theme.Gold, true));
+            var note = Ui.Text(EnglishUi ? "Spend influence once per turn before your main action. Spending it does not use your turn except when choosing contracts. Influence comes from completed contracts, new districts, City Hall goals, grants and trailing the leader. Influence is not added to your score." : "Раз в ход, до основного действия; ход не тратится (кроме «Контрактов с выбором» — это и есть ход). " +
                                "Влияние дают выполненные контракты, новые районы сети, цели мэрии, «Грант» и отставание от лидера. " +
                                "В очки оно не превращается.", 12f, Theme.TextDim);
             note.style.whiteSpace = WhiteSpace.Normal;
@@ -2403,12 +2438,12 @@ namespace CityHighways.Presentation
                     var texts = Ui.Column();
                     texts.style.flexGrow = 1f;
                     texts.style.flexShrink = 1f;
-                    texts.Add(Ui.Text(InfluenceInfo.Title(action), 15f, Theme.Text, true));
-                    var description = Ui.Text(blocker ?? InfluenceInfo.Describe(action, _game.Config), 12f, blocker != null ? Theme.Danger : Theme.TextDim);
+                    texts.Add(Ui.Text(InfluenceTitle(action), 15f, Theme.Text, true));
+                    var description = Ui.Text(blocker != null ? LocalizationService.TranslateLegacy(blocker) : InfluenceDescription(action), 12f, blocker != null ? Theme.Danger : Theme.TextDim);
                     description.style.whiteSpace = WhiteSpace.Normal;
                     texts.Add(description);
                     row.Add(texts);
-                    var button = Ui.Button($"{cost} вл.", () =>
+                    var button = Ui.Button(EnglishUi ? $"{cost} inf." : $"{cost} вл.", () =>
                     {
                         HideOverlay();
                         Act(() => _game.UseInfluence(chosen));
@@ -2439,14 +2474,14 @@ namespace CityHighways.Presentation
                 {
                     var chosen = kind;
                     var blocker = _game.GetBribeBlocker(kind);
-                    box.Add(ActionLine(BribeInfo.Title(kind), blocker ?? BribeInfo.Describe(kind), blocker != null,
-                        $"{BribeInfo.Cost(kind, _game.Config)} вл.", () =>
+                    box.Add(ActionLine(BribeTitle(kind), blocker != null ? LocalizationService.TranslateLegacy(blocker) : BribeDescription(kind), blocker != null,
+                        EnglishUi ? $"{BribeInfo.Cost(kind, _game.Config)} inf." : $"{BribeInfo.Cost(kind, _game.Config)} вл.", () =>
                         {
                             HideOverlay();
                             Act(() =>
                             {
                                 var result = _game.Bribe(chosen);
-                                if (result.Success) Flash("Взятка дана. О ней узнают в начале следующего круга — но не кто дал.");
+                                if (result.Success) Flash(EnglishUi ? "Bribe paid. It will be announced next round without revealing your identity." : "Взятка дана. О ней узнают в начале следующего круга — но не кто дал.");
                                 return result;
                             });
                         }));
