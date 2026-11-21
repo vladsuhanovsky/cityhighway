@@ -30,7 +30,7 @@ namespace CityHighways.Presentation
                 _ghostChip.style.marginRight = 10f;
                 _ghostChip.style.borderLeftWidth = 3f;
                 _ghostChip.style.borderLeftColor = new Color(0.62f, 0.74f, 1f);
-                _ghostChip.tooltip = "Рейд: те же карта, колода и соперники, что в партии рекордсмена. Сравнение — дороги, цели и удача к началу круга; " +
+                _ghostChip.tooltip = LocalizationService.Language == "en" ? "Record Raid: play on the same map, with the same deck and opponents as the record holder. Compare roads, goals and luck at each round; contracts count at the end." : "Рейд: те же карта, колода и соперники, что в партии рекордсмена. Сравнение — дороги, цели и удача к началу круга; " +
                                      "контракты считаются в конце.";
                 int index = _topBar.IndexOf(_logTab);
                 if (index >= 0) _topBar.Insert(index, _ghostChip);
@@ -57,7 +57,7 @@ namespace CityHighways.Presentation
                 return;
             }
             string who = _ghost == null ? "рекордсмена" : _ghost.Source == "self" ? "свой рекорд" : _ghost.Name;
-            Begin(game, 0f, $"Рейд на рекорд ({who}: {_ghost?.Score ?? 0} очк.) — те же карта, колода и соперники. Ваши ходы решают всё.");
+            Begin(game, 0f, LocalizationService.Language == "en" ? $"Record Raid ({(_ghost == null ? "record holder" : _ghost.Source == "self" ? "your record" : _ghost.Name)}: {_ghost?.Score ?? 0} pts). Same map, deck and opponents; your moves decide the outcome." : $"Рейд на рекорд ({who}: {_ghost?.Score ?? 0} очк.) — те же карта, колода и соперники. Ваши ходы решают всё.");
         }
 
         int RaidSeat()
@@ -73,7 +73,9 @@ namespace CityHighways.Presentation
         void RefreshGhost()
         {
             if (_ghostChip == null || _ghost == null || _game == null) return;
-            string name = _ghost.Source == "self" ? "Ваш рекорд" : $"Призрак {_ghost.Name}";
+            bool english = LocalizationService.Language == "en";
+            _ghostChip.tooltip = english ? "Record Raid: same map, deck and opponents as the record holder." : "Рейд на рекорд: та же карта, колода и соперники.";
+            string name = english ? (_ghost.Source == "self" ? "Your record" : $"Ghost {_ghost.Name}") : (_ghost.Source == "self" ? "Ваш рекорд" : $"Призрак {_ghost.Name}");
             string text = $"{name}: {_ghost.Score}";
             int seat = RaidSeat();
             var timeline = _ghost.ScoreByRound;
@@ -83,7 +85,7 @@ namespace CityHighways.Presentation
                 int theirs = timeline[Mathf.Clamp(round, 0, timeline.Length - 1)];
                 var me = _game.Players[seat];
                 int mine = me.RoadPoints + me.GoalPoints + me.LuckPoints;
-                text += $" · к {round}-му кругу: {theirs}, у вас {mine}";
+                text += english ? $" · round {round}: record {theirs}, yours {mine}" : $" · к {round}-му кругу: {theirs}, у вас {mine}";
                 _ghostChip.style.color = mine >= theirs ? new Color(0.62f, 0.95f, 0.66f) : new Color(1f, 0.78f, 0.62f);
             }
             _ghostChip.text = text;
@@ -98,11 +100,9 @@ namespace CityHighways.Presentation
             int mine = _game.Result.Ranking.FirstOrDefault(s => s.PlayerIndex == seat)?.Total ?? 0;
             string who = _ghost.Source == "self" ? "свой рекорд" : $"рекорд {_ghost.Name}";
             bool beaten = mine > _ghost.Score;
-            string text = beaten
-                ? $"Рейд удался: {who} побит — {mine} против {_ghost.Score}!"
-                : mine == _ghost.Score
-                    ? $"Ничья с призраком: по {mine} очк."
-                    : $"Рейд не удался: до рекорда не хватило {_ghost.Score - mine} очк. ({mine} из {_ghost.Score}).";
+            string text = LocalizationService.Language == "en"
+                ? (beaten ? $"Record beaten! {mine} versus {_ghost.Score} points." : mine == _ghost.Score ? $"Tied the record at {mine} points." : $"Record Raid lost: {_ghost.Score - mine} points short ({mine} of {_ghost.Score}).")
+                : (beaten ? $"Рейд удался: {who} побит — {mine} против {_ghost.Score}!" : mine == _ghost.Score ? $"Ничья с призраком: по {mine} очк." : $"Рейд не удался: до рекорда не хватило {_ghost.Score - mine} очк. ({mine} из {_ghost.Score}).");
             Toast(text, beaten ? Theme.Success : Theme.Gold);
             if (beaten) _app.Sound.Play(Sfx.Bell, 0.8f);
             SocialCloud.News.Add(text);
