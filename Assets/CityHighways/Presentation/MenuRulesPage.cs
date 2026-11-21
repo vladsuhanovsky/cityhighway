@@ -29,6 +29,35 @@ namespace CityHighways.Presentation
     /// </summary>
     sealed partial class RulesView
     {
+        internal static string RuleInfluenceTitle(InfluenceAction action)
+        {
+            if (LocalizationService.Language != "en") return InfluenceInfo.Title(action);
+            switch (action)
+            {
+                case InfluenceAction.RefreshMarket: return "Refresh Market";
+                case InfluenceAction.ExtraContracts: return "Choose Extra Contracts";
+                case InfluenceAction.Permit: return "City Hall Permit";
+                default: return "Cancel Event";
+            }
+        }
+
+        internal static string RuleInfluenceDescription(InfluenceAction action, GameConfig config)
+        {
+            if (LocalizationService.Language != "en") return InfluenceInfo.Describe(action, config);
+            switch (action)
+            {
+                case InfluenceAction.RefreshMarket:
+                    return "Discard all face-up cards, reveal new ones and continue your turn.";
+                case InfluenceAction.ExtraContracts:
+                    return $"Draw {config.ContractsDrawn + 1} contracts instead of {config.ContractsDrawn} and choose which to keep. This consumes your turn.";
+                case InfluenceAction.Permit:
+                    return "Ignore parade road closures and extra building costs caused by snow this turn" +
+                        (config.ScheduledRepairs > 0 ? "; you can also build on a repair-year road." : ".");
+                default:
+                    return "End the current city event immediately for everyone (except New District).";
+            }
+        }
+
         sealed class SectionInfo
         {
             public string Group;
@@ -1013,8 +1042,8 @@ namespace CityHighways.Presentation
             Paragraph(s, (En ? $"Gain influence from completed contracts +{_config.InfluencePerContract} (complex +{_config.InfluencePerComplexContract}); reaching a new district +{_config.InfluencePerNewDistrict} (except the first road); a City Hall goal +{_config.InfluencePerGoal}; a Grant card +{_config.LuckGrantInfluence}; or when trailing the leader by {_config.InfluenceCatchUpGap} points or more at round start, +{_config.InfluenceCatchUp}." : $"Откуда берётся: выполненный контракт +{_config.InfluencePerContract} (сложный +{_config.InfluencePerComplexContract}); дорога в новый для вашей сети район +{_config.InfluencePerNewDistrict} (кроме самой первой дороги); цель мэрии +{_config.InfluencePerGoal}; «Грант мэрии» из колоды удачи +{_config.LuckGrantInfluence}; в начале круга, если вы отстаёте от лидера на {_config.InfluenceCatchUpGap} очков и больше, +{_config.InfluenceCatchUp}."));
             Paragraph(s, LocalizationService.Get("menu.rules.detail.032"));
             foreach (var action in InfluenceInfo.All)
-                s.Add(Tile((En ? $"{InfluenceInfo.Title(action)} · {InfluenceInfo.Cost(action, _config)} influence" : $"{InfluenceInfo.Title(action)} · {InfluenceInfo.Cost(action, _config)} вл."),
-                    InfluenceInfo.Describe(action, _config) +
+                s.Add(Tile((En ? $"{RuleInfluenceTitle(action)} · {InfluenceInfo.Cost(action, _config)} influence" : $"{InfluenceInfo.Title(action)} · {InfluenceInfo.Cost(action, _config)} вл."),
+                    RuleInfluenceDescription(action, _config) +
                     (action == InfluenceAction.RefreshMarket && _config.InfluenceRefreshStep > 0 ? (En ? $" Each next market refresh costs {_config.InfluenceRefreshStep} more." : $" Каждое следующее ваше обновление на {_config.InfluenceRefreshStep} дороже.") : ""),
                     new Color(0.75f, 0.60f, 0.98f), new MenuIcon(InfluenceInfo.IsCityAction(action) ? MenuIcon.Glyph.Skyline : MenuIcon.Glyph.Coins, 26f, new Color(0.75f, 0.60f, 0.98f))));
             s.Add(TryButton(RuleSandbox.Kind.Influence, LocalizationService.Get("menu.rules.detail.033")));
