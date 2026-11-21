@@ -382,6 +382,18 @@ namespace CityHighways.Presentation
         public static string Name(string value)
         {
             if (LocalizationService.Language != "en" || string.IsNullOrEmpty(value)) return value;
+            // Translate recurring generated station names while keeping arbitrary proper names readable.
+            string[] from = { "Аэропорт", "Главный вокзал", "Северный вокзал", "Речной порт", "Вокзал", "Товарная", "Заводская", "Лесная", "Вишнёвая", "Депо", "Запад", "Восток", "Север", "Юг", "Центр" };
+            string[] to = { "Airport", "Central Station", "North Station", "River Port", "Station", "Freight Station", "Factory Station", "Forest Station", "Cherry Station", "Depot", "West", "East", "North", "South", "Centre" };
+            // Replace with non-Cyrillic placeholders so the transliterator doesn't touch translations.
+            for (int i = 0; i < from.Length; i++)
+            {
+                string marker = "~" + i + "~";
+                if (value.Contains(from[i]))
+                {
+                    value = value.Replace(from[i], marker);
+                }
+            }
             const string alphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
             var result = new System.Text.StringBuilder();
             foreach (char letter in value)
@@ -393,7 +405,10 @@ namespace CityHighways.Presentation
                     result.Append(char.ToUpperInvariant(latin[0])).Append(latin.Substring(1));
                 else result.Append(latin);
             }
-            return result.ToString();
+            string output = result.ToString();
+            for (int i = 0; i < from.Length; i++)
+                output = output.Replace("~" + i + "~", to[i]);
+            return output;
         }
     }
 }
