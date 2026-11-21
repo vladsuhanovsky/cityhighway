@@ -43,6 +43,29 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void DisplaySettings_LocalizedOptionsFollowLanguage()
+        {
+            var original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Low-end PC", DisplaySettings.PresetTitle(DisplaySettings.Preset.LowEnd));
+                Assert.AreEqual("Medium", DisplaySettings.City3DQualityNames[1]);
+                Assert.AreEqual("Slow", DisplaySettings.SpeedNames[0]);
+                StringAssert.Contains("3D city", DisplaySettings.PresetHint(DisplaySettings.Preset.Cinematic));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Для слабого ПК", DisplaySettings.PresetTitle(DisplaySettings.Preset.LowEnd));
+                Assert.AreEqual("Среднее", DisplaySettings.City3DQualityNames[1]);
+                Assert.AreEqual("Медленно", DisplaySettings.SpeedNames[0]);
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
