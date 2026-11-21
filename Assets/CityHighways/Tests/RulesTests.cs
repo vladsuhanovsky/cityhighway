@@ -421,6 +421,27 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ClassicJournal_RecognizesEveryResourceAndRoadType()
+        {
+            var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+            var resources = typeof(GameView).GetMethod("EnglishResourceName", flags);
+            var roads = typeof(GameView).GetMethod("EnglishRoadType", flags);
+            Assert.IsNotNull(resources);
+            Assert.IsNotNull(roads);
+            foreach (var word in new[] { "асфальт", "бетон", "сталь", "щебень", "техника" })
+            {
+                string result = resources.Invoke(null, new object[] { word }) as string;
+                Assert.IsFalse(Regex.IsMatch(result, "[а-яё]", RegexOptions.IgnoreCase), word);
+            }
+            foreach (var word in new[] { "улица", "проспект", "мост", "загородная дорога", "улица (любой ресурс)" })
+            {
+                string result = roads.Invoke(null, new object[] { word }) as string;
+                Assert.IsFalse(Regex.IsMatch(result, "[а-яё]", RegexOptions.IgnoreCase), word);
+            }
+            Assert.AreEqual("country road", roads.Invoke(null, new object[] { "загородная дорога" }));
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
