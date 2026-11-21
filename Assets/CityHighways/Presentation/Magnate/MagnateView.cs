@@ -843,7 +843,7 @@ namespace CityHighways.Presentation
             return title;
         }
 
-        string ArchivedEventMessage(string message)
+        static string ArchivedEventMessage(string message)
         {
             // Historical entries outlive active events. Translate from the saved
             // message itself, never from _game.Events (which only contains active events).
