@@ -50,6 +50,34 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ExistingGameErrors_RetranslateWhenLanguageChanges()
+        {
+            const string storedError = "Нужно 3 карт(ы) «сталь» (техника подходит вместо любой карты).";
+            const string roadBlocked = "Дорогу уже построил Sasha.";
+            var original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual(storedError, LocalizationService.TranslateGameError(storedError));
+                Assert.AreEqual(roadBlocked, LocalizationService.TranslateGameError(roadBlocked));
+
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("You need 3 steel cards (machinery can substitute for any card).",
+                    LocalizationService.TranslateGameError(storedError));
+                Assert.AreEqual("This road was already built by Sasha.",
+                    LocalizationService.TranslateGameError(roadBlocked));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual(storedError, LocalizationService.TranslateGameError(storedError));
+                Assert.AreEqual(roadBlocked, LocalizationService.TranslateGameError(roadBlocked));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void BuildAuctionAndSpecialActionBlockers_AreTranslated()
         {
             var original = LocalizationService.Language;

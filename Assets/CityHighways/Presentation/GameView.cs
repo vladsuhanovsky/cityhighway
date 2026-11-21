@@ -374,7 +374,9 @@ namespace CityHighways.Presentation
         // Состояние экрана
         readonly List<string> _log = new List<string>();
         string _flash;
+        string _flashPrefixKey;
         float _flashUntil;
+        string _renderedLanguage;
         int _revealedFor = -1;
         float _botTimer;
 
@@ -1165,6 +1167,7 @@ namespace CityHighways.Presentation
             _selectedContracts.Clear();
             _pinnedContracts.Clear();
             _flash = null;
+            _flashPrefixKey = null;
             HideOverlay();
             _snapshot = TakeSnapshot();
             _dirty = true;
@@ -1211,6 +1214,14 @@ namespace CityHighways.Presentation
         {
             if (_game == null) return;
 
+            // Rebuild localized text on a live language change, including the journal.
+            if (_renderedLanguage != LocalizationService.Language)
+            {
+                _renderedLanguage = LocalizationService.Language;
+                _logShownTotal = -1;
+                _dirty = true;
+            }
+
             _map.Tick(deltaTime);
             Sync3D(deltaTime);
             if (_game.Phase != GamePhase.GameOver) _playSeconds += deltaTime;
@@ -1218,6 +1229,7 @@ namespace CityHighways.Presentation
             if (_flash != null && Time.time > _flashUntil)
             {
                 _flash = null;
+                _flashPrefixKey = null;
                 _dirty = true;
             }
 
@@ -1384,7 +1396,7 @@ namespace CityHighways.Presentation
             _botTimer = 0f;
 
             var result = _bots[acting].Act(_game);
-            if (!result.Success) Flash(LocalizationService.Get("game.ui.034") + result.Error);
+            if (!result.Success) Flash(result.Error, "game.ui.034");
         }
 
         // ================================================================== Кто ходит и кто смотрит
@@ -1640,7 +1652,7 @@ namespace CityHighways.Presentation
             if (_game.CurrentEvent != null && _game.CurrentEvent.Kind == CityEventKind.RushHour)
                 text += EnglishUi ? "\n<color=#FF9A33>Rush hour: the road built now will charge double tolls</color>" : "\n<color=#FF9A33>Час пик: построенная сейчас дорога станет платной ×2</color>";
             if (HumanToAct && _game.Phase == GamePhase.AwaitingAction)
-                return text + "\n" + (_game.GetBuildBlocker(road.Id) is string blocker ? LocalizationService.TranslateLegacy(blocker) : (EnglishUi ? "<color=#7FD88A>Click to build</color>" : "<color=#7FD88A>Кликните, чтобы построить</color>"));
+                return text + "\n" + (_game.GetBuildBlocker(road.Id) is string blocker ? LocalizationService.TranslateGameError(blocker) : (EnglishUi ? "<color=#7FD88A>Click to build</color>" : "<color=#7FD88A>Кликните, чтобы построить</color>"));
             return text;
         }
 
@@ -2279,10 +2291,12 @@ namespace CityHighways.Presentation
             }, () => card.RemoveFromHierarchy(), 0.75f + hold);
         }
 
-        void Flash(string message)
+        void Flash(string message, string prefixKey = null)
         {
-            // Core remains language-neutral; translate its stable error messages at the UI boundary.
-            _flash = LocalizationService.TranslateGameError(message);
+            // Keep the core error and optional prefix untranslated until rendering.
+            // A language change must not leave a previously shown error in the old language.
+            _flash = message;
+            _flashPrefixKey = prefixKey;
             _flashUntil = Time.time + 3.5f;
             _app.Sound.Play(Sfx.Error, 0.7f);
             _dirty = true;
@@ -3401,7 +3415,9 @@ namespace CityHighways.Presentation
             _finalRound.text = FinalText();
             _finalRound.style.color = _game.IsFinalRound ? Theme.Gold : Theme.TextDim;
             Ui.Show(_finalRound, _finalRound.text.Length > 0 && _game.Phase != GamePhase.GameOver);
-            _flashLabel.text = _flash ?? "";
+            _flashLabel.text = _flash == null ? "" :
+                (_flashPrefixKey == null ? "" : LocalizationService.Get(_flashPrefixKey)) +
+                LocalizationService.TranslateGameError(_flash);
             Ui.Show(_flashLabel, _flash != null);
             Ui.Show(_passButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction && !_game.HasAnyLegalAction());
         }
