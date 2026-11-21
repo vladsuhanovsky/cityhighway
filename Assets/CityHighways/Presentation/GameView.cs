@@ -3949,14 +3949,14 @@ namespace CityHighways.Presentation
                 {
                     int drawn = p.LuckBuffs + p.LuckDebuffs;
                     string text = drawn == 0
-                        ? $"{p.Name}: не рисковал"
+                        ? (EnglishUi ? $"{p.Name}: did not take risks" : $"{p.Name}: не рисковал")
                         : $"{p.Name}: {drawn} карт ({p.LuckBuffs} баф., {p.LuckDebuffs} дебаф.), {p.LuckPoints:+#;-#;0} очк.";
                     luck.Add(Line(text, Palette.PlayerColor(p.Index)));
                 }
                 var luckiest = players.Where(p => p.LuckBuffs + p.LuckDebuffs > 0).OrderByDescending(p => p.LuckPoints).First();
                 var unluckiest = players.Where(p => p.LuckBuffs + p.LuckDebuffs > 0).OrderBy(p => p.LuckPoints).First();
-                if (luckiest.LuckPoints > 0) luck.Add(Line($"Самый везучий: {luckiest.Name}", Theme.Success, true));
-                if (unluckiest != luckiest && unluckiest.LuckPoints < 0) luck.Add(Line($"Не повезло: {unluckiest.Name}", Theme.Danger, true));
+                if (luckiest.LuckPoints > 0) luck.Add(Line(EnglishUi ? $"Luckiest: {luckiest.Name}" : $"Самый везучий: {luckiest.Name}", Theme.Success, true));
+                if (unluckiest != luckiest && unluckiest.LuckPoints < 0) luck.Add(Line(EnglishUi ? $"Unluckiest: {unluckiest.Name}" : $"Не повезло: {unluckiest.Name}", Theme.Danger, true));
                 luck.Add(Line(LocalizationService.Get("game.ui.151"), Theme.TextDim));
             }
             row.Add(luck);
@@ -4759,9 +4759,9 @@ namespace CityHighways.Presentation
         /// <summary>Подпись способа оплаты; cost — сколько карт стоит действие (с учётом скидок и событий).</summary>
         static string PaymentLabel(int cost, PaymentOption option)
         {
-            if (option.Resource == Resource.Machinery) return $"Только техника × {option.Machinery}";
+            if (option.Resource == Resource.Machinery) return EnglishUi ? $"Machinery only × {option.Machinery}" : $"Только техника × {option.Machinery}";
             string main = $"{Palette.CardTitle(option.Resource)} × {cost - option.Machinery}";
-            return option.Machinery == 0 ? main : $"{main} + техника × {option.Machinery}";
+            return option.Machinery == 0 ? main : EnglishUi ? $"{main} + machinery × {option.Machinery}" : $"{main} + техника × {option.Machinery}";
         }
     }
 }
