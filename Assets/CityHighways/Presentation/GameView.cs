@@ -26,6 +26,34 @@ namespace CityHighways.Presentation
         const int LogHistory = 200;
         const int ResourceCount = ResourceInfo.Count;
         static bool EnglishUi => LocalizationService.Language == "en";
+        static string LuckCardTitle(LuckCardKind kind)
+        {
+            if (!EnglishUi) return LuckInfo.Title(kind);
+            switch (kind)
+            {
+                case LuckCardKind.Grant: return "City Hall Grant";
+                case LuckCardKind.Supply: return "Unexpected Supply";
+                case LuckCardKind.Premium: return "Completion Bonus";
+                case LuckCardKind.Fine: return "Inspection";
+                case LuckCardKind.Theft: return "Warehouse Theft";
+                default: return "Contract Recall";
+            }
+        }
+
+        static string LuckCardDescription(LuckCardKind kind, GameConfig config)
+        {
+            if (!EnglishUi) return LuckInfo.Describe(kind, config);
+            switch (kind)
+            {
+                case LuckCardKind.Grant: return config.InfluenceEnabled ? $"+{config.LuckGrantInfluence} influence." : $"+{config.LuckGrant} pts.";
+                case LuckCardKind.Supply: return $"+{config.LuckSupply} resource cards from the deck.";
+                case LuckCardKind.Premium: return $"+{config.LuckPremiumPerContract} pts per completed contract (maximum {config.LuckPremiumMax}).";
+                case LuckCardKind.Fine: return $"−{config.LuckFine} pts.";
+                case LuckCardKind.Theft: return "Discard a random card from your hand.";
+                default: return $"Return your lowest-value unfinished contract to the bottom of the deck without a penalty. If none, lose {config.LuckFine} pts.";
+            }
+        }
+
         static string DisplayPlace(string name) => MagnateLocationText.Name(name);
 
         enum OverlayKind
@@ -2182,12 +2210,12 @@ namespace CityHighways.Presentation
             var face = Ui.Column();
             face.style.alignItems = Align.Center;
             face.Add(Ui.Text(buff ? LocalizationService.Get("game.ui.052") : LocalizationService.Get("game.ui.053"), 14f, color, true));
-            var title = Ui.Text(LuckInfo.Title(kind), 24f, Theme.Text, true);
+            var title = Ui.Text(LuckCardTitle(kind), 24f, Theme.Text, true);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
             title.style.whiteSpace = WhiteSpace.Normal;
             title.style.marginTop = 10f;
             face.Add(title);
-            var effect = Ui.Text(LuckInfo.Describe(kind, _game.Config), 13f, Theme.TextDim);
+            var effect = Ui.Text(LuckCardDescription(kind, _game.Config), 13f, Theme.TextDim);
             effect.style.unityTextAlign = TextAnchor.MiddleCenter;
             effect.style.whiteSpace = WhiteSpace.Normal;
             effect.style.marginTop = 12f;
@@ -3371,13 +3399,13 @@ namespace CityHighways.Presentation
                 Ui.Radius(card, 14f);
                 Ui.Border(card, 3f, color);
                 card.Add(Ui.Text(buff ? LocalizationService.Get("game.ui.052") : LocalizationService.Get("game.ui.053"), 13f, color, true));
-                var title = Ui.Text(LuckInfo.Title(kind), 22f, Theme.Text, true);
+                var title = Ui.Text(LuckCardTitle(kind), 22f, Theme.Text, true);
                 title.style.marginTop = 8f;
                 title.style.unityTextAlign = TextAnchor.MiddleCenter;
                 title.style.whiteSpace = WhiteSpace.Normal;
                 card.Add(title);
                 bool insured = !buff && _game.CurrentPlayer.Character == CharacterKind.Insurer;
-                var text = Ui.Text(insured ? (EnglishUi ? $"Insurance: only −{_game.Config.InsurerFine} pt." : $"Страховка: только −{_game.Config.InsurerFine} очко.") : LocalizationService.TranslateLegacy(LuckInfo.Describe(kind, _game.Config)), 13f, Theme.TextDim);
+                var text = Ui.Text(insured ? (EnglishUi ? $"Insurance: only −{_game.Config.InsurerFine} pt." : $"Страховка: только −{_game.Config.InsurerFine} очко.") : LuckCardDescription(kind, _game.Config), 13f, Theme.TextDim);
                 text.style.marginTop = 10f;
                 text.style.unityTextAlign = TextAnchor.MiddleCenter;
                 text.style.whiteSpace = WhiteSpace.Normal;
