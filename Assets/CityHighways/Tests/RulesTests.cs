@@ -398,6 +398,29 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void FirstGameTutorial_AllEnglishStepsAreTranslated()
+        {
+            var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
+            var titlesField = typeof(GameView).GetField("EnglishFirstGameTutorialTitles", flags);
+            var textsField = typeof(GameView).GetField("EnglishFirstGameTutorialTexts", flags);
+            Assert.IsNotNull(titlesField);
+            Assert.IsNotNull(textsField);
+            var titles = titlesField.GetValue(null) as string[];
+            var texts = textsField.GetValue(null) as string[];
+            Assert.IsNotNull(titles);
+            Assert.IsNotNull(texts);
+            Assert.AreEqual(9, titles.Length);
+            Assert.AreEqual(titles.Length, texts.Length);
+            for (int i = 0; i < titles.Length; i++)
+            {
+                Assert.IsNotEmpty(titles[i], "Missing tutorial title at index " + i);
+                Assert.IsNotEmpty(texts[i], "Missing tutorial text at index " + i);
+                Assert.IsFalse(Regex.IsMatch(titles[i] + texts[i], "[а-яё]", RegexOptions.IgnoreCase),
+                    "Russian text remains in first-game tutorial step " + i);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
