@@ -805,19 +805,19 @@ namespace CityHighways.Presentation
             if (road == null) { Ui.Show(_tooltip, false); return; }
             var owner = _game.Board.GetRoadOwner(road.Id);
             string who = !owner.HasValue ? LocalizationService.Get("magnate.ui.029") : owner == _game.PublicOwner ? LocalizationService.Get("magnate.ui.030")
-                : $"компания {_game.Players[owner.Value].Name}" + (owner == _game.CurrentPlayerIndex ? LocalizationService.Get("magnate.ui.031") : $" · проезд −{_game.Config.TollPerRoad}");
+                : (En ? $"company {_game.Players[owner.Value].Name}" : $"компания {_game.Players[owner.Value].Name}") + (owner == _game.CurrentPlayerIndex ? LocalizationService.Get("magnate.ui.031") : En ? $" · toll −{_game.Config.TollPerRoad}" : $" · проезд −{_game.Config.TollPerRoad}");
             string kind = _game.IsHighway(road.Id) ? LocalizationService.Get("magnate.ui.032") : road.IsBridge ? LocalizationService.Get("magnate.ui.033") : _game.IsWide(road) ? LocalizationService.Get("magnate.ui.034") : LocalizationService.Get("magnate.ui.035");
-            string text = $"{_game.Map.LocationName(road.A)} — {_game.Map.LocationName(road.B)}\n{kind}, длина {road.Length} · {who}\n" +
-                          $"Пропускает {_game.Capacity(road)} фур за раунд · в прошлом раунде: {_game.LastTraffic(road.Id)}" +
-                          (_game.IsWide(road) ? LocalizationService.Get("magnate.ui.040") : LocalizationService.Get("magnate.ui.041"));
+            string text = En ? $"{Place(_game.Map.LocationName(road.A))} — {Place(_game.Map.LocationName(road.B))}\n{kind}, length {road.Length} · {who}\n" +
+                          $"Capacity: {_game.Capacity(road)} trucks/round · last round: {_game.LastTraffic(road.Id)}" +
+                          (_game.IsWide(road) ? LocalizationService.Get("magnate.ui.040") : LocalizationService.Get("magnate.ui.041")) : $"{_game.Map.LocationName(road.A)} — {_game.Map.LocationName(road.B)}\n{kind}, длина {road.Length} · {who}\n" + $"Пропускает {_game.Capacity(road)} фур за раунд · в прошлом раунде: {_game.LastTraffic(road.Id)}" + (_game.IsWide(road) ? LocalizationService.Get("magnate.ui.040") : LocalizationService.Get("magnate.ui.041"));
             var closing = _game.Events.FirstOrDefault(e => e.Road == road.Id);
-            if (_game.IsClosed(road.Id)) text += $"\nЗакрыта: {closing?.Title ?? "событие"}";
+            if (_game.IsClosed(road.Id)) text += En ? $"\nClosed: {Place(closing?.Title ?? "event")}" : $"\nЗакрыта: {closing?.Title ?? "событие"}";
             if (HumanTurn && _game.Phase == MagnatePhase.Build)
             {
                 if (!owner.HasValue)
-                    text += _game.OpeningRoadsLeft > 0 ? $"\nКупить: {_game.BuildCost(road)} очков стройки" : LocalizationService.Get("magnate.ui.042");
+                    text += _game.OpeningRoadsLeft > 0 ? (En ? $"\nBuy: {_game.BuildCost(road)} build points" : $"\nКупить: {_game.BuildCost(road)} очков стройки") : LocalizationService.Get("magnate.ui.042");
                 else if (owner == _game.CurrentPlayerIndex && !_game.IsHighway(road.Id) && !_game.IsOpeningRound)
-                    text += $"\nУлучшить до магистрали: {_game.UpgradeCost(road)}";
+                    text += En ? $"\nUpgrade to highway: {_game.UpgradeCost(road)}" : $"\nУлучшить до магистрали: {_game.UpgradeCost(road)}";
             }
             ShowTooltip(text, position);
         }
@@ -832,25 +832,25 @@ namespace CityHighways.Presentation
                 return;
             }
             var hub = _game.HubAt(location.Id);
-            string text = location.Name + " · " + _game.Map.DistrictName(location.DistrictId);
+            string text = Place(location.Name) + " · " + Place(_game.Map.DistrictName(location.DistrictId));
             if (hub != null)
             {
                 text += "\n" + (hub.Kind == HubKind.Airport ? LocalizationService.Get("magnate.ui.036") : hub.Kind == HubKind.Port ? LocalizationService.Get("magnate.ui.037") : LocalizationService.Get("magnate.ui.038")) +
-                        $" · уровень {hub.Level}" + (hub.Owner >= 0 ? $" · владелец {_game.Players[hub.Owner].Name} (вложено {_game.HubInvestment(location.Id, hub.Owner)})" : LocalizationService.Get("magnate.ui.039"));
+                        (En ? $" · level {hub.Level}" : $" · уровень {hub.Level}") + (hub.Owner >= 0 ? (En ? $" · owner {_game.Players[hub.Owner].Name} (invested {_game.HubInvestment(location.Id, hub.Owner)})" : $" · владелец {_game.Players[hub.Owner].Name} (вложено {_game.HubInvestment(location.Id, hub.Owner)})") : LocalizationService.Get("magnate.ui.039"));
                 foreach (var cargo in _game.WaitingAt(location.Id))
-                    text += $"\n• {LogisticsGame.KindTitle(cargo.Kind)} → {_game.Map.LocationName(cargo.To)}: {cargo.Value} очк.";
+                    text += En ? $"\n• {LocalizationService.Get("rules.magnate.cargo." + cargo.Kind + ".name")} → {Place(_game.Map.LocationName(cargo.To))}: {cargo.Value} pts" : $"\n• {LogisticsGame.KindTitle(cargo.Kind)} → {_game.Map.LocationName(cargo.To)}: {cargo.Value} очк.";
                 if (HumanTurn && _game.Phase == MagnatePhase.Build && !_game.IsOpeningRound && hub.Level < 5)
                 {
                     int me = _game.CurrentPlayerIndex, cost = _game.HubUpgradeCost(hub);
                     int mine = _game.HubInvestment(location.Id, me) + cost;
                     int theirs = hub.Owner >= 0 && hub.Owner != me ? _game.HubInvestment(location.Id, hub.Owner) : 0;
-                    text += $"\nКлик — развить до уровня {hub.Level + 1} за {cost}: больше грузов";
-                    if (hub.Owner == me) text += $" (ваших вложений станет {mine})";
-                    else if (hub.Owner < 0 || mine > theirs) text += $" — хаб станет вашим: с чужих фур {_game.Config.HubFee} за погрузку, вы грузите первым";
-                    else text += $" — владельцем останется {_game.Players[hub.Owner].Name}: у вас будет {mine} из {theirs + 1} нужных";
+                    text += En ? $"\nClick to upgrade to level {hub.Level + 1} for {cost}: more cargo" : $"\nКлик — развить до уровня {hub.Level + 1} за {cost}: больше грузов";
+                    if (hub.Owner == me) text += En ? $" (your investment: {mine})" : $" (ваших вложений станет {mine})";
+                    else if (hub.Owner < 0 || mine > theirs) text += En ? $" — you will own the hub: rivals pay {_game.Config.HubFee} per pickup, and you load first" : $" — хаб станет вашим: с чужих фур {_game.Config.HubFee} за погрузку, вы грузите первым";
+                    else text += En ? $" — {_game.Players[hub.Owner].Name} keeps ownership: your {mine} versus {theirs + 1} needed" : $" — владельцем останется {_game.Players[hub.Owner].Name}: у вас будет {mine} из {theirs + 1} нужных";
                 }
             }
-            if (location.DistrictId == _game.Config.BribeDistrict) text += $"\nОпасный груз здесь — взятка {_game.Config.HazardBribe} влияния";
+            if (location.DistrictId == _game.Config.BribeDistrict) text += En ? $"\nHazardous cargo here requires {_game.Config.HazardBribe} influence" : $"\nОпасный груз здесь — взятка {_game.Config.HazardBribe} влияния";
 
             // Предпросмотр маршрута выбранной пустой фуры: путь на карте, время, плата, риск.
             if (HumanTurn && _game.Phase == MagnatePhase.Plan && _selectedTruck >= 0)
@@ -862,7 +862,7 @@ namespace CityHighways.Presentation
                     if (route != null)
                     {
                         _preview = route;
-                        text += $"\nМаршрут: {_game.RouteLength(route)} участков, ~{_game.RouteRounds(route)} р." +
+                        text += En ? $"\nRoute: {_game.RouteLength(route)} segments, ~{_game.RouteRounds(route)} rounds · tolls −{_game.RouteTolls(truck.Owner, route)} · congested roads: {_game.RouteRisk(route)}\nClick to travel here" : $"\nМаршрут: {_game.RouteLength(route)} участков, ~{_game.RouteRounds(route)} р." +
                                 $" · проезд −{_game.RouteTolls(truck.Owner, route)} · забитых дорог: {_game.RouteRisk(route)}\nКлик — ехать сюда";
                     }
                     else text += LocalizationService.Get("magnate.ui.043");
