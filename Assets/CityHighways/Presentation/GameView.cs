@@ -3109,6 +3109,50 @@ namespace CityHighways.Presentation
             else if (hadShown && fresh > 0) Ui.Show(_logNewButton, true);
         }
 
+        string CityOrderLogRoute(string route)
+        {
+            if (string.IsNullOrEmpty(route)) return route;
+            // The route uses display names, not IDs; preserve punctuation and order.
+            var segments = System.Text.RegularExpressions.Regex.Split(route, @"( — | через | и )");
+            for (int i = 0; i < segments.Length; i++)
+            {
+                if (segments[i] == " через ") segments[i] = " via ";
+                else if (segments[i] == " и ") segments[i] = " and ";
+                else if (segments[i] != " — ") segments[i] = DisplayPlace(segments[i]);
+            }
+            return string.Concat(segments);
+        }
+
+        string CoopJournalText(string message)
+        {
+            var order = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Новый заказ города: (.*?) — (\d+) очк\., срок (\d+) кругов\.$");
+            if (order.Success)
+                return $"New city order: {CityOrderLogRoute(order.Groups[1].Value)} — {order.Groups[2].Value} pts, due in {order.Groups[3].Value} rounds.";
+            var complete = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Заказ города выполнен: (.*?) \(\+(\d+) очк\. — (.*?)\)\. Кризис (\d+) → (\d+)\. Выполнено (\d+) из (\d+)\.$");
+            if (complete.Success)
+                return $"City order completed: {CityOrderLogRoute(complete.Groups[1].Value)} (+{complete.Groups[2].Value} pts — {complete.Groups[3].Value}). Crisis {complete.Groups[4].Value} → {complete.Groups[5].Value}. Completed {complete.Groups[6].Value} of {complete.Groups[7].Value}.";
+            var failed = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Заказ города просрочен: (.*?)\. Кризис \+(\d+) → (\d+) из (\d+)\.$");
+            if (failed.Success)
+                return $"City order expired: {CityOrderLogRoute(failed.Groups[1].Value)}. Crisis +{failed.Groups[2].Value} → {failed.Groups[3].Value} of {failed.Groups[4].Value}.";
+            var saved = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Город спасён: выполнено (\d+) заказов из (\d+)(?:, кризис (\d+) из (\d+))?\.$");
+            if (saved.Success)
+                return $"City saved: completed {saved.Groups[1].Value} of {saved.Groups[2].Value} orders" +
+                    (saved.Groups[3].Success ? $", crisis {saved.Groups[3].Value} of {saved.Groups[4].Value}." : ".");
+            var lost = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Город встал: кризис дошёл до (\d+)\. Выполнено заказов: (\d+) из (\d+)\.$");
+            if (lost.Success)
+                return $"City overwhelmed: crisis reached {lost.Groups[1].Value}. Completed {lost.Groups[2].Value} of {lost.Groups[3].Value} orders.";
+            var outOfRoads = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Участки кончились раньше, чем город получил свои заказы: выполнено (\d+) из (\d+)\.$");
+            if (outOfRoads.Success)
+                return $"Road pieces ran out before the city received its orders: completed {outOfRoads.Groups[1].Value} of {outOfRoads.Groups[2].Value}.";
+            return null;
+        }
+
         string JournalDisplayText(string message)
         {
             if (!EnglishUi || string.IsNullOrEmpty(message)) return message;
@@ -3127,6 +3171,8 @@ namespace CityHighways.Presentation
             if (crisis.Success) return $"The city grows: crisis +1 → {crisis.Groups[1].Value} of {crisis.Groups[2].Value}.";
             var eventCrisis = System.Text.RegularExpressions.Regex.Match(message, @"^Событие давит на город: кризис \+(\d+) → (\d+) из (\d+)\.$");
             if (eventCrisis.Success) return $"A city event increases the crisis by {eventCrisis.Groups[1].Value} → {eventCrisis.Groups[2].Value} of {eventCrisis.Groups[3].Value}.";
+            string coop = CoopJournalText(message);
+            if (coop != null) return coop;
             if (_game == null) return message;
             foreach (var player in _game.Players)
             {
