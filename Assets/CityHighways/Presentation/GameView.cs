@@ -3717,7 +3717,7 @@ namespace CityHighways.Presentation
             }
             var title = Ui.Text(result.Cooperative
                     ? (result.TeamWon ? LocalizationService.Get("game.ui.134") : LocalizationService.Get("game.ui.135"))
-                    : "Победа: " + string.Join(", ", result.Winners.Select(w => w.PlayerName)),
+                    : (EnglishUi ? "Victory: " : "Победа: ") + string.Join(", ", result.Winners.Select(w => w.PlayerName)),
                 34f, result.Cooperative && !result.TeamWon ? Theme.Danger : Theme.Gold, true);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
             title.style.marginLeft = 16f;
@@ -3726,13 +3726,13 @@ namespace CityHighways.Presentation
             box.Add(hero);
             if (result.Cooperative)
             {
-                var outcome = Ui.Text(result.CoopOutcome + $" Очки команды: {result.TeamTotal}.", 16f, Theme.Text, true);
+                var outcome = Ui.Text((EnglishUi ? (result.TeamWon ? "The team saved the city." : "The city defeated the team.") : result.CoopOutcome) + (EnglishUi ? $" Team score: {result.TeamTotal}." : $" Очки команды: {result.TeamTotal}."), 16f, Theme.Text, true);
                 outcome.style.whiteSpace = WhiteSpace.Normal;
                 outcome.style.unityTextAlign = TextAnchor.MiddleCenter;
                 outcome.style.marginBottom = 6f;
                 box.Add(outcome);
             }
-            var subtitle = Ui.Text("Дороги + контракты (★ — бонус контракта мэрии) ± плата за проезд + «Крупнейшая сеть» + цели мэрии ± удача + способность персонажа (Чиновник — за контракты, Мостовик — за мосты)", 13f, Theme.TextDim);
+            var subtitle = Ui.Text(EnglishUi ? "Roads + contracts (★ City Hall bonus) ± tolls + Largest Network + City Hall goals ± luck + character abilities (Official: contracts, Bridge Builder: bridges)" : "Дороги + контракты (★ — бонус контракта мэрии) ± плата за проезд + «Крупнейшая сеть» + цели мэрии ± удача + способность персонажа (Чиновник — за контракты, Мостовик — за мосты)", 13f, Theme.TextDim);
             subtitle.style.whiteSpace = WhiteSpace.Normal;
             subtitle.style.unityTextAlign = TextAnchor.MiddleCenter;
             subtitle.style.marginTop = 6f;
