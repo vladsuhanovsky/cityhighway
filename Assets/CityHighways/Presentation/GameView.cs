@@ -3260,6 +3260,20 @@ namespace CityHighways.Presentation
                     return "Too many face-up machinery cards: the market has been refreshed.";
                 case "Победа команды!": return "Team victory!";
             }
+            if (message.StartsWith("Победа команды! ", StringComparison.Ordinal))
+            {
+                string reason = message.Substring("Победа команды! ".Length);
+                return "Team victory! " + (CoopJournalText(reason) ?? reason);
+            }
+            if (message.StartsWith("Город победил. ", StringComparison.Ordinal))
+            {
+                string reason = message.Substring("Город победил. ".Length);
+                return "The city won. " + (CoopJournalText(reason) ?? reason);
+            }
+            var finalRound = System.Text.RegularExpressions.Regex.Match(message,
+                @"^У компании (.*?) осталось участков: (\d+)\. Начинается последний круг: у каждого ещё один ход\.$");
+            if (finalRound.Success)
+                return $"{finalRound.Groups[1].Value} has {finalRound.Groups[2].Value} road pieces left. Final round begins: every player gets one more turn.";
             var starting = System.Text.RegularExpressions.Regex.Match(message, @"^Игра началась\. Ходит (.*)\.$");
             if (starting.Success) return $"Game started. {starting.Groups[1].Value} plays first.";
             var defeat = System.Text.RegularExpressions.Regex.Match(message, @"^Игра окончена\. Победа: (.*)\.$");
