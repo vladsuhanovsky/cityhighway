@@ -1007,7 +1007,7 @@ namespace CityHighways.Presentation
             if (_log.Count == 0) _popupBody.Add(Pad(Hint(LocalizationService.Get("magnate.panel.053"))));
             foreach (var line in _log.Skip(Math.Max(0, _log.Count - 40)).Reverse())
             {
-                var label = Hint(line);
+                var label = Hint(JournalText(line));
                 label.style.marginTop = 4f;
                 _popupBody.Add(Pad(label));
             }
