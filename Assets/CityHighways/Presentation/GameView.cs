@@ -4053,6 +4053,25 @@ namespace CityHighways.Presentation
             public string Text;
         }
 
+        static readonly string[] EnglishFirstGameTutorialTitles =
+        {
+            "The Map", "City Hall Contracts", "Resources", "Your Cards",
+            "Tolls", "City Events", "Characters", "City Hall Goals", "Luck Cards"
+        };
+
+        static readonly string[] EnglishFirstGameTutorialTexts =
+        {
+            "You run a road company. Build roads between city locations to earn points immediately (a length-four road earns seven points). Colored areas represent districts.",
+            "Your contracts are in the Contracts tab at the bottom. Swipe through the cards. Connect any locations in the two required districts. Completed contracts award points; unfinished ones deduct points. Transit contracts pass through a third district, and hub contracts connect one district to two others. Hover to highlight the route.",
+            "Face-up cards and the deck are in Actions. Draw two cards per turn, from the market or the deck. Asphalt builds streets, concrete builds avenues, steel builds bridges, and gravel builds country roads. Machinery is a wild card; taking face-up machinery uses both draws.",
+            "Your hand is below the map beside Players. Each segment represents one card. A length-three road costs three matching resource cards. White roads can use any one resource type. Steel and bridges are scarce.",
+            "Rival roads are not dead ends. A contract route must use at least one of your roads and may use up to two rival roads. Pay their owners two points per rival road. The largest district network earns a bonus of ten points.",
+            "A colored marker at the top announces city events. Hover or open Menu for details. Events can appear at the start of a round: rush hour doubles tolls on affected roads, repairs close road segments, subsidies make bridges cheaper, and a new district adds locations and contracts.",
+            "Each company has a character ability shown in Players. Lucky chooses between two luck cards, Foreman can build a free road, and Toll Collector earns more in tolls. Make use of your character's strengths.",
+            "Open Menu in the top-right corner for City Hall goals. Three shared goals are available to all players; the first player to complete each goal claims the reward. Watch your rivals' progress.",
+            "Luck is in Actions. While drawing cards, replace one of your two draws with a luck card, at most once per turn. Benefits include grants, resource deliveries and contract bonuses. Risks include fines, theft and contract recalls."
+        };
+
         TutorialStep[] TutorialSteps() => new[]
         {
             new TutorialStep
@@ -4155,11 +4174,11 @@ namespace CityHighways.Presentation
             // Когда рассказываем про карту, карточку ставим вниз, иначе — в середину карты.
             card.style.top = mapTopLeft.y + (step.Target() == _map ? mapBounds.height - 250f : mapBounds.height / 2f - 110f);
 
-            card.Add(Ui.Text($"Обучение · {index + 1} из {steps.Length}", 12f, Theme.TextDim, true));
-            var title = Ui.Text(step.Title, 24f, Theme.Gold, true);
+            card.Add(Ui.Text(EnglishUi ? $"Tutorial · {index + 1} of {steps.Length}" : $"Обучение · {index + 1} из {steps.Length}", 12f, Theme.TextDim, true));
+            var title = Ui.Text(EnglishUi ? EnglishFirstGameTutorialTitles[index] : step.Title, 24f, Theme.Gold, true);
             title.style.marginTop = 4f;
             card.Add(title);
-            var text = Ui.Text(step.Text, 15f);
+            var text = Ui.Text(EnglishUi ? EnglishFirstGameTutorialTexts[index] : step.Text, 15f);
             text.style.marginTop = 8f;
             text.style.marginBottom = 16f;
             card.Add(text);
