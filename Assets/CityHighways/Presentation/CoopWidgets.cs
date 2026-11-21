@@ -16,6 +16,8 @@ namespace CityHighways.Presentation
     {
         readonly Action<Contract> _hover;
         readonly Label _score;
+        readonly Label _titleLabel;
+        readonly Label _crisisCaption;
         readonly VisualElement _meter;
         readonly Label _crisisLabel;
         readonly VisualElement _orders;
@@ -44,7 +46,8 @@ namespace CityHighways.Presentation
             var icon = new MenuIcon(MenuIcon.Glyph.Skyline, 20f, Theme.Gold);
             icon.style.marginRight = 8f;
             head.Add(icon);
-            var title = Ui.Text("ГОРОД ПРОТИВ ВСЕХ", 12f, Theme.Gold, true);
+            var title = Ui.Text(LocalizationService.Language == "en" ? "CITY VS EVERYONE" : "ГОРОД ПРОТИВ ВСЕХ", 12f, Theme.Gold, true);
+            _titleLabel = title;
             title.style.letterSpacing = 1.2f;
             title.style.flexGrow = 1f;
             head.Add(title);
@@ -67,7 +70,8 @@ namespace CityHighways.Presentation
             var crisisRow = Ui.Row();
             crisisRow.style.alignItems = Align.Center;
             crisisRow.style.marginTop = 8f;
-            var crisisCaption = Ui.Text("Кризис", 12f, Theme.TextDim, true);
+            var crisisCaption = Ui.Text(LocalizationService.Language == "en" ? "Crisis" : "Кризис", 12f, Theme.TextDim, true);
+            _crisisCaption = crisisCaption;
             crisisCaption.style.width = 52f;
             crisisRow.Add(crisisCaption);
             _meter = Ui.Row();
@@ -97,6 +101,9 @@ namespace CityHighways.Presentation
                 return;
             }
             Ui.Show(this, true);
+            bool english = LocalizationService.Language == "en";
+            _titleLabel.text = english ? "CITY VS EVERYONE" : "ГОРОД ПРОТИВ ВСЕХ";
+            _crisisCaption.text = english ? "Crisis" : "Кризис";
             _score.text = $"{game.OrdersDone}/{game.OrdersTarget}";
 
             // Шкала: столько делений, сколько максимум кризиса.
@@ -123,13 +130,13 @@ namespace CityHighways.Presentation
             _crisisLabel.style.color = CrisisColor(game.Crisis / (float)Mathf.Max(1, game.CrisisMax));
 
             // Карточки заказов пересобираем, только когда что-то изменилось.
-            var signature = string.Join(";", Signature(game));
+            var signature = LocalizationService.Language + ";" + string.Join(";", Signature(game));
             if (signature == _signature) return;
             _signature = signature;
             _orders.Clear();
             if (game.CityOrders.Count == 0)
             {
-                var none = Ui.Text("Заказов нет — колода контрактов пуста.", 12f, Theme.TextDim);
+                var none = Ui.Text(english ? "No city orders: the contract deck is empty." : "Заказов нет — колода контрактов пуста.", 12f, Theme.TextDim);
                 none.style.whiteSpace = WhiteSpace.Normal;
                 _orders.Add(none);
             }
@@ -160,12 +167,12 @@ namespace CityHighways.Presentation
             var texts = Ui.Column();
             texts.style.flexGrow = 1f;
             texts.style.flexShrink = 1f;
-            string route = $"{map.DistrictName(contract.DistrictA)} — {map.DistrictName(contract.DistrictB)}";
+            string route = $"{MagnateLocationText.Name(map.DistrictName(contract.DistrictA))} — {MagnateLocationText.Name(map.DistrictName(contract.DistrictB))}";
             var name = Ui.Text(route, 13f, Theme.Text, true);
             name.style.whiteSpace = WhiteSpace.Normal;
             texts.Add(name);
             if (contract.IsComplex)
-                texts.Add(Ui.Text((contract.Kind == ContractKind.Transit ? "через " : "и ") + map.DistrictName(contract.DistrictC), 11f, Theme.TextDim));
+                texts.Add(Ui.Text((LocalizationService.Language == "en" ? (contract.Kind == ContractKind.Transit ? "via " : "and ") : (contract.Kind == ContractKind.Transit ? "через " : "и ")) + MagnateLocationText.Name(map.DistrictName(contract.DistrictC)), 11f, Theme.TextDim));
             row.Add(texts);
 
             var right = Ui.Column();
@@ -177,7 +184,7 @@ namespace CityHighways.Presentation
             var clock = new MenuIcon(MenuIcon.Glyph.Clock, 12f, urgent ? GameColors.Danger : Theme.TextDim);
             clock.style.marginRight = 3f;
             timer.Add(clock);
-            timer.Add(Ui.Text(order.RoundsLeft == 1 ? "последний круг" : $"{order.RoundsLeft} {Plural(order.RoundsLeft)}", 11f,
+            timer.Add(Ui.Text(LocalizationService.Language == "en" ? (order.RoundsLeft == 1 ? "final round" : $"{order.RoundsLeft} rounds") : (order.RoundsLeft == 1 ? "последний круг" : $"{order.RoundsLeft} {Plural(order.RoundsLeft)}"), 11f,
                 urgent ? GameColors.Danger : Theme.TextDim, urgent));
             right.Add(timer);
             row.Add(right);
