@@ -2646,10 +2646,8 @@ namespace CityHighways.Presentation
         string PlayerTooltip(int index)
         {
             var player = _game.Players[index];
-            string character = player.Character != CharacterKind.None ? " · " + Characters.Title(player.Character) : "";
-            return $"{player.Name}{character}{BotTag(index)}\n{_game.VisibleScore(player)} очков · {player.RoadPieces} участков · {player.HandSize} карт"
-                   + (_game.Config.InfluenceEnabled ? $" · {player.Influence} влияния" : "")
-                   + "\nПодробнее — в панели «Игроки».";
+            string character = player.Character != CharacterKind.None ? " · " + CharacterLocalization.Title(player.Character) : "";
+            return EnglishUi ? $"{player.Name}{character}{BotTag(index)}\n{_game.VisibleScore(player)} pts · {player.RoadPieces} road pieces · {player.HandSize} cards" + (_game.Config.InfluenceEnabled ? $" · {player.Influence} influence" : "") + "\nMore details in the Players panel." : $"{player.Name}{character}{BotTag(index)}\n{_game.VisibleScore(player)} очков · {player.RoadPieces} участков · {player.HandSize} карт" + (_game.Config.InfluenceEnabled ? $" · {player.Influence} влияния" : "") + "\nПодробнее — в панели «Игроки».";
         }
 
         void RefreshPlayers()
@@ -2662,14 +2660,13 @@ namespace CityHighways.Presentation
                 bool active = player.Index == acting;
                 string character = player.Character != CharacterKind.None ? " · " + Characters.Title(player.Character) : "";
                 row.Name.text = player.Name + character + BotTag(player.Index);
-                row.Ability.text = player.Character == CharacterKind.None ? "" : Characters.Ability(player.Character, _game.Config)
-                    + (player.Character == CharacterKind.Foreman ? $" Осталось: {player.FreeRoadsLeft}." : "");
+                row.Ability.text = player.Character == CharacterKind.None ? "" : CharacterLocalization.Ability(player.Character, _game.Config)
+                    + (player.Character == CharacterKind.Foreman ? (EnglishUi ? $" Remaining: {player.FreeRoadsLeft}." : $" Осталось: {player.FreeRoadsLeft}.") : "");
                 Ui.Show(row.Ability, player.Character != CharacterKind.None);
                 // Видимые очки: дороги, цели, удача, штрафы и проезд (он платится по ходу партии). Контракты секретны.
                 int points = _game.VisibleScore(player);
                 row.Score.text = points.ToString();
-                row.Stats.text = $"{player.RoadPieces} уч · {player.HandSize} карт"
-                                 + (_game.Config.InfluenceEnabled ? $" · {player.Influence} вл" : "");
+                row.Stats.text = EnglishUi ? $"{player.RoadPieces} roads · {player.HandSize} cards" + (_game.Config.InfluenceEnabled ? $" · {player.Influence} inf." : "") : $"{player.RoadPieces} уч · {player.HandSize} карт" + (_game.Config.InfluenceEnabled ? $" · {player.Influence} вл" : "");
                 row.Pieces.Set(player.RoadPieces / (float)start);
                 row.Root.style.backgroundColor = active ? Theme.PanelHover : Theme.PanelLight;
                 var look = LookOf(player.Index);
@@ -3140,7 +3137,7 @@ namespace CityHighways.Presentation
             if (acting < 0) return LocalizationService.Get("game.ui.092");
             if (AwaitingHost) return LocalizationService.Get("game.ui.039");
             if (IsRealBot(acting)) return LocalizationService.Get("game.ui.093");
-            if (IsBot(acting)) return $"Ходит {_game.Players[acting].Name} (по сети)…";
+            if (IsBot(acting)) return EnglishUi ? $"{_game.Players[acting].Name} is playing online…" : $"Ходит {_game.Players[acting].Name} (по сети)…";
             if (NeedsHandoff) return LocalizationService.Get("game.ui.094");
 
             switch (_game.Phase)
@@ -3380,7 +3377,7 @@ namespace CityHighways.Presentation
                 title.style.whiteSpace = WhiteSpace.Normal;
                 card.Add(title);
                 bool insured = !buff && _game.CurrentPlayer.Character == CharacterKind.Insurer;
-                var text = Ui.Text(insured ? $"Страховка: только −{_game.Config.InsurerFine} очко." : LuckInfo.Describe(kind, _game.Config), 13f, Theme.TextDim);
+                var text = Ui.Text(insured ? (EnglishUi ? $"Insurance: only −{_game.Config.InsurerFine} pt." : $"Страховка: только −{_game.Config.InsurerFine} очко.") : LocalizationService.TranslateLegacy(LuckInfo.Describe(kind, _game.Config)), 13f, Theme.TextDim);
                 text.style.marginTop = 10f;
                 text.style.unityTextAlign = TextAnchor.MiddleCenter;
                 text.style.whiteSpace = WhiteSpace.Normal;
