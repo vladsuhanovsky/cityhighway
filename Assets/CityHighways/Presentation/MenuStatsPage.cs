@@ -382,8 +382,43 @@ namespace CityHighways.Presentation
             return row;
         }
 
-        static readonly string[] ReputationOrder = { LocalizationService.Get("menu.stats.030"), LocalizationService.Get("menu.stats.031"), LocalizationService.Get("menu.stats.032"), LocalizationService.Get("menu.stats.033"), LocalizationService.Get("menu.stats.034") };
-        static readonly string[] DifficultyOrder = { LocalizationService.Get("menu.stats.035"), LocalizationService.Get("menu.stats.036"), LocalizationService.Get("menu.stats.037"), LocalizationService.Get("menu.stats.038") };
+        // Game history stores original labels. Never cache language-dependent strings
+        // or use translated UI text as a stored-data key.
+        static readonly string[] ReputationOrder = { "Новичок", "Любитель", "Профи", "Мастер", "Легенда" };
+        static readonly string[] DifficultyOrder = { "Лёгкая", "Обычная", "Сложная", "Эксперт" };
+
+        static string RankLabel(int index) => LocalizationService.Get("menu.stats." + (30 + index).ToString("000"));
+        static string DifficultyLabel(int index) => LocalizationService.Get("menu.stats." + (35 + index).ToString("000"));
+
+        static int RankIndex(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return -1;
+            for (int i = 0; i < ReputationOrder.Length; i++)
+                if (name == ReputationOrder[i] || name == RankLabel(i) ||
+                    name == (i == 0 ? "Novice" : i == 1 ? "Amateur" : i == 2 ? "Pro" : i == 3 ? "Master" : "Legend"))
+                    return i;
+            return -1;
+        }
+
+        static int DifficultyIndex(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return -1;
+            for (int i = 0; i < DifficultyOrder.Length; i++)
+                if (name == DifficultyOrder[i] || name == DifficultyLabel(i)) return i;
+            return -1;
+        }
+
+        static string DisplayRank(string name)
+        {
+            int index = RankIndex(name);
+            return index >= 0 ? RankLabel(index) : name;
+        }
+
+        static string DisplayDifficulty(string name)
+        {
+            int index = DifficultyIndex(name);
+            return index >= 0 ? DifficultyLabel(index) : name;
+        }
 
         /// <summary>Магнат: средние за партию (доставки, заказы мэрии, пробки, проезд, хабы, потери), лучшая репутация, победы по сложности.</summary>
         VisualElement MagnateCard(List<(GameStat game, PlayerStat me)> mine)
@@ -421,23 +456,23 @@ namespace CityHighways.Presentation
             Stat(LocalizationService.Get("menu.stats.047"), $"{mine.Sum(x => x.me.perishableOnTime)}", (En ? $"lost cargo: {mine.Sum(x => x.me.losses)}" : $"потерь грузов: {mine.Sum(x => x.me.losses)}"), GameColors.Success);
             card.Add(grid);
 
-            int bestRank = mine.Select(x => Array.IndexOf(ReputationOrder, x.me.reputation ?? "")).DefaultIfEmpty(-1).Max();
+            int bestRank = mine.Select(x => RankIndex(x.me.reputation)).DefaultIfEmpty(-1).Max();
             if (bestRank >= 0)
-                card.Add(Caption((En ? $"Best reputation: {ReputationOrder[bestRank]} {new string('★', bestRank + 1)}" : $"Лучшая репутация: {ReputationOrder[bestRank]} {new string('★', bestRank + 1)}"), 14f, Theme.Gold, 6f));
+                card.Add(Caption((En ? $"Best reputation: {RankLabel(bestRank)} {new string('★', bestRank + 1)}" : $"Лучшая репутация: {RankLabel(bestRank)} {new string('★', bestRank + 1)}"), 14f, Theme.Gold, 6f));
 
             var byDifficulty = Ui.Column();
             byDifficulty.style.marginTop = 8f;
             byDifficulty.Add(Ui.Text(LocalizationService.Get("menu.stats.048"), 12f, Theme.TextDim, true));
-            foreach (var level in DifficultyOrder)
+            for (int difficultyIndex = 0; difficultyIndex < DifficultyOrder.Length; difficultyIndex++)
             {
-                var games = mine.Where(x => x.game.difficulty == level).ToList();
+                var games = mine.Where(x => DifficultyIndex(x.game.difficulty) == difficultyIndex).ToList();
                 if (games.Count == 0) continue;
                 int wins = games.Count(x => x.me.winner);
                 int percent = Mathf.RoundToInt(100f * wins / games.Count);
                 var row = Ui.Row();
                 row.style.alignItems = Align.Center;
                 row.style.marginTop = 4f;
-                var name = Ui.Text(level, 13f, Theme.Text);
+                var name = Ui.Text(DifficultyLabel(difficultyIndex), 13f, Theme.Text);
                 name.style.width = 90f;
                 row.Add(name);
                 row.Add(WinBar(percent, En ? $"{wins} of {games.Count} ({percent}%)" : $"{wins} из {games.Count} ({percent}%)"));
@@ -704,7 +739,7 @@ namespace CityHighways.Presentation
             when.Add(Ui.Number(ShortDate(game.date), 13f, Theme.Text, true));
             var tags = new List<string>();
             if (game.online) tags.Add(LocalizationService.Get("menu.stats.072"));
-            if (!string.IsNullOrEmpty(game.difficulty)) tags.Add(game.difficulty);
+            if (!string.IsNullOrEmpty(game.difficulty)) tags.Add(DisplayDifficulty(game.difficulty));
             if (!string.IsNullOrEmpty(game.scenario) && game.scenario != Scenarios.Title(ScenarioKind.Standard)) tags.Add(game.scenario);
             when.Add(Ui.Text(tags.Count > 0 ? string.Join(" · ", tags) : Duration(game.seconds), 11f, Theme.TextDim));
             row.Add(when);
@@ -815,7 +850,7 @@ namespace CityHighways.Presentation
             if (!string.IsNullOrEmpty(game.map)) facts.Add(game.map);
             if (!string.IsNullOrEmpty(game.scenario)) facts.Add(game.scenario);
             bool magnateGame = ModeTabs.Of(game) == GameMode.Magnate;
-            if (!string.IsNullOrEmpty(game.difficulty)) facts.Add((En ? $"difficulty: {game.difficulty}" : $"сложность «{game.difficulty}»"));
+            if (!string.IsNullOrEmpty(game.difficulty)) facts.Add((En ? $"difficulty: {DisplayDifficulty(game.difficulty)}" : $"сложность «{DisplayDifficulty(game.difficulty)}»"));
             if (game.turns > 0) facts.Add(En ? (magnateGame ? $"{game.turns} rounds" : $"{game.turns} turns") : (magnateGame ? $"{game.turns} раундов" : $"{game.turns} ходов"));
             if (game.seconds > 0) facts.Add(Duration(game.seconds));
             if (game.online) facts.Add(LocalizationService.Get("menu.stats.075"));
@@ -918,8 +953,8 @@ namespace CityHighways.Presentation
                 if (courier.delivered > 0) moments.Add((En ? $"Most deliveries: {courier.name} ({courier.delivered})." : $"Больше всех доставок у {courier.name}: {courier.delivered}."));
                 var mayor = game.results.OrderByDescending(r => r.mayorOrders).First();
                 if (mayor.mayorOrders > 0) moments.Add((En ? $"Most city orders: {mayor.name} ({mayor.mayorOrders})." : $"Заказы мэрии первым выполнял {mayor.name}: {mayor.mayorOrders}."));
-                var famous = game.results.OrderByDescending(r => Array.IndexOf(ReputationOrder, r.reputation ?? "")).First();
-                if (!string.IsNullOrEmpty(famous.reputation)) moments.Add((En ? $"Best reputation: {famous.name} ({famous.reputation})." : $"Лучшая репутация — у {famous.name}: {famous.reputation}."));
+                var famous = game.results.OrderByDescending(r => RankIndex(r.reputation)).First();
+                if (!string.IsNullOrEmpty(famous.reputation)) moments.Add((En ? $"Best reputation: {famous.name} ({DisplayRank(famous.reputation)})." : $"Лучшая репутация — у {famous.name}: {DisplayRank(famous.reputation)}."));
                 var stuck = game.results.Where(r => r.jams > 0).OrderByDescending(r => r.jams).FirstOrDefault();
                 if (stuck != null) moments.Add((En ? $"Most traffic jams: {stuck.name} ({stuck.jams})." : $"Чаще всех стоял в пробках {stuck.name}: {stuck.jams} {Plural(stuck.jams, LocalizationService.Get("menu.stats.091"), LocalizationService.Get("menu.stats.090"), LocalizationService.Get("menu.stats.091"))}."));
             }
