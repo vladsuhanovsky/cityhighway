@@ -113,6 +113,28 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void MagnateLocationNames_AreTranslatedOnlyForEnglishDisplay()
+        {
+            var initial = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Airport-West", MagnateLocationText.Name("Аэропорт-Запад"));
+                Assert.AreEqual("Central Station", MagnateLocationText.Name("Главный вокзал"));
+                Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(
+                    MagnateLocationText.Name("Красноозёрск"), "[а-яё]",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Аэропорт-Запад", MagnateLocationText.Name("Аэропорт-Запад"));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(initial);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
