@@ -3950,7 +3950,7 @@ namespace CityHighways.Presentation
                     int drawn = p.LuckBuffs + p.LuckDebuffs;
                     string text = drawn == 0
                         ? (EnglishUi ? $"{p.Name}: did not take risks" : $"{p.Name}: не рисковал")
-                        : $"{p.Name}: {drawn} карт ({p.LuckBuffs} баф., {p.LuckDebuffs} дебаф.), {p.LuckPoints:+#;-#;0} очк.";
+                        : (EnglishUi ? $"{p.Name}: {drawn} cards ({p.LuckBuffs} buffs, {p.LuckDebuffs} debuffs), {p.LuckPoints:+#;-#;0} pts" : $"{p.Name}: {drawn} карт ({p.LuckBuffs} баф., {p.LuckDebuffs} дебаф.), {p.LuckPoints:+#;-#;0} очк.");
                     luck.Add(Line(text, Palette.PlayerColor(p.Index)));
                 }
                 var luckiest = players.Where(p => p.LuckBuffs + p.LuckDebuffs > 0).OrderByDescending(p => p.LuckPoints).First();
