@@ -3153,6 +3153,38 @@ namespace CityHighways.Presentation
             return null;
         }
 
+        static string LuckResultText(string result)
+        {
+            var insurance = System.Text.RegularExpressions.Regex.Match(result, @"^страховка: вместо дебафа −(\d+) очко\.$");
+            if (insurance.Success) return $"Insurance: −{insurance.Groups[1].Value} pt instead of the penalty.";
+            var influence = System.Text.RegularExpressions.Regex.Match(result, @"^\+(\d+) влияния\.$");
+            if (influence.Success) return $"+{influence.Groups[1].Value} influence.";
+            var points = System.Text.RegularExpressions.Regex.Match(result, @"^\+(\d+) очков\.$");
+            if (points.Success) return $"+{points.Groups[1].Value} pts.";
+            var cards = System.Text.RegularExpressions.Regex.Match(result, @"^\+(\d+) карт ресурсов\.$");
+            if (cards.Success) return $"+{cards.Groups[1].Value} resource cards.";
+            var premium = System.Text.RegularExpressions.Regex.Match(result, @"^выполнено контрактов: (\d+), \+(\d+) очков\.$");
+            if (premium.Success) return $"{premium.Groups[1].Value} completed contracts, +{premium.Groups[2].Value} pts.";
+            var fine = System.Text.RegularExpressions.Regex.Match(result, @"^−(\d+) очка\.$");
+            if (fine.Success) return $"−{fine.Groups[1].Value} pts.";
+            var stolen = System.Text.RegularExpressions.Regex.Match(result, @"^−(\d+) карта с руки\.$");
+            if (stolen.Success) return $"Discard {stolen.Groups[1].Value} cards from hand.";
+            if (result == "рука пуста, красть нечего.") return "Hand is empty; nothing to steal.";
+            var recallFine = System.Text.RegularExpressions.Regex.Match(result, @"^невыполненных контрактов нет, −(\d+) очка\.$");
+            if (recallFine.Success) return $"No unfinished contracts; −{recallFine.Groups[1].Value} pts.";
+            var recall = System.Text.RegularExpressions.Regex.Match(result, @"^контракт (.*?) — (.*?) \((\d+)\) уходит под колоду\.$");
+            if (recall.Success)
+                return $"Contract {DisplayPlace(recall.Groups[1].Value)} — {DisplayPlace(recall.Groups[2].Value)} ({recall.Groups[3].Value}) goes to the bottom of the deck.";
+            return LocalizationService.TranslateLegacy(result);
+        }
+
+        static string LuckTitleFromRussian(string name)
+        {
+            foreach (LuckCardKind kind in Enum.GetValues(typeof(LuckCardKind)))
+                if (LuckInfo.Title(kind) == name) return LuckCardTitle(kind);
+            return name;
+        }
+
         string JournalDisplayText(string message)
         {
             if (!EnglishUi || string.IsNullOrEmpty(message)) return message;
@@ -3190,6 +3222,23 @@ namespace CityHighways.Presentation
                 var kept = System.Text.RegularExpressions.Regex.Match(action, @"^оставляет контрактов: (\d+)\.$");
                 if (kept.Success) return $"{player.Name} keeps {kept.Groups[1].Value} contracts.";
                 if (action == "пропускает ход.") return $"{player.Name} skips a turn.";
+                var luckyChoice = System.Text.RegularExpressions.Regex.Match(action,
+                    @"^открывает две карты удачи: «(.*?)» и «(.*?)»\.$");
+                if (luckyChoice.Success)
+                    return $"{player.Name} reveals two luck cards: “{LuckTitleFromRussian(luckyChoice.Groups[1].Value)}” and “{LuckTitleFromRussian(luckyChoice.Groups[2].Value)}”.";
+                var luck = System.Text.RegularExpressions.Regex.Match(action,
+                    @"^берёт карту удачи «(.*?)»: (.*)$");
+                if (luck.Success)
+                    return $"{player.Name} draws luck card “{LuckTitleFromRussian(luck.Groups[1].Value)}”: {LuckResultText(luck.Groups[2].Value)}";
+                var goalClaim = System.Text.RegularExpressions.Regex.Match(action,
+                    @"^первым выполняет цель мэрии «(.*?)» \(\+(\d+)\)\.$");
+                if (goalClaim.Success)
+                {
+                    string goalName = goalClaim.Groups[1].Value;
+                    var matchedGoal = _game.ActiveGoals.FirstOrDefault(g => g.Name == goalName);
+                    return $"{player.Name} claims City Hall goal “{(matchedGoal != null ? MayorGoalName(matchedGoal) : goalName)}” (+{goalClaim.Groups[2].Value} pts).";
+                }
+
                 var road = System.Text.RegularExpressions.Regex.Match(action,
                     @"^строит( бесплатно \(Прораб\))? (улица \(любой ресурс\)|загородная дорога|улица|проспект|мост|дорога) (.*?) — (.*?) \(\+(\d+)\)\.$");
                 if (road.Success)
