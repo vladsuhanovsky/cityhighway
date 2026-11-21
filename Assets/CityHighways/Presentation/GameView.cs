@@ -3793,11 +3793,11 @@ namespace CityHighways.Presentation
             int place = 1;
             foreach (var s in result.Ranking)
             {
-                string contracts = $"{s.ContractPoints:+#;-#;0} ({s.CompletedContracts} из {s.CompletedContracts + s.FailedContracts})"
+                string contracts = $"{s.ContractPoints:+#;-#;0} ({s.CompletedContracts} {(EnglishUi ? "of" : "из")} {s.CompletedContracts + s.FailedContracts})"
                                    + (s.MayorBonus > 0 ? $" ★+{s.MayorBonus}" : "");
                 int tollBalance = s.TollsEarned - s.TollsPaid - s.JamFees;
-                string tolls = $"{tollBalance:+#;-#;0}" + (s.JamFees > 0 ? $" (пробки −{s.JamFees})" : "");
-                string network = s.NetworkDistricts + " р." + (s.NetworkBonus > 0 ? $" (+{s.NetworkBonus})" : "");
+                string tolls = $"{tollBalance:+#;-#;0}" + (s.JamFees > 0 ? (EnglishUi ? $" (jams −{s.JamFees})" : $" (пробки −{s.JamFees})") : "");
+                string network = s.NetworkDistricts + (EnglishUi ? " dist." : " р.") + (s.NetworkBonus > 0 ? $" (+{s.NetworkBonus})" : "");
                 string character = s.Character == CharacterKind.None ? "—" : s.CharacterPoints > 0 ? "+" + s.CharacterPoints : "0";
                 var cells = new[] { $"{place}. {s.PlayerName}", s.RoadPoints.ToString(), contracts, tolls, network,
                     s.GoalPoints.ToString(), $"{s.LuckPoints:+#;-#;0}", character, s.Penalties == 0 ? "—" : s.Penalties.ToString(), s.Total.ToString() };
@@ -3808,7 +3808,7 @@ namespace CityHighways.Presentation
             var friends = _game.Result.Ranking.Where(r => r.FriendBonus > 0).ToList();
             if (friends.Count > 0)
             {
-                var friend = Ui.Text("«Друг мэра» — больше всех потратил влияния: " + string.Join(", ", friends.Select(f => $"{f.PlayerName} +{f.FriendBonus}")) + " (в итоге).",
+                var friend = Ui.Text((EnglishUi ? "Mayor’s Friend — most influence spent: " : "«Друг мэра» — больше всех потратил влияния: ") + string.Join(", ", friends.Select(f => $"{f.PlayerName} +{f.FriendBonus}")) + (EnglishUi ? " (final score)." : " (в итоге)."),
                     13f, Theme.Gold);
                 friend.style.whiteSpace = WhiteSpace.Normal;
                 friend.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -3820,7 +3820,7 @@ namespace CityHighways.Presentation
             {
                 var found = _game.FinalAudit.Where(a => a.Exposed > 0).ToList();
                 var audit = Ui.Text(found.Count > 0
-                        ? "Проверка перед итогами нашла взятки: " + string.Join(" · ", found.Select(a => $"{_game.Players[a.Player].Name} −{a.Fine}")) + " (в столбце «Штрафы»)."
+                        ? (EnglishUi ? "Final audit uncovered bribes: " : "Проверка перед итогами нашла взятки: ") + string.Join(" · ", found.Select(a => $"{_game.Players[a.Player].Name} −{a.Fine}")) + (EnglishUi ? " (see Penalties)." : " (в столбце «Штрафы»).")
                         : LocalizationService.Get("game.ui.144"), 13f, found.Count > 0 ? Theme.Danger : Theme.TextDim);
                 audit.style.whiteSpace = WhiteSpace.Normal;
                 audit.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -3831,7 +3831,7 @@ namespace CityHighways.Presentation
             if (_profileCredits != null && _profileCredits.Count > 0)
             {
                 var credit = Ui.Text(LocalizationService.Get("game.ui.145") + string.Join(" · ", _profileCredits.Select(c => $"{c.Profile} +{c.Amount + c.Bonus}"))
-                                     + " — тратится на оформление в «Профиле».", 14f, Theme.Gold, true);
+                                     + (EnglishUi ? " — spend it on profile cosmetics." : " — тратится на оформление в «Профиле»."), 14f, Theme.Gold, true);
                 credit.style.whiteSpace = WhiteSpace.Normal;
                 credit.style.unityTextAlign = TextAnchor.MiddleCenter;
                 credit.style.marginTop = 10f;
@@ -3840,7 +3840,7 @@ namespace CityHighways.Presentation
                 foreach (var c in _profileCredits.Where(x => (x.Unlocked != null && x.Unlocked.Count > 0) || x.DailyDone))
                 {
                     var parts = (c.Unlocked ?? new List<Achievement>()).Select(a => $"«{a.Title}» +{a.Reward}").ToList();
-                    if (c.DailyDone) parts.Add($"задание дня +{Achievements.DailyReward}");
+                    if (c.DailyDone) parts.Add(EnglishUi ? $"daily challenge +{Achievements.DailyReward}" : $"задание дня +{Achievements.DailyReward}");
                     var line = Ui.Text($"★ {c.Profile}: " + string.Join(", ", parts), 13f, Theme.Gold);
                     line.style.whiteSpace = WhiteSpace.Normal;
                     line.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -3851,8 +3851,8 @@ namespace CityHighways.Presentation
 
             if (_game.Config.InfluenceEnabled)
             {
-                var influence = Ui.Text("Влияние на конец партии (в очки не входит, остаток людей уходит в профиль): "
-                                        + string.Join(" · ", result.Ranking.Select(r => $"{r.PlayerName} — {r.Influence} (заработано {r.InfluenceEarned})")),
+                var influence = Ui.Text((EnglishUi ? "Influence at game end (not part of the score; remaining human-player influence goes to profiles): " : "Влияние на конец партии (в очки не входит, остаток людей уходит в профиль): ")
+                                        + string.Join(" · ", result.Ranking.Select(r => EnglishUi ? $"{r.PlayerName} — {r.Influence} (earned {r.InfluenceEarned})" : $"{r.PlayerName} — {r.Influence} (заработано {r.InfluenceEarned})")),
                     13f, Theme.TextDim);
                 influence.style.whiteSpace = WhiteSpace.Normal;
                 influence.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -3867,7 +3867,7 @@ namespace CityHighways.Presentation
             buttons.style.marginTop = 24f;
             if (_setup.tutorial)
             {
-                var done = Ui.Text("Обучение пройдено! В обычной партии есть ещё: городские события, цели мэрии, карты удачи, " +
+                var done = Ui.Text(EnglishUi ? "Tutorial complete! Full games add city events, City Hall goals, luck cards, characters, trades and passes, road upgrades, City Hall auctions and bribes. See Rules and first-game tips for details." : "Обучение пройдено! В обычной партии есть ещё: городские события, цели мэрии, карты удачи, " +
                                    "персонажи, сделки и пропуска, улучшение дорог, аукцион мэрии и взятки. Всё это — в «Правилах», " +
                                    "а коротко — в подсказках первой партии.", 14f, Theme.Gold);
                 done.style.whiteSpace = WhiteSpace.Normal;
