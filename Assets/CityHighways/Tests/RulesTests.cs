@@ -172,6 +172,38 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ChangingUiLanguage_DoesNotMutateGameSaveOrRestore()
+        {
+            string original = LocalizationService.Language;
+            try
+            {
+                var map = TestCities.Small();
+                var game = new Game(map, new[] { "Player One", "Player Two" }, seed: 42);
+
+                LocalizationService.SetLanguage("ru");
+                string russianSave = UnityEngine.JsonUtility.ToJson(game.CreateSave());
+
+                LocalizationService.SetLanguage("en");
+                string englishSave = UnityEngine.JsonUtility.ToJson(game.CreateSave());
+                Assert.AreEqual(russianSave, englishSave,
+                    "Changing the UI language must not modify persisted game state.");
+
+                var restored = Game.FromSave(map,
+                    UnityEngine.JsonUtility.FromJson<GameSaveData>(russianSave));
+                Assert.AreEqual(englishSave,
+                    UnityEngine.JsonUtility.ToJson(restored.CreateSave()),
+                    "A Russian-language save must round-trip without modifying the game state under English UI.");
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual(russianSave, UnityEngine.JsonUtility.ToJson(restored.CreateSave()));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
