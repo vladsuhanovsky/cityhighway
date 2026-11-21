@@ -49,6 +49,58 @@ namespace CityHighways.Tests
             }
         }
 
+        [System.Serializable]
+        public class LocalizationAuditEntry
+        {
+            public string key;
+            public string value;
+        }
+
+        [System.Serializable]
+        public class LocalizationAuditCatalog
+        {
+            public LocalizationAuditEntry[] entries;
+        }
+
+        [Test]
+        public void LocalizationCatalogs_HaveMatchingUniqueCompleteKeys()
+        {
+            var russianAsset = UnityEngine.Resources.Load<UnityEngine.TextAsset>("CityHighways/Localization/ru");
+            var englishAsset = UnityEngine.Resources.Load<UnityEngine.TextAsset>("CityHighways/Localization/en");
+            Assert.IsNotNull(russianAsset, "Russian localization asset is missing.");
+            Assert.IsNotNull(englishAsset, "English localization asset is missing.");
+
+            var russian = UnityEngine.JsonUtility.FromJson<LocalizationAuditCatalog>(russianAsset.text);
+            var english = UnityEngine.JsonUtility.FromJson<LocalizationAuditCatalog>(englishAsset.text);
+            Assert.IsNotNull(russian);
+            Assert.IsNotNull(english);
+            Assert.IsNotNull(russian.entries);
+            Assert.IsNotNull(english.entries);
+
+            var russianKeys = new HashSet<string>();
+            foreach (var item in russian.entries)
+            {
+                Assert.IsNotNull(item);
+                Assert.IsFalse(string.IsNullOrWhiteSpace(item.key), "Empty Russian key.");
+                Assert.IsTrue(russianKeys.Add(item.key), "Duplicate Russian key: " + item.key);
+                Assert.IsFalse(string.IsNullOrWhiteSpace(item.value), "Empty Russian value: " + item.key);
+            }
+
+            var englishKeys = new HashSet<string>();
+            foreach (var item in english.entries)
+            {
+                Assert.IsNotNull(item);
+                Assert.IsFalse(string.IsNullOrWhiteSpace(item.key), "Empty English key.");
+                Assert.IsTrue(englishKeys.Add(item.key), "Duplicate English key: " + item.key);
+                Assert.IsFalse(string.IsNullOrWhiteSpace(item.value), "Empty English value: " + item.key);
+                Assert.IsFalse(Regex.IsMatch(item.value, "[а-яё]", RegexOptions.IgnoreCase),
+                    "Untranslated Cyrillic characters in English localization: " + item.key);
+            }
+
+            CollectionAssert.AreEquivalent(russianKeys, englishKeys,
+                "Both languages must contain exactly the same localization keys.");
+        }
+
         [Test]
         public void AuctionTradeAndBribeJournal_RetranslateWithoutChangingNamesOrBids()
         {
