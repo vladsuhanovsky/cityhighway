@@ -43,6 +43,25 @@ namespace CityHighways.Presentation
             "Тупики и единственные переправы строят только игроки — это ценные участки.",
         };
 
+        static readonly string[] MagnateTipsEnglish =
+        {
+            "Perishable cargo scores highly, but loses value for every extra round in transit.",
+            "Heavy cargo can only use wide roads: concrete roads, bridges and highways.",
+            "Hazardous cargo in the Centre requires an influence bribe or it will be confiscated.",
+            "When too many trucks enter a road in one round, they all get stuck and lose points.",
+            "Your roads are free for your trucks and generate tolls from rivals.",
+            "Upgrade your road to a highway for more capacity and heavy cargo access.",
+            "Plan routes secretly; trucks move together. Predict where traffic jams will form.",
+            "The opening round is for construction: inspect cargo locations and build toward them.",
+            "The company investing the most construction points owns the hub, which can change hands.",
+            "Trailing companies act and load first; the lowest-scoring company gets a construction bonus.",
+            "Your trucks travel faster on your own roads that are two or more segments long.",
+            "If a rival takes a shipment, your truck tries another shipment at the same hub.",
+            "The second company to finish a city order earns half the reward.",
+            "Empty trucks can use any road, including narrow roads, to reach heavy cargo.",
+            "Dead ends and sole river crossings are valuable roads only players can build.",
+        };
+
         public static readonly string[] CompetitionTips =
         {
             "Длинные дороги приносят больше очков: дорога из 6 участков выгоднее трёх по 2.",
@@ -62,6 +81,25 @@ namespace CityHighways.Presentation
             "Карта удачи может принести и баф, и дебаф — под кнопкой «Удача» видно, что осталось в колоде.",
         };
 
+        static readonly string[] CompetitionTipsEnglish =
+        {
+            "Long roads score more than several short ones of the same total length.",
+            "A road's colour shows its resource. White roads accept any single resource type.",
+            "Machinery substitutes for any resource, but taking face-up machinery ends your turn.",
+            "Unfinished contracts cost points at game end. Do not keep too many.",
+            "A contract can use rival roads if it includes your own, but you pay their owners.",
+            "Rivals pay tolls when they travel your roads. Build busy connections.",
+            "Upgrade your roads to highways for more points and higher tolls.",
+            "Traffic jams make detours worthwhile.",
+            "Trading cards once per turn does not consume your action.",
+            "A sold pass lets the buyer travel your roads for free until game end.",
+            "Influence does not convert into points. Spend it during the game.",
+            "Only the first player to achieve a City Hall goal receives its reward.",
+            "The final round begins when someone runs low on road pieces.",
+            "Bribes made near game end may be discovered in the final audit.",
+            "Luck cards can help or hurt; check how many remain in the deck.",
+        };
+
         public static readonly string[] CooperativeTips =
         {
             "Все компании — одна команда, противник — сам город. Побеждаете или проигрываете вместе.",
@@ -76,23 +114,43 @@ namespace CityHighways.Presentation
             "Когда у кого-то кончаются участки, начинается последний круг — заказов к этому времени должно хватить.",
         };
 
+        static readonly string[] CooperativeTipsEnglish =
+        {
+            "All companies form one team against the city. You win or lose together.",
+            "Roads are shared: each ally's roads count for city orders and carry no tolls.",
+            "Crisis rises over time, with repairs, snow and parades adding more.",
+            "If crisis reaches the limit, everyone loses. Finish orders early.",
+            "Trade the resources your teammates need.",
+            "Co-op has no bribes, auctions or passes: work together on construction.",
+            "Coordinate which districts you connect so you do not duplicate routes.",
+            "A long shared highway can complete multiple city orders.",
+            "More players means more orders are needed for victory.",
+            "When anyone runs out of road pieces, the final round starts; finish enough orders first.",
+        };
+
         public static LoadingScreen Magnate() =>
-            new LoadingScreen("Логистический магнат", "Генерируем новый город", MagnateTips,
-                GeneratedArt.MagnateLoading, GameColors.Accent, "Не удалось построить город: ");
+            new LoadingScreen(LocalizationService.Language == "en" ? "Logistics Magnate" : "Логистический магнат",
+                LocalizationService.Language == "en" ? "Generating a new city" : "Генерируем новый город",
+                LocalizationService.Language == "en" ? MagnateTipsEnglish : MagnateTips,
+                GeneratedArt.MagnateLoading, GameColors.Accent, LocalizationService.Language == "en" ? "Could not generate the city: " : "Не удалось построить город: ");
 
         public static LoadingScreen Competition(string title = "Соревнование") =>
-            new LoadingScreen(title, "Готовим партию", CompetitionTips,
-                GeneratedArt.CompetitionLoading, GameColors.Accent, "Не удалось начать партию: ");
+            new LoadingScreen(LocalizationService.Language == "en" && title == "Соревнование" ? "Competitive" : title,
+                LocalizationService.Language == "en" ? "Preparing the game" : "Готовим партию",
+                LocalizationService.Language == "en" ? CompetitionTipsEnglish : CompetitionTips,
+                GeneratedArt.CompetitionLoading, GameColors.Accent, LocalizationService.Language == "en" ? "Could not start the game: " : "Не удалось начать партию: ");
 
         public static LoadingScreen Cooperative() =>
-            new LoadingScreen("Кооператив", "Собираем команду против города", CooperativeTips,
-                GeneratedArt.CooperativeLoading, Theme.Success, "Не удалось начать партию: ");
+            new LoadingScreen(LocalizationService.Language == "en" ? "Cooperative" : "Кооператив",
+                LocalizationService.Language == "en" ? "Assembling your team" : "Собираем команду против города",
+                LocalizationService.Language == "en" ? CooperativeTipsEnglish : CooperativeTips,
+                GeneratedArt.CooperativeLoading, Theme.Success, LocalizationService.Language == "en" ? "Could not start the game: " : "Не удалось начать партию: ");
 
         public LoadingScreen(string title, string subtitle, string[] tips, string artPath, Color accent, string failText)
         {
             _tips = tips != null && tips.Length > 0 ? tips : MagnateTips;
             _accent = accent;
-            _failText = failText ?? "Ошибка: ";
+            _failText = failText ?? (LocalizationService.Language == "en" ? "Error: " : "Ошибка: ");
             Root = new VisualElement();
             Ui.Fill(Root);
             Root.style.backgroundColor = new Color(0.07f, 0.09f, 0.12f, 1f);
@@ -168,7 +226,7 @@ namespace CityHighways.Presentation
             box.Add(_stage);
 
             _tipIndex = UnityEngine.Random.Range(0, _tips.Length);
-            _tip = Ui.Text("Совет: " + _tips[_tipIndex], 14f, Theme.TextDim);
+            _tip = Ui.Text((LocalizationService.Language == "en" ? "Tip: " : "Совет: ") + _tips[_tipIndex], 14f, Theme.TextDim);
             _tip.style.marginTop = 34f;
             _tip.style.whiteSpace = WhiteSpace.Normal;
             _tip.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -212,7 +270,7 @@ namespace CityHighways.Presentation
         /// <summary>Город сгенерирован или карта загружена — показать его название под заголовком.</summary>
         public void SetCity(string name)
         {
-            if (!string.IsNullOrEmpty(name)) _subtitle.text = $"Город «{name}»";
+            if (!string.IsNullOrEmpty(name)) _subtitle.text = LocalizationService.Language == "en" ? $"City: {MagnateLocationText.Name(name)}" : $"Город «{name}»";
         }
 
         /// <summary>Своя подпись под заголовком (например, «Карта «Москва» · 4 компании»).</summary>
@@ -272,7 +330,7 @@ namespace CityHighways.Presentation
                 {
                     _bar.style.width = Length.Percent(100f);
                     _truck.style.left = Length.Percent(100f);
-                    _stage.text = "Готово!";
+                    _stage.text = LocalizationService.Language == "en" ? "Ready!" : "Готово!";
                     app.Tweener.After(0.25f, done);
                     return;
                 }
@@ -305,7 +363,7 @@ namespace CityHighways.Presentation
         {
             _stage.text = message;
             _stage.style.color = Theme.Danger;
-            var back = Ui.Button("В меню", () => onError?.Invoke(), ButtonKind.Secondary, 15f);
+            var back = Ui.Button(LocalizationService.Language == "en" ? "Back to Menu" : "В меню", () => onError?.Invoke(), ButtonKind.Secondary, 15f);
             back.style.marginTop = 18f;
             _stage.parent.Add(back);
         }
