@@ -2086,6 +2086,26 @@ namespace CityHighways.Presentation
         void FlyCoins(PaidRoute route, int payer, float delay)
         {
             if (!IsLaidOut(_map) || !IsLaidOut(_fx)) return;
+            int paidRoads = route.Passages.Count(p => p.Toll > 0 && p.Owner >= 0 && p.Owner < _playerRows.Length);
+            if (!GameFxTuning.AnimateIndividualCoins(paidRoads, Ui.ReducedMotion))
+            {
+                // Clear, compact feedback when the settlement is dense or motion is reduced.
+                foreach (var owner in route.Passages.Where(p => p.Toll > 0 && p.Owner >= 0 && p.Owner < _playerRows.Length)
+                    .GroupBy(p => p.Owner))
+                {
+                    var target = PlayerAnchor(owner.Key);
+                    int earned = owner.Sum(p => p.Toll);
+                    _app.Tweener.After(delay, () => FloatText(target, $"+{earned}", Theme.Gold));
+                }
+                if (payer >= 0 && payer < _playerRows.Length)
+                {
+                    var payerRow = PlayerAnchor(payer);
+                    int total = route.Toll + route.JamFee;
+                    _app.Tweener.After(delay, () => FloatText(payerRow, $"−{total}", Theme.Danger));
+                }
+                return;
+            }
+
             int index = 0;
             foreach (var passage in route.Passages)
             {
@@ -2128,7 +2148,7 @@ namespace CityHighways.Presentation
                     position.y -= Mathf.Sin(fly * Mathf.PI) * 60f;
                     coin.style.left = position.x - size / 2f;
                     coin.style.top = position.y - size / 2f;
-                    float scale = 0.4f + 0.6f * Ui.EaseOutCubic(pop) - 0.3f * fly;
+                    float scale = GameFxTuning.CoinScale(k);
                     coin.style.scale = new Scale(new Vector3(scale, scale, 1f));
                     coin.style.opacity = k > 0.9f ? (1f - k) / 0.1f : 1f;
                 }, () =>

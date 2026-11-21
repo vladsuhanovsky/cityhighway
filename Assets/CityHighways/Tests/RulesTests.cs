@@ -96,6 +96,22 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void CoinFx_KeepLargeSettlementsReadableWithoutLosingValues()
+        {
+            Assert.IsFalse(GameFxTuning.AnimateIndividualCoins(0, false));
+            Assert.IsTrue(GameFxTuning.AnimateIndividualCoins(1, false));
+            Assert.IsTrue(GameFxTuning.AnimateIndividualCoins(GameFxTuning.MaxAnimatedCoinsPerRoute, false));
+            Assert.IsFalse(GameFxTuning.AnimateIndividualCoins(GameFxTuning.MaxAnimatedCoinsPerRoute + 1, false));
+            Assert.IsFalse(GameFxTuning.AnimateIndividualCoins(1, true));
+
+            foreach (float k in new[] { -1f, 0f, 0.25f, 0.5f, 1f, 2f })
+            {
+                Assert.GreaterOrEqual(GameFxTuning.CoinScale(k), 0.25f);
+                Assert.LessOrEqual(GameFxTuning.CoinScale(k), 1.01f);
+            }
+        }
+
+        [Test]
         public void GameplayEffects_RespectReducedMotionAndStayWithinSafeBounds()
         {
             Assert.AreEqual(0f, GameFxTuning.ToastOpacity(0f), 0.001f);

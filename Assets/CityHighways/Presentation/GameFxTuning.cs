@@ -24,6 +24,21 @@ namespace CityHighways.Presentation
             return ToastTop - ToastTravel * (1f - Mathf.SmoothStep(0f, 1f, enter));
         }
 
+        public const int MaxAnimatedCoinsPerRoute = 6;
+
+        // Large toll settlements use a single total per owner instead of a screenful
+        // of moving coins. Reduced-motion players always get the readable totals.
+        public static bool AnimateIndividualCoins(int paidRoadCount, bool reducedMotion) =>
+            !reducedMotion && paidRoadCount > 0 && paidRoadCount <= MaxAnimatedCoinsPerRoute;
+
+        public static float CoinScale(float progress)
+        {
+            float k = Mathf.Clamp01(progress);
+            float pop = Mathf.Clamp01(k / 0.25f);
+            float fly = Ui.EaseInOutCubic(Mathf.Clamp01((k - 0.25f) / 0.75f));
+            return Mathf.Max(0.25f, 0.4f + 0.6f * Ui.EaseOutCubic(pop) - 0.3f * fly);
+        }
+
         public static int FireworkCount(int normal, bool reducedMotion) =>
             reducedMotion ? 0 : Mathf.Max(0, normal);
 
