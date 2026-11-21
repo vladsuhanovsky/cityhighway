@@ -96,6 +96,22 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ResourceCardFx_RespectsAvailabilityAndReducedMotion()
+        {
+            Assert.IsTrue(GameFxTuning.CanHighlightFaceUp(true, true, true, false));
+            Assert.IsFalse(GameFxTuning.CanHighlightFaceUp(false, true, true, false));
+            Assert.IsFalse(GameFxTuning.CanHighlightFaceUp(true, false, true, false));
+            Assert.IsFalse(GameFxTuning.CanHighlightFaceUp(true, true, false, false));
+            Assert.IsFalse(GameFxTuning.CanHighlightFaceUp(true, true, true, true));
+            Assert.Less(GameFxTuning.FaceUpHoverOffset(true, false), 0f);
+            Assert.AreEqual(0f, GameFxTuning.FaceUpHoverOffset(false, false));
+            Assert.AreEqual(0f, GameFxTuning.FaceUpHoverOffset(true, true));
+            Assert.Less(GameFxTuning.CardFlightDuration(true), GameFxTuning.CardFlightDuration(false));
+            Assert.AreEqual(0f, GameFxTuning.CardArcHeight(true));
+            Assert.Greater(GameFxTuning.CardArcHeight(false), 0f);
+        }
+
+        [Test]
         public void ContractAndJamFx_UseBoundedParticleBudgets()
         {
             Assert.AreEqual(24, GameFxTuning.ContractSparksPerDistrict(1, false));

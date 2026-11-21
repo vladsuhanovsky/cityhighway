@@ -24,6 +24,20 @@ namespace CityHighways.Presentation
             return ToastTop - ToastTravel * (1f - Mathf.SmoothStep(0f, 1f, enter));
         }
 
+        // Resource cards respond only when the player can actually draw that card.
+        public static bool CanHighlightFaceUp(bool humanTurn, bool drawingPhase,
+            bool hasCard, bool secondDrawMachinery) =>
+            humanTurn && drawingPhase && hasCard && !secondDrawMachinery;
+
+        public static float FaceUpHoverOffset(bool canDraw, bool reducedMotion) =>
+            canDraw && !reducedMotion ? -5f : 0f;
+
+        public static float CardFlightDuration(bool reducedMotion) =>
+            reducedMotion ? 0.04f : 0.5f;
+
+        public static float CardArcHeight(bool reducedMotion) =>
+            reducedMotion ? 0f : 50f;
+
         public const int MaxAnimatedCoinsPerRoute = 6;
 
         // Large toll settlements use a single total per owner instead of a screenful

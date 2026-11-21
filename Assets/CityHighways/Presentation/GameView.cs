@@ -2066,11 +2066,12 @@ namespace CityHighways.Presentation
             _fx.Add(card);
 
             _app.Tweener.After(delay, () => _app.Sound.Play(Sfx.Card));
-            _app.Tweener.Add(0.5f, k =>
+            bool reducedMotion = Ui.ReducedMotion;
+            _app.Tweener.Add(GameFxTuning.CardFlightDuration(reducedMotion), k =>
             {
                 float eased = Ui.EaseInOutCubic(k);
                 var position = Vector2.Lerp(start, end, eased);
-                position.y -= Mathf.Sin(k * Mathf.PI) * 50f;
+                position.y -= Mathf.Sin(k * Mathf.PI) * GameFxTuning.CardArcHeight(reducedMotion);
                 card.style.left = position.x;
                 card.style.top = position.y;
                 card.style.opacity = Mathf.Clamp01(k * 8f) * (k > 0.85f ? (1f - k) / 0.15f : 1f);
@@ -2406,7 +2407,16 @@ namespace CityHighways.Presentation
                 int slot = i;
                 var card = new CardView(64f, 92f, false);
                 card.RegisterCallback<ClickEvent>(_ => Act(() => _game.DrawFaceUpCard(slot)));
-                card.RegisterCallback<PointerEnterEvent>(_ => card.style.top = -5f);
+                Ui.Transitions(card, 0.14f, "top");
+                card.RegisterCallback<PointerEnterEvent>(_ =>
+                {
+                    bool drawing = _game.Phase == GamePhase.AwaitingAction || _game.Phase == GamePhase.DrawingSecondCard;
+                    bool forbidden = _game.Phase == GamePhase.DrawingSecondCard &&
+                                     _game.FaceUpCards[slot] == Resource.Machinery;
+                    bool available = GameFxTuning.CanHighlightFaceUp(HumanToAct, drawing,
+                        _game.FaceUpCards[slot].HasValue, forbidden);
+                    card.style.top = GameFxTuning.FaceUpHoverOffset(available, Ui.ReducedMotion);
+                });
                 card.RegisterCallback<PointerLeaveEvent>(_ => card.style.top = 0f);
                 _faceUp[i] = card;
                 _faceUpRow.Add(card);
@@ -2422,6 +2432,9 @@ namespace CityHighways.Presentation
                 var card = _game.FaceUpCards[i];
                 bool forbidden = _game.Phase == GamePhase.DrawingSecondCard && card == Resource.Machinery;
                 _faceUp[i].Set(card, null, card.HasValue && forbidden);
+                // A card must not remain raised if the current action made it unavailable.
+                if (!GameFxTuning.CanHighlightFaceUp(HumanToAct, canDraw, card.HasValue, forbidden))
+                    _faceUp[i].style.top = 0f;
             }
             _faceUpRow.style.opacity = canDraw ? 1f : 0.7f;
 
