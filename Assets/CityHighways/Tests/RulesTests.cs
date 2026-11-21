@@ -316,6 +316,57 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void MayorGoals_DisplayTextUsesSelectedLanguage()
+        {
+            var nameMethod = typeof(GameView).GetMethod("MayorGoalName",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            var descriptionMethod = typeof(GameView).GetMethod("MayorGoalDescription",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(nameMethod);
+            Assert.IsNotNull(descriptionMethod);
+            var goal = new MayorGoal("test-bridge", "Мосты для города", GoalKind.Bridges, 2, 5);
+            var map = TestCities.Small();
+            var initial = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Bridge Builder", nameMethod.Invoke(null, new object[] { goal }));
+                Assert.AreEqual("Build 2 bridges across the river",
+                    descriptionMethod.Invoke(null, new object[] { goal, map }));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Мосты для города", nameMethod.Invoke(null, new object[] { goal }));
+                Assert.AreEqual(goal.Describe(map),
+                    descriptionMethod.Invoke(null, new object[] { goal, map }));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(initial);
+            }
+        }
+
+        [Test]
+        public void ConstructionPayment_UsesSelectedLanguage()
+        {
+            var method = typeof(GameView).GetMethod("PaymentLabel",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            var option = new PaymentOption(Resource.Machinery, 2);
+            var initial = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                StringAssert.Contains("Machinery", (string)method.Invoke(null, new object[] { 2, option }));
+                LocalizationService.SetLanguage("ru");
+                StringAssert.Contains("техника", (string)method.Invoke(null, new object[] { 2, option }));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(initial);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
