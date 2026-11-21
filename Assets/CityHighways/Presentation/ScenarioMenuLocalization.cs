@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using CityHighways.Core;
 
+// Keep scenario UI helpers internal while allowing EditMode regression tests.
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("CityHighways.Tests")]
+
 namespace CityHighways.Presentation
 {
     /// <summary>
