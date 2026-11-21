@@ -411,7 +411,8 @@ namespace CityHighways.Presentation
             {
                 if (!button.enabledSelf) return;
                 button.style.backgroundColor = hover;
-                button.style.translate = new Translate(new Length(0f), new Length(-1.5f));
+                button.style.translate = new Translate(new Length(0f),
+                    new Length(GameFxTuning.ButtonHoverLift(ReducedMotion)));
             });
             button.RegisterCallback<PointerLeaveEvent>(_ =>
             {
@@ -421,7 +422,11 @@ namespace CityHighways.Presentation
             });
             button.RegisterCallback<PointerDownEvent>(_ =>
             {
-                if (button.enabledSelf) button.style.scale = new Scale(new Vector3(0.97f, 0.97f, 1f));
+                if (button.enabledSelf)
+                {
+                    float amount = GameFxTuning.ButtonPressScale(ReducedMotion);
+                    button.style.scale = new Scale(new Vector3(amount, amount, 1f));
+                }
             }, TrickleDown.TrickleDown);
             button.RegisterCallback<PointerUpEvent>(_ => button.style.scale = new Scale(Vector3.one), TrickleDown.TrickleDown);
             return button;

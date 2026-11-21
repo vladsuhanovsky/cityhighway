@@ -96,6 +96,15 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ButtonFeedback_UsesColorWithoutMovementInReducedMotion()
+        {
+            Assert.AreEqual(-1.5f, GameFxTuning.ButtonHoverLift(false), 0.001f);
+            Assert.AreEqual(0f, GameFxTuning.ButtonHoverLift(true), 0.001f);
+            Assert.AreEqual(0.97f, GameFxTuning.ButtonPressScale(false), 0.001f);
+            Assert.AreEqual(1f, GameFxTuning.ButtonPressScale(true), 0.001f);
+        }
+
+        [Test]
         public void ResourceCardFx_RespectsAvailabilityAndReducedMotion()
         {
             Assert.IsTrue(GameFxTuning.CanHighlightFaceUp(true, true, true, false));

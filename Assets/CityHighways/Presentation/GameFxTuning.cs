@@ -38,6 +38,12 @@ namespace CityHighways.Presentation
         public static float CardArcHeight(bool reducedMotion) =>
             reducedMotion ? 0f : 50f;
 
+        public static float ButtonHoverLift(bool reducedMotion) =>
+            reducedMotion ? 0f : -1.5f;
+
+        public static float ButtonPressScale(bool reducedMotion) =>
+            reducedMotion ? 1f : 0.97f;
+
         public const int MaxAnimatedCoinsPerRoute = 6;
 
         // Large toll settlements use a single total per owner instead of a screenful
