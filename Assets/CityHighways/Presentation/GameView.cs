@@ -1341,7 +1341,7 @@ namespace CityHighways.Presentation
         {
             if (!TimerEnabled || !HumanToAct || _timerExpired) return "";
             int seconds = Mathf.Max(0, Mathf.CeilToInt(_turnTimeLeft));
-            return $"  ·  осталось {seconds / 60}:{seconds % 60:00}";
+            return EnglishUi ? $"  ·  remaining {seconds / 60}:{seconds % 60:00}" : $"  ·  осталось {seconds / 60}:{seconds % 60:00}";
         }
 
         /// <summary>Отметить, что игрок видел журнал до этого места (пока его карты открыты).</summary>
@@ -3755,7 +3755,7 @@ namespace CityHighways.Presentation
                 report.Add(Ui.Text(LocalizationService.Get("game.ui.132"), 13f, Theme.Gold, true));
                 const int maxLines = 8;
                 if (unseen.Count > maxLines)
-                    report.Add(Ui.Text($"…и ещё {unseen.Count - maxLines} событий раньше", 12f, Theme.TextDim));
+                    report.Add(Ui.Text(EnglishUi ? $"…and {unseen.Count - maxLines} earlier events" : $"…и ещё {unseen.Count - maxLines} событий раньше", 12f, Theme.TextDim));
                 foreach (var line in unseen.Skip(Math.Max(0, unseen.Count - maxLines)))
                 {
                     var label = Ui.Text("• " + line, 12f, Theme.Text);
