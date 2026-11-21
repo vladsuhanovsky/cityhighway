@@ -3932,8 +3932,8 @@ namespace CityHighways.Presentation
             {
                 var owner = _game.GoalOwner(goal.Id);
                 goals.Add(owner.HasValue
-                    ? Line($"«{goal.Name}» — {_game.Players[owner.Value].Name}, +{goal.Points}", Palette.PlayerColor(owner.Value))
-                    : Line($"«{goal.Name}» — никто не выполнил", Theme.TextDim));
+                    ? Line($"«{MayorGoalName(goal)}» — {_game.Players[owner.Value].Name}, +{goal.Points}", Palette.PlayerColor(owner.Value))
+                    : Line(EnglishUi ? $"“{MayorGoalName(goal)}” — no winner" : $"«{goal.Name}» — никто не выполнил", Theme.TextDim));
             }
             row.Add(goals);
 
@@ -4665,6 +4665,39 @@ namespace CityHighways.Presentation
             return string.Join("\n", lines);
         }
 
+        static string MayorGoalName(MayorGoal goal)
+        {
+            if (!EnglishUi) return goal.Name;
+            switch (goal.Kind)
+            {
+                case GoalKind.Locations: return "District Connections";
+                case GoalKind.Bridges: return "Bridge Builder";
+                case GoalKind.Network: return "Connected Network";
+                case GoalKind.ResourcePieces: return "Material Roads";
+                case GoalKind.LongRoads: return "Long Roads";
+                default: return goal.Name;
+            }
+        }
+
+        static string MayorGoalDescription(MayorGoal goal, CityMap map)
+        {
+            if (!EnglishUi) return goal.Describe(map);
+            switch (goal.Kind)
+            {
+                case GoalKind.Locations:
+                    return $"Build your roads at {goal.Count} of {map.LocationsIn(goal.District).Count} locations in {DisplayPlace(map.DistrictName(goal.District))}";
+                case GoalKind.Bridges:
+                    return $"Build {goal.Count} bridges across the river";
+                case GoalKind.Network:
+                    return $"Connect {goal.Count} districts in one network";
+                case GoalKind.ResourcePieces:
+                    return $"Build {goal.Count} road segments using {Palette.CardTitle(goal.Resource ?? Resource.Asphalt)}";
+                case GoalKind.LongRoads:
+                    return $"Build {goal.Count} roads of length {goal.Length} or more";
+                default: return goal.Describe(map);
+            }
+        }
+
         /// <summary>Цели мэрии: название, награда, условие и статус — свободна (с прогрессом зрителя) или чья.</summary>
         void RefreshGoals()
         {
@@ -4691,10 +4724,10 @@ namespace CityHighways.Presentation
                 var texts = Ui.Column();
                 texts.style.flexGrow = 1f;
                 texts.style.flexShrink = 1f;
-                texts.Add(Ui.Text(goal.Name, 13f, owner.HasValue ? Theme.TextDim : Theme.Text, true));
+                texts.Add(Ui.Text(MayorGoalName(goal), 13f, owner.HasValue ? Theme.TextDim : Theme.Text, true));
                 string status = owner.HasValue
                     ? LocalizationService.Get("game.ui.167") + _game.Players[owner.Value].Name
-                    : $"{goal.Describe(_game.Map)} · у вас {Math.Min(goal.Count, _game.GoalProgress(viewer.Index, goal))}/{goal.Count}";
+                    : (EnglishUi ? $"{MayorGoalDescription(goal, _game.Map)} · yours: {Math.Min(goal.Count, _game.GoalProgress(viewer.Index, goal))}/{goal.Count}" : $"{goal.Describe(_game.Map)} · у вас {Math.Min(goal.Count, _game.GoalProgress(viewer.Index, goal))}/{goal.Count}");
                 var statusLabel = Ui.Text(status, 11f, owner.HasValue ? Palette.PlayerColor(owner.Value) : Theme.TextDim);
                 statusLabel.style.whiteSpace = WhiteSpace.Normal;
                 texts.Add(statusLabel);
