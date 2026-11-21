@@ -50,6 +50,45 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void BuildAuctionAndSpecialActionBlockers_AreTranslated()
+        {
+            var original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("This road is already yours.",
+                    LocalizationService.TranslateGameError("Эта дорога уже ваша."));
+                Assert.AreEqual("This road was already built by Elena.",
+                    LocalizationService.TranslateGameError("Дорогу уже построил Elena."));
+                Assert.AreEqual("Roadworks: this road is closed until the end of the round.",
+                    LocalizationService.TranslateGameError("Ремонт: участок закрыт до конца круга."));
+                Assert.AreEqual("Not enough road pieces.",
+                    LocalizationService.TranslateGameError("Не хватает участков дороги."));
+                Assert.AreEqual("Free construction is limited to roads of length 4 or less.",
+                    LocalizationService.TranslateGameError("Бесплатно — только дороги длиной до 4."));
+                Assert.AreEqual("Contract 12 is not among those offered.",
+                    LocalizationService.TranslateGameError("Контракта 12 нет среди предложенных."));
+                Assert.AreEqual("Contract 12 is listed twice.",
+                    LocalizationService.TranslateGameError("Контракт 12 указан дважды."));
+                Assert.AreEqual("You can only upgrade your own roads.",
+                    LocalizationService.TranslateGameError("Улучшать можно только свои дороги."));
+                Assert.AreEqual("You can make an accusation only at the start of your turn.",
+                    LocalizationService.TranslateGameError("Обвинить можно в начале своего хода."));
+                Assert.AreEqual("You only have 3 influence.",
+                    LocalizationService.TranslateGameError("У вас только 3 влияния."));
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Эта дорога уже ваша.",
+                    LocalizationService.TranslateGameError("Эта дорога уже ваша."));
+                Assert.AreEqual("Бесплатно — только дороги длиной до 4.",
+                    LocalizationService.TranslateGameError("Бесплатно — только дороги длиной до 4."));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void GameActionErrors_UseEnglishForKnownCoreFailures()
         {
             var original = LocalizationService.Language;

@@ -6123,6 +6123,94 @@
     {
       "key": "game.error.resource.machinery",
       "value": "machinery"
+    },
+    {
+      "key": "game.error.blocker.001",
+      "value": "This road is already yours."
+    },
+    {
+      "key": "game.error.blocker.002",
+      "value": "This district is not open yet."
+    },
+    {
+      "key": "game.error.blocker.003",
+      "value": "Roadworks: this road is closed until the end of the round."
+    },
+    {
+      "key": "game.error.blocker.004",
+      "value": "Repair Year: this road is closed this round (a City Hall permit allows construction)."
+    },
+    {
+      "key": "game.error.blocker.005",
+      "value": "Parade: roads near this district are closed until the end of the round (a City Hall permit lifts the restriction)."
+    },
+    {
+      "key": "game.error.blocker.006",
+      "value": "Not enough road pieces."
+    },
+    {
+      "key": "game.error.blocker.007",
+      "value": "Road upgrades are disabled."
+    },
+    {
+      "key": "game.error.blocker.008",
+      "value": "You cannot upgrade roads right now."
+    },
+    {
+      "key": "game.error.blocker.009",
+      "value": "You can only upgrade your own roads."
+    },
+    {
+      "key": "game.error.blocker.010",
+      "value": "This road is already a highway."
+    },
+    {
+      "key": "game.error.blocker.011",
+      "value": "Bribes are disabled."
+    },
+    {
+      "key": "game.error.blocker.012",
+      "value": "You can bribe only at the start of your turn, before your main action."
+    },
+    {
+      "key": "game.error.blocker.013",
+      "value": "Only one bribe per turn."
+    },
+    {
+      "key": "game.error.blocker.014",
+      "value": "You can make an accusation only at the start of your turn."
+    },
+    {
+      "key": "game.error.blocker.015",
+      "value": "Only one accusation per turn."
+    },
+    {
+      "key": "game.error.blocker.016",
+      "value": "Choose an opponent."
+    },
+    {
+      "key": "game.error.blocker.017",
+      "value": "Influence is disabled."
+    },
+    {
+      "key": "game.error.dynamic.014",
+      "value": "This road was already built by {0}."
+    },
+    {
+      "key": "game.error.dynamic.015",
+      "value": "{0} has already selected contracts."
+    },
+    {
+      "key": "game.error.dynamic.016",
+      "value": "Free construction is limited to roads of length {0} or less."
+    },
+    {
+      "key": "game.error.dynamic.017",
+      "value": "Contract {0} is not among those offered."
+    },
+    {
+      "key": "game.error.dynamic.018",
+      "value": "Contract {0} is listed twice."
     }
   ]
 }

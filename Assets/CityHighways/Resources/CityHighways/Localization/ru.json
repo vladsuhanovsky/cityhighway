@@ -6123,6 +6123,94 @@
     {
       "key": "game.error.resource.machinery",
       "value": "техника"
+    },
+    {
+      "key": "game.error.blocker.001",
+      "value": "Эта дорога уже ваша."
+    },
+    {
+      "key": "game.error.blocker.002",
+      "value": "Этот район ещё не открыт."
+    },
+    {
+      "key": "game.error.blocker.003",
+      "value": "Ремонт: участок закрыт до конца круга."
+    },
+    {
+      "key": "game.error.blocker.004",
+      "value": "Год ремонта: участок закрыт в этом круге (разрешение мэрии пускает строить)."
+    },
+    {
+      "key": "game.error.blocker.005",
+      "value": "Парад: дороги у этого района закрыты до конца круга (разрешение мэрии снимает запрет)."
+    },
+    {
+      "key": "game.error.blocker.006",
+      "value": "Не хватает участков дороги."
+    },
+    {
+      "key": "game.error.blocker.007",
+      "value": "Улучшение дорог выключено."
+    },
+    {
+      "key": "game.error.blocker.008",
+      "value": "Сейчас нельзя улучшать дороги."
+    },
+    {
+      "key": "game.error.blocker.009",
+      "value": "Улучшать можно только свои дороги."
+    },
+    {
+      "key": "game.error.blocker.010",
+      "value": "Эта дорога уже магистраль."
+    },
+    {
+      "key": "game.error.blocker.011",
+      "value": "Взятки выключены."
+    },
+    {
+      "key": "game.error.blocker.012",
+      "value": "Взятку дают в начале хода, до основного действия."
+    },
+    {
+      "key": "game.error.blocker.013",
+      "value": "Одна взятка за ход."
+    },
+    {
+      "key": "game.error.blocker.014",
+      "value": "Обвинить можно в начале своего хода."
+    },
+    {
+      "key": "game.error.blocker.015",
+      "value": "Одно обвинение за ход."
+    },
+    {
+      "key": "game.error.blocker.016",
+      "value": "Выберите соперника."
+    },
+    {
+      "key": "game.error.blocker.017",
+      "value": "Влияние выключено."
+    },
+    {
+      "key": "game.error.dynamic.014",
+      "value": "Дорогу уже построил {0}."
+    },
+    {
+      "key": "game.error.dynamic.015",
+      "value": "{0} уже выбрал контракты."
+    },
+    {
+      "key": "game.error.dynamic.016",
+      "value": "Бесплатно — только дороги длиной до {0}."
+    },
+    {
+      "key": "game.error.dynamic.017",
+      "value": "Контракта {0} нет среди предложенных."
+    },
+    {
+      "key": "game.error.dynamic.018",
+      "value": "Контракт {0} указан дважды."
     }
   ]
 }

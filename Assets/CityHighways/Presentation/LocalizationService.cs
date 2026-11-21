@@ -115,6 +115,11 @@ namespace CityHighways.Presentation
             (@"^Нужно (\d+) карт\(ы\) «([^»]+)» \(техника подходит вместо любой карты\)\.$", "game.error.dynamic.011", true),
             (@"^Эту дорогу строят из ресурса «([^»]+)»\.$", "game.error.dynamic.012", true),
             (@"^Не хватает карт «([^»]+)»\.$", "game.error.dynamic.013", true),
+            (@"^Дорогу уже построил (.+)\.$", "game.error.dynamic.014", false),
+            (@"^(.+) уже выбрал контракты\.$", "game.error.dynamic.015", false),
+            (@"^Бесплатно — только дороги длиной до (\d+)\.$", "game.error.dynamic.016", false),
+            (@"^Контракта (\d+) нет среди предложенных\.$", "game.error.dynamic.017", false),
+            (@"^Контракт (\d+) указан дважды\.$", "game.error.dynamic.018", false),
         };
 
         static string LocalizedErrorResource(string name)
