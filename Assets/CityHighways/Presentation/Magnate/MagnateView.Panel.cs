@@ -924,7 +924,7 @@ namespace CityHighways.Presentation
                 if (contract.Kind.HasValue) titleRow.Add(Chip(contract.Kind.Value, CargoIconPanel));
                 string status = contract.Second >= 0 ? (En ? $" — completed by {_game.Players[contract.Winner].Name} and {_game.Players[contract.Second].Name}" : $" — выполнили {_game.Players[contract.Winner].Name} и {_game.Players[contract.Second].Name}")
                     : contract.Winner >= 0 ? (En ? $" — completed by {_game.Players[contract.Winner].Name}, second place available" : $" — выполнил {_game.Players[contract.Winner].Name}, второе место открыто") : "";
-                var title = Ui.Text(contract.Title + status, 14f, Theme.Text, true);
+                var title = Ui.Text(ContractName(contract.Title) + status, 14f, Theme.Text, true);
                 title.style.whiteSpace = WhiteSpace.Normal;
                 title.style.flexShrink = 1f;
                 titleRow.Add(title);
