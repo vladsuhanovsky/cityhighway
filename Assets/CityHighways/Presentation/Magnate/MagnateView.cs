@@ -868,7 +868,7 @@ namespace CityHighways.Presentation
             if (message == "Стройка закончена: со следующего раунда фуры берут грузы.")
                 return "Construction is over: trucks start picking up cargo next round.";
             if (message.StartsWith("Раунд стройки: "))
-                return "Opening construction round: companies each build a road. Trucks wait until round two.";
+                return $"Opening construction round: each company builds {_game.Config.OpeningRoads} road(s). Trucks remain parked; routes start in round two.";
             if (message.StartsWith("Событие: "))
             {
                 foreach (var e in _game.Events)
@@ -917,6 +917,14 @@ namespace CityHighways.Presentation
                     if (alternative.Success)
                         return $"{p.Name}: a rival took the cargo at {station}; the truck selected another: {QuickCargoEnglishFromRussian(alternative.Groups[1].Value)} to {Place(alternative.Groups[2].Value)}.";
                 }
+                var hubUpgrade = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^" + player + @" развивает «(.*?)» до уровня (\d+)\.$");
+                if (hubUpgrade.Success)
+                    return $"{p.Name} upgrades hub {Place(hubUpgrade.Groups[1].Value)} to level {hubUpgrade.Groups[2].Value}.";
+                var hubTakeover = System.Text.RegularExpressions.Regex.Match(message,
+                    @"^" + player + @" перехватывает «(.*?)» у (.*): вложено (\d+) против (\d+)\.$");
+                if (hubTakeover.Success)
+                    return $"{p.Name} takes over hub {Place(hubTakeover.Groups[1].Value)} from {hubTakeover.Groups[2].Value}: invested {hubTakeover.Groups[3].Value} vs {hubTakeover.Groups[4].Value}.";
                 var initial = $"Жребий: первым ходит {p.Name}.";
                 if (message == initial) return $"First turn: {p.Name}.";
                 var subsidy = System.Text.RegularExpressions.Regex.Match(message,
