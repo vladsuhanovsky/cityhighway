@@ -28,7 +28,7 @@ namespace CityHighways.Presentation
         public float tiltDegrees = 38f;
 
         public static readonly float[] TiltOptions = { 30f, 38f, 45f };
-        public static readonly string[] City3DQualityNames = { "Низкое", "Среднее", "Высокое" };
+        public static string[] City3DQualityNames => LocalizationService.Language == "en" ? new[] { "Low", "Medium", "High" } : new[] { "Низкое", "Среднее", "Высокое" };
         /// <summary>Свет фона главного меню: 0 — по часам компьютера, 1 — день, 2 — ночь.</summary>
         public int menuLight;
         /// <summary>Палитра фона главного меню (MenuBackground.PaletteNames).</summary>
@@ -64,7 +64,7 @@ namespace CityHighways.Presentation
         /// <summary>Чем крутится поле — для подсказок.</summary>
         public static string RotateButtonText => Active == null || Active.leftDragRotates ? "левой кнопкой мыши" : "правой кнопкой мыши";
 
-        public static readonly string[] SpeedNames = { "Медленно", "Обычно", "Быстро" };
+        public static string[] SpeedNames => LocalizationService.Language == "en" ? new[] { "Slow", "Normal", "Fast" } : new[] { "Медленно", "Обычно", "Быстро" };
         static readonly float[] SpeedFactors = { 0.6f, 1f, 1.6f };
         public float CameraSpeedFactor => SpeedFactors[Mathf.Clamp(cameraSpeed, 0, 2)];
         public float ZoomStep => new[] { 1.1f, 1.2f, 1.35f }[Mathf.Clamp(zoomSpeed, 0, 2)];
@@ -78,12 +78,18 @@ namespace CityHighways.Presentation
         public enum Preset { LowEnd, Cinematic, Esports }
 
         public static string PresetTitle(Preset preset) =>
-            preset == Preset.LowEnd ? "Для слабого ПК" : preset == Preset.Cinematic ? "Кинематографичный" : "Киберспорт";
+            LocalizationService.Language == "en"
+                ? (preset == Preset.LowEnd ? "Low-end PC" : preset == Preset.Cinematic ? "Cinematic" : "Esports")
+                : (preset == Preset.LowEnd ? "Для слабого ПК" : preset == Preset.Cinematic ? "Кинематографичный" : "Киберспорт");
 
         public static string PresetHint(Preset preset) =>
-            preset == Preset.LowEnd ? "Низкое качество, плоская карта без 3D-города, меньше анимаций"
-            : preset == Preset.Cinematic ? "Максимум качества, 3D-город под углом 45°, все анимации, свет по часам"
-            : "3D-город сверху для чёткости, мини-карта, без лишних анимаций";
+            LocalizationService.Language == "en"
+                ? (preset == Preset.LowEnd ? "Lower quality, flat map without a 3D city, fewer animations"
+                    : preset == Preset.Cinematic ? "Maximum quality, 3D city at 45°, all animations, time-based lighting"
+                    : "Top-down 3D city for clarity, minimap, fewer animations")
+                : (preset == Preset.LowEnd ? "Низкое качество, плоская карта без 3D-города, меньше анимаций"
+                    : preset == Preset.Cinematic ? "Максимум качества, 3D-город под углом 45°, все анимации, свет по часам"
+                    : "3D-город сверху для чёткости, мини-карта, без лишних анимаций");
 
         /// <summary>Пресет меняет графику и анимации; громкость, экран и разрешение не трогает.</summary>
         public void ApplyPreset(Preset preset)
