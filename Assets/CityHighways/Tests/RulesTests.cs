@@ -238,6 +238,31 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void CooperativeOrderTimer_LocalizesAfterSwitchingLanguage()
+        {
+            var method = typeof(CoopPanel).GetMethod("RoundLabel",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            var initial = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("final round", method.Invoke(null, new object[] { 1 }));
+                Assert.AreEqual("3 rounds", method.Invoke(null, new object[] { 3 }));
+                Assert.AreEqual("5 rounds", method.Invoke(null, new object[] { 5 }));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("последний круг", method.Invoke(null, new object[] { 1 }));
+                Assert.AreEqual("3 круга", method.Invoke(null, new object[] { 3 }));
+                Assert.AreEqual("5 кругов", method.Invoke(null, new object[] { 5 }));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(initial);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
