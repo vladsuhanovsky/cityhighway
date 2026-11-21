@@ -279,8 +279,8 @@ namespace CityHighways.Presentation
                 float late = (float)last.Skip(half).Average(x => x.me.total);
                 float delta = late - early;
                 card.Add(Caption(Mathf.Abs(delta) < 2f ? LocalizationService.Get("menu.stats.020")
-                    : delta > 0 ? $"Растёте: последние партии в среднем на {delta:0} очк. выше прежних."
-                    : $"Спад: последние партии в среднем на {-delta:0} очк. ниже прежних.",
+                    : delta > 0 ? (En ? $"Improving: recent games average {delta:0} points higher than earlier games." : $"Растёте: последние партии в среднем на {delta:0} очк. выше прежних.")
+                    : (En ? $"Declining: recent games average {-delta:0} points lower than earlier games." : $"Спад: последние партии в среднем на {-delta:0} очк. ниже прежних."),
                     13f, Mathf.Abs(delta) < 2f ? Theme.TextDim : delta > 0 ? GameColors.Success : GameColors.Danger, 6f));
             }
             card.Add(Caption(LocalizationService.Get("menu.stats.021"), 11f, Theme.TextDim, 4f));
@@ -693,10 +693,10 @@ namespace CityHighways.Presentation
             if (me != null)
             {
                 int place = game.results.Count(r => r.total > me.total) + 1;
-                result.Add(Ui.Text(me.winner ? $"Победа · {me.total} очк." : $"{place}-е место из {game.results.Length} · {me.total} очк.", 14f,
+                result.Add(Ui.Text(En ? (me.winner ? $"Victory · {me.total} pts" : $"Place {place} of {game.results.Length} · {me.total} pts") : (me.winner ? $"Победа · {me.total} очк." : $"{place}-е место из {game.results.Length} · {me.total} очк."), 14f,
                     me.winner ? GameColors.Success : Theme.Text, true));
             }
-            else result.Add(Ui.Text($"Победил {winner.name} · {winner.total} очк.", 14f, Theme.Text, true));
+            else result.Add(Ui.Text((En ? $"{winner.name} won · {winner.total} pts" : $"Победил {winner.name} · {winner.total} очк."), 14f, Theme.Text, true));
             var others = Ui.Text(string.Join(", ", ordered.Select(r => $"{r.name} {r.total}")), 12f, Theme.TextDim);
             others.style.overflow = Overflow.Hidden;
             others.style.textOverflow = TextOverflow.Ellipsis;
@@ -764,7 +764,7 @@ namespace CityHighways.Presentation
             var icon = new MenuIcon(MenuIcon.Glyph.Flag, 22f, Theme.Gold);
             icon.style.marginRight = 10f;
             head.Add(icon);
-            var title = Ui.Text($"Партия {ShortDate(game.date)}", 22f, Theme.Gold, true);
+            var title = Ui.Text((En ? $"Game {ShortDate(game.date)}" : $"Партия {ShortDate(game.date)}"), 22f, Theme.Gold, true);
             title.style.flexGrow = 1f;
             head.Add(title);
             if (Replays.Exists(game.replay))
@@ -783,8 +783,8 @@ namespace CityHighways.Presentation
             if (!string.IsNullOrEmpty(game.map)) facts.Add(game.map);
             if (!string.IsNullOrEmpty(game.scenario)) facts.Add(game.scenario);
             bool magnateGame = ModeTabs.Of(game) == GameMode.Magnate;
-            if (!string.IsNullOrEmpty(game.difficulty)) facts.Add($"сложность «{game.difficulty}»");
-            if (game.turns > 0) facts.Add(magnateGame ? $"{game.turns} раундов" : $"{game.turns} ходов");
+            if (!string.IsNullOrEmpty(game.difficulty)) facts.Add((En ? $"difficulty: {game.difficulty}" : $"сложность «{game.difficulty}»"));
+            if (game.turns > 0) facts.Add(En ? (magnateGame ? $"{game.turns} rounds" : $"{game.turns} turns") : (magnateGame ? $"{game.turns} раундов" : $"{game.turns} ходов"));
             if (game.seconds > 0) facts.Add(Duration(game.seconds));
             if (game.online) facts.Add(LocalizationService.Get("menu.stats.075"));
             if (game.coop) facts.Add(LocalizationService.Get("menu.stats.076"));
@@ -804,10 +804,10 @@ namespace CityHighways.Presentation
             var heroTexts = Ui.Column();
             bool teamWon = game.results.Any(r => r.winner);
             heroTexts.Add(Ui.Text(game.coop
-                ? (teamWon ? $"Команда спасла город — {game.results.Sum(r => r.total)} очк. на всех" : LocalizationService.Get("menu.stats.077"))
-                : $"Победил {winner.name} — {winner.total} очк.", 18f, Theme.Text, true));
-            if (ordered.Count > 1 && !game.coop) heroTexts.Add(Ui.Text($"Отрыв от второго места: {winner.total - ordered[1].total} очк." +
-                                                        (string.IsNullOrEmpty(winner.character) ? "" : $" Персонаж: {winner.character}."), 13f, Theme.TextDim));
+                ? (teamWon ? (En ? $"The team saved the city — {game.results.Sum(r => r.total)} total points" : $"Команда спасла город — {game.results.Sum(r => r.total)} очк. на всех") : LocalizationService.Get("menu.stats.077"))
+                : (En ? $"{winner.name} won — {winner.total} pts" : $"Победил {winner.name} — {winner.total} очк."), 18f, Theme.Text, true));
+            if (ordered.Count > 1 && !game.coop) heroTexts.Add(Ui.Text((En ? $"Lead over second place: {winner.total - ordered[1].total} pts." : $"Отрыв от второго места: {winner.total - ordered[1].total} очк.") +
+                                                        (string.IsNullOrEmpty(winner.character) ? "" : (En ? $" Character: {winner.character}." : $" Персонаж: {winner.character}.")), 13f, Theme.TextDim));
             hero.Add(heroTexts);
             window.Add(hero);
 
@@ -883,26 +883,26 @@ namespace CityHighways.Presentation
             if (magnateGame)
             {
                 var courier = game.results.OrderByDescending(r => r.delivered).First();
-                if (courier.delivered > 0) moments.Add($"Больше всех доставок у {courier.name}: {courier.delivered}.");
+                if (courier.delivered > 0) moments.Add((En ? $"Most deliveries: {courier.name} ({courier.delivered})." : $"Больше всех доставок у {courier.name}: {courier.delivered}."));
                 var mayor = game.results.OrderByDescending(r => r.mayorOrders).First();
-                if (mayor.mayorOrders > 0) moments.Add($"Заказы мэрии первым выполнял {mayor.name}: {mayor.mayorOrders}.");
+                if (mayor.mayorOrders > 0) moments.Add((En ? $"Most city orders: {mayor.name} ({mayor.mayorOrders})." : $"Заказы мэрии первым выполнял {mayor.name}: {mayor.mayorOrders}."));
                 var famous = game.results.OrderByDescending(r => Array.IndexOf(ReputationOrder, r.reputation ?? "")).First();
-                if (!string.IsNullOrEmpty(famous.reputation)) moments.Add($"Лучшая репутация — у {famous.name}: {famous.reputation}.");
+                if (!string.IsNullOrEmpty(famous.reputation)) moments.Add((En ? $"Best reputation: {famous.name} ({famous.reputation})." : $"Лучшая репутация — у {famous.name}: {famous.reputation}."));
                 var stuck = game.results.Where(r => r.jams > 0).OrderByDescending(r => r.jams).FirstOrDefault();
-                if (stuck != null) moments.Add($"Чаще всех стоял в пробках {stuck.name}: {stuck.jams} {Plural(stuck.jams, LocalizationService.Get("menu.stats.091"), LocalizationService.Get("menu.stats.090"), LocalizationService.Get("menu.stats.091"))}.");
+                if (stuck != null) moments.Add((En ? $"Most traffic jams: {stuck.name} ({stuck.jams})." : $"Чаще всех стоял в пробках {stuck.name}: {stuck.jams} {Plural(stuck.jams, LocalizationService.Get("menu.stats.091"), LocalizationService.Get("menu.stats.090"), LocalizationService.Get("menu.stats.091"))}."));
             }
             var tollKing = game.results.OrderByDescending(r => r.tollsEarned).First();
-            if (tollKing.tollsEarned > 0) moments.Add($"Больше всех за проезд получил {tollKing.name}: +{tollKing.tollsEarned}.");
+            if (tollKing.tollsEarned > 0) moments.Add((En ? $"Most tolls earned: {tollKing.name} (+{tollKing.tollsEarned})." : $"Больше всех за проезд получил {tollKing.name}: +{tollKing.tollsEarned}."));
             var network = game.results.OrderByDescending(r => r.networkDistricts).First();
-            if (network.networkDistricts > 0) moments.Add($"Самая большая сеть — у {network.name}: {network.networkDistricts} {Plural(network.networkDistricts, "район", LocalizationService.Get("menu.stats.092"), LocalizationService.Get("menu.stats.093"))}.");
+            if (network.networkDistricts > 0) moments.Add((En ? $"Largest network: {network.name} ({network.networkDistricts} districts)." : $"Самая большая сеть — у {network.name}: {network.networkDistricts} {Plural(network.networkDistricts, "район", LocalizationService.Get("menu.stats.092"), LocalizationService.Get("menu.stats.093"))}."));
             var contracts = game.results.OrderByDescending(r => r.completedContracts).First();
-            if (contracts.completedContracts > 0) moments.Add($"Больше всех контрактов выполнил {contracts.name}: {contracts.completedContracts}.");
+            if (contracts.completedContracts > 0) moments.Add((En ? $"Most contracts completed: {contracts.name} ({contracts.completedContracts})." : $"Больше всех контрактов выполнил {contracts.name}: {contracts.completedContracts}."));
             var failed = game.results.Where(r => r.failedContracts > 0).OrderByDescending(r => r.failedContracts).FirstOrDefault();
-            if (failed != null) moments.Add($"Провалено контрактов у {failed.name}: {failed.failedContracts}.");
+            if (failed != null) moments.Add((En ? $"Most failed contracts: {failed.name} ({failed.failedContracts})." : $"Провалено контрактов у {failed.name}: {failed.failedContracts}."));
             var jam = game.results.Where(r => r.jamFees > 0).OrderByDescending(r => r.jamFees).FirstOrDefault();
-            if (jam != null) moments.Add($"В пробках больше всех потерял {jam.name}: −{jam.jamFees}.");
+            if (jam != null) moments.Add((En ? $"Most points lost to jams: {jam.name} (−{jam.jamFees})." : $"В пробках больше всех потерял {jam.name}: −{jam.jamFees}."));
             foreach (var r in game.results.Where(r => r.achievements != null && r.achievements.Length > 0))
-                moments.Add($"{r.name} открыл достижени{(r.achievements.Length == 1 ? "е" : "я")}: {string.Join(", ", r.achievements)}.");
+                moments.Add((En ? $"{r.name} unlocked achievements: {string.Join(", ", r.achievements)}." : $"{r.name} открыл достижени{(r.achievements.Length == 1 ? "е" : "я")}: {string.Join(", ", r.achievements)}."));
             if (moments.Count > 0)
             {
                 var momentsTitle = Ui.SectionTitle(LocalizationService.Get("menu.stats.094"));
@@ -955,7 +955,7 @@ namespace CityHighways.Presentation
                 .OrderByDescending(x => x.Human).ThenByDescending(x => x.Games).ToList();
             bool magnate = s_mode == GameMode.Magnate;
             float[] widths = { 170f, 60f, 130f, 70f, 70f, 120f };
-            card.Add(TableRow(new[] { LocalizationService.Get("menu.stats.011"), LocalizationService.Get("menu.stats.098"), "Побед", LocalizationService.Get("menu.stats.099"), LocalizationService.Get("menu.stats.100"), magnate ? LocalizationService.Get("menu.stats.101") : LocalizationService.Get("menu.stats.085") }, widths, Theme.TextDim, true));
+            card.Add(TableRow(new[] { LocalizationService.Get("menu.stats.011"), LocalizationService.Get("menu.stats.098"), (En ? "Wins" : "Побед"), LocalizationService.Get("menu.stats.099"), LocalizationService.Get("menu.stats.100"), magnate ? LocalizationService.Get("menu.stats.101") : LocalizationService.Get("menu.stats.085") }, widths, Theme.TextDim, true));
             foreach (var r in rows)
             {
                 int percent = Mathf.RoundToInt(100f * r.Wins / Math.Max(1, r.Games));
@@ -1000,7 +1000,7 @@ namespace CityHighways.Presentation
                 var texts = Ui.Column();
                 texts.style.flexGrow = 1f;
                 texts.Add(Ui.Text(r.Name, 14f, Theme.Text, true));
-                texts.Add(Ui.Text($"{r.Games} {Plural(r.Games, LocalizationService.Get("menu.stats.004"), LocalizationService.Get("menu.stats.005"), LocalizationService.Get("menu.stats.006"))} · средний счёт {r.Average:0}", 11f, Theme.TextDim));
+                texts.Add(Ui.Text((En ? $"{r.Games} games · average score {r.Average:0}" : $"{r.Games} {Plural(r.Games, LocalizationService.Get("menu.stats.004"), LocalizationService.Get("menu.stats.005"), LocalizationService.Get("menu.stats.006"))} · средний счёт {r.Average:0}"), 11f, Theme.TextDim));
                 var bar = new ProgressBar(180f, 6f, percent >= 50 ? GameColors.Success : Theme.Gold);
                 bar.Set(percent / 100f);
                 bar.style.marginTop = 4f;
