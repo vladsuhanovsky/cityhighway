@@ -654,19 +654,19 @@ namespace CityHighways.Presentation
             if (truck.Location == cargo.From && _game.FindRoute(truck.Owner, cargo.From, cargo.To, cargo.Kind) == null)
             {
                 // Фура уже на хабе, а довезти нельзя — ехать никуда не нужно, нужен широкий путь.
-                Toast($"Фура {TruckNumber(truck)} уже на хабе, но довезти пока нельзя: этому грузу нужны широкие дороги (бетон, мост или магистраль) до «{_game.Map.LocationName(cargo.To)}».", 4f);
+                Toast(En ? $"Truck {TruckNumber(truck)} is already at the hub, but this cargo needs wide roads (concrete, bridges or highways) to {Place(_game.Map.LocationName(cargo.To))}." : $"Фура {TruckNumber(truck)} уже на хабе, но довезти пока нельзя: этому грузу нужны широкие дороги (бетон, мост или магистраль) до «{_game.Map.LocationName(cargo.To)}».", 4f);
                 _app.Sound.Play(Sfx.Error, 0.5f);
                 return;
             }
             if (truck.Location == cargo.From)
             {
                 error = _game.PlanTruck(truck.Id, cargo.Id, null);
-                if (error == null) Toast($"Фура {TruckNumber(truck)} берёт груз ({LogisticsGame.KindTitle(cargo.Kind).ToLowerInvariant()}): {_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)}.");
+                if (error == null) Toast(En ? $"Truck {TruckNumber(truck)} picks up {QuickCargoTitle(cargo.Kind).ToLowerInvariant()}: {Place(_game.Map.LocationName(cargo.From))} → {Place(_game.Map.LocationName(cargo.To))}." : $"Фура {TruckNumber(truck)} берёт груз ({LogisticsGame.KindTitle(cargo.Kind).ToLowerInvariant()}): {_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)}.");
             }
             else
             {
                 error = _game.PlanTruck(truck.Id, null, cargo.From);
-                if (error == null) Toast($"Фура {TruckNumber(truck)} едет за грузом на {_game.Map.LocationName(cargo.From)} (~{_game.RouteRounds(toHub)} р.). Груз возьмёте, когда доедете, если его не заберут раньше.", 4f);
+                if (error == null) Toast(En ? $"Truck {TruckNumber(truck)} heads to {Place(_game.Map.LocationName(cargo.From))} (~{_game.RouteRounds(toHub)} rounds). It will collect cargo on arrival if still available." : $"Фура {TruckNumber(truck)} едет за грузом на {_game.Map.LocationName(cargo.From)} (~{_game.RouteRounds(toHub)} р.). Груз возьмёте, когда доедете, если его не заберут раньше.", 4f);
             }
             if (error != null) { Toast(error); _app.Sound.Play(Sfx.Error, 0.5f); return; }
             _app.Sound.Play(Sfx.Card, 0.6f);
@@ -680,7 +680,7 @@ namespace CityHighways.Presentation
         void FillCargoDetail(Cargo cargo)
         {
             if (cargo == null) { FillCargoList(); return; }
-            _popupTitle.text = $"{_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)}";
+            _popupTitle.text = $"{Place(_game.Map.LocationName(cargo.From))} → {Place(_game.Map.LocationName(cargo.To))}";
             var back = Ui.Button(LocalizationService.Get("magnate.panel.035"), () => { _popupKind = "cargo"; _dirty = true; }, ButtonKind.Ghost, 12f);
             back.style.alignSelf = Align.FlexStart;
             _popupBody.Add(Pad(back));
@@ -689,7 +689,7 @@ namespace CityHighways.Presentation
             head.style.alignItems = Align.Center;
             head.style.marginTop = 4f;
             head.Add(Chip(cargo.Kind, 26f));
-            var rule = Ui.Text($"{LogisticsGame.KindTitle(cargo.Kind)}. {LogisticsGame.KindRule(cargo.Kind, _game.Config)}", 12f, Theme.Text);
+            var rule = Ui.Text($"{QuickCargoTitle(cargo.Kind)}. {QuickCargoRule(cargo.Kind)}", 12f, Theme.Text);
             rule.style.whiteSpace = WhiteSpace.Normal;
             rule.style.flexShrink = 1f;
             head.Add(rule);
@@ -697,20 +697,20 @@ namespace CityHighways.Presentation
 
             var lines = new List<string>
             {
-                $"Откуда: {_game.Map.LocationName(cargo.From)} · куда: {_game.Map.LocationName(cargo.To)}",
-                $"Цена при доставке: {cargo.Value} очк. (до множителя репутации)"
+                En ? $"From: {Place(_game.Map.LocationName(cargo.From))} · to: {Place(_game.Map.LocationName(cargo.To))}" : $"Откуда: {_game.Map.LocationName(cargo.From)} · куда: {_game.Map.LocationName(cargo.To)}",
+                En ? $"Delivery value: {cargo.Value} pts (before reputation multiplier)" : $"Цена при доставке: {cargo.Value} очк. (до множителя репутации)"
             };
             if (cargo.Kind == CargoKind.Perishable)
-                lines.Add($"Норма: ещё {Mathf.Max(0, cargo.SpawnRound + cargo.Norm - _game.Round)} р., дальше −{_game.Config.PerishableLatePenalty} за каждый раунд опоздания");
+                lines.Add(En ? $"Deadline: {Mathf.Max(0, cargo.SpawnRound + cargo.Norm - _game.Round)} rounds left, then −{_game.Config.PerishableLatePenalty} per late round" : $"Норма: ещё {Mathf.Max(0, cargo.SpawnRound + cargo.Norm - _game.Round)} р., дальше −{_game.Config.PerishableLatePenalty} за каждый раунд опоздания");
             if (ForContract(cargo)) lines.Add(LocalizationService.Get("magnate.panel.036"));
             var delivery = _game.FindRoute(_game.CurrentPlayerIndex, cargo.From, cargo.To, cargo.Kind);
             if (delivery != null)
             {
                 _popupPreview = delivery;
-                lines.Add($"Путь доставки (золотой на карте): {_game.RouteLength(delivery)} участков, ~{_game.RouteRounds(delivery, cargo.Kind)} р., " +
+                lines.Add(En ? $"Delivery route (gold on map): {_game.RouteLength(delivery)} segments, ~{_game.RouteRounds(delivery, cargo.Kind)} rounds, toll −{_game.RouteTolls(_game.CurrentPlayerIndex, delivery)}, congested roads: {_game.RouteRisk(delivery)}" : $"Путь доставки (золотой на карте): {_game.RouteLength(delivery)} участков, ~{_game.RouteRounds(delivery, cargo.Kind)} р., " +
                           $"проезд −{_game.RouteTolls(_game.CurrentPlayerIndex, delivery)}, забитых дорог: {_game.RouteRisk(delivery)}");
                 if (cargo.Kind == CargoKind.Hazard && _game.RouteEntersBribeZone(cargo.From, delivery))
-                    lines.Add($"Путь идёт через Центр: взятка {_game.Config.HazardBribe} влияния, иначе конфискация");
+                    lines.Add(En ? $"Route crosses the Centre: pay {_game.Config.HazardBribe} influence or cargo will be confiscated" : $"Путь идёт через Центр: взятка {_game.Config.HazardBribe} влияния, иначе конфискация");
             }
             else
             {
@@ -727,10 +727,10 @@ namespace CityHighways.Presentation
                     int unbuilt = roads.Count(r => !_game.IsBuilt(r.Id));
                     int narrow = roads.Count(r => _game.IsBuilt(r.Id) && !_game.Allowed(r, cargo.Kind));
                     var why = new List<string>();
-                    if (unbuilt > 0) why.Add($"не построено дорог: {unbuilt}");
+                    if (unbuilt > 0) why.Add(En ? $"unbuilt roads: {unbuilt}" : $"не построено дорог: {unbuilt}");
                     if (narrow > 0) why.Add(cargo.Kind == CargoKind.Heavy || cargo.Kind == CargoKind.Oversized
-                        ? $"узких или закрытых: {narrow}" : $"закрытых: {narrow}");
-                    lines.Add($"Красным на карте — кратчайший путь ({_game.RouteLength(ideal)} участков); ярко-красные дороги мешают" +
+                        ? (En ? $"narrow or closed: {narrow}" : $"узких или закрытых: {narrow}") : (En ? $"closed: {narrow}" : $"закрытых: {narrow}"));
+                    lines.Add((En ? $"The shortest route is red on the map ({_game.RouteLength(ideal)} segments); bright red roads block it" : $"Красным на карте — кратчайший путь ({_game.RouteLength(ideal)} участков); ярко-красные дороги мешают") +
                               (why.Count > 0 ? " — " + string.Join(", ", why) : "") + ".");
                 }
             }
