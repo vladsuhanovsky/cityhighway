@@ -1,5 +1,8 @@
 using System.Linq;
 using CityHighways.Core;
+using CityHighways.Presentation;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 
 namespace CityHighways.Tests
@@ -8,6 +11,36 @@ namespace CityHighways.Tests
     {
         static Game Started(int players = 2, GameConfig config = null) =>
             TestCities.Started(TestCities.Small(), players, config);
+
+        [Test]
+        public void RulesGlossary_RebuildsForSelectedLanguage()
+        {
+            var original = LocalizationService.Language;
+            try
+            {
+                var config = new GameConfig();
+                LocalizationService.SetLanguage("en");
+                var english = RulesGlossary.All(config);
+                Assert.AreEqual(19, english.Count);
+                foreach (var term in english)
+                {
+                    Assert.IsFalse(Regex.IsMatch(term.Title + term.Definition + term.Section, "[а-яё]", RegexOptions.IgnoreCase),
+                        "Untranslated English glossary term: " + term.Id);
+                }
+                Assert.AreEqual("Contract", RulesGlossary.Find(config, "contract").Title);
+                StringAssert.Contains("<link=\"contract\">",
+                    RulesGlossary.Linkify(config, "Complete the contract.", new HashSet<string>()));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Контракт", RulesGlossary.Find(config, "contract").Title);
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Contract", RulesGlossary.Find(config, "contract").Title);
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
 
         [Test]
         public void Setup_DealsCardsContractsAndPieces()
