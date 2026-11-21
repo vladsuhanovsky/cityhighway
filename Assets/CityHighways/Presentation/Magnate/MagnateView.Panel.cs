@@ -154,8 +154,8 @@ namespace CityHighways.Presentation
             if (events.Count == 0) return;
             var icon = HubEventIcons.Event(events[0].Kind, 26f);
             if (icon != null) _eventIcon.Add(icon);
-            _eventChip.text = events.Count == 1 ? $"Событие: {events[0].Title}" : $"События: {events.Count}";
-            _eventChip.tooltip = string.Join("\n", events.Select(e => $"{e.Title}: {e.Description}" + (e.EndRound > _game.Round ? $" (до раунда {e.EndRound})" : "")));
+            _eventChip.text = events.Count == 1 ? (En ? $"Event: {EventTitle(events[0])}" : $"Событие: {events[0].Title}") : (En ? $"Events: {events.Count}" : $"События: {events.Count}");
+            _eventChip.tooltip = string.Join("\n", events.Select(e => En ? $"{EventTitle(e)}: {EventDescription(e)}" + (e.EndRound > _game.Round ? $" (until round {e.EndRound})" : "") : $"{e.Title}: {e.Description}" + (e.EndRound > _game.Round ? $" (до раунда {e.EndRound})" : "")));
         }
 
         void RefreshBottom()
@@ -360,12 +360,12 @@ namespace CityHighways.Presentation
                 kind.style.marginRight = 5f;
                 title.Add(kind);
             }
-            title.Add(Ui.Text($"Фура {number}", 12f, Theme.Text, true));
+            title.Add(Ui.Text(En ? $"Truck {number}" : $"Фура {number}", 12f, Theme.Text, true));
             chip.Add(title);
             string status = truck.Cargo != null ? $"→ {_game.Map.LocationName(cargo?.To)}"
-                : truck.PlannedCargo != null ? $"берёт → {_game.Map.LocationName(cargo?.To)}"
-                : truck.Target != null ? $"пустая → {_game.Map.LocationName(truck.Target)}"
-                : $"ждёт · {_game.Map.LocationName(truck.Location)}";
+                 : truck.PlannedCargo != null ? (En ? $"picking up → {Place(_game.Map.LocationName(cargo?.To))}" : $"берёт → {_game.Map.LocationName(cargo?.To)}")
+                 : truck.Target != null ? (En ? $"empty → {Place(_game.Map.LocationName(truck.Target))}" : $"пустая → {_game.Map.LocationName(truck.Target)}")
+                 : (En ? $"waiting · {Place(_game.Map.LocationName(truck.Location))}" : $"ждёт · {_game.Map.LocationName(truck.Location)}");
             var line = Ui.Text(status, 11f, truck.Route.Count > 0 || truck.Cargo != null ? Theme.TextDim : new Color(1f, 0.8f, 0.4f));
             line.style.overflow = Overflow.Hidden;
             line.style.textOverflow = TextOverflow.Ellipsis;
