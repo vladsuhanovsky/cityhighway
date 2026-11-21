@@ -11,12 +11,14 @@ namespace CityHighways.Presentation
     public static class ModeTabs
     {
         public static string Title(GameMode mode) =>
-            mode == GameMode.Magnate ? "Логистический магнат" : mode == GameMode.Coop ? "Кооператив" : "Соревнование";
+            LocalizationService.Language == "en"
+                ? (mode == GameMode.Magnate ? "Logistics Magnate" : mode == GameMode.Coop ? "Cooperative" : "Competitive")
+                : (mode == GameMode.Magnate ? "Логистический магнат" : mode == GameMode.Coop ? "Кооператив" : "Соревнование");
 
         public static string Tagline(GameMode mode) =>
-            mode == GameMode.Magnate ? "Фуры, грузы и хабы в новом городе каждый раз"
-            : mode == GameMode.Coop ? "Все компании — одна команда против города"
-            : "Дороги, контракты мэрии и плата за проезд";
+            LocalizationService.Language == "en"
+                ? (mode == GameMode.Magnate ? "Trucks, cargo and hubs in a newly generated city" : mode == GameMode.Coop ? "All companies join forces against the city" : "Roads, City Hall contracts and tolls")
+                : (mode == GameMode.Magnate ? "Фуры, грузы и хабы в новом городе каждый раз" : mode == GameMode.Coop ? "Все компании — одна команда против города" : "Дороги, контракты мэрии и плата за проезд");
 
         public static MenuIcon.Glyph Glyph(GameMode mode) =>
             mode == GameMode.Magnate ? MenuIcon.Glyph.Road : mode == GameMode.Coop ? MenuIcon.Glyph.Skyline : MenuIcon.Glyph.Trophy;
