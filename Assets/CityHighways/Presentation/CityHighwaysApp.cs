@@ -280,19 +280,19 @@ namespace CityHighways.Presentation
             _root.Add(loading.Root);
             int people = setup.players.Count;
             if (!string.IsNullOrEmpty(mapName))
-                loading.SetSubtitle($"Карта «{mapName}» · {people} {Plural(people, "компания", "компании", "компаний")}");
+                loading.SetSubtitle(LocalizationService.Language == "en" ? $"Map: {MagnateLocationText.Name(mapName)} · {people} companies" : $"Карта «{mapName}» · {people} {Plural(people, "компания", "компании", "компаний")}");
             GameView view = null;
             var steps = new List<(string, Action)>
             {
-                ("Раскладываем карту и правила…", () =>
+                (LocalizationService.Language == "en" ? "Laying out the map and rules…" : "Раскладываем карту и правила…", () =>
                 {
                     view = net != null ? new GameView(this, setup, net) : new GameView(this, setup);
                     view.DeferStart = true;
                     _root.Insert(0, view.Root);
                 }),
-                ("Тасуем колоды, раздаём контракты и ресурсы…", () => start(view)),
-                ("Поднимаем дома, прокладываем улицы, запускаем машины…", () => view.Build3D()),
-                ("Выдаём технику бригадам…", () => { }),
+                (LocalizationService.Language == "en" ? "Shuffling decks and dealing contracts…" : "Тасуем колоды, раздаём контракты и ресурсы…", () => start(view)),
+                (LocalizationService.Language == "en" ? "Building houses, roads and traffic…" : "Поднимаем дома, прокладываем улицы, запускаем машины…", () => view.Build3D()),
+                (LocalizationService.Language == "en" ? "Preparing construction machinery…" : "Выдаём технику бригадам…", () => { }),
             };
             loading.Run(this, steps, () =>
             {
@@ -381,12 +381,12 @@ namespace CityHighways.Presentation
             MagnateView view = null;
             var steps = new List<(string, Action)>
             {
-                ("Прокладываем реки и намечаем кварталы…", () =>
+                (LocalizationService.Language == "en" ? "Laying out rivers and districts…" : "Прокладываем реки и намечаем кварталы…", () =>
                 {
                     city = setup.magnateTutorialMap ? CityGenerator.GenerateTutorial() : GenerateCheckedCity(seed);
                     loading.SetCity(city.Map.Name);
                 }),
-                ("Расставляем аэропорты, вокзалы и порты…", () =>
+                (LocalizationService.Language == "en" ? "Placing airports, stations and ports…" : "Расставляем аэропорты, вокзалы и порты…", () =>
                 {
                     var config = MagnateConfig.For((MagnateDifficulty)Mathf.Clamp(setup.magnateDifficulty, 0, 3));
                     // Против ботов первый ход — по жребию. Кроме партии с обучением: наставник ведёт с хода игрока.
@@ -401,14 +401,14 @@ namespace CityHighways.Presentation
                     }
                     game = new LogisticsGame(city, names, bots, seed, config);
                 }),
-                ("Рисуем карту и дороги…", () =>
+                (LocalizationService.Language == "en" ? "Drawing the map and roads…" : "Рисуем карту и дороги…", () =>
                 {
                     view = new MagnateView(this, setup, game);
                     _root.Insert(0, view.Root);
                     view.Begin();
                 }),
-                ("Поднимаем дома, сажаем деревья, наполняем реки…", () => view.Setup3D()),
-                ("Грузим первые фуры…", () => { }),
+                (LocalizationService.Language == "en" ? "Building houses, planting trees and filling rivers…" : "Поднимаем дома, сажаем деревья, наполняем реки…", () => view.Setup3D()),
+                (LocalizationService.Language == "en" ? "Loading the first trucks…" : "Грузим первые фуры…", () => { }),
             };
             loading.Run(this, steps, () =>
             {
