@@ -1556,33 +1556,46 @@ namespace CityHighways.Presentation
             Ui.Show(_tooltip, true);
         }
 
+        static string RoadKindLabel(Resource? resource)
+        {
+            if (!EnglishUi) return ResourceInfo.RoadKind(resource);
+            if (!resource.HasValue) return "Street (any resource)";
+            switch (resource.Value)
+            {
+                case Resource.Asphalt: return "Street";
+                case Resource.Concrete: return "Avenue";
+                case Resource.Steel: return "Bridge";
+                case Resource.Gravel: return "Country Road";
+                default: return "Road";
+            }
+        }
+
         string RoadTooltip(Road road)
         {
-            string kind = ResourceInfo.RoadKind(road.Resource);
+            string kind = RoadKindLabel(road.Resource);
             string resource = road.Resource.HasValue ? Palette.CardTitle(road.Resource.Value) : LocalizationService.Get("game.ui.050");
-            string text = $"<b>{LocationName(road.A)} — {LocationName(road.B)}</b>\n" +
-                          $"{char.ToUpper(kind[0]) + kind.Substring(1)} · длина {road.Length} · {resource} · {_game.Config.PointsForLength(road.Length)} очк.";
+            string text = EnglishUi ? $"<b>{DisplayPlace(LocationName(road.A))} — {DisplayPlace(LocationName(road.B))}</b>\n{kind} · length {road.Length} · {resource} · {_game.Config.PointsForLength(road.Length)} pts" : $"<b>{LocationName(road.A)} — {LocationName(road.B)}</b>\n{char.ToUpper(kind[0]) + kind.Substring(1)} · длина {road.Length} · {resource} · {_game.Config.PointsForLength(road.Length)} очк.";
 
             int? owner = _game.GetRoadOwner(road.Id);
             if (!owner.HasValue && road.Id == _game.FinalOrderRoadId)
-                text += $"\n<color=#FFCC40>Финальный заказ мэрии: +{_game.Config.FinalOrderBonus} очков тому, кто построит её в последнем круге</color>";
+                text += EnglishUi ? $"\n<color=#FFCC40>Final City Hall order: +{_game.Config.FinalOrderBonus} pts to whoever builds it in the last round</color>" : $"\n<color=#FFCC40>Финальный заказ мэрии: +{_game.Config.FinalOrderBonus} очков тому, кто построит её в последнем круге</color>";
             if (owner.HasValue)
             {
-                text += "\nПостроил: " + _game.Players[owner.Value].Name;
+                text += (EnglishUi ? "\nBuilt by: " : "\nПостроил: ") + _game.Players[owner.Value].Name;
                 if (_game.IsRushHourRoad(road.Id))
-                    text += $"\n<color=#FF9A33>Загруженная магистраль (час пик): проезд ×{_game.Config.RushHourTollMultiplier}</color>";
+                    text += EnglishUi ? $"\n<color=#FF9A33>Busy highway (rush hour): toll ×{_game.Config.RushHourTollMultiplier}</color>" : $"\n<color=#FF9A33>Загруженная магистраль (час пик): проезд ×{_game.Config.RushHourTollMultiplier}</color>";
                 int traffic = _game.TrafficOn(road.Id);
-                if (traffic > 0) text += $"\nЗагрузка: {traffic} {Plural(traffic, "маршрут", "маршрута", "маршрутов")} соперников";
+                if (traffic > 0) text += EnglishUi ? $"\nTraffic: {traffic} rival routes" : $"\nЗагрузка: {traffic} {Plural(traffic, "маршрут", "маршрута", "маршрутов")} соперников";
                 if (_game.IsJammed(road.Id))
-                    text += $"\n<color=#FF6B5B>Пробка: проезд ещё +{_game.Config.JamFee} очк. городу. Владелец может улучшить дорогу до магистрали.</color>";
+                    text += EnglishUi ? $"\n<color=#FF6B5B>Traffic jam: +{_game.Config.JamFee} pts paid to the city. The owner can upgrade the road to a highway.</color>" : $"\n<color=#FF6B5B>Пробка: проезд ещё +{_game.Config.JamFee} очк. городу. Владелец может улучшить дорогу до магистрали.</color>";
                 else if (_game.Config.JamThreshold > 0 && !_game.IsRushHourRoad(road.Id) && traffic == _game.Config.JamThreshold - 1)
-                    text += "\n<color=#FFB35B>Ещё один маршрут — и здесь пробка</color>";
+                    text += EnglishUi ? "\n<color=#FFB35B>One more route will cause a traffic jam</color>" : "\n<color=#FFB35B>Ещё один маршрут — и здесь пробка</color>";
                 int viewer = Viewer;
                 if (owner.Value != viewer && !IsBot(viewer))
                 {
-                    if (_game.HasPass(viewer, owner.Value)) text += "\nУ вас пропуск: проезд владельцу бесплатно";
-                    else text += $"\nПроезд для вас: −{_game.TollFor(road.Id, viewer)} очк. владельцу";
-                    if (_game.IsJammed(road.Id)) text += $" и −{_game.JamFeeFor(road.Id)} городу";
+                    if (_game.HasPass(viewer, owner.Value)) text += EnglishUi ? "\nYour road pass makes this toll free" : "\nУ вас пропуск: проезд владельцу бесплатно";
+                    else text += EnglishUi ? $"\nYour toll: −{_game.TollFor(road.Id, viewer)} pts to the owner" : $"\nПроезд для вас: −{_game.TollFor(road.Id, viewer)} очк. владельцу";
+                    if (_game.IsJammed(road.Id)) text += EnglishUi ? $" and −{_game.JamFeeFor(road.Id)} to the city" : $" и −{_game.JamFeeFor(road.Id)} городу";
                 }
                 return text;
             }
