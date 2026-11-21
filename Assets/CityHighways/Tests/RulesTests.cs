@@ -442,6 +442,55 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void CooperativeJournal_TranslatesCityOrdersAndCrisisWithoutChangingNames()
+        {
+            var translate = typeof(GameView).GetMethod("CoopJournalText",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(translate);
+            var examples = new[]
+            {
+                "Новый заказ города: Север — Юг — 7 очк., срок 3 кругов.",
+                "Заказ города выполнен: Север — Юг (+7 очк. — Alice). Кризис 3 → 1. Выполнено 2 из 5.",
+                "Заказ города просрочен: Север — Юг. Кризис +2 → 4 из 6.",
+                "Город спасён: выполнено 5 заказов из 5, кризис 1 из 6.",
+                "Город встал: кризис дошёл до 6. Выполнено заказов: 2 из 5.",
+                "Участки кончились раньше, чем город получил свои заказы: выполнено 2 из 5."
+            };
+            foreach (string entry in examples)
+            {
+                string translated = (string)translate.Invoke(null, new object[] { entry });
+                Assert.IsNotNull(translated, "Unknown Cooperative message: " + entry);
+                // Map place names may remain Cyrillic when a map has no English alias.
+                Assert.IsFalse(translated.Contains("Заказ города") || translated.Contains("Кризис") ||
+                    translated.Contains("Город спасён") || translated.Contains("Участки кончились"),
+                    "Cooperative message was not translated: " + entry);
+            }
+            string completed = (string)translate.Invoke(null, new object[] { examples[1] });
+            StringAssert.Contains("Alice", completed);
+            Assert.IsNull(translate.Invoke(null, new object[] { "Unknown format" }));
+        }
+
+        [Test]
+        public void LuckJournal_AllKnownOutcomesAreTranslated()
+        {
+            var translate = typeof(GameView).GetMethod("LuckResultText",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(translate);
+            foreach (string outcome in new[]
+            {
+                "страховка: вместо дебафа −2 очко.", "+3 влияния.", "+6 очков.",
+                "+2 карт ресурсов.", "выполнено контрактов: 2, +4 очков.",
+                "−3 очка.", "−1 карта с руки.", "рука пуста, красть нечего.",
+                "невыполненных контрактов нет, −3 очка."
+            })
+            {
+                string result = (string)translate.Invoke(null, new object[] { outcome });
+                Assert.IsFalse(Regex.IsMatch(result, "[а-яё]", RegexOptions.IgnoreCase),
+                    "Luck outcome was not translated: " + outcome);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
