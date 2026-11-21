@@ -749,15 +749,15 @@ namespace CityHighways.Presentation
                 // пустой фурой можно: пока она едет, достройте широкий путь.
                 bool here = truck.Location == cargo.From;
                 var info = Hint(here
-                    ? $"Фура {TruckNumber(truck)} уже на хабе: возьмёт груз, как только появится путь — постройте широкие дороги (бетон, мост или магистраль) до «{_game.Map.LocationName(cargo.To)}»."
-                    : $"Ближайшая свободная — фура {TruckNumber(truck)}: до хаба ~{_game.RouteRounds(toHub)} р. Пустая фура доедет по любым дорогам, " +
-                      $"а пока она в пути — постройте широкий путь до «{_game.Map.LocationName(cargo.To)}».");
+                    ? (En ? $"Truck {TruckNumber(truck)} is at the hub. Build wide roads (concrete, bridge or highway) to {Place(_game.Map.LocationName(cargo.To))} before it can deliver." : $"Фура {TruckNumber(truck)} уже на хабе: возьмёт груз, как только появится путь — постройте широкие дороги (бетон, мост или магистраль) до «{_game.Map.LocationName(cargo.To)}».")
+                    : (En ? $"Closest available truck: {TruckNumber(truck)}, ~{_game.RouteRounds(toHub)} rounds to the hub. Empty trucks can use any roads; meanwhile build a wide route to {Place(_game.Map.LocationName(cargo.To))}." : $"Ближайшая свободная — фура {TruckNumber(truck)}: до хаба ~{_game.RouteRounds(toHub)} р. Пустая фура доедет по любым дорогам, " +
+                      $"а пока она в пути — постройте широкий путь до «{_game.Map.LocationName(cargo.To)}».") );
                 info.style.color = Theme.Gold;
                 info.style.marginTop = 8f;
                 _popupBody.Add(Pad(info));
                 if (!here)
                 {
-                    var go = Ui.Button($"Отправить фуру {TruckNumber(truck)} к хабу", () => AssignCargo(cargo), ButtonKind.Primary, 13f);
+                    var go = Ui.Button(En ? $"Send Truck {TruckNumber(truck)} to Hub" : $"Отправить фуру {TruckNumber(truck)} к хабу", () => AssignCargo(cargo), ButtonKind.Primary, 13f);
                     go.style.marginTop = 8f;
                     go.style.alignSelf = Align.FlexStart;
                     _popupBody.Add(Pad(go));
@@ -768,13 +768,13 @@ namespace CityHighways.Presentation
                 int rounds = _game.RouteRounds(toHub) + _game.RouteRounds(delivery, cargo.Kind);
                 int value = _game.ValueIfDelivered(cargo, rounds, truck.Owner);
                 string who = truck.Location == cargo.From
-                    ? $"Фура {TruckNumber(truck)} уже на хабе: привезёт за ~{rounds} р. и получит ~{value} очк."
+                    ? (En ? $"Truck {TruckNumber(truck)} is at the hub: ~{rounds} rounds to deliver for ~{value} pts." : $"Фура {TruckNumber(truck)} уже на хабе: привезёт за ~{rounds} р. и получит ~{value} очк.")
                     : $"Ближайшая свободная — фура {TruckNumber(truck)}: до хаба ~{_game.RouteRounds(toHub)} р., с доставкой ~{rounds} р., ~{value} очк.";
                 var info = Hint(who);
                 info.style.color = Theme.Gold;
                 info.style.marginTop = 8f;
                 _popupBody.Add(Pad(info));
-                var take = Ui.Button(truck.Location == cargo.From ? $"Взять фурой {TruckNumber(truck)}" : $"Отправить фуру {TruckNumber(truck)} к хабу",
+                var take = Ui.Button(truck.Location == cargo.From ? (En ? $"Pick Up with Truck {TruckNumber(truck)}" : $"Взять фурой {TruckNumber(truck)}") : (En ? $"Send Truck {TruckNumber(truck)} to Hub" : $"Отправить фуру {TruckNumber(truck)} к хабу"),
                     () => AssignCargo(cargo), ButtonKind.Primary, 13f);
                 take.style.marginTop = 8f;
                 take.style.alignSelf = Align.FlexStart;
@@ -794,13 +794,13 @@ namespace CityHighways.Presentation
             var cargo = _game.GetCargo(truck.Cargo);
             var planned = _game.GetCargo(truck.PlannedCargo);
             var kind = cargo?.Kind ?? planned?.Kind;
-            _popupTitle.text = $"Фура {number} · {_game.Map.LocationName(truck.Location)} · скорость {_game.SpeedOf(kind)}";
+            _popupTitle.text = En ? $"Truck {number} · {Place(_game.Map.LocationName(truck.Location))} · speed {_game.SpeedOf(kind)}" : $"Фура {number} · {_game.Map.LocationName(truck.Location)} · скорость {_game.SpeedOf(kind)}";
             string status = cargo != null
-                ? $"Везёт ({LogisticsGame.KindTitle(cargo.Kind).ToLowerInvariant()}): {_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)} " +
-                  $"(~{_game.ValueIfDelivered(cargo, _game.RouteRounds(truck.Route, cargo.Kind), truck.Owner)} очк.)" +
-                  (cargo.Kind == CargoKind.Valuable ? (cargo.Escorted ? " · с охраной" : " · без охраны!") : "")
-                : planned != null ? $"Берёт ({LogisticsGame.KindTitle(planned.Kind).ToLowerInvariant()}): {_game.Map.LocationName(planned.From)} → {_game.Map.LocationName(planned.To)}"
-                : truck.Target != null ? $"Пустая → {_game.Map.LocationName(truck.Target)}"
+                ? (En ? $"Delivering {QuickCargoTitle(cargo.Kind).ToLowerInvariant()}: {Place(_game.Map.LocationName(cargo.From))} → {Place(_game.Map.LocationName(cargo.To))} " : $"Везёт ({LogisticsGame.KindTitle(cargo.Kind).ToLowerInvariant()}): {_game.Map.LocationName(cargo.From)} → {_game.Map.LocationName(cargo.To)} ") +
+                  (En ? $"(~{_game.ValueIfDelivered(cargo, _game.RouteRounds(truck.Route, cargo.Kind), truck.Owner)} pts)" : $"(~{_game.ValueIfDelivered(cargo, _game.RouteRounds(truck.Route, cargo.Kind), truck.Owner)} очк.)") +
+                  (cargo.Kind == CargoKind.Valuable ? (cargo.Escorted ? (En ? " · escorted" : " · с охраной") : (En ? " · unescorted!" : " · без охраны!")) : "")
+                : planned != null ? (En ? $"Picking up {QuickCargoTitle(planned.Kind).ToLowerInvariant()}: {Place(_game.Map.LocationName(planned.From))} → {Place(_game.Map.LocationName(planned.To))}" : $"Берёт ({LogisticsGame.KindTitle(planned.Kind).ToLowerInvariant()}): {_game.Map.LocationName(planned.From)} → {_game.Map.LocationName(planned.To)}")
+                : truck.Target != null ? (En ? $"Empty → {Place(_game.Map.LocationName(truck.Target))}" : $"Пустая → {_game.Map.LocationName(truck.Target)}")
                 : LocalizationService.Get("magnate.panel.040");
             var statusLabel = Ui.Text(status, 13f, Theme.Text, true);
             statusLabel.style.whiteSpace = WhiteSpace.Normal;
@@ -823,7 +823,7 @@ namespace CityHighways.Presentation
                     var row = CargoRow(item, false);
                     var path = _game.FindRoute(truck.Owner, truck.Location, item.To, item.Kind);
                     bool wide = item.Kind == CargoKind.Heavy || item.Kind == CargoKind.Oversized;
-                    var takeButton = Ui.Button(path != null ? $"Взять · {_game.RouteRounds(path, item.Kind)} р." : wide ? LocalizationService.Get("magnate.panel.043") : LocalizationService.Get("magnate.panel.044"), () =>
+                    var takeButton = Ui.Button(path != null ? (En ? $"Pick Up · {_game.RouteRounds(path, item.Kind)} rounds" : $"Взять · {_game.RouteRounds(path, item.Kind)} р.") : wide ? LocalizationService.Get("magnate.panel.043") : LocalizationService.Get("magnate.panel.044"), () =>
                     {
                         var error = _game.PlanTruck(truck.Id, item.Id, null);
                         if (error != null) { Toast(error); _app.Sound.Play(Sfx.Error, 0.5f); }
