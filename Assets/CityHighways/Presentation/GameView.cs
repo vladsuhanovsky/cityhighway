@@ -1992,20 +1992,20 @@ namespace CityHighways.Presentation
             else Toast(HumanCount > 1 ? string.Format(LocalizationService.Get("game.notice.player_turn"), name) : LocalizationService.Get("game.notice.your_turn"), Theme.Gold);
         }
 
-        static float ClaimDuration(Road road) => road == null ? 0f : 0.12f * road.Length + 0.1f;
+        static float ClaimDuration(Road road) => road == null ? 0f : Ui.ReducedMotion ? 0.04f : 0.12f * road.Length + 0.1f;
 
         void AnimateClaim(Road route)
         {
             if (route == null) return;
-            _map.BuildProgress[route.Id] = 0f;
+            _map.BuildProgress[route.Id] = Ui.ReducedMotion ? 1f : 0f;
             int segments = route.Length;
             int played = 0;
 
             _app.Tweener.Add(ClaimDuration(route), k =>
             {
-                _map.BuildProgress[route.Id] = k;
+                _map.BuildProgress[route.Id] = Ui.ReducedMotion ? 1f : k;
                 int shown = Mathf.FloorToInt(k * segments + 0.001f);
-                if (shown > played)
+                if (!Ui.ReducedMotion && shown > played)
                 {
                     played = shown;
                     _app.Sound.Play(Sfx.Clack, 0.8f);
@@ -2014,6 +2014,12 @@ namespace CityHighways.Presentation
             {
                 _map.BuildProgress.Remove(route.Id);
                 _app.Sound.Play(Sfx.Horn, 0.6f);
+                // Small player-colored completion sparkle. Keep major fireworks for
+                // contracts and mayor goals; this should not overwhelm rapid bot turns.
+                int sparks = GameFxTuning.FireworkCount(12, Ui.ReducedMotion);
+                if (sparks > 0 && IsLaidOut(_map))
+                    _map.Fireworks(_map.WorldToLocal(_map.RoadWorldCenter(route.Id)),
+                        Palette.PlayerColor(_game.GetRoadOwner(route.Id) ?? 0), sparks);
             });
         }
 
