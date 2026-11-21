@@ -135,6 +135,43 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void SavedMagnateStats_AreMatchedAcrossLanguageSwitches()
+        {
+            var statsView = typeof(MenuStatsPage).Assembly.GetType("CityHighways.Presentation.StatsView");
+            Assert.IsNotNull(statsView);
+            var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
+            var rankIndex = statsView.GetMethod("RankIndex", flags);
+            var difficultyIndex = statsView.GetMethod("DifficultyIndex", flags);
+            var displayRank = statsView.GetMethod("DisplayRank", flags);
+            var displayDifficulty = statsView.GetMethod("DisplayDifficulty", flags);
+            Assert.IsNotNull(rankIndex);
+            Assert.IsNotNull(difficultyIndex);
+            Assert.IsNotNull(displayRank);
+            Assert.IsNotNull(displayDifficulty);
+
+            string original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual(0, rankIndex.Invoke(null, new object[] { "Новичок" }));
+                Assert.AreEqual(4, rankIndex.Invoke(null, new object[] { "Легенда" }));
+                Assert.AreEqual(2, rankIndex.Invoke(null, new object[] { "Pro" }));
+                Assert.AreEqual(0, difficultyIndex.Invoke(null, new object[] { "Лёгкая" }));
+                Assert.AreEqual(1, difficultyIndex.Invoke(null, new object[] { "Обычная" }));
+                Assert.AreEqual("Easy", displayDifficulty.Invoke(null, new object[] { "Лёгкая" }));
+                Assert.AreEqual("Legend", displayRank.Invoke(null, new object[] { "Легенда" }));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Обычная", displayDifficulty.Invoke(null, new object[] { "Normal" }));
+                Assert.AreEqual("Профи", displayRank.Invoke(null, new object[] { "Pro" }));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
