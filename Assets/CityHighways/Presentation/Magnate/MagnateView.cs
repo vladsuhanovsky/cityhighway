@@ -18,6 +18,11 @@ namespace CityHighways.Presentation
     public sealed partial class MagnateView
     {
         const float TopBarHeight = 56f, AnimationSeconds = 2.2f;
+        static bool En => LocalizationService.Language == "en";
+        static string Place(string name) => MagnateLocationText.Name(name);
+        static string DifficultyName(MagnateDifficulty value) => En
+            ? (value == MagnateDifficulty.Easy ? "Easy" : value == MagnateDifficulty.Normal ? "Normal" : value == MagnateDifficulty.Hard ? "Hard" : "Expert")
+            : MagnateConfig.Title(value);
 
         readonly CityHighwaysApp _app;
         readonly GameSetup _setup;
@@ -250,14 +255,14 @@ namespace CityHighways.Presentation
             _map.SetGame(_game.Board);
             _minimap.SetGame(_game.Board);
             Ui.Show(_minimap, _app.Display == null || _app.Display.showMinimap);
-            _log.Add($"Город {_game.Map.Name}, сложность «{MagnateConfig.Title(_game.Config.Difficulty)}». " +
-                     $"Хабы: {string.Join(", ", _game.Hubs.Select(h => _game.Map.LocationName(h.LocationId)))}.");
+            _log.Add((En ? $"City {Place(_game.Map.Name)}, difficulty: {DifficultyName(_game.Config.Difficulty)}. " : $"Город {_game.Map.Name}, сложность «{MagnateConfig.Title(_game.Config.Difficulty)}». ") +
+                     (En ? $"Hubs: {string.Join(", ", _game.Hubs.Select(h => Place(_game.Map.LocationName(h.LocationId))))}." : $"Хабы: {string.Join(", ", _game.Hubs.Select(h => _game.Map.LocationName(h.LocationId)))}."));
             ApplyLayers();
             if (_game.Config.RandomFirstPlayer)
             {
                 var first = _game.CurrentPlayer;
-                _log.Add($"Жребий: первым ходит {first.Name}.");
-                Toast(first.IsBot ? $"Жребий: первым ходит {first.Name}." : $"Жребий: вы ходите первым, {first.Name}!", 3.5f);
+                _log.Add((En ? $"First turn: {first.Name}." : $"Жребий: первым ходит {first.Name}."));
+                Toast(first.IsBot ? (En ? $"First turn: {first.Name}." : $"Жребий: первым ходит {first.Name}.") : (En ? $"You go first, {first.Name}!" : $"Жребий: вы ходите первым, {first.Name}!"), 3.5f);
             }
             StartTurn();
             if (_setup.forceMagnateTutorial || (!_setup.magnateTutorialDone && _game.Players.Any(p => !p.IsBot))) StartCoach();
@@ -405,12 +410,12 @@ namespace CityHighways.Presentation
                 var card = Ui.Card(26f);
                 card.style.backgroundColor = Theme.Panel;
                 card.style.alignItems = Align.Center;
-                card.Add(Ui.Text($"Ход: {player.Name}", 26f, Palette.PlayerColor(player.Index), true));
-                var hint = Ui.Text("Соперники, отвернитесь: сейчас будут планироваться маршруты.", 15f, Theme.TextDim);
+                card.Add(Ui.Text((En ? $"Turn: {player.Name}" : $"Ход: {player.Name}"), 26f, Palette.PlayerColor(player.Index), true));
+                var hint = Ui.Text((En ? "Other players, please look away: it is time to plan routes." : "Соперники, отвернитесь: сейчас будут планироваться маршруты."), 15f, Theme.TextDim);
                 hint.style.marginTop = 10f;
                 hint.style.marginBottom = 18f;
                 card.Add(hint);
-                card.Add(Ui.Button("Начать ход", () =>
+                card.Add(Ui.Button(En ? "Start Turn" : "Начать ход", () =>
                 {
                     _awaitingHandoff = false;
                     Ui.Show(_handoff, false);
@@ -459,7 +464,7 @@ namespace CityHighways.Presentation
             _animating = report;
             _shownReport = report;
             _animationTime = 0f;
-            Toast($"Раунд {report.Round}: фуры в пути…", AnimationSeconds);
+            Toast((En ? $"Round {report.Round}: trucks on the move…" : $"Раунд {report.Round}: фуры в пути…"), AnimationSeconds);
             if (report.Jams.Count > 0) _app.Sound.Play(Sfx.Horn, 0.6f);
             _dirty = true;
         }
