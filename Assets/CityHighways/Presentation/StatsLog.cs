@@ -237,6 +237,10 @@ namespace CityHighways.Presentation
                     if (stat.results.Any(r => r.kind == "human" && r.winner)) humanWins++;
                 }
                 if (games == 0) return "";
+                if (LocalizationService.Language == "en")
+                    return humanGames > 0
+                        ? $"Games played: {games} · human wins: {humanWins} of {humanGames}"
+                        : $"Games played: {games}";
                 return humanGames > 0
                     ? $"Сыграно партий: {games} · побед людей: {humanWins} из {humanGames}"
                     : $"Сыграно партий: {games}";
