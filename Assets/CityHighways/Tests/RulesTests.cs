@@ -13,6 +13,89 @@ namespace CityHighways.Tests
             TestCities.Started(TestCities.Small(), players, config);
 
         [Test]
+        public void LiveBuildAndSave_KeepCoreStateIndependentOfLanguage()
+        {
+            string original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("ru");
+                var map = TestCities.Small();
+                var game = TestCities.Started(map);
+                var journal = new List<string>();
+                game.Log += journal.Add;
+                game.Debug_SetHand(0, Resource.Asphalt, Resource.Asphalt);
+                var built = game.BuildRoad("r1", Resource.Asphalt, 0);
+                Assert.IsTrue(built.Success, built.Error);
+                Assert.IsTrue(journal.Any(line => line.Contains("строит")),
+                    "The game must store its original language-neutral log format.");
+
+                string blocker = game.GetBuildBlocker("r1");
+                StringAssert.Contains("Дорогу уже построил", blocker);
+                string before = UnityEngine.JsonUtility.ToJson(game.CreateSave());
+
+                LocalizationService.SetLanguage("en");
+                string translated = LocalizationService.TranslateGameError(blocker);
+                StringAssert.Contains("This road was already built by", translated);
+                Assert.AreEqual(before, UnityEngine.JsonUtility.ToJson(game.CreateSave()),
+                    "Switching to English must not modify a live game or its saved state.");
+
+                var restored = Game.FromSave(map,
+                    UnityEngine.JsonUtility.FromJson<GameSaveData>(before));
+                Assert.AreEqual(before, UnityEngine.JsonUtility.ToJson(restored.CreateSave()),
+                    "Build state must survive save/load under the other UI language.");
+
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual(blocker, LocalizationService.TranslateGameError(blocker));
+                Assert.AreEqual(before, UnityEngine.JsonUtility.ToJson(game.CreateSave()));
+            }
+            finally { LocalizationService.SetLanguage(original); }
+        }
+
+        [Test]
+        public void LivePendingTrade_SurvivesLanguageChangeSaveLoadAndAcceptance()
+        {
+            string original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("ru");
+                var map = TestCities.Small();
+                var game = TestCities.Started(map);
+                var journal = new List<string>();
+                game.Log += journal.Add;
+                game.Debug_SetHand(0, Resource.Asphalt);
+                game.Debug_SetHand(1, Resource.Steel);
+
+                var proposed = game.ProposeTrade(1, Resource.Asphalt, 1, Resource.Steel, 1);
+                Assert.IsTrue(proposed.Success, proposed.Error);
+                Assert.AreEqual(GamePhase.RespondingTrade, game.Phase);
+                string offer = journal.Last();
+                StringAssert.Contains(" предлагает ", offer);
+                Assert.IsNull(LocalizationService.TranslateTradeJournal(offer));
+                string saved = UnityEngine.JsonUtility.ToJson(game.CreateSave());
+
+                LocalizationService.SetLanguage("en");
+                string display = LocalizationService.TranslateTradeJournal(offer);
+                StringAssert.Contains(" offers ", display);
+                StringAssert.Contains("asphalt", display);
+                StringAssert.Contains("steel", display);
+                Assert.AreEqual(saved, UnityEngine.JsonUtility.ToJson(game.CreateSave()));
+
+                var restored = Game.FromSave(map,
+                    UnityEngine.JsonUtility.FromJson<GameSaveData>(saved));
+                Assert.AreEqual(GamePhase.RespondingTrade, restored.Phase);
+                Assert.AreEqual(saved, UnityEngine.JsonUtility.ToJson(restored.CreateSave()));
+                Assert.IsTrue(restored.RespondTrade(true).Success);
+                Assert.AreEqual(1, restored.Players[0].CardCount(Resource.Steel));
+                Assert.AreEqual(1, restored.Players[1].CardCount(Resource.Asphalt));
+
+                LocalizationService.SetLanguage("ru");
+                Assert.IsNull(LocalizationService.TranslateTradeJournal(offer));
+                Assert.AreEqual(saved, UnityEngine.JsonUtility.ToJson(game.CreateSave()));
+            }
+            finally { LocalizationService.SetLanguage(original); }
+        }
+
+        [Test]
         public void DynamicGameActionErrors_TranslateValuesWithoutChangingCoreMessages()
         {
             var original = LocalizationService.Language;
