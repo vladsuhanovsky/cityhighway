@@ -32,14 +32,16 @@ namespace CityHighways.Presentation
         static List<Term> _terms;
         static Regex _regex;
         static GameConfig _config;
+        static string _language;
 
         /// <summary>Цвет ссылки в тексте правил.</summary>
         public const string LinkColor = "#F6C66B";
 
         public static IReadOnlyList<Term> All(GameConfig config)
         {
-            if (_terms != null && ReferenceEquals(_config, config)) return _terms;
+            if (_terms != null && ReferenceEquals(_config, config) && _language == LocalizationService.Language) return _terms;
             _config = config;
+            _language = LocalizationService.Language;
             var gold = new Color(0.96f, 0.78f, 0.42f);
             var city = new Color(0.55f, 0.75f, 0.95f);
             var danger = new Color(0.92f, 0.42f, 0.40f);
@@ -104,6 +106,39 @@ namespace CityHighways.Presentation
                     Pattern = @"персонаж",
                     Definition = "Глава компании со своей способностью: Прораб, Сборщик пошлин, Мостовик… Выбирается из двух в начале партии." },
             };
+            if (_language == "en")
+            {
+                var english = new Dictionary<string, (string title, string definition, string pattern, string section)>
+                {
+                    ["contract"] = ("Contract", "A city commission to connect two districts with your roads. Completion earns points; failure costs the same number of points at game end.", @"contract", "Contracts and tolls"),
+                    ["toll"] = ("Toll", $"Points paid to another player for using their road on your contract route: {config.TollPerRoad} per road, with at most {config.MaxForeignRoadsPerContract} foreign roads.", @"toll", "Contracts and tolls"),
+                    ["highway"] = ("Highway", $"An upgraded road of your own: +{config.UpgradePoints} points, tolls multiplied by {config.RushHourTollMultiplier}, and immunity to traffic jams.", @"highway", "Deals and highways"),
+                    ["jam"] = ("Traffic jam", $"A regular road used by {config.JamThreshold} or more rival contracts. Each subsequent passage costs another {config.JamFee} points, which are lost.", @"traffic jam|congestion", "Deals and highways"),
+                    ["influence"] = ("Influence", "City Hall currency. Spend it once per turn before your main action on the market, permits or bribes. It is not converted into points; the balance goes to your profile.", @"influence", "Influence"),
+                    ["bribe"] = ("Bribe", "A secret action paid for with influence: build a road one card cheaper or take an extra card from the deck. A rival may expose it and trigger a penalty.", @"brib", "Influence"),
+                    ["deal"] = ("Deal", $"Trade with one rival once per turn before your action: exchange 1–{config.TradeMaxCards} cards of one resource for another, optionally adding influence. This does not consume your turn.", @"deal|trad", "Deals and highways"),
+                    ["pass"] = ("Pass", "A pass sold in a deal lets its buyer travel along all your roads without paying you tolls until the game ends.", @"pass", "Deals and highways"),
+                    ["machinery"] = ("Machinery", "A wild card replacing any resource card when building. Taking face-up machinery as your first card consumes your whole turn.", @"machinery", "Resources"),
+                    ["resource"] = ("Resource", "A building card: asphalt, concrete, steel or gravel. The resource determines road colour; road length determines the number of cards needed.", @"resource", "Resources"),
+                    ["luck"] = ("Luck card", "Draw instead of one of your two resource cards: a benefit (grant, bonus, delivery) or a setback (fine, inspection). At most one per turn.", @"luck card|luck", "City Hall goals and luck"),
+                    ["mayor"] = ("City Hall", "The city's commissioner: issues contracts and shared goals, announces events, runs auctions and accepts influence.", @"city hall|mayor", "City Hall goals and luck"),
+                    ["event"] = ("City event", $"At the start of a round, there is a {Mathf.RoundToInt(config.EventChance * 100)}% chance of a rush hour, roadworks, snowstorm, parade or investor event. It lasts until the round ends.", @"event", "Events"),
+                    ["auction"] = ("City Hall auction", $"Once per game, players secretly bid influence for a valuable contract. Completing it earns another {config.AuctionBonus} points.", @"auction", "Influence"),
+                    ["network"] = ("Largest network", $"Your connected roads. At game end, the network covering the most districts earns {config.NetworkBonus} bonus points.", @"network", "Game end and scoring"),
+                    ["piece"] = ("Road piece", $"Each road segment uses a piece: a length-three road needs three. When {config.FinalRoundPieces} or fewer remain, the final round begins.", @"road piece|segment", "Game end and scoring"),
+                    ["order"] = ("City order", $"Co-op: a shared team contract with a deadline (a 10-point order for two players lasts {config.CoopOrderRoundsFor(10, 2)} rounds). Complete it with the shared network to earn points and reduce crisis by {config.CoopCrisisReliefPerOrder}; missing the deadline raises crisis by {config.CoopCrisisPerFailedOrder}.", @"city order", "Co-op"),
+                    ["crisis"] = ("Crisis", $"The co-op meter from 0 to {config.CoopCrisisMax} rises over time, from expired orders and bad events. If it reaches {config.CoopCrisisMax}, the city defeats the team.", @"crisis", "Co-op"),
+                    ["character"] = ("Character", "A company leader with a unique ability, such as Foreman, Toll Collector or Bridge Builder. Choose one of two at game start.", @"character", "Characters")
+                };
+                foreach (var term in _terms)
+                {
+                    if (!english.TryGetValue(term.Id, out var translated)) continue;
+                    term.Title = translated.title;
+                    term.Definition = translated.definition;
+                    term.Pattern = translated.pattern;
+                    term.Section = translated.section;
+                }
+            }
             _regex = new Regex(@"\b(" + string.Join("|", _terms.Select(t => "(?<" + t.Id + ">" + t.Pattern + ")")) + @")[а-яёa-z]*",
                 RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             return _terms;
