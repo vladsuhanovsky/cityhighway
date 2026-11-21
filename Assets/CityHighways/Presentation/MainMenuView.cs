@@ -1023,8 +1023,14 @@ namespace CityHighways.Presentation
             if (_mapButton != null)
             {
                 var map = GameSetup.MapOf(_setup.mapResourcePath);
-                _mapButton.text = map.Title;
-                _mapHint.text = map.Hint;
+                _mapButton.text = LocalizationService.Language == "en"
+                    ? (map.Path.EndsWith("amsterdam") ? "Amsterdam" : map.Path.EndsWith("chongqing") ? "Chongqing" : "Moscow")
+                    : map.Title;
+                _mapHint.text = LocalizationService.Language == "en"
+                    ? (map.Path.EndsWith("amsterdam") ? "Compact canal city: the IJ bay separates Noord, the Amstel runs toward the centre, and the A10 ring surrounds the city."
+                       : map.Path.EndsWith("chongqing") ? "A city of bridges and hills: the centre lies between the Yangtze and Jialing rivers, with bridges connecting the banks."
+                       : "A large city with 66 locations, the Moskva River crossing the map and three outlying districts.")
+                    : map.Hint;
                 _modeButton.text = LocalizationService.Get(_setup.magnate ? "menu.new_game.mode_magnate" : _setup.cooperative ? "menu.new_game.mode_coop" : "menu.new_game.mode_competitive");
                 var rules = new GameConfig();
                 var magnateRules = new MagnateConfig();
@@ -1064,7 +1070,9 @@ namespace CityHighways.Presentation
             Ui.Show(_difficultyRow, !classic);
             Ui.Show(_difficultyHint, !classic);
             var difficulty = (MagnateDifficulty)Mathf.Clamp(_setup.magnateDifficulty, 0, 3);
-            if (_difficultyButton != null) _difficultyButton.text = MagnateConfig.Title(difficulty);
+            if (_difficultyButton != null) _difficultyButton.text = LocalizationService.Language == "en"
+                ? (difficulty == MagnateDifficulty.Easy ? "Easy" : difficulty == MagnateDifficulty.Normal ? "Normal" : difficulty == MagnateDifficulty.Hard ? "Hard" : "Expert")
+                : MagnateConfig.Title(difficulty);
             if (_difficultyHint != null) _difficultyHint.text = DifficultyHint(difficulty);
             Ui.Show(_characterHint, classic);
 
