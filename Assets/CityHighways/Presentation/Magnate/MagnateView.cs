@@ -393,7 +393,7 @@ namespace CityHighways.Presentation
             {
                 _roundShown = _game.Round;
                 var fresh = _game.Events.FirstOrDefault(ev => ev.StartRound == _game.Round);
-                if (fresh != null) Toast($"Событие: {fresh.Title}. {fresh.Description}", 4.5f);
+                if (fresh != null) Toast(En ? $"Event: {EventTitle(fresh)}. {EventDescription(fresh)}" : $"Событие: {fresh.Title}. {fresh.Description}", 4.5f);
             }
             var player = _game.CurrentPlayer;
             if (player.IsBot)
@@ -800,6 +800,47 @@ namespace CityHighways.Presentation
 
         bool HumanTurn => _animating == null && !_awaitingHandoff && _game.Phase != MagnatePhase.GameOver && !_game.CurrentPlayer.IsBot;
 
+        string EventTitle(LogisticsEvent e)
+        {
+            if (!En || e == null) return e?.Title ?? "";
+            switch (e.Kind)
+            {
+                case LogisticsEventKind.Accident: return "Road Accident";
+                case LogisticsEventKind.RoadRepair: return "Roadworks";
+                case LogisticsEventKind.FuelShortage: return "Fuel Shortage";
+                case LogisticsEventKind.CustomsCheck: return "Customs Inspection";
+                case LogisticsEventKind.Storm: return "Storm Warning";
+                default: return "Festival";
+            }
+        }
+
+        string EventDescription(LogisticsEvent e)
+        {
+            if (!En || e == null) return e?.Description ?? "";
+            string roadName = "";
+            if (!string.IsNullOrEmpty(e.Road))
+            {
+                var road = _game.Map.GetRoad(e.Road);
+                if (road != null)
+                    roadName = Place(_game.Map.LocationName(road.A)) + " — " + Place(_game.Map.LocationName(road.B));
+            }
+            switch (e.Kind)
+            {
+                case LogisticsEventKind.Accident:
+                    return $"A truck broke down on {roadName}. The road is closed for this round; trucks take detours.";
+                case LogisticsEventKind.RoadRepair:
+                    return $"Road {roadName} is closed for repairs for two rounds.";
+                case LogisticsEventKind.FuelShortage:
+                    return "All trucks move two fewer road segments this round.";
+                case LogisticsEventKind.CustomsCheck:
+                    return $"Hazardous and valuable cargo in transit must pay {_game.Config.CustomsBribe} influence or wait one round.";
+                case LogisticsEventKind.Storm:
+                    return "Bridges have one less capacity; heavy and oversized cargo cannot use bridges.";
+                default:
+                    return "Streets in the Centre are closed for this round.";
+            }
+        }
+
         void OnRoadHover(Road road, Vector2 position)
         {
             if (road == null) { Ui.Show(_tooltip, false); return; }
@@ -811,7 +852,7 @@ namespace CityHighways.Presentation
                           $"Capacity: {_game.Capacity(road)} trucks/round · last round: {_game.LastTraffic(road.Id)}" +
                           (_game.IsWide(road) ? LocalizationService.Get("magnate.ui.040") : LocalizationService.Get("magnate.ui.041")) : $"{_game.Map.LocationName(road.A)} — {_game.Map.LocationName(road.B)}\n{kind}, длина {road.Length} · {who}\n" + $"Пропускает {_game.Capacity(road)} фур за раунд · в прошлом раунде: {_game.LastTraffic(road.Id)}" + (_game.IsWide(road) ? LocalizationService.Get("magnate.ui.040") : LocalizationService.Get("magnate.ui.041"));
             var closing = _game.Events.FirstOrDefault(e => e.Road == road.Id);
-            if (_game.IsClosed(road.Id)) text += En ? $"\nClosed: {Place(closing?.Title ?? "event")}" : $"\nЗакрыта: {closing?.Title ?? "событие"}";
+            if (_game.IsClosed(road.Id)) text += En ? $"\nClosed: {(closing != null ? EventTitle(closing) : "event")}" : $"\nЗакрыта: {closing?.Title ?? "событие"}";
             if (HumanTurn && _game.Phase == MagnatePhase.Build)
             {
                 if (!owner.HasValue)
