@@ -367,6 +367,37 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void LuckCardTitlesAndDescriptions_TranslateForAllKinds()
+        {
+            var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
+            var title = typeof(GameView).GetMethod("LuckCardTitle", flags);
+            var description = typeof(GameView).GetMethod("LuckCardDescription", flags);
+            Assert.IsNotNull(title);
+            Assert.IsNotNull(description);
+            var config = new GameConfig();
+            var original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                foreach (LuckCardKind kind in System.Enum.GetValues(typeof(LuckCardKind)))
+                {
+                    string name = (string)title.Invoke(null, new object[] { kind });
+                    string effect = (string)description.Invoke(null, new object[] { kind, config });
+                    Assert.IsFalse(Regex.IsMatch(name + effect, "[а-яё]", RegexOptions.IgnoreCase),
+                        "English luck card not translated: " + kind);
+                }
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Грант мэрии", title.Invoke(null, new object[] { LuckCardKind.Grant }));
+                Assert.AreEqual(LuckInfo.Describe(LuckCardKind.Fine, config),
+                    description.Invoke(null, new object[] { LuckCardKind.Fine, config }));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
