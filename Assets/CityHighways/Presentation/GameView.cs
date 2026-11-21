@@ -1599,20 +1599,20 @@ namespace CityHighways.Presentation
                 }
                 return text;
             }
-            if (_game.IsScheduledRepair(road.Id)) text += "\n<color=#FF6B6B>Год ремонта: закрыт в этом круге (разрешение мэрии пускает строить)</color>";
-            else if (_game.IsUnderRepair(road.Id)) text += "\n<color=#FF6B6B>Ремонт: закрыт до конца круга</color>";
-            if (!owner.HasValue && _game.IsNextRepair(road.Id)) text += "\n<color=#FF9A33>Год ремонта: закроют в следующем круге — успейте построить</color>";
-            if (_game.IsParadeClosed(road.Id)) text += "\n<color=#CC80FF>Парад: закрыт до конца круга</color>";
+            if (_game.IsScheduledRepair(road.Id)) text += EnglishUi ? "\n<color=#FF6B6B>Repair Year: closed this round (City Hall permit allows construction)</color>" : "\n<color=#FF6B6B>Год ремонта: закрыт в этом круге (разрешение мэрии пускает строить)</color>";
+            else if (_game.IsUnderRepair(road.Id)) text += EnglishUi ? "\n<color=#FF6B6B>Roadworks: closed until end of round</color>" : "\n<color=#FF6B6B>Ремонт: закрыт до конца круга</color>";
+            if (!owner.HasValue && _game.IsNextRepair(road.Id)) text += EnglishUi ? "\n<color=#FF9A33>Repair Year: road closes next round — build it now</color>" : "\n<color=#FF9A33>Год ремонта: закроют в следующем круге — успейте построить</color>";
+            if (_game.IsParadeClosed(road.Id)) text += EnglishUi ? "\n<color=#CC80FF>Parade: closed until end of round</color>" : "\n<color=#CC80FF>Парад: закрыт до конца круга</color>";
             if (road.Resource == Resource.Gravel && _game.CurrentEvent?.Kind == CityEventKind.Snow)
-                text += $"\n<color=#D9EBFF>Снегопад: +{_game.Config.SnowExtraCost} карта к цене</color>";
+                text += EnglishUi ? $"\n<color=#D9EBFF>Snowfall: +{_game.Config.SnowExtraCost} cards to build cost</color>" : $"\n<color=#D9EBFF>Снегопад: +{_game.Config.SnowExtraCost} карта к цене</color>";
             if (_game.CurrentEvent?.Kind == CityEventKind.Investor)
-                text += $"\n<color=#FFD94D>Инвестор: +{_game.Config.InvestorBonus} очка за постройку</color>";
+                text += EnglishUi ? $"\n<color=#FFD94D>Investor: +{_game.Config.InvestorBonus} pts for construction</color>" : $"\n<color=#FFD94D>Инвестор: +{_game.Config.InvestorBonus} очка за постройку</color>";
             int cost = _game.BuildCost(road);
-            if (cost < road.Length) text += $"\n<color=#7FC8FF>Субсидия мэрии: сейчас стоит {cost} карт(ы)</color>";
+            if (cost < road.Length) text += EnglishUi ? $"\n<color=#7FC8FF>City Hall subsidy: now costs {cost} cards</color>" : $"\n<color=#7FC8FF>Субсидия мэрии: сейчас стоит {cost} карт(ы)</color>";
             if (_game.CurrentEvent != null && _game.CurrentEvent.Kind == CityEventKind.RushHour)
-                text += "\n<color=#FF9A33>Час пик: построенная сейчас дорога станет платной ×2</color>";
+                text += EnglishUi ? "\n<color=#FF9A33>Rush hour: the road built now will charge double tolls</color>" : "\n<color=#FF9A33>Час пик: построенная сейчас дорога станет платной ×2</color>";
             if (HumanToAct && _game.Phase == GamePhase.AwaitingAction)
-                return text + "\n" + (_game.GetBuildBlocker(road.Id) ?? "<color=#7FD88A>Кликните, чтобы построить</color>");
+                return text + "\n" + (_game.GetBuildBlocker(road.Id) is string blocker ? LocalizationService.TranslateLegacy(blocker) : (EnglishUi ? "<color=#7FD88A>Click to build</color>" : "<color=#7FD88A>Кликните, чтобы построить</color>"));
             return text;
         }
 
