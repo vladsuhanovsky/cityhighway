@@ -20,6 +20,7 @@ namespace CityHighways.Presentation
 
     sealed class StatsView
     {
+        static bool En => LocalizationService.Language == "en";
         enum HistoryFilter { All, Wins, Online, Week }
 
         readonly Action _rebuild;
@@ -94,7 +95,7 @@ namespace CityHighways.Presentation
             empty.style.backgroundColor = Theme.Panel;
             empty.style.alignItems = Align.Center;
             empty.Add(new MenuIcon(ModeTabs.Glyph(s_mode), 48f, Theme.Gold));
-            empty.Add(Ui.Text($"В режиме «{ModeTabs.Title(s_mode)}» ещё ни одной партии", 22f, Theme.Text, true));
+            empty.Add(Ui.Text((En ? $"No games played in {ModeTabs.Title(s_mode)} mode yet" : $"В режиме «{ModeTabs.Title(s_mode)}» ещё ни одной партии"), 22f, Theme.Text, true));
             string hint = s_mode == GameMode.Magnate
                 ? LocalizationService.Get("menu.stats.007")
                 : s_mode == GameMode.Coop
@@ -212,7 +213,7 @@ namespace CityHighways.Presentation
             card.Add(Ui.Text(_player ?? "—", 24f, Theme.Text, true));
             int wins = mine.Count(x => x.me.winner);
             int percent = mine.Count > 0 ? Mathf.RoundToInt(100f * wins / mine.Count) : 0;
-            card.Add(Caption($"Партий: {mine.Count} · побед: {wins} ({percent}%)", 14f, Theme.TextDim, 2f));
+            card.Add(Caption((En ? $"Games: {mine.Count} · wins: {wins} ({percent}%)" : $"Партий: {mine.Count} · побед: {wins} ({percent}%)"), 14f, Theme.TextDim, 2f));
 
             // Серии: текущая (победы или поражения подряд) и лучшая серия побед.
             int current = 0;
@@ -238,22 +239,22 @@ namespace CityHighways.Presentation
             if (mine.Count == 0) texts.Add(Ui.Text(LocalizationService.Get("menu.stats.012"), 16f, Theme.Text, true));
             else if (currentWins)
             {
-                texts.Add(Ui.Text($"Серия побед: {current}", 18f, new Color(1f, 0.65f, 0.30f), true));
+                texts.Add(Ui.Text((En ? $"Winning streak: {current}" : $"Серия побед: {current}"), 18f, new Color(1f, 0.65f, 0.30f), true));
                 texts.Add(Ui.Text(current >= 3 ? LocalizationService.Get("menu.stats.013") : LocalizationService.Get("menu.stats.014"), 12f, Theme.TextDim));
             }
             else
             {
-                texts.Add(Ui.Text($"Холодная серия: {current} {Plural(current, "поражение", LocalizationService.Get("menu.stats.015"), LocalizationService.Get("menu.stats.016"))}", 16f, new Color(0.60f, 0.82f, 1f), true));
+                texts.Add(Ui.Text((En ? $"Losing streak: {current} losses" : $"Холодная серия: {current} {Plural(current, "поражение", LocalizationService.Get("menu.stats.015"), LocalizationService.Get("menu.stats.016"))}"), 16f, new Color(0.60f, 0.82f, 1f), true));
                 texts.Add(Ui.Text(LocalizationService.Get("menu.stats.017"), 12f, Theme.TextDim));
             }
             streak.Add(texts);
             card.Add(streak);
-            card.Add(Caption($"Лучшая серия побед: {best}", 13f, Theme.Text, 10f));
+            card.Add(Caption((En ? $"Best winning streak: {best}" : $"Лучшая серия побед: {best}"), 13f, Theme.Text, 10f));
             if (mine.Count > 0)
             {
-                card.Add(Caption($"Лучший счёт: {mine.Max(x => x.me.total)} · средний: {mine.Average(x => x.me.total):0}", 13f, Theme.Text, 4f));
+                card.Add(Caption((En ? $"Best score: {mine.Max(x => x.me.total)} · average: {mine.Average(x => x.me.total):0}" : $"Лучший счёт: {mine.Max(x => x.me.total)} · средний: {mine.Average(x => x.me.total):0}"), 13f, Theme.Text, 4f));
                 int achievements = mine.Sum(x => x.me.achievements?.Length ?? 0);
-                if (achievements > 0) card.Add(Caption($"Достижений за партии: {achievements}", 13f, Theme.Gold, 4f));
+                if (achievements > 0) card.Add(Caption((En ? $"Achievements earned in games: {achievements}" : $"Достижений за партии: {achievements}"), 13f, Theme.Gold, 4f));
             }
             return card;
         }
@@ -380,17 +381,17 @@ namespace CityHighways.Presentation
                 grid.Add(tile);
             }
             float Avg(Func<PlayerStat, int> f) => (float)mine.Average(x => f(x.me));
-            Stat(LocalizationService.Get("menu.stats.041"), $"{Avg(r => r.delivered):0.#}", $"всего {mine.Sum(x => x.me.delivered)}", Theme.Text);
-            Stat(LocalizationService.Get("menu.stats.042"), $"{Avg(r => r.mayorOrders):0.#}", $"всего {mine.Sum(x => x.me.mayorOrders)}", Theme.Gold);
+            Stat(LocalizationService.Get("menu.stats.041"), $"{Avg(r => r.delivered):0.#}", (En ? $"total {mine.Sum(x => x.me.delivered)}" : $"всего {mine.Sum(x => x.me.delivered)}"), Theme.Text);
+            Stat(LocalizationService.Get("menu.stats.042"), $"{Avg(r => r.mayorOrders):0.#}", (En ? $"total {mine.Sum(x => x.me.mayorOrders)}" : $"всего {mine.Sum(x => x.me.mayorOrders)}"), Theme.Gold);
             Stat(LocalizationService.Get("menu.stats.043"), $"{Avg(r => r.jams):0.#}", null, Avg(r => r.jams) > 3f ? GameColors.Danger : Theme.Text);
             Stat(LocalizationService.Get("menu.stats.044"), $"{Avg(r => r.tollsEarned - r.tollsPaid):+0.#;−0.#;0}", $"+{mine.Sum(x => x.me.tollsEarned)} / −{mine.Sum(x => x.me.tollsPaid)}", Theme.Text);
             Stat(LocalizationService.Get("menu.stats.045"), $"{Avg(r => r.hubFees):0.#}", LocalizationService.Get("menu.stats.046"), Theme.Text);
-            Stat(LocalizationService.Get("menu.stats.047"), $"{mine.Sum(x => x.me.perishableOnTime)}", $"потерь грузов: {mine.Sum(x => x.me.losses)}", GameColors.Success);
+            Stat(LocalizationService.Get("menu.stats.047"), $"{mine.Sum(x => x.me.perishableOnTime)}", (En ? $"lost cargo: {mine.Sum(x => x.me.losses)}" : $"потерь грузов: {mine.Sum(x => x.me.losses)}"), GameColors.Success);
             card.Add(grid);
 
             int bestRank = mine.Select(x => Array.IndexOf(ReputationOrder, x.me.reputation ?? "")).DefaultIfEmpty(-1).Max();
             if (bestRank >= 0)
-                card.Add(Caption($"Лучшая репутация: {ReputationOrder[bestRank]} {new string('★', bestRank + 1)}", 14f, Theme.Gold, 6f));
+                card.Add(Caption((En ? $"Best reputation: {ReputationOrder[bestRank]} {new string('★', bestRank + 1)}" : $"Лучшая репутация: {ReputationOrder[bestRank]} {new string('★', bestRank + 1)}"), 14f, Theme.Gold, 6f));
 
             var byDifficulty = Ui.Column();
             byDifficulty.style.marginTop = 8f;
@@ -505,7 +506,7 @@ namespace CityHighways.Presentation
                 var big = Ui.Number($"{percent}%", 40f, percent >= 50 ? GameColors.Success : Theme.Gold, true);
                 big.style.marginRight = 12f;
                 head.Add(big);
-                head.Add(Caption($"Вы набираете в среднем больше, чем {percent}% соперников из журнала ({below} из {others.Count}).", 14f, Theme.Text, 0f));
+                head.Add(Caption((En ? $"Your average score is higher than {percent}% of recorded opponents ({below} of {others.Count})." : $"Вы набираете в среднем больше, чем {percent}% соперников из журнала ({below} из {others.Count})."), 14f, Theme.Text, 0f));
                 card.Add(head);
             }
             // Соперники, с которыми чаще всего играли: на сколько ваш средний счёт выше или ниже.
@@ -547,7 +548,7 @@ namespace CityHighways.Presentation
                 track.Add(middle);
                 row.Add(track);
                 var text = Ui.Text(Mathf.Abs(delta) < 1f ? LocalizationService.Get("menu.stats.057")
-                    : delta > 0 ? $"вы выше на {delta:0}%" : $"вы ниже на {-delta:0}%", 13f, delta >= 0 ? GameColors.Success : GameColors.Danger, true);
+                    : delta > 0 ? (En ? $"you lead by {delta:0}%" : $"вы выше на {delta:0}%") : (En ? $"you trail by {-delta:0}%" : $"вы ниже на {-delta:0}%"), 13f, delta >= 0 ? GameColors.Success : GameColors.Danger, true);
                 text.style.marginLeft = 10f;
                 row.Add(text);
                 card.Add(row);
@@ -582,8 +583,8 @@ namespace CityHighways.Presentation
                 tile.Add(texts);
                 row.Add(tile);
             }
-            Tile(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.stats.059"), _games.Count.ToString(), _games.Any(g => g.online) ? $"сетевых: {_games.Count(g => g.online)}" : null);
-            Tile(MenuIcon.Glyph.Clock, LocalizationService.Get("menu.stats.060"), Duration(seconds), $"в среднем {Duration(seconds / Math.Max(1, _games.Count))}");
+            Tile(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.stats.059"), _games.Count.ToString(), _games.Any(g => g.online) ? (En ? $"online: {_games.Count(g => g.online)}" : $"сетевых: {_games.Count(g => g.online)}") : null);
+            Tile(MenuIcon.Glyph.Clock, LocalizationService.Get("menu.stats.060"), Duration(seconds), (En ? $"average {Duration(seconds / Math.Max(1, _games.Count))}" : $"в среднем {Duration(seconds / Math.Max(1, _games.Count))}"));
             Tile(MenuIcon.Glyph.Trophy, LocalizationService.Get("menu.stats.061"), best.result.total.ToString(), $"{best.result.name}, {ShortDate(best.game.date)}");
             return row;
         }
@@ -616,7 +617,7 @@ namespace CityHighways.Presentation
                 var bestRow = Ui.Row();
                 bestRow.style.alignItems = Align.Center;
                 bestRow.style.marginBottom = 4f;
-                var bestText = Ui.Text($"Лучшая партия: {Mine(best).total} очк. · {best.map} · {ShortDate(best.date)}", 13f, Theme.Gold, true);
+                var bestText = Ui.Text((En ? $"Best game: {Mine(best).total} pts · {best.map} · {ShortDate(best.date)}" : $"Лучшая партия: {Mine(best).total} очк. · {best.map} · {ShortDate(best.date)}"), 13f, Theme.Gold, true);
                 bestText.style.flexGrow = 1f;
                 bestRow.Add(bestText);
                 var watch = Ui.Button(LocalizationService.Get("menu.stats.067"), () => Replays.Open(best.replay), ButtonKind.Secondary, 13f);
@@ -1098,7 +1099,9 @@ namespace CityHighways.Presentation
         {
             if (seconds <= 0) return "—";
             int minutes = seconds / 60;
-            return minutes >= 60 ? $"{minutes / 60} ч {minutes % 60} мин" : $"{Math.Max(1, minutes)} мин";
+            return En
+                ? (minutes >= 60 ? $"{minutes / 60}h {minutes % 60}m" : $"{Math.Max(1, minutes)}m")
+                : (minutes >= 60 ? $"{minutes / 60} ч {minutes % 60} мин" : $"{Math.Max(1, minutes)} мин");
         }
 
         static string Plural(int n, string one, string few, string many)
