@@ -165,13 +165,30 @@ namespace CityHighways.Presentation
         /// Localize self-contained game journal entries. Player-supplied names and bid details
         /// remain unchanged. Returns null for formats the presenter does not yet know.
         /// </summary>
-        public static string TranslateSpecialJournal(string message)
+        public static string TranslateSpecialJournal(string message, Func<string, string> districtName = null)
         {
             if (string.IsNullOrEmpty(message) || Language != "en") return null;
+            Func<string, string> district = districtName ?? (name => name);
 
             var match = System.Text.RegularExpressions.Regex.Match(message,
                 @"^(.+) делает тайную ставку\.$");
             if (match.Success) return match.Groups[1].Value + " places a secret bid.";
+
+            match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Аукцион мэрии: контракт (.*?) — (.*?) \((\d+) очк\., выполнен — ещё \+(\d+)\)\. Тайные ставки влиянием\.$");
+            if (match.Success)
+                return $"City Hall auction: contract {district(match.Groups[1].Value)} — {district(match.Groups[2].Value)} ({match.Groups[3].Value} pts, +{match.Groups[4].Value} when completed). Secret influence bids.";
+
+            match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^(.+) обвиняет (.+) во взятке — подтвердилось! Раскрыто: (\d+), штраф −(\d+)\.$");
+            if (match.Success)
+                return $"{match.Groups[1].Value} accuses {match.Groups[2].Value} of bribery: confirmed! {match.Groups[3].Value} bribes exposed, penalty −{match.Groups[4].Value}.";
+
+            match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^(.+) обвиняет (.+) во взятке — не подтвердилось\. Ложное обвинение: −(\d+)\.$");
+            if (match.Success)
+                return $"{match.Groups[1].Value} accuses {match.Groups[2].Value} of bribery: not confirmed. False accusation penalty: −{match.Groups[3].Value}.";
+
 
             match = System.Text.RegularExpressions.Regex.Match(message,
                 @"^Аукцион выигрывает (.+) за (\d+) влияния \(ставки: (.*)\)\.$");

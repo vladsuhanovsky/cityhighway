@@ -3299,7 +3299,7 @@ namespace CityHighways.Presentation
             if (eventCrisis.Success) return $"A city event increases the crisis by {eventCrisis.Groups[1].Value} → {eventCrisis.Groups[2].Value} of {eventCrisis.Groups[3].Value}.";
             string progress = LocalizationService.TranslateProgressJournal(message, DisplayPlace);
             if (progress != null) return progress;
-            string special = LocalizationService.TranslateSpecialJournal(message);
+            string special = LocalizationService.TranslateSpecialJournal(message, DisplayPlace);
             if (special != null) return special;
             string coop = CoopJournalText(message);
             if (coop != null) return coop;
@@ -3369,6 +3369,7 @@ namespace CityHighways.Presentation
                 case "мост": return "bridge";
                 case "загородная дорога": return "country road";
                 case "улица (любой ресурс)": return "street";
+                case "дорога": return "road";
                 default: return name;
             }
         }

@@ -63,6 +63,32 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void CityHallAuctionAndBriberyAccusations_AreLocalized()
+        {
+            var original = LocalizationService.Language;
+            const string auction = "Аукцион мэрии: контракт Север — Центр (7 очк., выполнен — ещё +3). Тайные ставки влиянием.";
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                System.Func<string, string> district = name =>
+                    name == "Север" ? "North" : name == "Центр" ? "Center" : name;
+                Assert.AreEqual("City Hall auction: contract North — Center (7 pts, +3 when completed). Secret influence bids.",
+                    LocalizationService.TranslateSpecialJournal(auction, district));
+                Assert.AreEqual("Vera accuses Alex of bribery: confirmed! 2 bribes exposed, penalty −6.",
+                    LocalizationService.TranslateSpecialJournal("Vera обвиняет Alex во взятке — подтвердилось! Раскрыто: 2, штраф −6."));
+                Assert.AreEqual("Alex accuses Vera of bribery: not confirmed. False accusation penalty: −4.",
+                    LocalizationService.TranslateSpecialJournal("Alex обвиняет Vera во взятке — не подтвердилось. Ложное обвинение: −4."));
+                Assert.IsNull(LocalizationService.TranslateSpecialJournal("Unrecognized auction data."));
+                LocalizationService.SetLanguage("ru");
+                Assert.IsNull(LocalizationService.TranslateSpecialJournal(auction, district));
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("City Hall auction: contract North — Center (7 pts, +3 when completed). Secret influence bids.",
+                    LocalizationService.TranslateSpecialJournal(auction, district));
+            }
+            finally { LocalizationService.SetLanguage(original); }
+        }
+
+        [Test]
         public void ProgressJournal_CoversRoadsInfluenceAndFinaleInBothLanguages()
         {
             var original = LocalizationService.Language;
