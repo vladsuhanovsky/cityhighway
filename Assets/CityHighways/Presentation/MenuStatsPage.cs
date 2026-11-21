@@ -440,7 +440,7 @@ namespace CityHighways.Presentation
                 var name = Ui.Text(level, 13f, Theme.Text);
                 name.style.width = 90f;
                 row.Add(name);
-                row.Add(WinBar(percent, $"{wins} из {games.Count} ({percent}%)"));
+                row.Add(WinBar(percent, En ? $"{wins} of {games.Count} ({percent}%)" : $"{wins} из {games.Count} ({percent}%)"));
                 byDifficulty.Add(row);
             }
             card.Add(byDifficulty);
