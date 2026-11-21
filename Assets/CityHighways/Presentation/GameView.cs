@@ -1769,7 +1769,7 @@ namespace CityHighways.Presentation
                 {
                     // Спокойная подача: тост, тихий звук, мягкое свечение краёв карты и плавная подсветка карточки события.
                     var color = EventColor(cityEvent.Kind);
-                    Toast(string.Format(LocalizationService.Get("game.notice.city_event"), cityEvent.Title), color);
+                    Toast(string.Format(LocalizationService.Get("game.notice.city_event"), CityEventTitle(cityEvent.Kind)), color);
                     _app.Sound.Play(cityEvent.Kind == CityEventKind.NewDistrict ? Sfx.Fanfare : Sfx.Swish, 0.3f);
                     _map.Flash(color);
                     _map.Repaint();
@@ -4390,11 +4390,11 @@ namespace CityHighways.Presentation
             }
             var color = EventColor(cityEvent.Kind);
             _eventChip.style.backgroundColor = color;
-            _eventTitle.text = cityEvent.Title;
+            _eventTitle.text = CityEventTitle(cityEvent.Kind);
             _eventTitle.style.color = color;
-            _eventText.text = cityEvent.Describe(_game);
+            _eventText.text = CityEventDescription(cityEvent);
             Ui.Border(_eventCard, 2f, new Color(color.r, color.g, color.b, 0.6f));
-            SetEventPill(color, cityEvent.Title);
+            SetEventPill(color, CityEventTitle(cityEvent.Kind));
         }
 
         void SetEventPill(Color color, string title)
@@ -4943,6 +4943,66 @@ namespace CityHighways.Presentation
 
                 row.Add(Ui.Text("+" + goal.Points, 14f, owner.HasValue ? Theme.TextDim : Theme.Gold, true));
                 _goalsBox.Add(row);
+            }
+        }
+
+        static string CityEventTitle(CityEventKind kind)
+        {
+            if (!EnglishUi)
+            {
+                switch (kind)
+                {
+                    case CityEventKind.RushHour: return "Час пик";
+                    case CityEventKind.Repair: return "Ремонт";
+                    case CityEventKind.Subsidy: return "Субсидия мэрии";
+                    case CityEventKind.Parade: return "Парад";
+                    case CityEventKind.Snow: return "Снегопад";
+                    case CityEventKind.Investor: return "Инвестор";
+                    default: return "Новый район";
+                }
+            }
+            switch (kind)
+            {
+                case CityEventKind.RushHour: return "Rush Hour";
+                case CityEventKind.Repair: return "Roadworks";
+                case CityEventKind.Subsidy: return "City Hall Subsidy";
+                case CityEventKind.Parade: return "Parade";
+                case CityEventKind.Snow: return "Snowfall";
+                case CityEventKind.Investor: return "Investor";
+                default: return "New District";
+            }
+        }
+
+        string CityEventDescription(CityEvent cityEvent)
+        {
+            if (!EnglishUi) return cityEvent.Describe(_game);
+            var config = _game.Config;
+            switch (cityEvent.Kind)
+            {
+                case CityEventKind.RushHour:
+                    return $"Roads built this round become busy highways: tolls cost {config.TollPerRoad * config.RushHourTollMultiplier} pts instead of {config.TollPerRoad}.";
+                case CityEventKind.Repair:
+                {
+                    var roads = new List<string>();
+                    foreach (var id in cityEvent.ClosedRoads)
+                    {
+                        var road = _game.Map.GetRoad(id);
+                        if (road != null)
+                            roads.Add(DisplayPlace(_game.Map.LocationName(road.A)) + " — " + DisplayPlace(_game.Map.LocationName(road.B)));
+                    }
+                    return roads.Count == 0 ? "No available roads were found for repairs."
+                        : "Construction blocked for this round: " + string.Join("; ", roads) + ".";
+                }
+                case CityEventKind.Subsidy:
+                    return $"Bridges cost {config.BridgeSubsidy} fewer steel cards this round (minimum one).";
+                case CityEventKind.Parade:
+                    return $"District {DisplayPlace(_game.Map.DistrictName(config.ParadeDistrict))} is closed: roads touching it cannot be built this round.";
+                case CityEventKind.Snow:
+                    return $"Gravel roads cost {config.SnowExtraCost} extra cards this round.";
+                case CityEventKind.Investor:
+                    return $"Every road built this round earns an extra +{config.InvestorBonus} pts.";
+                default:
+                    return $"New district {DisplayPlace(_game.Map.DistrictName(cityEvent.DistrictId))} opened on the outskirts, bringing locations, roads and contracts.";
             }
         }
 
