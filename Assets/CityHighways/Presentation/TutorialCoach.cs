@@ -30,6 +30,54 @@ namespace CityHighways.Presentation
             public bool HintRoad;
         }
 
+        static bool En => LocalizationService.Language == "en";
+        static readonly string[] EnglishStepTitles =
+        {
+            "Welcome!", "Starting Contracts", "Draw Cards", "Build a Road",
+            "Road Points", "Rival Roads", "Complete a Contract", "Contract Completed!",
+            "New Contracts", "Final Round Approaching", "Final Round"
+        };
+
+        string EnglishResource(Road road) =>
+            road.Resource.HasValue ? Palette.CardTitle(road.Resource.Value) : "one resource type";
+
+        string EnglishHintCost()
+        {
+            var road = HintedRoad();
+            if (road == null) return "";
+            int cost = _game.BuildCost(road, MePlayer);
+            int have = road.Resource.HasValue ? MePlayer.CardCount(road.Resource.Value) : MaxBuilding();
+            have += MePlayer.CardCount(Resource.Machinery);
+            return $"You need {cost} cards of {EnglishResource(road)}; you have {Mathf.Min(have, cost)} suitable cards.";
+        }
+
+        string EnglishNeedText()
+        {
+            var road = HintedRoad();
+            return road == null
+                ? "Draw cards matching the resources used by roads leading to your contracts."
+                : $"The highlighted blue road needs {_game.BuildCost(road, MePlayer)} cards of {EnglishResource(road)}.";
+        }
+
+        string EnglishStepText(int index)
+        {
+            switch (index)
+            {
+                case 0: return "This tutorial takes place on a small map in central Moscow. You run a road company against the Mentor. Build roads and complete City Hall contracts to score the most points. Follow the steps to learn.";
+                case 1: return "The Contracts panel at the bottom lists districts to connect with your roads. Completed contracts earn points, and unfinished ones lose points at game end. Hover to highlight districts. Keep at least two contracts and choose Take Selected.";
+                case 2: return "On your turn, draw two cards from the Actions panel, either face-up or from the deck. " + EnglishNeedText() + " Machinery is a wild card, but taking face-up machinery uses both draws.";
+                case 3: return "The blue highlight shows a road leading toward your contract. Click it when you have enough cards: " + EnglishHintCost() + " If you need more cards, draw again. Available roads pulse.";
+                case 4: return $"Every completed road scores immediately: length 1 earns {_game.Config.PointsForLength(1)}, length 2 earns {_game.Config.PointsForLength(2)}, and length 3 earns {_game.Config.PointsForLength(3)}. Longer roads pay more. Road pieces remaining: {MePlayer.RoadPieces}.";
+                case 5: return $"The Mentor is building too. A rival road is not a dead end: a contract route must contain at least one of your roads and no more than {_game.Config.MaxForeignRoadsPerContract} rival roads. Pay each rival road owner {_game.Config.TollPerRoad} points when completing the contract. Rivals also pay to use your roads.";
+                case 6: return "Finish the connection between your contract's districts. The highlighted road is the next segment to build. " + EnglishHintCost();
+                case 7: return "Your contract is complete! Its points are awarded at game end, and you've already earned influence. In Actions, spend influence to refresh the card market or draw extra contracts. Remaining influence goes to your profile for cosmetics.";
+                case 8: return "All your contracts are complete. While you still have road pieces, draw more contracts using the Actions panel (this consumes a turn). Keep at least one, or build long roads for points.";
+                case 9: return $"When anyone has {_game.Config.FinalRoundPieces} road pieces or fewer, the final round begins and every player gets one more turn. Check unfinished contracts: they cost points at game end.";
+                case 10: return (_game.FinalOrderRoad != null ? $"City Hall has issued a final order: the gold-outlined road earns +{_game.Config.FinalOrderBonus} points if built this round. " : "") + "This is your last turn. Finish a contract if possible, or build the longest available road.";
+                default: return "";
+            }
+        }
+
         public readonly VisualElement Panel;
         readonly Label _counter;
         readonly Label _title;
@@ -74,10 +122,10 @@ namespace CityHighways.Presentation
             _text.style.marginBottom = 10f;
             Panel.Add(_text);
             var buttons = Ui.Row();
-            _ok = Ui.Button("Понятно", Next, ButtonKind.Primary, 14f);
+            _ok = Ui.Button(En ? "Got it" : "Понятно", Next, ButtonKind.Primary, 14f);
             _ok.style.marginRight = 8f;
             buttons.Add(_ok);
-            buttons.Add(Ui.Button("Скрыть подсказки", Hide, ButtonKind.Ghost, 13f));
+            buttons.Add(Ui.Button(En ? "Hide Tips" : "Скрыть подсказки", Hide, ButtonKind.Ghost, 13f));
             Panel.Add(buttons);
         }
 
@@ -237,11 +285,11 @@ namespace CityHighways.Presentation
             _map.HintRoad = visible && step.HintRoad && _game.CurrentPlayerIndex == Me ? HintedRoad()?.Id : null;
             if (!visible) return;
 
-            _counter.text = $"Обучение · шаг {_finished.Count + 1} из {_steps.Count}";
-            _title.text = step.Title;
-            _text.text = step.Text();
+            _counter.text = En ? $"Tutorial · step {_finished.Count + 1} of {_steps.Count}" : $"Обучение · шаг {_finished.Count + 1} из {_steps.Count}";
+            _title.text = En ? EnglishStepTitles[_index] : step.Title;
+            _text.text = En ? EnglishStepText(_index) : step.Text();
             Ui.Show(_ok, step.Done == null);
-            _ok.text = _index == 0 ? "Начнём" : "Понятно";
+            _ok.text = _index == 0 ? (En ? "Let’s Start" : "Начнём") : (En ? "Got it" : "Понятно");
 
             // В левом верхнем углу карты.
             var bounds = _map.worldBound;
