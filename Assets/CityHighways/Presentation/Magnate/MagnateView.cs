@@ -843,6 +843,43 @@ namespace CityHighways.Presentation
             return title;
         }
 
+        string ArchivedEventMessage(string message)
+        {
+            // Historical entries outlive active events. Translate from the saved
+            // message itself, never from _game.Events (which only contains active events).
+            var eventLine = System.Text.RegularExpressions.Regex.Match(message, @"^Событие: ([^.]+)\. (.*)$");
+            if (!eventLine.Success) return null;
+            string description = eventLine.Groups[2].Value;
+            switch (eventLine.Groups[1].Value)
+            {
+                case "ДТП":
+                    var accident = System.Text.RegularExpressions.Regex.Match(description,
+                        @"^Фура сломалась на дороге (.*): дорога закрыта на этот раунд — фуры объезжают\.$");
+                    if (accident.Success)
+                        return $"Event: Road Accident. A truck broke down on {Place(accident.Groups[1].Value)}; the road is closed this round and trucks take detours.";
+                    break;
+                case "Ремонт дороги":
+                    var repairs = System.Text.RegularExpressions.Regex.Match(description,
+                        @"^Дорога (.*) закрыта на ремонт на 2 раунда\.$");
+                    if (repairs.Success)
+                        return $"Event: Roadworks. Road {Place(repairs.Groups[1].Value)} is closed for two rounds.";
+                    break;
+                case "Нехватка топлива":
+                    return "Event: Fuel Shortage. All trucks move two fewer segments this round.";
+                case "Таможенная проверка":
+                    var customs = System.Text.RegularExpressions.Regex.Match(description,
+                        @"^Опасные и ценные грузы в пути платят (\d+) влияния — иначе стоят раунд\.$");
+                    if (customs.Success)
+                        return $"Event: Customs Inspection. Hazardous and valuable cargo must pay {customs.Groups[1].Value} influence or wait one round.";
+                    break;
+                case "Штормовое предупреждение":
+                    return "Event: Storm Warning. Bridges have reduced capacity; heavy and oversized cargo cannot cross them.";
+                case "Фестиваль":
+                    return "Event: Festival. Streets in the Centre are closed this round.";
+            }
+            return null; // Preserve unknown or future event formats.
+        }
+
         string JournalText(string message)
         {
             if (!En || string.IsNullOrEmpty(message)) return message;
@@ -871,8 +908,8 @@ namespace CityHighways.Presentation
                 return $"Opening construction round: each company builds {_game.Config.OpeningRoads} road(s). Trucks remain parked; routes start in round two.";
             if (message.StartsWith("Событие: "))
             {
-                foreach (var e in _game.Events)
-                    if (message.Contains(e.Title)) return "Event: " + EventTitle(e) + ". " + EventDescription(e);
+                string archived = ArchivedEventMessage(message);
+                if (archived != null) return archived;
             }
             var finished = System.Text.RegularExpressions.Regex.Match(message, @"^Партия окончена\. Победил (.*): (\d+) очков\.$");
             if (finished.Success) return $"Game over. Winner: {finished.Groups[1].Value} ({finished.Groups[2].Value} pts).";
