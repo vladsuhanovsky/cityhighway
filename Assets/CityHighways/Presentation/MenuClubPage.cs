@@ -16,6 +16,7 @@ namespace CityHighways.Presentation
     /// </summary>
     public sealed class MenuClubPage
     {
+        static bool En => LocalizationService.Language == "en";
         enum Tab { Club, Friends }
 
         readonly CityHighwaysApp _app;
@@ -180,9 +181,9 @@ namespace CityHighways.Presentation
             var titles = Ui.Column();
             titles.style.flexGrow = 1f;
             titles.Add(Ui.Text($"{club.name}  [{club.tag}]", 26f, Theme.Gold, true));
-            titles.Add(Ui.Text($"Участников: {state.members?.Length ?? 0} из 30 · целей недели выполнено: {state.weeksDone}" +
+            titles.Add(Ui.Text((En ? $"Members: {state.members?.Length ?? 0} of 30 · weekly goals completed: {state.weeksDone}" : $"Участников: {state.members?.Length ?? 0} из 30 · целей недели выполнено: {state.weeksDone}") +
                                (club.open ? LocalizationService.Get("menu.clubs.012") : LocalizationService.Get("menu.clubs.013")), 13f, Theme.TextDim));
-            var code = Ui.Text($"Код приглашения: {club.code}", 15f, Theme.Text, true);
+            var code = Ui.Text((En ? $"Invite code: {club.code}" : $"Код приглашения: {club.code}"), 15f, Theme.Text, true);
             code.style.marginTop = 6f;
             titles.Add(code);
             row.Add(titles);
@@ -227,7 +228,7 @@ namespace CityHighways.Presentation
                 goal.Add(hint);
                 goal.Add(ProgressBar(week.progress, week.target, week.completed ? Theme.Success : Theme.Gold));
                 var numbers = Ui.Text(week.completed
-                    ? $"Выполнено: {week.progress} из {week.target} {SocialCloud.GoalUnit(week.kind, week.target)} — логотип получен!"
+                    ? (En ? $"Completed: {week.progress} of {week.target} {SocialCloud.GoalUnit(week.kind, week.target)} — logo unlocked!" : $"Выполнено: {week.progress} из {week.target} {SocialCloud.GoalUnit(week.kind, week.target)} — логотип получен!")
                     : $"{week.progress} из {week.target} {SocialCloud.GoalUnit(week.kind, week.target)}", 14f, week.completed ? Theme.Success : Theme.Text, true);
                 numbers.style.marginTop = 4f;
                 goal.Add(numbers);
@@ -257,7 +258,7 @@ namespace CityHighways.Presentation
                     Ui.Radius(fill, 5f);
                     bar.Add(fill);
                     line.Add(bar);
-                    var amount = Ui.Number($"{member.amount} · партий {member.games}", 12f, Theme.TextDim);
+                    var amount = Ui.Number((En ? $"{member.amount} · games {member.games}" : $"{member.amount} · партий {member.games}"), 12f, Theme.TextDim);
                     amount.style.width = 140f;
                     amount.style.unityTextAlign = TextAnchor.MiddleRight;
                     line.Add(amount);
@@ -381,7 +382,7 @@ namespace CityHighways.Presentation
                 var name = Ui.Text($"{club.name}  [{club.tag}]", 15f, Theme.Text, true);
                 name.style.flexGrow = 1f;
                 row.Add(name);
-                row.Add(Ui.Text($"{club.members} уч.", 13f, Theme.TextDim));
+                row.Add(Ui.Text((En ? $"{club.members} members" : $"{club.members} уч."), 13f, Theme.TextDim));
                 string id = club.id;
                 var enter = Ui.Button(LocalizationService.Get("menu.clubs.035"), () =>
                 {
@@ -543,7 +544,7 @@ namespace CityHighways.Presentation
                 ghost.LoadReplay(_ => _app.StartRaid(ghost), Fail);
             }, ButtonKind.Primary, 13f);
             raid.style.marginLeft = 8f;
-            raid.tooltip = "Рейд: та же карта, та же колода и те же соперники, что в партии рекордсмена. Вы садитесь на его место.";
+            raid.tooltip = En ? "Raid: play the same map, deck and opponents as the record holder, taking their seat." : "Рейд: та же карта, та же колода и те же соперники, что в партии рекордсмена. Вы садитесь на его место.";
             row.Add(raid);
             return row;
         }
@@ -586,8 +587,8 @@ namespace CityHighways.Presentation
             if (!DateTime.TryParse(iso, null, System.Globalization.DateTimeStyles.RoundtripKind, out var end)) return "";
             var left = end.ToUniversalTime() - DateTime.UtcNow;
             if (left.TotalHours < 1) return LocalizationService.Get("menu.clubs.064");
-            if (left.TotalDays < 1) return $"до конца недели {(int)left.TotalHours} ч";
-            return $"до конца недели {(int)left.TotalDays} дн. {left.Hours} ч";
+            if (left.TotalDays < 1) return En ? $"{(int)left.TotalHours}h left this week" : $"до конца недели {(int)left.TotalHours} ч";
+            return En ? $"{(int)left.TotalDays}d {left.Hours}h left this week" : $"до конца недели {(int)left.TotalDays} дн. {left.Hours} ч";
         }
 
         static string ShortDate(string date) =>
