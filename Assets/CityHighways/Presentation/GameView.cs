@@ -2795,7 +2795,7 @@ namespace CityHighways.Presentation
             header.style.alignItems = Align.FlexEnd;
             header.style.marginBottom = 4f;
             header.Add(Ui.Text(setup ? LocalizationService.Get("game.ui.076") : LocalizationService.Get("game.ui.077"), 18f, Theme.Gold, true));
-            var hint = Ui.Text($"  ·  оставьте хотя бы {required}. Клик по карточке — взять или отказаться. Наведите — районы подсветятся. Невыполненный контракт в конце отнимает очки.", 13f, Theme.TextDim);
+            var hint = Ui.Text(EnglishUi ? $"  ·  Keep at least {required}. Click a card to select or remove it. Hover to highlight districts. Unfinished contracts cost points at game end." : $"  ·  оставьте хотя бы {required}. Клик по карточке — взять или отказаться. Наведите — районы подсветятся. Невыполненный контракт в конце отнимает очки.", 13f, Theme.TextDim);
             hint.style.flexShrink = 1f;
             header.Add(hint);
             _contractsBox.Add(header);
@@ -2810,12 +2810,12 @@ namespace CityHighways.Presentation
             _choiceCarousel.SetCards(cards);
             _contractsBox.Add(_choiceCarousel);
 
-            var confirm = Ui.Button($"Взять выбранные ({_selectedContracts.Count})", () =>
+            var confirm = Ui.Button(EnglishUi ? $"Take Selected ({_selectedContracts.Count})" : $"Взять выбранные ({_selectedContracts.Count})", () =>
             {
                 var ids = _selectedContracts.ToList();
                 if (ids.Count < required)
                 {
-                    Flash($"Нужно оставить хотя бы {required}.");
+                    Flash(EnglishUi ? $"You must keep at least {required} contracts." : $"Нужно оставить хотя бы {required}.");
                     return;
                 }
                 Act(() => setup ? _game.KeepInitialContracts(player.Index, ids) : _game.KeepContracts(ids));
@@ -2885,7 +2885,7 @@ namespace CityHighways.Presentation
             tagSpace.style.flexGrow = 1f;
             tags.Add(tagSpace);
             if (_game.Players[playerIndex].IsMayorContract(contract.Id))
-                tags.Add(Ui.Text($"МЭРИЯ +{_game.Config.AuctionBonus}", 11f, Theme.Gold, true));
+                tags.Add(Ui.Text(EnglishUi ? $"CITY HALL +{_game.Config.AuctionBonus}" : $"МЭРИЯ +{_game.Config.AuctionBonus}", 11f, Theme.Gold, true));
             if (selection && marked) tags.Add(Ui.Text(LocalizationService.Get("game.ui.084"), 11f, Theme.Success, true));
             card.Add(tags);
 
@@ -2922,7 +2922,7 @@ namespace CityHighways.Presentation
             if (selection) status = marked ? LocalizationService.Get("game.ui.087") : LocalizationService.Get("game.ui.088");
             else if (done && foreign > 0)
             {
-                status = $"через {foreign} чужих · проезд −{check.Toll}" + (check.JamFee > 0 ? $" · пробка −{check.JamFee}" : "");
+                status = EnglishUi ? $"via {foreign} rival roads · toll −{check.Toll}" + (check.JamFee > 0 ? $" · jam −{check.JamFee}" : "") : $"через {foreign} чужих · проезд −{check.Toll}" + (check.JamFee > 0 ? $" · пробка −{check.JamFee}" : "");
                 statusColor = Theme.Gold;
             }
             else if (done)
@@ -2931,9 +2931,9 @@ namespace CityHighways.Presentation
                 statusColor = Theme.Success;
             }
             else if (contract.Kind == ContractKind.Hub && check.LegsCompleted > 0)
-                status = $"готово {check.LegsCompleted} из {check.LegsTotal}";
+                status = EnglishUi ? $"completed {check.LegsCompleted} of {check.LegsTotal}" : $"готово {check.LegsCompleted} из {check.LegsTotal}";
             else status = LocalizationService.Get("game.ui.090");
-            var statusLabel = Ui.Text(pinned ? status + "\nмаршрут закреплён" : status, 12f, statusColor);
+            var statusLabel = Ui.Text(pinned ? status + (EnglishUi ? "\nroute pinned" : "\nмаршрут закреплён") : status, 12f, statusColor);
             statusLabel.style.flexGrow = 1f;
             statusLabel.style.flexShrink = 1f;
             bottom.Add(statusLabel);
