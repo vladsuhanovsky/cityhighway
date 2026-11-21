@@ -368,4 +368,32 @@ namespace CityHighways.Presentation
             _stage.parent.Add(back);
         }
     }
+
+    /// <summary>Display-only transliteration; generated city/location IDs and saved data stay unchanged.</summary>
+    internal static class MagnateLocationText
+    {
+        static readonly string[] Latin =
+        {
+            "a", "b", "v", "g", "d", "e", "yo", "zh", "z", "i", "y",
+            "k", "l", "m", "n", "o", "p", "r", "s", "t", "u", "f",
+            "kh", "ts", "ch", "sh", "shch", "", "y", "", "e", "yu", "ya"
+        };
+
+        public static string Name(string value)
+        {
+            if (LocalizationService.Language != "en" || string.IsNullOrEmpty(value)) return value;
+            const string alphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+            var result = new System.Text.StringBuilder();
+            foreach (char letter in value)
+            {
+                int index = alphabet.IndexOf(char.ToLowerInvariant(letter));
+                if (index < 0) { result.Append(letter); continue; }
+                string latin = Latin[index];
+                if (char.IsUpper(letter) && latin.Length > 0)
+                    result.Append(char.ToUpperInvariant(latin[0])).Append(latin.Substring(1));
+                else result.Append(latin);
+            }
+            return result.ToString();
+        }
+    }
 }
