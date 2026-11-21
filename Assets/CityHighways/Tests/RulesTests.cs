@@ -88,6 +88,31 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ModeTabs_TranslateTitlesAndDescriptionsForAllGameModes()
+        {
+            var original = LocalizationService.Language;
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                foreach (GameMode mode in System.Enum.GetValues(typeof(GameMode)))
+                {
+                    Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(
+                        ModeTabs.Title(mode) + ModeTabs.Tagline(mode), "[а-яё]",
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase));
+                }
+                Assert.AreEqual("Logistics Magnate", ModeTabs.Title(GameMode.Magnate));
+                Assert.AreEqual("Competitive", ModeTabs.Title(GameMode.Classic));
+                Assert.AreEqual("Cooperative", ModeTabs.Title(GameMode.Coop));
+                LocalizationService.SetLanguage("ru");
+                Assert.AreEqual("Логистический магнат", ModeTabs.Title(GameMode.Magnate));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
