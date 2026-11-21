@@ -50,6 +50,43 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void AuctionTradeAndBribeJournal_RetranslateWithoutChangingNamesOrBids()
+        {
+            var original = LocalizationService.Language;
+            const string auction = "Аукцион выигрывает Vera за 3 влияния (ставки: Vera 3, Даша 2).";
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Vera places a secret bid.",
+                    LocalizationService.TranslateSpecialJournal("Vera делает тайную ставку."));
+                Assert.AreEqual("Auction winner: Vera for 3 influence (bids: Vera 3, Даша 2).",
+                    LocalizationService.TranslateSpecialJournal(auction));
+                Assert.AreEqual("No auction bids were made; the contract returns to the bottom of the deck (bids: Vera 0).",
+                    LocalizationService.TranslateSpecialJournal("На аукционе никто не поставил — контракт уходит под колоду (ставки: Vera 0)."));
+                Assert.AreEqual("There were 2 bribes last round. Their authors remain unknown and can be exposed before this round ends.",
+                    LocalizationService.TranslateSpecialJournal("В прошлом круге в мэрии шептались: взяток — 2. Кто — неизвестно; раскрыть можно до конца этого круга."));
+                Assert.AreEqual("Аня accepts the trade.",
+                    LocalizationService.TranslateSpecialJournal("Аня соглашается на сделку."));
+                Assert.AreEqual("Аня rejects the trade.",
+                    LocalizationService.TranslateSpecialJournal("Аня отказывается от сделки."));
+                Assert.AreEqual("Аня now travels free on roads owned by Vera.",
+                    LocalizationService.TranslateSpecialJournal("Аня теперь ездит по дорогам Vera бесплатно."));
+                Assert.AreEqual("Vera lacks the required resources; the trade is canceled.",
+                    LocalizationService.TranslateSpecialJournal("У Vera не нашлось нужного — сделки нет."));
+                Assert.IsNull(LocalizationService.TranslateSpecialJournal("Unknown journal entry."));
+                LocalizationService.SetLanguage("ru");
+                Assert.IsNull(LocalizationService.TranslateSpecialJournal(auction));
+                LocalizationService.SetLanguage("en");
+                Assert.AreEqual("Auction winner: Vera for 3 influence (bids: Vera 3, Даша 2).",
+                    LocalizationService.TranslateSpecialJournal(auction));
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void ExistingGameErrors_RetranslateWhenLanguageChanges()
         {
             const string storedError = "Нужно 3 карт(ы) «сталь» (техника подходит вместо любой карты).";

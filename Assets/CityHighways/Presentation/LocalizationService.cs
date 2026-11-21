@@ -161,6 +161,54 @@ namespace CityHighways.Presentation
             return message;
         }
 
+        /// <summary>
+        /// Localize self-contained game journal entries. Player-supplied names and bid details
+        /// remain unchanged. Returns null for formats the presenter does not yet know.
+        /// </summary>
+        public static string TranslateSpecialJournal(string message)
+        {
+            if (string.IsNullOrEmpty(message) || Language != "en") return null;
+
+            var match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^(.+) делает тайную ставку\.$");
+            if (match.Success) return match.Groups[1].Value + " places a secret bid.";
+
+            match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^Аукцион выигрывает (.+) за (\d+) влияния \(ставки: (.*)\)\.$");
+            if (match.Success)
+                return $"Auction winner: {match.Groups[1].Value} for {match.Groups[2].Value} influence (bids: {match.Groups[3].Value}).";
+
+            match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^На аукционе никто не поставил — контракт уходит под колоду \(ставки: (.*)\)\.$");
+            if (match.Success)
+                return $"No auction bids were made; the contract returns to the bottom of the deck (bids: {match.Groups[1].Value}).";
+
+            match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^В прошлом круге в мэрии шептались: взяток — (\d+)\. Кто — неизвестно; раскрыть можно до конца этого круга\.$");
+            if (match.Success)
+                return $"There were {match.Groups[1].Value} bribes last round. Their authors remain unknown and can be exposed before this round ends.";
+
+            match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^У (.+) не нашлось нужного — сделки нет\.$");
+            if (match.Success)
+                return $"{match.Groups[1].Value} lacks the required resources; the trade is canceled.";
+
+            match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^(.+) соглашается на сделку\.$");
+            if (match.Success) return $"{match.Groups[1].Value} accepts the trade.";
+
+            match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^(.+) отказывается от сделки\.$");
+            if (match.Success) return $"{match.Groups[1].Value} rejects the trade.";
+
+            match = System.Text.RegularExpressions.Regex.Match(message,
+                @"^(.+) теперь ездит по дорогам (.+) бесплатно\.$");
+            if (match.Success)
+                return $"{match.Groups[1].Value} now travels free on roads owned by {match.Groups[2].Value}.";
+
+            return null;
+        }
+
         /// <summary>Look up translated UI data by stable ID, preserving its Russian source as fallback.</summary>
         public static string GetOrFallback(string key, string fallback)
         {

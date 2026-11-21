@@ -3297,6 +3297,8 @@ namespace CityHighways.Presentation
             if (crisis.Success) return $"The city grows: crisis +1 → {crisis.Groups[1].Value} of {crisis.Groups[2].Value}.";
             var eventCrisis = System.Text.RegularExpressions.Regex.Match(message, @"^Событие давит на город: кризис \+(\d+) → (\d+) из (\d+)\.$");
             if (eventCrisis.Success) return $"A city event increases the crisis by {eventCrisis.Groups[1].Value} → {eventCrisis.Groups[2].Value} of {eventCrisis.Groups[3].Value}.";
+            string special = LocalizationService.TranslateSpecialJournal(message);
+            if (special != null) return special;
             string coop = CoopJournalText(message);
             if (coop != null) return coop;
             string cityEvent = ArchivedCityEventText(message);
