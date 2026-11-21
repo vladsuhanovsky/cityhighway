@@ -1782,7 +1782,7 @@ namespace CityHighways.Presentation
             {
                 _lastCoopNewsShown = _game.CoopNewsNumber;
                 bool good = _game.LastCoopNewsGood;
-                Toast(_game.LastCoopNews, good ? Theme.Success : Theme.Danger);
+                Toast(EnglishUi ? CoopJournalText(_game.LastCoopNews) ?? _game.LastCoopNews : _game.LastCoopNews, good ? Theme.Success : Theme.Danger);
                 _app.Sound.Play(good ? Sfx.Fanfare : Sfx.Swish, good ? 0.5f : 0.4f);
                 _map.Flash(good ? Theme.Success : Theme.Danger);
             }
@@ -1865,7 +1865,7 @@ namespace CityHighways.Presentation
                 string who = _game.Players[pair.Value].Name;
                 _app.Tweener.After(claimDuration + 0.15f, () =>
                 {
-                    Toast(string.Format(LocalizationService.Get("game.notice.goal_claimed"), goal.Name, who, goal.Points), Theme.Gold);
+                    Toast(string.Format(LocalizationService.Get("game.notice.goal_claimed"), MayorGoalName(goal), who, goal.Points), Theme.Gold);
                     // Салют над серединой карты — цветом компании, взявшей цель.
                     _map.Fireworks(_map.contentRect.center + new Vector2(-80f, -40f), Palette.PlayerColor(pair.Value), 48);
                     _map.Fireworks(_map.contentRect.center + new Vector2(90f, 10f), Theme.Gold, 40);
@@ -3109,7 +3109,7 @@ namespace CityHighways.Presentation
             else if (hadShown && fresh > 0) Ui.Show(_logNewButton, true);
         }
 
-        string CityOrderLogRoute(string route)
+        static string CityOrderLogRoute(string route)
         {
             if (string.IsNullOrEmpty(route)) return route;
             // The route uses display names, not IDs; preserve punctuation and order.
@@ -3123,7 +3123,7 @@ namespace CityHighways.Presentation
             return string.Concat(segments);
         }
 
-        string CoopJournalText(string message)
+        static string CoopJournalText(string message)
         {
             var order = System.Text.RegularExpressions.Regex.Match(message,
                 @"^Новый заказ города: (.*?) — (\d+) очк\., срок (\d+) кругов\.$");
