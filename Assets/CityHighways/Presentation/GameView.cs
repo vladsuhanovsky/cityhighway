@@ -3185,6 +3185,71 @@ namespace CityHighways.Presentation
             return name;
         }
 
+        static string ArchivedCityEventText(string message)
+        {
+            var line = System.Text.RegularExpressions.Regex.Match(message, @"^Событие: (.*?)\. (.*)$");
+            if (!line.Success) return null;
+            var title = line.Groups[1].Value;
+            var body = line.Groups[2].Value;
+            if (title == "Час пик")
+            {
+                var toll = System.Text.RegularExpressions.Regex.Match(body,
+                    @"^Дороги, построенные в этот круг, станут загруженными магистралями: проезд по ним — (\d+) очк\. вместо (\d+)\.$");
+                if (toll.Success)
+                    return $"Event: Rush Hour. Roads built this round become busy highways; tolls are {toll.Groups[1].Value} pts instead of {toll.Groups[2].Value}.";
+            }
+            if (title == "Ремонт")
+            {
+                if (body == "Свободных участков для ремонта не нашлось.")
+                    return "Event: Roadworks. No free roads were available for repairs.";
+                var closed = System.Text.RegularExpressions.Regex.Match(body,
+                    @"^До конца круга нельзя строить: (.*)\.$");
+                if (closed.Success)
+                {
+                    var roads = closed.Groups[1].Value.Split(new[] { "; " }, StringSplitOptions.None);
+                    for (int i = 0; i < roads.Length; i++)
+                        roads[i] = CityOrderLogRoute(roads[i]);
+                    return "Event: Roadworks. Construction blocked this round: " + string.Join("; ", roads) + ".";
+                }
+            }
+            if (title == "Субсидия мэрии")
+            {
+                var subsidy = System.Text.RegularExpressions.Regex.Match(body,
+                    @"^Мосты в этот круг дешевле на (\d+) карт\(у\) стали \(но не меньше одной\)\.$");
+                if (subsidy.Success)
+                    return $"Event: City Hall Subsidy. Bridges cost {subsidy.Groups[1].Value} fewer steel cards this round (minimum one).";
+            }
+            if (title == "Парад")
+            {
+                var parade = System.Text.RegularExpressions.Regex.Match(body,
+                    @"^Район «(.*)» перекрыт: до конца круга нельзя строить дороги, которые его касаются\.$");
+                if (parade.Success)
+                    return $"Event: Parade. District {DisplayPlace(parade.Groups[1].Value)} is closed to construction this round.";
+            }
+            if (title == "Снегопад")
+            {
+                var snow = System.Text.RegularExpressions.Regex.Match(body,
+                    @"^Щебёночные дороги в этот круг на (\d+) карт\(у\) дороже\.$");
+                if (snow.Success)
+                    return $"Event: Snowfall. Gravel roads cost {snow.Groups[1].Value} extra cards this round.";
+            }
+            if (title == "Инвестор")
+            {
+                var investor = System.Text.RegularExpressions.Regex.Match(body,
+                    @"^Каждая дорога, построенная в этот круг, приносит ещё \+(\d+) очка\.$");
+                if (investor.Success)
+                    return $"Event: Investor. Each road built this round earns +{investor.Groups[1].Value} pts.";
+            }
+            if (title == "Новый район")
+            {
+                var district = System.Text.RegularExpressions.Regex.Match(body,
+                    @"^На окраине открылся район «(.*)»: новые места, дороги и контракты\.$");
+                if (district.Success)
+                    return $"Event: New District. {DisplayPlace(district.Groups[1].Value)} opened on the outskirts, bringing locations, roads and contracts.";
+            }
+            return null; // Unknown formats remain unchanged rather than inventing a translation.
+        }
+
         string JournalDisplayText(string message)
         {
             if (!EnglishUi || string.IsNullOrEmpty(message)) return message;
@@ -3205,6 +3270,8 @@ namespace CityHighways.Presentation
             if (eventCrisis.Success) return $"A city event increases the crisis by {eventCrisis.Groups[1].Value} → {eventCrisis.Groups[2].Value} of {eventCrisis.Groups[3].Value}.";
             string coop = CoopJournalText(message);
             if (coop != null) return coop;
+            string cityEvent = ArchivedCityEventText(message);
+            if (cityEvent != null) return cityEvent;
             if (_game == null) return message;
             foreach (var player in _game.Players)
             {
