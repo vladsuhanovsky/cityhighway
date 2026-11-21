@@ -405,7 +405,7 @@ namespace CityHighways.Presentation
                 try { element = _sections[i].Build(); }
                 catch (Exception e)
                 {
-                    Debug.LogWarning("Правила: раздел «" + _sections[i].Title + "» не собрался для поиска: " + e.Message);
+                    Debug.LogWarning((En ? "Rules section could not be indexed: " : "Правила: раздел не собрался для поиска: ") + _sections[i].Title + ": " + e.Message);
                     continue;
                 }
                 _index.Add((i, _sections[i].Title));
@@ -434,7 +434,7 @@ namespace CityHighways.Presentation
             var list = Ui.Column();
             list.Add(Ui.Text((En ? $"Search: '{query}'" : $"Поиск: «{query}»"), 22f, Theme.Gold, true));
             list.Add(Caption(results.Count == 0 ? LocalizationService.Get("menu.rules.detail.001")
-                : $"Найдено: {results.Count}{(results.Count == 30 ? "+" : "")}. Нажмите на строку — откроется раздел.", 13f, Theme.TextDim, 4f));
+                : (En ? $"Found: {results.Count}{(results.Count == 30 ? "+" : "")}. Click a result to open that section." : $"Найдено: {results.Count}{(results.Count == 30 ? "+" : "")}. Нажмите на строку — откроется раздел."), 13f, Theme.TextDim, 4f));
             foreach (var (section, text) in results)
             {
                 var row = Ui.Column();
