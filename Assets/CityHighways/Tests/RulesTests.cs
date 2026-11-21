@@ -263,6 +263,33 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void TradeSummary_UsesSelectedLanguageWithoutChangingOffer()
+        {
+            var method = typeof(GameView).GetMethod("TradeSide",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            string original = LocalizationService.Language;
+            var args = new object[] { 2, Resource.Concrete, 3, true };
+            try
+            {
+                LocalizationService.SetLanguage("en");
+                string english = (string)method.Invoke(null, args);
+                StringAssert.Contains("influence", english);
+                StringAssert.Contains("road pass", english);
+                Assert.IsFalse(Regex.IsMatch(english, "[а-яё]", RegexOptions.IgnoreCase));
+
+                LocalizationService.SetLanguage("ru");
+                string russian = (string)method.Invoke(null, args);
+                StringAssert.Contains("влияния", russian);
+                StringAssert.Contains("пропуск", russian);
+            }
+            finally
+            {
+                LocalizationService.SetLanguage(original);
+            }
+        }
+
+        [Test]
         public void Setup_DealsCardsContractsAndPieces()
         {
             var game = new Game(TestCities.Small(), new[] { "Аня", "Борис" }, seed: 1);
