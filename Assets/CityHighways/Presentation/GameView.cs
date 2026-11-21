@@ -25,6 +25,8 @@ namespace CityHighways.Presentation
         /// <summary>Сколько последних записей хранит и показывает журнал (старые уходят).</summary>
         const int LogHistory = 200;
         const int ResourceCount = ResourceInfo.Count;
+        static bool EnglishUi => LocalizationService.Language == "en";
+        static string DisplayPlace(string name) => MagnateLocationText.Name(name);
 
         enum OverlayKind
         {
@@ -122,19 +124,19 @@ namespace CityHighways.Presentation
             if (_game.IsFinalRound)
             {
                 int left = _game.FinalTurnsLeft;
-                string text = left <= 1 ? "Последний круг: это последний ход партии!"
-                    : $"Последний круг: до конца {left} {Plural(left, "ход", "хода", "ходов")}";
+                string text = EnglishUi ? (left <= 1 ? "Final round: this is the last turn!" : $"Final round: {left} turns remaining")
+                    : (left <= 1 ? "Последний круг: это последний ход партии!" : $"Последний круг: до конца {left} {Plural(left, "ход", "хода", "ходов")}");
                 var order = _game.FinalOrderRoad;
                 if (order != null)
                     text += _game.FinalOrderWinner >= 0
-                        ? $"\nФинальный заказ выполнил {_game.Players[_game.FinalOrderWinner].Name}"
-                        : $"\nФинальный заказ: {LocationName(order.A)} — {LocationName(order.B)} (+{_game.Config.FinalOrderBonus})";
+                        ? (EnglishUi ? $"\nFinal city order completed by {_game.Players[_game.FinalOrderWinner].Name}" : $"\nФинальный заказ выполнил {_game.Players[_game.FinalOrderWinner].Name}")
+                        : (EnglishUi ? $"\nFinal city order: {DisplayPlace(LocationName(order.A))} — {DisplayPlace(LocationName(order.B))} (+{_game.Config.FinalOrderBonus})" : $"\nФинальный заказ: {LocationName(order.A)} — {LocationName(order.B)} (+{_game.Config.FinalOrderBonus})");
                 return text;
             }
             if (_game.FinalWarned)
             {
                 int toFinal = _game.FewestPieces - _game.Config.FinalRoundPieces;
-                return toFinal > 0 ? $"Скоро финал: до последнего круга {toFinal} {Plural(toFinal, "участок", "участка", "участков")} у лидера стройки" : "";
+                return toFinal > 0 ? (EnglishUi ? $"Final round approaching: the building leader has {toFinal} road pieces above the final-round threshold" : $"Скоро финал: до последнего круга {toFinal} {Plural(toFinal, "участок", "участка", "участков")} у лидера стройки") : "";
             }
             return "";
         }
@@ -1027,7 +1029,7 @@ namespace CityHighways.Presentation
                 ShowError(e.Message);
                 return;
             }
-            Begin(game, 0f, _setup.tutorial ? LocalizationService.Get("game.ui.029") : $"Новая партия на карте «{game.Map.Name}».");
+            Begin(game, 0f, _setup.tutorial ? LocalizationService.Get("game.ui.029") : EnglishUi ? $"New game on {DisplayPlace(game.Map.Name)}." : $"Новая партия на карте «{game.Map.Name}».");
         }
 
         /// <summary>Сетевая партия: Game уже собран сессией (у хоста — новый, у клиента — по данным хоста).</summary>
@@ -1042,7 +1044,7 @@ namespace CityHighways.Presentation
                     _game.Log -= AddLog;
                     _game.StateChanged -= OnStateChanged;
                 }
-                Begin(_net.Game, _playSeconds, "Партия синхронизирована с хостом.");
+                Begin(_net.Game, _playSeconds, EnglishUi ? "Game synchronized with the host." : "Партия синхронизирована с хостом.");
             };
             _net.Closed += text =>
             {
@@ -1050,7 +1052,7 @@ namespace CityHighways.Presentation
                 ShowConnectionLost(text);
             };
             string role = _net.IsHost ? LocalizationService.Get("game.ui.032") : LocalizationService.Get("game.ui.033") + _net.Seats[0].name;
-            Begin(_net.Game, 0f, $"Сетевая партия ({_net.Transport.Kind}, {role}) на карте «{_net.Game.Map.Name}».");
+            Begin(_net.Game, 0f, EnglishUi ? $"Online game ({_net.Transport.Kind}, {role}) on {DisplayPlace(_net.Game.Map.Name)}." : $"Сетевая партия ({_net.Transport.Kind}, {role}) на карте «{_net.Game.Map.Name}».");
         }
 
         void ShowConnectionLost(string text)
@@ -1078,10 +1080,10 @@ namespace CityHighways.Presentation
             {
                 Debug.LogException(e);
                 SaveSystem.Delete();
-                ShowError("Сохранение повреждено или не подходит к карте, поэтому удалено.\n" + e.Message);
+                ShowError((EnglishUi ? "The save was damaged or did not match the map and was deleted.\n" : "Сохранение повреждено или не подходит к карте, поэтому удалено.\n") + e.Message);
                 return;
             }
-            Begin(game, file.playSeconds, $"Партия продолжена (сохранена {file.savedAt}).");
+            Begin(game, file.playSeconds, EnglishUi ? $"Game resumed (saved {file.savedAt})." : $"Партия продолжена (сохранена {file.savedAt}).");
         }
 
         void Begin(Game game, float playSeconds, string firstLogLine)
