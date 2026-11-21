@@ -39,6 +39,15 @@ namespace CityHighways.Presentation
             return Mathf.Max(0.25f, 0.4f + 0.6f * Ui.EaseOutCubic(pop) - 0.3f * fly);
         }
 
+        // Keep a multi-district contract celebration inside one predictable budget.
+        public static int ContractSparksPerDistrict(int districtCount, bool reducedMotion) =>
+            reducedMotion ? 0 : Mathf.Clamp(60 / Mathf.Max(1, districtCount), 8, 24);
+
+        // Only the first two jams in a single update receive particles.
+        // All jams still enter the journal and remain visible on the map.
+        public static int JamSparks(int index, bool reducedMotion) =>
+            reducedMotion || index < 0 || index >= 2 ? 0 : 8;
+
         public static int FireworkCount(int normal, bool reducedMotion) =>
             reducedMotion ? 0 : Mathf.Max(0, normal);
 

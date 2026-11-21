@@ -1898,15 +1898,29 @@ namespace CityHighways.Presentation
                 _app.Tweener.After(claimDuration + 0.3f, () =>
                     Toast(string.Format(LocalizationService.Get("game.notice.toll_earned"), gain), Theme.Gold));
             }
+            int newJamIndex = 0;
             foreach (var roadId in now.Jammed)
             {
                 if (before.Jammed.Contains(roadId)) continue;
                 var jammedRoad = _game.Map.GetRoad(roadId);
                 if (jammedRoad == null) continue;
                 bool mine = now.Owners.TryGetValue(roadId, out var jamOwner) && jamOwner == me && !IsBot(me);
-                string text = string.Format(LocalizationService.Get("game.notice.traffic_jam"), LocationName(jammedRoad.A), LocationName(jammedRoad.B)) +
-                              (mine ? LocalizationService.Get("game.notice.jam_upgrade") : string.Format(LocalizationService.Get("game.notice.jam_fee"), _game.Config.JamFee));
-                _app.Tweener.After(claimDuration + 0.5f, () => Toast(text, Theme.Danger));
+                int jamIndex = newJamIndex++;
+                // Avoid simultaneous error toasts: the journal retains every jam,
+                // while at most two receive prominent animated alerts.
+                if (jamIndex < 2)
+                {
+                    string text = string.Format(LocalizationService.Get("game.notice.traffic_jam"), LocationName(jammedRoad.A), LocationName(jammedRoad.B)) +
+                                  (mine ? LocalizationService.Get("game.notice.jam_upgrade") : string.Format(LocalizationService.Get("game.notice.jam_fee"), _game.Config.JamFee));
+                    string alertRoad = roadId;
+                    _app.Tweener.After(claimDuration + 0.5f + jamIndex * 1.8f, () =>
+                    {
+                        Toast(text, Theme.Danger);
+                        int sparks = GameFxTuning.JamSparks(jamIndex, Ui.ReducedMotion);
+                        if (sparks > 0 && IsLaidOut(_map))
+                            _map.Fireworks(_map.WorldToLocal(_map.RoadWorldCenter(alertRoad)), Theme.Danger, sparks);
+                    });
+                }
             }
 
             // Очки по ходу партии: «+N» / «−N» у строки игрока (дороги, цели, удача, штрафы; проезд — монетками ниже).
@@ -1938,6 +1952,9 @@ namespace CityHighways.Presentation
                 coinWave++;
             }
 
+            // Stagger local contract rewards so concurrent completions do not
+            // immediately replace each other in the toast slot.
+            int shownContracts = 0;
             // Выполненные контракты того, кто сидит за экраном.
             foreach (var key in now.Completed)
             {
@@ -1951,12 +1968,13 @@ namespace CityHighways.Presentation
                 if (contract == null) continue;
                 var paidCheck = _game.CheckContract(playerIndex, contract);
                 int contractToll = paidCheck.Toll + paidCheck.JamFee;
-                _app.Tweener.After(claimDuration, () =>
+                float noticeDelay = claimDuration + shownContracts++ * 2.0f;
+                _app.Tweener.After(noticeDelay, () =>
                 {
                     string toll = contractToll > 0 ? string.Format(LocalizationService.Get("game.notice.contract_toll"), contractToll, paidCheck.JamFee > 0 ? LocalizationService.Get("game.notice.contract_toll_jam") : "") : "";
                     Toast(string.Format(LocalizationService.Get("game.notice.contract_completed"), ContractTitle(contract), contract.Points, toll), Theme.Success);
                     // Салют над районами контракта.
-                    int contractBurst = GameFxTuning.FireworkCount(30, Ui.ReducedMotion);
+                    int contractBurst = GameFxTuning.ContractSparksPerDistrict(contract.Districts.Count(), Ui.ReducedMotion);
                     if (contractBurst > 0)
                         foreach (var district in contract.Districts)
                             _map.Fireworks(_map.DistrictScreenCenter(district), Palette.PlayerColor(playerIndex), contractBurst);

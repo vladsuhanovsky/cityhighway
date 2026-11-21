@@ -96,6 +96,21 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ContractAndJamFx_UseBoundedParticleBudgets()
+        {
+            Assert.AreEqual(24, GameFxTuning.ContractSparksPerDistrict(1, false));
+            Assert.AreEqual(24, GameFxTuning.ContractSparksPerDistrict(2, false));
+            Assert.AreEqual(20, GameFxTuning.ContractSparksPerDistrict(3, false));
+            Assert.AreEqual(8, GameFxTuning.ContractSparksPerDistrict(20, false));
+            Assert.AreEqual(0, GameFxTuning.ContractSparksPerDistrict(2, true));
+            Assert.AreEqual(8, GameFxTuning.JamSparks(0, false));
+            Assert.AreEqual(8, GameFxTuning.JamSparks(1, false));
+            Assert.AreEqual(0, GameFxTuning.JamSparks(2, false));
+            Assert.AreEqual(0, GameFxTuning.JamSparks(0, true));
+            Assert.AreEqual(0, GameFxTuning.JamSparks(-1, false));
+        }
+
+        [Test]
         public void CoinFx_KeepLargeSettlementsReadableWithoutLosingValues()
         {
             Assert.IsFalse(GameFxTuning.AnimateIndividualCoins(0, false));
