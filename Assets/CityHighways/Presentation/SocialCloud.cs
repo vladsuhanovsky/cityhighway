@@ -214,10 +214,12 @@ namespace CityHighways.Presentation
             get
             {
                 var steam = NetPlatforms.Steam;
-                if (steam == null || !steam.Available) return "Рекорды друзей и клубы работают через Steam: запустите игру из Steam.";
-                if (Profiles.Active?.cloudBanned ?? false) return "Аккаунт заблокирован администратором.";
+                if (steam == null || !steam.Available) return LocalizationService.Language == "en" ? "Friends’ records and clubs require Steam: launch the game through Steam." : "Рекорды друзей и клубы работают через Steam: запустите игру из Steam.";
+                if (Profiles.Active?.cloudBanned ?? false) return LocalizationService.Language == "en" ? "The account has been blocked by an administrator." : "Аккаунт заблокирован администратором.";
                 if (string.IsNullOrEmpty(CloudProfiles.ServerId))
-                    return string.IsNullOrEmpty(CloudProfiles.Problem) ? "Профиль ещё синхронизируется с сервером…" : "Нет связи с сервером: " + CloudProfiles.Problem;
+                    return string.IsNullOrEmpty(CloudProfiles.Problem)
+                        ? (LocalizationService.Language == "en" ? "Your profile is still syncing with the server…" : "Профиль ещё синхронизируется с сервером…")
+                        : (LocalizationService.Language == "en" ? "Cannot connect to the server: " : "Нет связи с сервером: ") + CloudProfiles.Problem;
                 return "";
             }
         }
