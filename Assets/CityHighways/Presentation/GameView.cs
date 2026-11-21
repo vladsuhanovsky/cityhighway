@@ -2285,8 +2285,9 @@ namespace CityHighways.Presentation
 
         void RefreshDrawerInfo()
         {
-            _drawerInfo.text = $"Колода: {_game.DeckCount} · сброс {_game.DiscardCount} · контрактов в колоде {_game.ContractDeckCount}"
-                               + (_game.Scenario != ScenarioKind.Standard ? $"\nСценарий: {Scenarios.Title(_game.Scenario)}" : "");
+            _drawerInfo.text = EnglishUi
+                ? $"Deck: {_game.DeckCount} · discard: {_game.DiscardCount} · contract deck: {_game.ContractDeckCount}" + (_game.Scenario != ScenarioKind.Standard ? $"\nScenario: {ScenarioMenuLocalization.Title(_game.Scenario)}" : "")
+                : $"Колода: {_game.DeckCount} · сброс {_game.DiscardCount} · контрактов в колоде {_game.ContractDeckCount}" + (_game.Scenario != ScenarioKind.Standard ? $"\nСценарий: {Scenarios.Title(_game.Scenario)}" : "");
         }
 
         void BuildFaceUpRow()
@@ -2330,12 +2331,12 @@ namespace CityHighways.Presentation
             {
                 int chance = (int)Math.Round(100.0 * buffs / (buffs + debuffs));
                 int luckLeft = _game.LuckWillReshuffle ? _game.LuckDiscardCount : _game.LuckDeckCount;
-                _luckOdds.text = $"В колоде {_game.DeckCount} · контрактов {_game.ContractDeckCount} · удача {luckLeft}: шанс бафа {chance}%"
+                _luckOdds.text = (EnglishUi ? $"Deck: {_game.DeckCount} · contracts: {_game.ContractDeckCount} · luck cards: {luckLeft} · buff chance: {chance}%" : $"В колоде {_game.DeckCount} · контрактов {_game.ContractDeckCount} · удача {luckLeft}: шанс бафа {chance}%")
                                  + (_game.LuckWillReshuffle ? LocalizationService.Get("game.ui.060") : "")
                                  + (_game.TradeUsedThisTurn ? LocalizationService.Get("game.ui.061") : "")
                                  + (_game.InfluenceUsedThisTurn ? LocalizationService.Get("game.ui.062") : "")
                                  + (HumanToAct && _game.BribeDiscountActive ? LocalizationService.Get("game.ui.063") : "")
-                                 + (_game.AnnouncedBribes > 0 ? $" · нераскрытых взяток прошлого круга: {_game.AnnouncedBribes}" : "");
+                                 + (_game.AnnouncedBribes > 0 ? (EnglishUi ? $" · unreported bribes last round: {_game.AnnouncedBribes}" : $" · нераскрытых взяток прошлого круга: {_game.AnnouncedBribes}") : "");
             }
             Ui.SetEnabled(_luckButton, HumanToAct && _game.CanDrawLuckCard());
             _contractsButton.text = LocalizationService.Get("game.ui.064");
@@ -2344,7 +2345,7 @@ namespace CityHighways.Presentation
             _tradeButton.text = LocalizationService.Get("game.ui.020");
             Ui.SetEnabled(_tradeButton, HumanToAct && _game.CanProposeTrade());
             Ui.Show(_influenceButton, _game.Config.InfluenceEnabled);
-            _influenceButton.text = $"Влияние {_game.Players[Viewer].Influence}";
+            _influenceButton.text = EnglishUi ? $"Influence {_game.Players[Viewer].Influence}" : $"Влияние {_game.Players[Viewer].Influence}";
             Ui.SetEnabled(_influenceButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction);
         }
 
@@ -4488,8 +4489,8 @@ namespace CityHighways.Presentation
         {
             var viewer = _game.Players[Viewer];
             bool choosing = TryGetContractChooser(out _);
-            _contractsTab.text = choosing ? "Контракты •" : NeedsHandoff ? LocalizationService.Get("game.ui.018") : $"Контракты · {viewer.Contracts.Count}";
-            _logTab.text = _logTotal > _logSeenTotal && _sheet != SheetKind.Log ? "Журнал •" : LocalizationService.Get("game.ui.021");
+            _contractsTab.text = choosing ? (EnglishUi ? "Contracts •" : "Контракты •") : NeedsHandoff ? LocalizationService.Get("game.ui.018") : (EnglishUi ? $"Contracts · {viewer.Contracts.Count}" : $"Контракты · {viewer.Contracts.Count}");
+            _logTab.text = _logTotal > _logSeenTotal && _sheet != SheetKind.Log ? (EnglishUi ? "Journal •" : "Журнал •") : LocalizationService.Get("game.ui.021");
             StyleTab(_actionsTab, _sheet == SheetKind.Actions);
             StyleTab(_contractsTab, _sheet == SheetKind.Contracts);
             StyleTab(_logTab, _sheet == SheetKind.Log);
