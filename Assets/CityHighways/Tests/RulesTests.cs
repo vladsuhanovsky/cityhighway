@@ -105,6 +105,22 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void MapTooltip_StaysInsideAvailableBounds()
+        {
+            var bounds = new UnityEngine.Vector2(700f, 500f);
+            var topLeft = GameFxTuning.TooltipPosition(UnityEngine.Vector2.zero, bounds, 300f, 130f);
+            Assert.GreaterOrEqual(topLeft.x, 8f);
+            Assert.GreaterOrEqual(topLeft.y, 8f);
+            var bottomRight = GameFxTuning.TooltipPosition(new UnityEngine.Vector2(680f, 480f), bounds, 300f, 130f);
+            Assert.LessOrEqual(bottomRight.x + 300f, bounds.x);
+            Assert.LessOrEqual(bottomRight.y + 130f, bounds.y);
+            var small = GameFxTuning.TooltipPosition(new UnityEngine.Vector2(50f, 50f),
+                new UnityEngine.Vector2(240f, 140f), 300f, 130f);
+            Assert.GreaterOrEqual(small.x, 8f);
+            Assert.GreaterOrEqual(small.y, 8f);
+        }
+
+        [Test]
         public void HazardMarkers_PrioritizeJamsAndClosuresOverSnow()
         {
             Assert.AreEqual(0, GameFxTuning.RoadWarningPriority(false, false, false, false));

@@ -1167,6 +1167,8 @@ namespace CityHighways.Presentation
 
             _map.TiltEnabled = _app.Display == null || _app.Display.tiltedBoard;
             _map.SetGame(_game);
+            // The player legend must use the current game, not names from the last party.
+            BuildLayersList();
             // Под экраном загрузки 3D-город строится отдельным шагом (Build3D), чтобы полоса загрузки двигалась.
             bool deferred = DeferStart;
             DeferStart = false;
@@ -1630,8 +1632,9 @@ namespace CityHighways.Presentation
             var local = _fx.WorldToLocal(_map.LocalToWorld(position));
             var mapBounds = _map.worldBound;
             var mapMax = _fx.WorldToLocal(new Vector2(mapBounds.xMax, mapBounds.yMax));
-            _tooltip.style.left = Mathf.Min(local.x + 18f, mapMax.x - 310f);
-            _tooltip.style.top = Mathf.Min(local.y + 18f, mapMax.y - 130f);
+            var tooltipPosition = GameFxTuning.TooltipPosition(local, mapMax, 300f, 130f);
+            _tooltip.style.left = tooltipPosition.x;
+            _tooltip.style.top = tooltipPosition.y;
             Ui.Show(_tooltip, true);
         }
 

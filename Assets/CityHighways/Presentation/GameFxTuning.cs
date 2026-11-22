@@ -82,6 +82,16 @@ namespace CityHighways.Presentation
         public static int RoadWarningPriority(bool jammed, bool repair, bool parade, bool snow) =>
             jammed ? 4 : repair ? 3 : parade ? 2 : snow ? 1 : 0;
 
+        // Keep map tooltips within their visible overlay, even on narrow screens.
+        public static Vector2 TooltipPosition(Vector2 cursor, Vector2 bounds, float width, float height)
+        {
+            float right = Mathf.Max(8f, bounds.x - width - 8f);
+            float bottom = Mathf.Max(8f, bounds.y - height - 8f);
+            return new Vector2(
+                Mathf.Clamp(cursor.x + 18f, 8f, right),
+                Mathf.Clamp(cursor.y + 18f, 8f, bottom));
+        }
+
         public static float RoadWarningOpacity(float time, bool reducedMotion) =>
             reducedMotion ? 0.82f : 0.72f + 0.18f * Mathf.Sin(time * 2.3f);
 
