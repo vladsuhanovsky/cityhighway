@@ -246,6 +246,36 @@ namespace CityHighways.Presentation
                 });
                 _layersList.Add(row);
             }
+
+            // Optional analysis mode, separate from persistent map-layer preferences.
+            bool networks = _map.OwnershipView;
+            var networkButton = Ui.Button(EnglishUi
+                ? (networks ? "✓ Networks: by owner" : "Networks: off")
+                : (networks ? "✓ Сети: по владельцам" : "Сети: выключены"), () =>
+            {
+                _map.OwnershipView = !_map.OwnershipView;
+                _map.Repaint();
+                BuildLayersList();
+            }, networks ? ButtonKind.Primary : ButtonKind.Secondary, 13f);
+            networkButton.style.marginTop = 8f;
+            _layersList.Add(networkButton);
+            if (networks && _game != null)
+            {
+                for (int i = 0; i < _game.Players.Count; i++)
+                {
+                    var line = Ui.Row();
+                    line.style.alignItems = Align.Center;
+                    var marker = Ui.Box();
+                    marker.style.width = 9f;
+                    marker.style.height = 9f;
+                    marker.style.marginRight = 6f;
+                    marker.style.backgroundColor = Palette.PlayerColor(i);
+                    Ui.Radius(marker, 5f);
+                    line.Add(marker);
+                    line.Add(Ui.Text(_game.Players[i].Name, 12f, Theme.Text));
+                    _layersList.Add(line);
+                }
+            }
         }
 
         /// <summary>

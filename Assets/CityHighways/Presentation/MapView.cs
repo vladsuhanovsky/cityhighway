@@ -288,6 +288,8 @@ namespace CityHighways.Presentation
         };
         /// <summary>Дорога, выбранная для стройки или улучшения (открыто окно оплаты), — в светлом контуре.</summary>
         public string SelectedRoadId { get; set; }
+        /// <summary>Analysis layer: every company's routes in its player color.</summary>
+        public bool OwnershipView { get; set; }
         /// <summary>Temporary construction ghost, calculated from current action legality.</summary>
         public string PreviewRoadId { get; private set; }
         public bool PreviewAllowed { get; private set; }
@@ -1284,6 +1286,7 @@ namespace CityHighways.Presentation
             DrawAtmosphere(p, area);
             foreach (var road in _game.Map.Roads)
                 if (RoadVisible(road)) DrawRoadOver(p, road);
+            DrawOwnershipView(p);
             DrawConstructionPreview(p);
             DrawRoadSweeps(p);
             DrawRoadWarnings(p);
@@ -1301,6 +1304,26 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Ghost road overlay is a visual-only preview, never modifies ownership.</summary>
+        void DrawOwnershipView(Painter2D p)
+        {
+            if (!OwnershipView) return;
+            foreach (var road in _game.Map.Roads)
+            {
+                if (!RoadVisible(road)) continue;
+                int? owner = _game.GetRoadOwner(road.Id);
+                Color color = owner.HasValue ? OwnerColor(owner.Value) : new Color(0.42f, 0.44f, 0.48f);
+                float alpha = owner.HasValue ? 0.95f : 0.32f;
+                var segments = _layout.GetSegments(road);
+                p.strokeColor = new Color(color.r, color.g, color.b, alpha);
+                p.lineWidth = owner.HasValue ? (_game.IsRushHourRoad(road.Id) ? 4.4f : 3f) : 1f;
+                foreach (var segment in segments)
+                {
+                    SegmentPath(p, segment, owner.HasValue ? 4.2f : 2.5f, Vector2.zero);
+                    p.Stroke();
+                }
+            }
+        }
+
         void DrawConstructionPreview(Painter2D p)
         {
             if (string.IsNullOrEmpty(PreviewRoadId)) return;

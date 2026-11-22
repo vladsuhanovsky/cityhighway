@@ -117,6 +117,17 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void OwnershipMap_IsOnlyAViewMode()
+        {
+            var map = new MapView();
+            Assert.IsFalse(map.OwnershipView);
+            map.OwnershipView = true;
+            Assert.IsTrue(map.OwnershipView);
+            map.OwnershipView = false;
+            Assert.IsFalse(map.OwnershipView);
+        }
+
+        [Test]
         public void ConstructionPreview_IsVisualOnlyAndClearsCorrectly()
         {
             var map = new MapView();
