@@ -12,8 +12,7 @@ namespace CityHighways.Presentation
         {
             if (cityRoot == null) return 0;
 
-            var anchors = Object.FindObjectsByType<CitySceneDecoration>(
-                FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            var anchors = Object.FindObjectsByType<CitySceneDecoration>(FindObjectsInactive.Exclude);
             int count = 0;
             foreach (var anchor in anchors)
             {
