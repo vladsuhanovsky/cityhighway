@@ -1279,6 +1279,7 @@ namespace CityHighways.Presentation
             foreach (var road in _game.Map.Roads)
                 if (RoadVisible(road)) DrawRoadOver(p, road);
             DrawConstructionPreview(p);
+            DrawRoadWarnings(p);
             DrawCars(p);
             DrawStreetLights(p);
             foreach (var location in _game.Map.Locations)
@@ -1314,6 +1315,46 @@ namespace CityHighways.Presentation
                 p.lineWidth = 2.5f;
                 SegmentPath(p, segment, 3.5f, Vector2.zero);
                 p.Stroke();
+            }
+        }
+
+        /// <summary>Compact warning signs for traffic, roadworks, parades and snow.
+        /// The simulation already owns those states; this paints only their meaning.</summary>
+        void DrawRoadWarnings(Painter2D p)
+        {
+            int signs = 0;
+            foreach (var road in _game.Map.Roads)
+            {
+                if (signs >= 28) break; // avoid flooding dense maps
+                if (!RoadVisible(road)) continue;
+                Color color;
+                if (_game.IsJammed(road.Id)) color = new Color(1f, 0.35f, 0.25f);
+                else if (_game.IsUnderRepair(road.Id) || _game.IsScheduledRepair(road.Id))
+                    color = new Color(1f, 0.68f, 0.22f);
+                else if (_game.IsParadeClosed(road.Id)) color = new Color(0.80f, 0.49f, 1f);
+                else if (road.Resource == Resource.Gravel && _game.CurrentEvent?.Kind == CityEventKind.Snow)
+                    color = new Color(0.68f, 0.86f, 1f);
+                else continue;
+
+                var segments = _layout.GetSegments(road);
+                if (segments.Count == 0) continue;
+                var center = segments[segments.Count / 2].Center + new Vector2(0f, -10f);
+                float opacity = GameFxTuning.RoadWarningOpacity(PulseTime, Ui.ReducedMotion);
+                // Dark rim keeps the marker legible over bright 3D terrain.
+                p.fillColor = new Color(0.07f, 0.08f, 0.12f, 0.85f);
+                CirclePath(p, center, 7.5f);
+                p.Fill();
+                p.fillColor = new Color(color.r, color.g, color.b, opacity);
+                CirclePath(p, center, 5.5f);
+                p.Fill();
+                p.strokeColor = new Color(0.08f, 0.09f, 0.12f, 0.95f);
+                p.lineWidth = 1.7f;
+                Line(p, center + new Vector2(0f, -2.6f), center + new Vector2(0f, 1f));
+                p.Stroke();
+                p.fillColor = new Color(0.08f, 0.09f, 0.12f, 0.95f);
+                CirclePath(p, center + new Vector2(0f, 3f), 0.85f);
+                p.Fill();
+                signs++;
             }
         }
 

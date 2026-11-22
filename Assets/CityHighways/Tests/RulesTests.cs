@@ -96,6 +96,18 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void HazardMarkers_RespectReducedMotionAndHaveBoundedOpacity()
+        {
+            Assert.AreEqual(0.82f, GameFxTuning.RoadWarningOpacity(0f, true), 0.001f);
+            foreach (float time in new[] { 0f, 0.3f, 2f, 20f })
+            {
+                float opacity = GameFxTuning.RoadWarningOpacity(time, false);
+                Assert.GreaterOrEqual(opacity, 0.54f);
+                Assert.LessOrEqual(opacity, 0.91f);
+            }
+        }
+
+        [Test]
         public void ConstructionPreview_IsVisualOnlyAndClearsCorrectly()
         {
             var map = new MapView();

@@ -71,6 +71,10 @@ namespace CityHighways.Presentation
         public static int FireworkCount(int normal, bool reducedMotion) =>
             reducedMotion ? 0 : Mathf.Max(0, normal);
 
+        // Persistent hazard markers are subtle, motion-free when accessibility asks for it.
+        public static float RoadWarningOpacity(float time, bool reducedMotion) =>
+            reducedMotion ? 0.82f : 0.72f + 0.18f * Mathf.Sin(time * 2.3f);
+
         public static float EventGlowStrength(float progress, bool reducedMotion) =>
             reducedMotion ? 0f : Mathf.Sin(Mathf.Clamp01(progress) * Mathf.PI);
     }
