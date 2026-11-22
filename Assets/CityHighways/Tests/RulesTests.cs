@@ -105,6 +105,18 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void GameTooltip_UsesViewportWidthAndRemainsReadable()
+        {
+            Assert.AreEqual(300f, GameFxTuning.TooltipWidth(1200f));
+            Assert.AreEqual(224f, GameFxTuning.TooltipWidth(240f));
+            var position = GameFxTuning.TooltipPosition(new UnityEngine.Vector2(220f, 125f),
+                new UnityEngine.Vector2(240f, 180f), GameFxTuning.TooltipWidth(240f), 130f);
+            Assert.GreaterOrEqual(position.x, 8f);
+            Assert.GreaterOrEqual(position.y, 8f);
+            Assert.LessOrEqual(position.x + GameFxTuning.TooltipWidth(240f), 240f);
+        }
+
+        [Test]
         public void GamePanels_AdaptWidthsAndToastsOnCompactScreens()
         {
             Assert.IsTrue(GameFxTuning.CompactActions(600f));

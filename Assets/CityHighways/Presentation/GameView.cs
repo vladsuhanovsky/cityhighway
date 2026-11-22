@@ -1035,6 +1035,7 @@ namespace CityHighways.Presentation
             Root.Add(_fx);
 
             _tooltip = Ui.Column();
+            _tooltip.pickingMode = PickingMode.Ignore;
             _tooltip.style.position = Position.Absolute;
             _tooltip.style.width = 300f;
             _tooltip.style.backgroundColor = new Color(0.08f, 0.09f, 0.11f, 0.95f);
@@ -1054,6 +1055,7 @@ namespace CityHighways.Presentation
             _toastHolder.style.top = TopBarHeight + 120f;
             _toastHolder.style.justifyContent = Justify.Center;
             _toast = Ui.Text("", 20f, Theme.Gold, true);
+            _toast.pickingMode = PickingMode.Ignore;
             _toast.style.backgroundColor = new Color(0.08f, 0.09f, 0.11f, 0.92f);
             _toast.style.whiteSpace = WhiteSpace.Normal;
             _toast.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -1638,7 +1640,7 @@ namespace CityHighways.Presentation
             var mapMax = _fx.WorldToLocal(new Vector2(mapBounds.xMax, mapBounds.yMax));
             // Leave a minimum margin on compact windows; avoid a tooltip wider
             // than the available map viewport.
-            float tooltipWidth = Mathf.Min(300f, Mathf.Max(100f, mapMax.x - 16f));
+            float tooltipWidth = GameFxTuning.TooltipWidth(mapMax.x);
             _tooltip.style.width = tooltipWidth;
             var tooltipPosition = GameFxTuning.TooltipPosition(local, mapMax, tooltipWidth, 130f);
             _tooltip.style.left = tooltipPosition.x;
@@ -5068,10 +5070,18 @@ namespace CityHighways.Presentation
                 _tooltipText.text = value;
                 var bounds = element.worldBound;
                 var below = _fx.WorldToLocal(new Vector2(bounds.xMin, bounds.yMax + 8f));
-                float maxX = _fx.layout.width - 316f;
+                var above = _fx.WorldToLocal(new Vector2(bounds.xMin, bounds.yMin - 130f));
+                float availableWidth = _fx.layout.width;
+                float availableHeight = _fx.layout.height;
+                float tooltipWidth = GameFxTuning.TooltipWidth(availableWidth);
+                _tooltip.style.width = tooltipWidth;
                 bool fromBottom = bounds.center.y > _fx.worldBound.center.y;
-                _tooltip.style.left = Mathf.Clamp(below.x, 8f, Mathf.Max(8f, maxX));
-                _tooltip.style.top = fromBottom ? _fx.WorldToLocal(new Vector2(0f, bounds.yMin)).y - 120f : below.y;
+                var ideal = fromBottom ? above : below;
+                var position = GameFxTuning.TooltipPosition(
+                    ideal - new Vector2(18f, 18f),
+                    new Vector2(availableWidth, availableHeight), tooltipWidth, 130f);
+                _tooltip.style.left = position.x;
+                _tooltip.style.top = position.y;
                 Ui.Show(_tooltip, true);
             });
             element.RegisterCallback<PointerLeaveEvent>(_ => Ui.Show(_tooltip, false));
@@ -5115,7 +5125,8 @@ namespace CityHighways.Presentation
             _faceUpRow.style.flexWrap = compact ? Wrap.Wrap : Wrap.NoWrap;
             _faceUpRow.style.marginRight = compact ? 0f : 18f;
             _faceUpRow.style.marginBottom = compact ? 10f : 0f;
-            _actionButtons.style.width = compact ? Length.Percent(100f) : StyleKeyword.Auto;
+            if (compact) _actionButtons.style.width = Length.Percent(100f);
+            else _actionButtons.style.width = StyleKeyword.Auto;
             _logSheet.style.width = GameFxTuning.SheetWidth(width, 640f);
             _logSheet.style.maxHeight = Mathf.Max(120f, Root.layout.height - TopBarHeight - BottomBarHeight - 12f);
             _statusBanner.style.maxWidth = GameFxTuning.SheetWidth(width, 760f);

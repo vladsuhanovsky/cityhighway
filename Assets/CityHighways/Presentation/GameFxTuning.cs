@@ -98,6 +98,10 @@ namespace CityHighways.Presentation
         public static float SheetWidth(float screenWidth, float preferred) =>
             Mathf.Max(100f, Mathf.Min(preferred, screenWidth - 24f));
 
+        // Overlapping popups should never capture mouse input from the map.
+        public static float TooltipWidth(float viewportWidth) =>
+            Mathf.Min(300f, Mathf.Max(100f, viewportWidth - 16f));
+
         public static float ToastMaxWidth(float screenWidth) =>
             Mathf.Max(120f, screenWidth - 32f);
 
