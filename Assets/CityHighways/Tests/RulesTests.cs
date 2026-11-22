@@ -117,6 +117,15 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ContractLayout_UsesCompactRulesWithoutChangingCardData()
+        {
+            Assert.IsTrue(GameFxTuning.CompactContracts(800f));
+            Assert.IsFalse(GameFxTuning.CompactContracts(1200f));
+            Assert.AreEqual(16f, GameFxTuning.ContractsHeaderFontSize(800f));
+            Assert.AreEqual(18f, GameFxTuning.ContractsHeaderFontSize(1200f));
+        }
+
+        [Test]
         public void GamePanels_AdaptWidthsAndToastsOnCompactScreens()
         {
             Assert.IsTrue(GameFxTuning.CompactActions(600f));

@@ -95,6 +95,11 @@ namespace CityHighways.Presentation
         // Compact layout stacks the face-up cards above action buttons.
         public static bool CompactActions(float screenWidth) => screenWidth < 980f;
 
+        public static bool CompactContracts(float screenWidth) => screenWidth < 900f;
+
+        public static float ContractsHeaderFontSize(float screenWidth) =>
+            CompactContracts(screenWidth) ? 16f : 18f;
+
         public static float SheetWidth(float screenWidth, float preferred) =>
             Mathf.Max(100f, Mathf.Min(preferred, screenWidth - 24f));
 

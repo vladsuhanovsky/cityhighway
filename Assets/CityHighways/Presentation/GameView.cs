@@ -2989,11 +2989,17 @@ namespace CityHighways.Presentation
             }
 
             var header = Ui.Row();
-            header.style.alignItems = Align.FlexEnd;
-            header.style.marginBottom = 4f;
-            header.Add(Ui.Text(setup ? LocalizationService.Get("game.ui.076") : LocalizationService.Get("game.ui.077"), 18f, Theme.Gold, true));
+            header.style.alignItems = Align.FlexStart;
+            header.style.flexWrap = Wrap.Wrap;
+            header.style.marginBottom = 6f;
+            var choiceTitle = Ui.Text(setup ? LocalizationService.Get("game.ui.076") : LocalizationService.Get("game.ui.077"), 18f, Theme.Gold, true);
+            choiceTitle.style.whiteSpace = WhiteSpace.Normal;
+            choiceTitle.style.flexShrink = 1f;
+            header.Add(choiceTitle);
             var hint = Ui.Text(EnglishUi ? $"  ·  Keep at least {required}. Click a card to select or remove it. Hover to highlight districts. Unfinished contracts cost points at game end." : $"  ·  оставьте хотя бы {required}. Клик по карточке — взять или отказаться. Наведите — районы подсветятся. Невыполненный контракт в конце отнимает очки.", 13f, Theme.TextDim);
             hint.style.flexShrink = 1f;
+            hint.style.whiteSpace = WhiteSpace.Normal;
+            hint.style.marginTop = 4f;
             header.Add(hint);
             _contractsBox.Add(header);
 
@@ -3038,7 +3044,8 @@ namespace CityHighways.Presentation
             }
 
             var tip = Ui.Text(LocalizationService.Get("game.ui.080"), 13f, Theme.TextDim);
-            tip.style.marginBottom = 2f;
+            tip.style.whiteSpace = WhiteSpace.Normal;
+            tip.style.marginBottom = 4f;
             _contractsBox.Add(tip);
 
             // Сначала невыполненные — о них важнее помнить.
@@ -3063,6 +3070,8 @@ namespace CityHighways.Presentation
             var card = Ui.Column();
             card.pickingMode = PickingMode.Position;
             card.style.width = ContractCardWidth;
+            // Use minimum height rather than fixed height: English names and
+            // long toll descriptions can grow without clipping the footer.
             card.style.minHeight = 172f;
             card.style.backgroundColor = pinned ? Theme.PanelHover : Theme.PanelLight;
             Ui.Radius(card, 12f);
@@ -3076,6 +3085,8 @@ namespace CityHighways.Presentation
             Ui.Transitions(card, "translate", "background-color");
 
             var tags = Ui.Row();
+            tags.style.flexWrap = Wrap.Wrap;
+            tags.style.alignItems = Align.Center;
             string kind = contract.Kind == ContractKind.Transit ? LocalizationService.Get("game.ui.081") : contract.Kind == ContractKind.Hub ? LocalizationService.Get("game.ui.082") : LocalizationService.Get("game.ui.083");
             tags.Add(Ui.Text(kind, 11f, contract.IsComplex ? MapView.ThirdColor : Theme.TextDim, true));
             var tagSpace = Ui.Box();
@@ -3089,6 +3100,7 @@ namespace CityHighways.Presentation
             VisualElement DistrictLine(Color chip, string prefix, string district)
             {
                 var line = Ui.Row();
+                line.style.alignItems = Align.FlexStart;
                 line.style.marginTop = 6f;
                 if (prefix != null)
                 {
@@ -3099,6 +3111,7 @@ namespace CityHighways.Presentation
                 line.Add(DistrictChip(chip));
                 var name = Ui.Text(DistrictName(district), 16f, done ? Theme.TextDim : Theme.Text, true);
                 name.style.flexShrink = 1f;
+                name.style.whiteSpace = WhiteSpace.Normal;
                 line.Add(name);
                 return line;
             }
@@ -3133,13 +3146,15 @@ namespace CityHighways.Presentation
             var statusLabel = Ui.Text(pinned ? status + (EnglishUi ? "\nroute pinned" : "\nмаршрут закреплён") : status, 12f, statusColor);
             statusLabel.style.flexGrow = 1f;
             statusLabel.style.flexShrink = 1f;
+            statusLabel.style.whiteSpace = WhiteSpace.Normal;
             bottom.Add(statusLabel);
             bottom.Add(Ui.Number(done ? "+" + contract.Points : contract.Points.ToString(), 26f, done ? Theme.Success : Theme.Gold, true));
             card.Add(bottom);
 
             card.RegisterCallback<PointerEnterEvent>(_ =>
             {
-                card.style.translate = new Translate(new Length(0f), new Length(-4f));
+                card.style.translate = new Translate(new Length(0f),
+                    new Length(Ui.ReducedMotion ? 0f : -4f));
                 ShowContractHighlight(playerIndex, contract);
             });
             card.RegisterCallback<PointerLeaveEvent>(_ =>
@@ -5121,6 +5136,7 @@ namespace CityHighways.Presentation
             }
             Fit(_actionsSheet, 860f);
             Fit(_contractsSheet, ContractsSheetWidth);
+            _contractsSheet.style.maxHeight = Length.Percent(100f);
             bool compact = GameFxTuning.CompactActions(width);
             _actionsLayoutRow.style.flexDirection = compact ? FlexDirection.Column : FlexDirection.Row;
             if (compact)
