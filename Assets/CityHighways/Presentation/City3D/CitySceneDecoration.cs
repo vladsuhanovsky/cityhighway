@@ -20,6 +20,12 @@ namespace CityHighways.Presentation
         [SerializeField, Tooltip("Disable to keep the anchor in the scene without displaying it in game.")]
         bool showInGame = true;
 
+#if UNITY_EDITOR
+        [SerializeField, Tooltip("Draw an editor-only wireframe of the prefab when this anchor is selected.")]
+        bool previewWireframeInScene = true;
+        public bool PreviewWireframeInScene => previewWireframeInScene;
+#endif
+
         public string MapName => mapName;
         public GameObject VisualPrefab => visualPrefab;
         public bool ShowInGame => showInGame;
