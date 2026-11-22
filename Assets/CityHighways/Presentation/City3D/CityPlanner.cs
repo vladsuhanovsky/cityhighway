@@ -229,9 +229,12 @@ namespace CityHighways.Presentation
         /// <param name="hubSites">Станции с комплексами хабов: в радиусе HubClearance вокруг них — ни домов, ни деревьев, ни площадок.</param>
         /// <param name="hubCenters">Центры комплексов хабов в мире (x, z) — вокруг них тоже свободно.</param>
         public static Plan Build(CityMap map, float density = 1f, IEnumerable<string> hubSites = null,
-            IEnumerable<Vector2> hubCenters = null)
+            IEnumerable<Vector2> hubCenters = null, float buildingDensityMultiplier = 1f, float treeDensityMultiplier = 1f)
         {
             var plan = new Plan { Style = StyleOf(map) };
+            // Default multipliers keep the original deterministic layout exactly intact.
+            float buildingDensity = density * Mathf.Clamp(buildingDensityMultiplier, 0.5f, 1.5f);
+            float treeDensity = density * Mathf.Clamp(treeDensityMultiplier, 0.5f, 1.5f);
             Vector2 Field(float x, float y) => new Vector2(x * FieldW, y * FieldH);
 
             var points = map.Locations.ToDictionary(l => l.Id, l => Field(l.X, l.Y));
@@ -300,7 +303,7 @@ namespace CityHighways.Presentation
                 var p = new Vector2((ix + 0.5f + (Hash(ix, iy, 4) - 0.5f) * 0.2f) * cell, (iy + 0.5f + (Hash(ix, iy, 5) - 0.5f) * 0.2f) * cell);
                 float e = Ring(p), u = Urban(e);
                 if (u > 0.15f && (ix % 4 == 0 || iy % 3 == 0)) continue;                  // улицы
-                float keep = (Mathf.Min(1f, u * 1.1f) + (e > 1.08f ? 0.06f : 0f)) * density;
+                float keep = (Mathf.Min(1f, u * 1.1f) + (e > 1.08f ? 0.06f : 0f)) * buildingDensity;
                 if (Hash(ix, iy, 1) > keep) continue;
                 if (ringRoad && e > 0.97f && e < 1.05f) continue;                          // полоса МКАД
                 var location = NearestLocation(p);
@@ -493,7 +496,7 @@ namespace CityHighways.Presentation
             for (int pi = 0; pi < parks.Count; pi++)
             {
                 var c = parks[pi];
-                int count = Mathf.RoundToInt(c.z * c.z / 55f * density);
+                int count = Mathf.RoundToInt(c.z * c.z / 55f * treeDensity);
                 for (int j = 0; j < count; j++)
                 {
                     float angle = Hash(pi, j, 40) * Mathf.PI * 2f, radius = Mathf.Sqrt(Hash(pi, j, 41)) * c.z;
@@ -507,9 +510,9 @@ namespace CityHighways.Presentation
             {
                 var p = new Vector2((ix + 0.5f + (Hash(ix, iy, 50) - 0.5f) * 0.8f) * treeCell, (iy + 0.5f + (Hash(ix, iy, 51) - 0.5f) * 0.8f) * treeCell);
                 float e = Ring(p);
-                bool forest = e > 1.06f && Noise(p.x, p.y, 60f, 52) > 0.55f && Hash(ix, iy, 53) < 0.8f * density;
-                bool yard = e < 1f && Hash(ix, iy, 55) < 0.035f * density;
-                bool bank = Nearest(p, river) < 30f && Hash(ix, iy, 56) < 0.35f * density;
+                bool forest = e > 1.06f && Noise(p.x, p.y, 60f, 52) > 0.55f && Hash(ix, iy, 53) < 0.8f * treeDensity;
+                bool yard = e < 1f && Hash(ix, iy, 55) < 0.035f * treeDensity;
+                bool bank = Nearest(p, river) < 30f && Hash(ix, iy, 56) < 0.35f * treeDensity;
                 if (forest || yard || bank) AddTree(p, forest ? 0.07f + Hash(ix, iy, 54) * 0.04f : 0.05f + Hash(ix, iy, 54) * 0.03f, 57, forest);
             }
             // Рощи на холмах вне города: чем выше, тем гуще.
@@ -521,12 +524,12 @@ namespace CityHighways.Presentation
                 {
                     var p = new Vector2((ix + Hash(ix, iy, 430)) * grove, (iy + Hash(ix, iy, 431)) * grove);
                     float height = ToWorld(p).y / ReliefField.Amplitude;
-                    if (height < 0.45f || NearestPlace(p) < 60f || Hash(ix, iy, 432) > (height - 0.45f) * 2.2f * density) continue;
+                    if (height < 0.45f || NearestPlace(p) < 60f || Hash(ix, iy, 432) > (height - 0.45f) * 2.2f * treeDensity) continue;
                     AddTree(p, 0.05f + Hash(ix, iy, 433) * 0.04f, 434, true);
                 }
             }
             AddProps(map, plan, density, roads, river, points, NearestPlace, q => OnPaved(q) || InPark(q, 0f), FreeOfBuildings, NearHub);
-            AddOutskirts(map, plan, density, river);
+            AddOutskirts(map, plan, buildingDensity, treeDensity, river);
             plan.Decals.Sort((a, b) => Layer(a.Kind).CompareTo(Layer(b.Kind)));
             return plan;
         }
@@ -626,7 +629,7 @@ namespace CityHighways.Presentation
         /// карточки), деревни из домиков с двускатными и вальмовыми крышами и лоскуты полей. Реки продолжены
         /// за край — у воды ничего не строится. Всё детерминировано.
         /// </summary>
-        static void AddOutskirts(CityMap map, Plan plan, float density, List<Seg> river)
+        static void AddOutskirts(CityMap map, Plan plan, float buildingDensity, float treeDensity, List<Seg> river)
         {
             // Реки за краем: продолжаем крайние отрезки далеко наружу.
             var rivers = new List<Seg>(river);
@@ -649,7 +652,7 @@ namespace CityHighways.Presentation
             {
                 int ix = Mathf.RoundToInt(x / treeCell), iy = Mathf.RoundToInt(y / treeCell);
                 var p = new Vector2(x + (Hash(ix, iy, 310) - 0.5f) * treeCell * 0.8f, y + (Hash(ix, iy, 311) - 0.5f) * treeCell * 0.8f);
-                if (!Outside(p, 6f) || ForestNoise(p.x, p.y) < ForestLevel || Hash(ix, iy, 312) > 0.78f * density) continue;
+                if (!Outside(p, 6f) || ForestNoise(p.x, p.y) < ForestLevel || Hash(ix, iy, 312) > 0.78f * treeDensity) continue;
                 if (Nearest(p, rivers) < 24f) continue;
                 float size = 0.07f + Hash(ix, iy, 313) * 0.045f;
                 plan.Trees.Add(new TreeSpot
@@ -667,7 +670,7 @@ namespace CityHighways.Presentation
                 int ix = Mathf.RoundToInt(x / houseCell), iy = Mathf.RoundToInt(y / houseCell);
                 var p = new Vector2(x + (Hash(ix, iy, 320) - 0.5f) * 5f, y + (Hash(ix, iy, 321) - 0.5f) * 5f);
                 if (!Outside(p, 10f) || VillageNoise(p.x, p.y) < VillageLevel || ForestNoise(p.x, p.y) > ForestLevel - 0.04f) continue;
-                if (Hash(ix, iy, 322) > 0.62f * density || Nearest(p, rivers) < 30f) continue;
+                if (Hash(ix, iy, 322) > 0.62f * buildingDensity || Nearest(p, rivers) < 30f) continue;
                 float w = 9f + Hash(ix, iy, 323) * 4f, d = 7f + Hash(ix, iy, 324) * 3f;
                 plan.Buildings.Add(new Building
                 {
