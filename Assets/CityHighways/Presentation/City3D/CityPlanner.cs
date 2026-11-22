@@ -148,6 +148,30 @@ namespace CityHighways.Presentation
             return CityShapes.Kind.CanalRow;
         }
 
+        /// <summary>Circle in field pixels that suppresses visual procedural objects only.</summary>
+        public struct ExclusionZone
+        {
+            public readonly Vector2 Center;
+            public readonly float Radius;
+            public readonly bool Buildings;
+            public readonly bool Trees;
+
+            public ExclusionZone(Vector2 center, float radius, bool buildings, bool trees)
+            {
+                Center = center;
+                Radius = Mathf.Max(0f, radius);
+                Buildings = buildings;
+                Trees = trees;
+            }
+
+            public bool Contains(Vector2 point, bool building, float objectRadius = 0f)
+            {
+                if (building ? !Buildings : !Trees) return false;
+                float reach = Radius + Mathf.Max(0f, objectRadius);
+                return (point - Center).sqrMagnitude < reach * reach;
+            }
+        }
+
         public sealed class Plan
         {
             /// <summary>Архитектурный стиль города (фонари, деревья и здания — в его духе).</summary>
@@ -229,12 +253,20 @@ namespace CityHighways.Presentation
         /// <param name="hubSites">Станции с комплексами хабов: в радиусе HubClearance вокруг них — ни домов, ни деревьев, ни площадок.</param>
         /// <param name="hubCenters">Центры комплексов хабов в мире (x, z) — вокруг них тоже свободно.</param>
         public static Plan Build(CityMap map, float density = 1f, IEnumerable<string> hubSites = null,
-            IEnumerable<Vector2> hubCenters = null, float buildingDensityMultiplier = 1f, float treeDensityMultiplier = 1f)
+            IEnumerable<Vector2> hubCenters = null, float buildingDensityMultiplier = 1f, float treeDensityMultiplier = 1f,
+            IEnumerable<ExclusionZone> exclusionZones = null)
         {
             var plan = new Plan { Style = StyleOf(map) };
             // Default multipliers keep the original deterministic layout exactly intact.
             float buildingDensity = density * Mathf.Clamp(buildingDensityMultiplier, 0.5f, 1.5f);
             float treeDensity = density * Mathf.Clamp(treeDensityMultiplier, 0.5f, 1.5f);
+            var zones = exclusionZones == null ? new List<ExclusionZone>() : exclusionZones.ToList();
+            bool IsExcluded(Vector2 point, bool building, float radius = 0f)
+            {
+                foreach (var zone in zones)
+                    if (zone.Contains(point, building, radius)) return true;
+                return false;
+            }
             Vector2 Field(float x, float y) => new Vector2(x * FieldW, y * FieldH);
 
             var points = map.Locations.ToDictionary(l => l.Id, l => Field(l.X, l.Y));
@@ -347,6 +379,7 @@ namespace CityHighways.Presentation
                 }
                 // Стиль карты: Чунцин — китайская архитектура, Амстердам — европейская.
                 kind = Restyle(plan.Style, kind, character == Character.Center, Hash(ix, iy, 16), cell, ref w, ref d, ref h);
+                if (IsExcluded(p, true, Mathf.Max(w, d) * 0.5f)) continue;
 
                 // Отступы: чем выше здание, тем дальше от дорог; севернее здания (за ним на экране) — ещё дальше.
                 float heightPx = h * PixelsPerUnit;
@@ -481,7 +514,7 @@ namespace CityHighways.Presentation
             void AddTree(Vector2 p, float size, int salt, bool forest)
             {
                 if (Nearest(p, roads) < 11f || NearestPlace(p) < 17f || Nearest(p, river) < 17f || !FreeOfBuildings(p, 11f) || OnPaved(p)) return;
-                if (NearHub(p)) return;
+                if (NearHub(p) || IsExcluded(p, false)) return;
                 var location = NearestLocation(p);
                 float pick = Hash((int)p.x, (int)p.y, salt);
                 // На вершинах холмов — ельники.
@@ -529,7 +562,7 @@ namespace CityHighways.Presentation
                 }
             }
             AddProps(map, plan, density, roads, river, points, NearestPlace, q => OnPaved(q) || InPark(q, 0f), FreeOfBuildings, NearHub);
-            AddOutskirts(map, plan, buildingDensity, treeDensity, river);
+            AddOutskirts(map, plan, buildingDensity, treeDensity, river, zones);
             plan.Decals.Sort((a, b) => Layer(a.Kind).CompareTo(Layer(b.Kind)));
             return plan;
         }
@@ -629,8 +662,15 @@ namespace CityHighways.Presentation
         /// карточки), деревни из домиков с двускатными и вальмовыми крышами и лоскуты полей. Реки продолжены
         /// за край — у воды ничего не строится. Всё детерминировано.
         /// </summary>
-        static void AddOutskirts(CityMap map, Plan plan, float buildingDensity, float treeDensity, List<Seg> river)
+        static void AddOutskirts(CityMap map, Plan plan, float buildingDensity, float treeDensity, List<Seg> river,
+            List<ExclusionZone> zones)
         {
+            bool IsExcluded(Vector2 p, bool building, float radius = 0f)
+            {
+                foreach (var zone in zones)
+                    if (zone.Contains(p, building, radius)) return true;
+                return false;
+            }
             // Реки за краем: продолжаем крайние отрезки далеко наружу.
             var rivers = new List<Seg>(river);
             foreach (var line in map.Rivers)
@@ -653,7 +693,7 @@ namespace CityHighways.Presentation
                 int ix = Mathf.RoundToInt(x / treeCell), iy = Mathf.RoundToInt(y / treeCell);
                 var p = new Vector2(x + (Hash(ix, iy, 310) - 0.5f) * treeCell * 0.8f, y + (Hash(ix, iy, 311) - 0.5f) * treeCell * 0.8f);
                 if (!Outside(p, 6f) || ForestNoise(p.x, p.y) < ForestLevel || Hash(ix, iy, 312) > 0.78f * treeDensity) continue;
-                if (Nearest(p, rivers) < 24f) continue;
+                if (Nearest(p, rivers) < 24f || IsExcluded(p, false)) continue;
                 float size = 0.07f + Hash(ix, iy, 313) * 0.045f;
                 plan.Trees.Add(new TreeSpot
                 {
@@ -672,6 +712,7 @@ namespace CityHighways.Presentation
                 if (!Outside(p, 10f) || VillageNoise(p.x, p.y) < VillageLevel || ForestNoise(p.x, p.y) > ForestLevel - 0.04f) continue;
                 if (Hash(ix, iy, 322) > 0.62f * buildingDensity || Nearest(p, rivers) < 30f) continue;
                 float w = 9f + Hash(ix, iy, 323) * 4f, d = 7f + Hash(ix, iy, 324) * 3f;
+                if (IsExcluded(p, true, Mathf.Max(w, d) * 0.5f)) continue;
                 plan.Buildings.Add(new Building
                 {
                     Center = p, Width = w, Depth = d, Height = 0.032f + Hash(ix, iy, 325) * 0.022f,
