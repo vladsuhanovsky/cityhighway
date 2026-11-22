@@ -159,6 +159,8 @@ namespace CityHighways.Presentation
             var clearances = CityGenerationExclusionZone.Collect(_map.Name);
             var plan = CityPlanner.Build(_map, density, _hubSites, _hubPlaces.Values.Select(h => h.Origin),
                 buildingMultiplier, treeMultiplier, clearances);
+            // Replace selected visual instances before district/tree meshes and counts are built.
+            CityProceduralReplacementResolver.Apply(plan, _map.Name, _root.transform);
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
 
