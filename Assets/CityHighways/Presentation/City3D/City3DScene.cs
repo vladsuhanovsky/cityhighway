@@ -169,6 +169,8 @@ namespace CityHighways.Presentation
             BuildJunctions();
             BuildStations();
             BuildBridges();
+            // Optional scene-authored visuals. Core map geometry and rules remain procedural.
+            SceneDecorationSpawner.Spawn(_map.Name, _root.transform);
             SetupReflections(quality);
         }
 
