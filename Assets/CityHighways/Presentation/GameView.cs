@@ -608,6 +608,7 @@ namespace CityHighways.Presentation
 
             // Действия: открытый ряд карт и кнопки хода.
             _actionsSheet = Sheet("Действия", 860f, CloseSheet, out var actionsBody);
+            _actionsSheet.style.maxHeight = Length.Percent(100f);
             var actionsRow = Ui.Row();
             _actionsLayoutRow = actionsRow;
             actionsRow.style.alignItems = Align.FlexStart;
@@ -5122,6 +5123,16 @@ namespace CityHighways.Presentation
             Fit(_contractsSheet, ContractsSheetWidth);
             bool compact = GameFxTuning.CompactActions(width);
             _actionsLayoutRow.style.flexDirection = compact ? FlexDirection.Column : FlexDirection.Row;
+            if (compact)
+            {
+                _actionsLayoutRow.style.width = Length.Percent(100f);
+                _faceUpRow.style.width = Length.Percent(100f);
+            }
+            else
+            {
+                _actionsLayoutRow.style.width = StyleKeyword.Auto;
+                _faceUpRow.style.width = StyleKeyword.Auto;
+            }
             _faceUpRow.style.flexWrap = compact ? Wrap.Wrap : Wrap.NoWrap;
             _faceUpRow.style.marginRight = compact ? 0f : 18f;
             _faceUpRow.style.marginBottom = compact ? 10f : 0f;
