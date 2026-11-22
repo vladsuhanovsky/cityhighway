@@ -2995,10 +2995,12 @@ namespace CityHighways.Presentation
             }
 
             var header = Ui.Row();
+            header.style.flexShrink = 1f;
             header.style.alignItems = Align.FlexStart;
             header.style.flexWrap = Wrap.Wrap;
             header.style.marginBottom = 6f;
-            var choiceTitle = Ui.Text(setup ? LocalizationService.Get("game.ui.076") : LocalizationService.Get("game.ui.077"), 18f, Theme.Gold, true);
+            var choiceTitle = Ui.Text(setup ? LocalizationService.Get("game.ui.076") : LocalizationService.Get("game.ui.077"),
+                GameFxTuning.ContractsHeaderFontSize(Root.layout.width), Theme.Gold, true);
             choiceTitle.style.whiteSpace = WhiteSpace.Normal;
             choiceTitle.style.flexShrink = 1f;
             header.Add(choiceTitle);
@@ -3091,6 +3093,7 @@ namespace CityHighways.Presentation
             Ui.Transitions(card, "translate", "background-color");
 
             var tags = Ui.Row();
+            tags.style.flexShrink = 1f;
             tags.style.flexWrap = Wrap.Wrap;
             tags.style.alignItems = Align.Center;
             string kind = contract.Kind == ContractKind.Transit ? LocalizationService.Get("game.ui.081") : contract.Kind == ContractKind.Hub ? LocalizationService.Get("game.ui.082") : LocalizationService.Get("game.ui.083");

@@ -308,6 +308,7 @@ namespace CityHighways.Presentation
             row.Add(_prev);
 
             _viewport = new VisualElement();
+            _viewport.style.minWidth = 0f;
             _viewport.style.flexGrow = 1f;
             _viewport.style.flexShrink = 1f;
             _viewport.style.overflow = Overflow.Hidden;
@@ -319,6 +320,7 @@ namespace CityHighways.Presentation
             _strip.style.paddingTop = 6f;
             _strip.style.paddingBottom = 10f;
             _strip.style.paddingLeft = 4f;
+            _strip.style.flexShrink = 0f;
             _viewport.Add(_strip);
 
             _next = new IconButton(IconButton.Glyph.Right, "", () => Step(1), 12f);

@@ -117,6 +117,14 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ContractHeader_ChoosesReadableFontAtDifferentWidths()
+        {
+            Assert.AreEqual(16f, GameFxTuning.ContractsHeaderFontSize(640f));
+            Assert.AreEqual(16f, GameFxTuning.ContractsHeaderFontSize(899f));
+            Assert.AreEqual(18f, GameFxTuning.ContractsHeaderFontSize(900f));
+        }
+
+        [Test]
         public void ContractCarousel_LeavesVerticalScrollForTheParentPanel()
         {
             Assert.IsFalse(CardCarousel.ShouldCaptureWheel(0f, 1f, true));
