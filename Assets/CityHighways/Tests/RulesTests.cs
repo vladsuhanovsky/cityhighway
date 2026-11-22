@@ -96,6 +96,21 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ConstructionPreview_IsVisualOnlyAndClearsCorrectly()
+        {
+            var map = new MapView();
+            Assert.IsNull(map.PreviewRoadId);
+            map.SetConstructionPreview("r1", true, false);
+            Assert.AreEqual("r1", map.PreviewRoadId);
+            Assert.IsTrue(map.PreviewAllowed);
+            Assert.IsFalse(map.PreviewFree);
+            map.SetConstructionPreview("r1", true, true);
+            Assert.IsTrue(map.PreviewFree);
+            map.SetConstructionPreview(null, false, false);
+            Assert.IsNull(map.PreviewRoadId);
+        }
+
+        [Test]
         public void ButtonFeedback_UsesColorWithoutMovementInReducedMotion()
         {
             Assert.AreEqual(-1.5f, GameFxTuning.ButtonHoverLift(false), 0.001f);

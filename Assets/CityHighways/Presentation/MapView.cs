@@ -286,6 +286,19 @@ namespace CityHighways.Presentation
         };
         /// <summary>Дорога, выбранная для стройки или улучшения (открыто окно оплаты), — в светлом контуре.</summary>
         public string SelectedRoadId { get; set; }
+        /// <summary>Temporary construction ghost, calculated from current action legality.</summary>
+        public string PreviewRoadId { get; private set; }
+        public bool PreviewAllowed { get; private set; }
+        public bool PreviewFree { get; private set; }
+        public void SetConstructionPreview(string roadId, bool allowed, bool free)
+        {
+            if (PreviewRoadId == roadId && PreviewAllowed == allowed && PreviewFree == free) return;
+            PreviewRoadId = roadId;
+            PreviewAllowed = allowed;
+            PreviewFree = free;
+            Repaint();
+        }
+
 
         float _tiltProgress;   // 0..1, наклон плавно появляется в начале партии
         float _hoverFade;      // контур наведённой дороги проявляется за доли секунды
@@ -648,6 +661,7 @@ namespace CityHighways.Presentation
             PathRoads.Clear();
             BuildProgress.Clear();
             HoverRoad = null;
+            SetConstructionPreview(null, false, false);
             RefreshVisibility();
             Repaint();
         }
@@ -664,6 +678,7 @@ namespace CityHighways.Presentation
             BuildProgress.Clear();
             HoverRoad = null;
             SelectedRoadId = null;
+            SetConstructionPreview(null, false, false);
             _tiltProgress = 0f;
             _zoom = _zoomTarget = 1f;
             _pan = _panTarget = Vector2.zero;
@@ -1263,6 +1278,7 @@ namespace CityHighways.Presentation
             DrawAtmosphere(p, area);
             foreach (var road in _game.Map.Roads)
                 if (RoadVisible(road)) DrawRoadOver(p, road);
+            DrawConstructionPreview(p);
             DrawCars(p);
             DrawStreetLights(p);
             foreach (var location in _game.Map.Locations)
@@ -1274,6 +1290,31 @@ namespace CityHighways.Presentation
             if (_dimLevel > 0.001f) DrawContractHighlight(p, area);
             DrawFireworks(p, dt);
             DrawFlash(p, area);
+        }
+
+        /// <summary>Ghost road overlay is a visual-only preview, never modifies ownership.</summary>
+        void DrawConstructionPreview(Painter2D p)
+        {
+            if (string.IsNullOrEmpty(PreviewRoadId)) return;
+            var road = _game.Map.GetRoad(PreviewRoadId);
+            if (road == null || _game.GetRoadOwner(road.Id).HasValue || !RoadVisible(road)) return;
+            Color color = PreviewAllowed
+                ? (PreviewFree ? new Color(0.40f, 0.88f, 1f) : new Color(0.44f, 0.96f, 0.64f))
+                : new Color(1f, 0.39f, 0.35f);
+            var segments = _layout.GetSegments(road);
+            float alpha = Ui.ReducedMotion ? 0.75f : 0.68f + 0.15f * Mathf.Sin(PulseTime * 3f);
+            p.lineCap = LineCap.Round;
+            foreach (var segment in segments)
+            {
+                p.strokeColor = new Color(color.r, color.g, color.b, 0.16f * alpha);
+                p.lineWidth = 15f;
+                SegmentPath(p, segment, 3.5f, Vector2.zero);
+                p.Stroke();
+                p.strokeColor = new Color(color.r, color.g, color.b, alpha);
+                p.lineWidth = 2.5f;
+                SegmentPath(p, segment, 3.5f, Vector2.zero);
+                p.Stroke();
+            }
         }
 
         float _lastDrawTime;

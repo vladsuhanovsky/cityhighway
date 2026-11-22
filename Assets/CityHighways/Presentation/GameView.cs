@@ -1577,10 +1577,16 @@ namespace CityHighways.Presentation
         {
             if (route == null || _overlayKind != OverlayKind.None || _game == null)
             {
+                _map.SetConstructionPreview(null, false, false);
                 Ui.Show(_tooltip, false);
                 return;
             }
 
+            bool canPreview = HumanToAct && _game.Phase == GamePhase.AwaitingAction &&
+                              !_game.GetRoadOwner(route.Id).HasValue;
+            bool free = canPreview && _game.CanBuildRoadFree(route.Id);
+            bool payable = canPreview && _game.GetPaymentOptions(route.Id).Count > 0;
+            _map.SetConstructionPreview(canPreview ? route.Id : null, free || payable, free);
             ShowMapTooltip(RoadTooltip(route), position);
         }
 
@@ -1652,7 +1658,17 @@ namespace CityHighways.Presentation
             if (_game.CurrentEvent != null && _game.CurrentEvent.Kind == CityEventKind.RushHour)
                 text += EnglishUi ? "\n<color=#FF9A33>Rush hour: the road built now will charge double tolls</color>" : "\n<color=#FF9A33>Час пик: построенная сейчас дорога станет платной ×2</color>";
             if (HumanToAct && _game.Phase == GamePhase.AwaitingAction)
-                return text + "\n" + (_game.GetBuildBlocker(road.Id) is string blocker ? LocalizationService.TranslateGameError(blocker) : (EnglishUi ? "<color=#7FD88A>Click to build</color>" : "<color=#7FD88A>Кликните, чтобы построить</color>"));
+            {
+                bool free = _game.CanBuildRoadFree(road.Id);
+                var ways = _game.GetPaymentOptions(road.Id);
+                if (free) text += EnglishUi ? "\n<color=#66E7FF>Free construction available</color>" : "\n<color=#66E7FF>Доступно бесплатное строительство</color>";
+                if (ways.Count > 0)
+                    text += EnglishUi ? $"\n<color=#7FD88A>Preview: {_game.BuildCost(road)} cards · {ways.Count} payment options</color>"
+                        : $"\n<color=#7FD88A>Предпросмотр: {_game.BuildCost(road)} карт · способов оплаты: {ways.Count}</color>";
+                string blocker = _game.GetBuildBlocker(road.Id);
+                return text + "\n" + (blocker != null && !free && ways.Count == 0 ? LocalizationService.TranslateGameError(blocker)
+                    : EnglishUi ? "<color=#7FD88A>Click to build</color>" : "<color=#7FD88A>Кликните, чтобы построить</color>");
+            }
             return text;
         }
 
