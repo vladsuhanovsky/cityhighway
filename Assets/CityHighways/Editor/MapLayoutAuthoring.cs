@@ -55,6 +55,11 @@ public static class MapLayoutAuthoring
 
     static void ImportMap(TextAsset asset)
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode || asset == null)
+        {
+            Debug.LogWarning("Import requires Edit Mode and a valid JSON map asset.");
+            return;
+        }
         CityMapDto dto;
         try { dto = JsonUtility.FromJson<CityMapDto>(asset.text); }
         catch (Exception e) { Debug.LogError("Cannot parse map: " + e); return; }
@@ -99,6 +104,11 @@ public static class MapLayoutAuthoring
 
     public static void ExportPreview(MapLayoutPreview preview)
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            Debug.LogWarning("Exit Play Mode before exporting map coordinates.");
+            return;
+        }
         if (preview == null || preview.SourceMap == null)
         {
             Debug.LogError("Select a Map Layout Preview or one of its location markers.");
