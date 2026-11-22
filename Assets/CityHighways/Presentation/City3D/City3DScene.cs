@@ -1958,6 +1958,7 @@ namespace CityHighways.Presentation
                 _reflectionTexture = null;
             }
             Shader.SetGlobalFloat("_CityReflectionOn", 0f);
+            CityProceduralReplacementResolver.ClearCatalog();
             _treeChunks.Clear();
             _builtRoads.Clear();
             _constructing.Clear();

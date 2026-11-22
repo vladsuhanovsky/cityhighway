@@ -22,12 +22,16 @@ namespace CityHighways.Presentation
         [SerializeField, Tooltip("Prefab spawned in place of the nearest matching procedural visual.")]
         GameObject visualPrefab;
 
+        [SerializeField, Tooltip("Optional stable ID copied from the generated 3D city. When set, search radius is ignored.")]
+        string stableObjectId = "";
+
         [SerializeField] bool showInGame = true;
 
         public TargetKind Target => target;
         public float SearchRadius => Mathf.Max(0.05f, searchRadius);
         public GameObject VisualPrefab => visualPrefab;
         public string MapName => mapName;
+        public string StableObjectId => stableObjectId;
 
         public bool AppliesTo(string cityName) =>
             isActiveAndEnabled && showInGame && visualPrefab != null &&
