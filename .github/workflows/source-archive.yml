@@ -1,0 +1,43 @@
+name: Source ZIP for Unity project
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archive:
+    name: Package City Highways source
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          persist-credentials: false
+      - name: Create reproducible Unity project archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Include all tracked project files, keeping repository-relative paths
+          # and skipping local Git/Unity caches. LFS assets were fetched above.
+          mkdir -p dist
+          git ls-files -z | while IFS= read -r -d '' file; do
+            if [[ -f "$file" ]]; then
+              printf '%s\0' "$file"
+            fi
+          done | xargs -0 -r zip -q "dist/CityHighways-source.zip"
+          unzip -tq dist/CityHighways-source.zip
+          echo "Commit: ${GITHUB_SHA}" > dist/SOURCE_COMMIT.txt
+          echo "ZIP size: $(du -h dist/CityHighways-source.zip | cut -f1)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cityhighways-source-zip
+          path: |
+            dist/CityHighways-source.zip
+            dist/SOURCE_COMMIT.txt
+          if-no-files-found: error
+          retention-days: 7
