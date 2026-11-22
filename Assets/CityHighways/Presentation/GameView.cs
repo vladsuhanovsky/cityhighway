@@ -197,7 +197,7 @@ namespace CityHighways.Presentation
         [Flags]
         public enum MapLayer { StationNames = 1, DistrictNames = 2, FreeRoads = 4, Cars = 8, People = 16, Focus = 32 }
 
-        static (MapLayer layer, string title, string hint)[] LayerItems =>
+        static (MapLayer layer, string title, string hint)[] LayerItems => new[]
         {
             (MapLayer.StationNames, LocalizationService.Get("game.ui.001"), LocalizationService.Get("game.ui.002")),
             (MapLayer.DistrictNames, LocalizationService.Get("game.ui.003"), LocalizationService.Get("game.ui.004")),
