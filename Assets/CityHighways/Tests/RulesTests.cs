@@ -105,6 +105,17 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void MapTooltip_SupportsSmallViewportWidths()
+        {
+            var bounds = new UnityEngine.Vector2(200f, 170f);
+            float tooltipWidth = UnityEngine.Mathf.Min(300f, UnityEngine.Mathf.Max(100f, bounds.x - 16f));
+            var pos = GameFxTuning.TooltipPosition(new UnityEngine.Vector2(190f, 120f),
+                bounds, tooltipWidth, 130f);
+            Assert.LessOrEqual(pos.x + tooltipWidth, bounds.x);
+            Assert.LessOrEqual(pos.y + 130f, bounds.y);
+        }
+
+        [Test]
         public void MapTooltip_StaysInsideAvailableBounds()
         {
             var bounds = new UnityEngine.Vector2(700f, 500f);

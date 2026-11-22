@@ -1632,7 +1632,11 @@ namespace CityHighways.Presentation
             var local = _fx.WorldToLocal(_map.LocalToWorld(position));
             var mapBounds = _map.worldBound;
             var mapMax = _fx.WorldToLocal(new Vector2(mapBounds.xMax, mapBounds.yMax));
-            var tooltipPosition = GameFxTuning.TooltipPosition(local, mapMax, 300f, 130f);
+            // Leave a minimum margin on compact windows; avoid a tooltip wider
+            // than the available map viewport.
+            float tooltipWidth = Mathf.Min(300f, Mathf.Max(100f, mapMax.x - 16f));
+            _tooltip.style.width = tooltipWidth;
+            var tooltipPosition = GameFxTuning.TooltipPosition(local, mapMax, tooltipWidth, 130f);
             _tooltip.style.left = tooltipPosition.x;
             _tooltip.style.top = tooltipPosition.y;
             Ui.Show(_tooltip, true);
@@ -2102,15 +2106,19 @@ namespace CityHighways.Presentation
         void StartRoadSweep(string roadId, bool upgrade)
         {
             if (Ui.ReducedMotion) return;
+            // A delayed tween from a previous party must not paint on the next one.
+            Game sourceGame = _game;
             _map.RoadSweeps[roadId] = 0f;
             if (upgrade) _map.UpgradeSweeps.Add(roadId);
             else _map.UpgradeSweeps.Remove(roadId);
             _app.Tweener.Add(0.65f, k =>
             {
+                if (_game != sourceGame || Ui.ReducedMotion) return;
                 _map.RoadSweeps[roadId] = k;
                 _map.Repaint();
             }, () =>
             {
+                if (_game != sourceGame) return;
                 _map.RoadSweeps.Remove(roadId);
                 _map.UpgradeSweeps.Remove(roadId);
                 _map.Repaint();
