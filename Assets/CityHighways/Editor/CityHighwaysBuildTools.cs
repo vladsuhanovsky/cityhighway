@@ -109,7 +109,7 @@ public static class CityHighwaysBuildTools
         }
 
         // Never silently change a tracked hand-authored scene.
-        var apps = Object.FindObjectsByType<CityHighwaysApp>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        var apps = Object.FindObjectsByType<CityHighwaysApp>(FindObjectsInactive.Include);
         if (apps.Length > 1)
         {
             Debug.LogError("City Highways: the scene contains multiple CityHighwaysApp components.");

@@ -69,7 +69,7 @@ public static class MapLayoutAuthoring
             return;
         }
         // Never delete a hand-edited preview on repeated import.
-        if (UnityEngine.Object.FindObjectsByType<MapLayoutPreview>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length != 0)
+        if (UnityEngine.Object.FindObjectsByType<MapLayoutPreview>(FindObjectsInactive.Include).Length != 0)
         {
             Debug.LogWarning("A map preview already exists. Delete or save it manually before importing another.");
             return;
