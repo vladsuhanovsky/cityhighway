@@ -152,7 +152,12 @@ namespace CityHighways.Presentation
             _hubPlaces = HubPlacement.Plan(_map, _hubSites, RiverWidth / 2f + BankWidth);
             _relief = new ReliefField(_map, _riverLines, RiverWidth / 2f + BankWidth, _hubPlaces);
             Relief.Use(_relief);
-            var plan = CityPlanner.Build(_map, density, _hubSites, _hubPlaces.Values.Select(h => h.Origin));
+            // Scene-authored visual overrides are optional and default to the legacy layout.
+            var tuning = CityGenerationTuning.FindForMap(_map.Name);
+            float buildingMultiplier = tuning != null ? tuning.BuildingDensity : 1f;
+            float treeMultiplier = tuning != null ? tuning.TreeDensity : 1f;
+            var plan = CityPlanner.Build(_map, density, _hubSites, _hubPlaces.Values.Select(h => h.Origin),
+                buildingMultiplier, treeMultiplier);
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
 
