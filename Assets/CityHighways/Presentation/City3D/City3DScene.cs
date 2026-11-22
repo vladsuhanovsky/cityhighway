@@ -156,8 +156,9 @@ namespace CityHighways.Presentation
             var tuning = CityGenerationTuning.FindForMap(_map.Name);
             float buildingMultiplier = tuning != null ? tuning.BuildingDensity : 1f;
             float treeMultiplier = tuning != null ? tuning.TreeDensity : 1f;
+            var clearances = CityGenerationExclusionZone.Collect(_map.Name);
             var plan = CityPlanner.Build(_map, density, _hubSites, _hubPlaces.Values.Select(h => h.Origin),
-                buildingMultiplier, treeMultiplier);
+                buildingMultiplier, treeMultiplier, clearances);
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
 
