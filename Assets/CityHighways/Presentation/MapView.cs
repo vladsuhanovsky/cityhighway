@@ -1375,18 +1375,24 @@ namespace CityHighways.Presentation
         void DrawRoadWarnings(Painter2D p)
         {
             int signs = 0;
+            bool snowEvent = _game.CurrentEvent?.Kind == CityEventKind.Snow;
+            // During a citywide snow event, do not spend the marker budget on
+            // harmless gravel roads before showing congestion and closures.
+            for (int level = 4; level >= 1 && signs < 28; level--)
             foreach (var road in _game.Map.Roads)
             {
-                if (signs >= 28) break; // avoid flooding dense maps
+                if (signs >= 28) break;
                 if (!RoadVisible(road)) continue;
-                Color color;
-                if (_game.IsJammed(road.Id)) color = new Color(1f, 0.35f, 0.25f);
-                else if (_game.IsUnderRepair(road.Id) || _game.IsScheduledRepair(road.Id))
-                    color = new Color(1f, 0.68f, 0.22f);
-                else if (_game.IsParadeClosed(road.Id)) color = new Color(0.80f, 0.49f, 1f);
-                else if (road.Resource == Resource.Gravel && _game.CurrentEvent?.Kind == CityEventKind.Snow)
-                    color = new Color(0.68f, 0.86f, 1f);
-                else continue;
+                int priority = GameFxTuning.RoadWarningPriority(
+                    _game.IsJammed(road.Id),
+                    _game.IsUnderRepair(road.Id) || _game.IsScheduledRepair(road.Id),
+                    _game.IsParadeClosed(road.Id),
+                    snowEvent && road.Resource == Resource.Gravel);
+                if (priority != level) continue;
+                Color color = level == 4 ? new Color(1f, 0.35f, 0.25f)
+                    : level == 3 ? new Color(1f, 0.68f, 0.22f)
+                    : level == 2 ? new Color(0.80f, 0.49f, 1f)
+                    : new Color(0.68f, 0.86f, 1f);
 
                 var segments = _layout.GetSegments(road);
                 if (segments.Count == 0) continue;

@@ -105,6 +105,16 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void HazardMarkers_PrioritizeJamsAndClosuresOverSnow()
+        {
+            Assert.AreEqual(0, GameFxTuning.RoadWarningPriority(false, false, false, false));
+            Assert.AreEqual(1, GameFxTuning.RoadWarningPriority(false, false, false, true));
+            Assert.AreEqual(2, GameFxTuning.RoadWarningPriority(false, false, true, true));
+            Assert.AreEqual(3, GameFxTuning.RoadWarningPriority(false, true, true, true));
+            Assert.AreEqual(4, GameFxTuning.RoadWarningPriority(true, true, true, true));
+        }
+
+        [Test]
         public void HazardMarkers_RespectReducedMotionAndHaveBoundedOpacity()
         {
             Assert.AreEqual(0.82f, GameFxTuning.RoadWarningOpacity(0f, true), 0.001f);

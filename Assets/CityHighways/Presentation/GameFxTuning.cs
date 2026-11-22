@@ -78,6 +78,10 @@ namespace CityHighways.Presentation
             return reducedMotion || distance < 0f || distance > 0.4f ? 0f : Mathf.Clamp01(1f - distance / 0.4f);
         }
 
+        // An overcrowded map prioritizes actual jams and closures over weather.
+        public static int RoadWarningPriority(bool jammed, bool repair, bool parade, bool snow) =>
+            jammed ? 4 : repair ? 3 : parade ? 2 : snow ? 1 : 0;
+
         public static float RoadWarningOpacity(float time, bool reducedMotion) =>
             reducedMotion ? 0.82f : 0.72f + 0.18f * Mathf.Sin(time * 2.3f);
 
