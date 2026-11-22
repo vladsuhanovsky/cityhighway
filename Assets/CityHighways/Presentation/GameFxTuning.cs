@@ -72,6 +72,12 @@ namespace CityHighways.Presentation
             reducedMotion ? 0 : Mathf.Max(0, normal);
 
         // Persistent hazard markers are subtle, motion-free when accessibility asks for it.
+        public static float SweepOpacity(float position, float progress, bool reducedMotion)
+        {
+            float distance = progress - position;
+            return reducedMotion || distance < 0f || distance > 0.4f ? 0f : Mathf.Clamp01(1f - distance / 0.4f);
+        }
+
         public static float RoadWarningOpacity(float time, bool reducedMotion) =>
             reducedMotion ? 0.82f : 0.72f + 0.18f * Mathf.Sin(time * 2.3f);
 

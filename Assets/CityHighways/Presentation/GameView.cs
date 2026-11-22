@@ -144,6 +144,7 @@ namespace CityHighways.Presentation
             /// <summary>Видимые очки без проезда (дороги, цели, удача, штрафы) — для всплывающих «+N».</summary>
             public int[] Points;
             public readonly HashSet<string> Jammed = new HashSet<string>();
+            public readonly HashSet<string> Highways = new HashSet<string>();
         }
 
         /// <summary>Строка о финале под статусом: последний круг (ходов до конца, заказ мэрии) или «скоро финал».</summary>
@@ -1743,6 +1744,7 @@ namespace CityHighways.Presentation
                 var owner = _game.GetRoadOwner(route.Id);
                 if (owner.HasValue) s.Owners[route.Id] = owner.Value;
                 if (owner.HasValue && _game.IsJammed(route.Id)) s.Jammed.Add(route.Id);
+                if (owner.HasValue && _game.IsRushHourRoad(route.Id)) s.Highways.Add(route.Id);
             }
             return s;
         }
@@ -1758,6 +1760,10 @@ namespace CityHighways.Presentation
                 AnimateClaim(route);
                 claimDuration = Mathf.Max(claimDuration, ClaimDuration(route));
             }
+
+            foreach (var roadId in now.Highways)
+                if (before.Owners.ContainsKey(roadId) && !before.Highways.Contains(roadId))
+                    StartRoadSweep(roadId, true);
 
             // Новые карты в руках — летят из открытого ряда или из колоды.
             var changedSlots = new List<int>();
@@ -2048,6 +2054,7 @@ namespace CityHighways.Presentation
             {
                 _map.BuildProgress.Remove(route.Id);
                 _app.Sound.Play(Sfx.Horn, 0.6f);
+                StartRoadSweep(route.Id, false);
                 // Small player-colored completion sparkle. Keep major fireworks for
                 // contracts and mayor goals; this should not overwhelm rapid bot turns.
                 int sparks = GameFxTuning.FireworkCount(12, Ui.ReducedMotion);
@@ -2055,6 +2062,24 @@ namespace CityHighways.Presentation
                     _map.Fireworks(_map.WorldToLocal(_map.RoadWorldCenter(route.Id)),
                         Palette.PlayerColor(_game.GetRoadOwner(route.Id) ?? 0), sparks);
             });
+        }
+
+        void StartRoadSweep(string roadId, bool upgrade)
+        {
+            if (Ui.ReducedMotion) return;
+            _map.RoadSweeps[roadId] = 0f;
+            if (upgrade) _map.UpgradeSweeps.Add(roadId);
+            else _map.UpgradeSweeps.Remove(roadId);
+            _app.Tweener.Add(0.65f, k =>
+            {
+                _map.RoadSweeps[roadId] = k;
+                _map.Repaint();
+            }, () =>
+            {
+                _map.RoadSweeps.Remove(roadId);
+                _map.UpgradeSweeps.Remove(roadId);
+                _map.Repaint();
+            }, 0f, false);
         }
 
         void FlyCard(int playerIndex, Resource color, int faceUpSlot, float delay)

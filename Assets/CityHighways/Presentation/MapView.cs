@@ -108,6 +108,8 @@ namespace CityHighways.Presentation
         public readonly Dictionary<string, Color> PathRoads = new Dictionary<string, Color>();
         /// <summary>Прогресс анимации строительства 0..1 для только что построенных дорог.</summary>
         public readonly Dictionary<string, float> BuildProgress = new Dictionary<string, float>();
+        public readonly Dictionary<string, float> RoadSweeps = new Dictionary<string, float>();
+        public readonly HashSet<string> UpgradeSweeps = new HashSet<string>();
         public float PulseTime;
         public bool Interactive = true;
         /// <summary>Наклонять поле (2.5D). Берётся из настроек экрана при старте партии.</summary>
@@ -660,6 +662,8 @@ namespace CityHighways.Presentation
             Affordable.Clear();
             PathRoads.Clear();
             BuildProgress.Clear();
+            RoadSweeps.Clear();
+            UpgradeSweeps.Clear();
             HoverRoad = null;
             SetConstructionPreview(null, false, false);
             RefreshVisibility();
@@ -676,6 +680,8 @@ namespace CityHighways.Presentation
             HighlightThird = null;
             PathRoads.Clear();
             BuildProgress.Clear();
+            RoadSweeps.Clear();
+            UpgradeSweeps.Clear();
             HoverRoad = null;
             SelectedRoadId = null;
             SetConstructionPreview(null, false, false);
@@ -1279,6 +1285,7 @@ namespace CityHighways.Presentation
             foreach (var road in _game.Map.Roads)
                 if (RoadVisible(road)) DrawRoadOver(p, road);
             DrawConstructionPreview(p);
+            DrawRoadSweeps(p);
             DrawRoadWarnings(p);
             DrawCars(p);
             DrawStreetLights(p);
@@ -1320,6 +1327,28 @@ namespace CityHighways.Presentation
 
         /// <summary>Compact warning signs for traffic, roadworks, parades and snow.
         /// The simulation already owns those states; this paints only their meaning.</summary>
+        void DrawRoadSweeps(Painter2D p)
+        {
+            if (Ui.ReducedMotion || RoadSweeps.Count == 0) return;
+            foreach (var pair in RoadSweeps)
+            {
+                var road = _game.Map.GetRoad(pair.Key);
+                if (road == null || !RoadVisible(road)) continue;
+                var segments = _layout.GetSegments(road);
+                if (segments.Count == 0) continue;
+                Color color = UpgradeSweeps.Contains(pair.Key) ? new Color(1f, 0.69f, 0.24f) : new Color(0.70f, 0.96f, 1f);
+                for (int i = 0; i < segments.Count; i++)
+                {
+                    float alpha = GameFxTuning.SweepOpacity((i + 0.5f) / segments.Count, pair.Value, false);
+                    if (alpha <= 0f) continue;
+                    p.strokeColor = new Color(color.r, color.g, color.b, alpha * 0.86f);
+                    p.lineWidth = 3f;
+                    SegmentPath(p, segments[i], 4f, Vector2.zero);
+                    p.Stroke();
+                }
+            }
+        }
+
         void DrawRoadWarnings(Painter2D p)
         {
             int signs = 0;

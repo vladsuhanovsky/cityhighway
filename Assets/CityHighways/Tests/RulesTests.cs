@@ -96,6 +96,15 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void RoadSweep_RespectsProgressAndReducedMotion()
+        {
+            Assert.AreEqual(0f, GameFxTuning.SweepOpacity(0.5f, 0.5f, true));
+            Assert.AreEqual(1f, GameFxTuning.SweepOpacity(0.5f, 0.5f, false), 0.001f);
+            Assert.AreEqual(0f, GameFxTuning.SweepOpacity(0.7f, 0.5f, false));
+            Assert.AreEqual(0f, GameFxTuning.SweepOpacity(0.1f, 0.9f, false));
+        }
+
+        [Test]
         public void HazardMarkers_RespectReducedMotionAndHaveBoundedOpacity()
         {
             Assert.AreEqual(0.82f, GameFxTuning.RoadWarningOpacity(0f, true), 0.001f);
