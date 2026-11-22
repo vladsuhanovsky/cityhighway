@@ -92,7 +92,8 @@ public static class CityHighwaysBuildTools
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return false;
 
-        if (File.Exists(ScenePath))
+        bool existed = File.Exists(ScenePath);
+        if (existed)
         {
             EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         }
@@ -107,16 +108,26 @@ public static class CityHighwaysBuildTools
             }
         }
 
-        if (Object.FindAnyObjectByType<CityHighwaysApp>() == null)
+        // Never silently change a tracked hand-authored scene.
+        var apps = Object.FindObjectsByType<CityHighwaysApp>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        if (apps.Length > 1)
+        {
+            Debug.LogError("City Highways: the scene contains multiple CityHighwaysApp components.");
+            return false;
+        }
+        if (existed && apps.Length == 0)
+        {
+            Debug.LogError("City Highways: startup scene has no CityHighwaysApp. Fix the scene manually.");
+            return false;
+        }
+        if (!existed)
+        {
             new GameObject("Game").AddComponent<CityHighwaysApp>();
+            if (GameObject.Find("EventSystem") == null) CreateEventSystem();
+            Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));
+            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
+        }
 
-        // Event System нужен UI Toolkit, если в проекте включена только новая система ввода.
-        if (GameObject.Find("EventSystem") == null) CreateEventSystem();
-
-        Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));
-        var scene = EditorSceneManager.GetActiveScene();
-        EditorSceneManager.MarkSceneDirty(scene);
-        EditorSceneManager.SaveScene(scene, ScenePath);
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         return true;
     }
