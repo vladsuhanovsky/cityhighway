@@ -612,7 +612,13 @@ namespace CityHighways.Presentation
             var actionsRow = Ui.Row();
             _actionsLayoutRow = actionsRow;
             actionsRow.style.alignItems = Align.FlexStart;
-            actionsBody.Add(actionsRow);
+            var actionsScroll = new ScrollView(ScrollViewMode.Vertical);
+            actionsScroll.style.flexGrow = 1f;
+            actionsScroll.style.flexShrink = 1f;
+            actionsScroll.style.minHeight = 0f;
+            Ui.StyleScroller(actionsScroll);
+            actionsBody.Add(actionsScroll);
+            actionsScroll.Add(actionsRow);
             _faceUpRow = Ui.Row();
             _faceUpRow.style.marginRight = 18f;
             actionsRow.Add(_faceUpRow);

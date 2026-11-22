@@ -338,12 +338,16 @@ namespace CityHighways.Presentation
             _viewport.RegisterCallback<PointerUpEvent>(OnUp, TrickleDown.TrickleDown);
             _viewport.RegisterCallback<WheelEvent>(e =>
             {
-                float delta = Mathf.Abs(e.delta.x) > Mathf.Abs(e.delta.y) ? e.delta.x : e.delta.y;
-                if (Mathf.Abs(delta) < 0.01f) return;
-                Step(delta > 0f ? 1 : -1);
+                // A vertical wheel scrolls the surrounding contracts page.
+                // Only an intentional horizontal wheel/touchpad gesture moves cards.
+                if (!ShouldCaptureWheel(e.delta.x, e.delta.y, _maxOffset > 1f)) return;
+                Step(e.delta.x > 0f ? 1 : -1);
                 e.StopPropagation();
             });
         }
+
+        public static bool ShouldCaptureWheel(float x, float y, bool scrollable) =>
+            scrollable && Mathf.Abs(x) >= 0.1f && Mathf.Abs(x) > Mathf.Abs(y);
 
         /// <summary>Заменить карточки; положение ленты сохраняется (в пределах новой длины).</summary>
         public void SetCards(IEnumerable<VisualElement> cards)

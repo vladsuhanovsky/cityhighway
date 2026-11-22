@@ -117,6 +117,15 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ContractCarousel_LeavesVerticalScrollForTheParentPanel()
+        {
+            Assert.IsFalse(CardCarousel.ShouldCaptureWheel(0f, 1f, true));
+            Assert.IsFalse(CardCarousel.ShouldCaptureWheel(1f, 2f, true));
+            Assert.IsFalse(CardCarousel.ShouldCaptureWheel(2f, 0f, false));
+            Assert.IsTrue(CardCarousel.ShouldCaptureWheel(2f, 0f, true));
+        }
+
+        [Test]
         public void ContractLayout_UsesCompactRulesWithoutChangingCardData()
         {
             Assert.IsTrue(GameFxTuning.CompactContracts(800f));
