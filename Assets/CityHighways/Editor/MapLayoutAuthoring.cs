@@ -123,7 +123,7 @@ public static class MapLayoutAuthoring
 
     static string ReplaceLocationCoordinates(string json, Dictionary<string, Vector2> positions)
     {
-        var start = Regex.Match(json, "\\\"locations\\\"\\s*:\\s*\\[");
+        var start = Regex.Match(json, @"""locations""\s*:\s*\[");
         if (!start.Success) throw new FormatException("Missing locations array.");
         int open = start.Index + start.Length - 1;
         int depth = 0, close = -1;
@@ -134,7 +134,7 @@ public static class MapLayoutAuthoring
             if (inString)
             {
                 if (escaped) escaped = false;
-                else if (c == '\\\\') escaped = true;
+                else if (c == (char)92) escaped = true;
                 else if (c == '"') inString = false;
                 continue;
             }
@@ -147,7 +147,7 @@ public static class MapLayoutAuthoring
         string array = json.Substring(open + 1, close - open - 1);
         var seen = new HashSet<string>(StringComparer.Ordinal);
         int count = 0;
-        string changed = Regex.Replace(array, @"\\{[^{}]*\\}", match =>
+        string changed = Regex.Replace(array, @"\{[^{}]*\}", match =>
         {
             var dto = JsonUtility.FromJson<LocationDto>(match.Value);
             if (dto == null || string.IsNullOrEmpty(dto.id) || !seen.Add(dto.id))
@@ -166,7 +166,7 @@ public static class MapLayoutAuthoring
 
     static string SetNumber(string block, string field, float value)
     {
-        string pattern = "(\\\"" + field + "\\"\\s*:\\s*)(-?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)";
+        string pattern = @"(" + @"""" + Regex.Escape(field) + @"""\s*:\s*)(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)";
         int matches = 0;
         string updated = Regex.Replace(block, pattern, match =>
         {
