@@ -105,6 +105,18 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void GamePanels_AdaptWidthsAndToastsOnCompactScreens()
+        {
+            Assert.IsTrue(GameFxTuning.CompactActions(600f));
+            Assert.IsFalse(GameFxTuning.CompactActions(1200f));
+            Assert.AreEqual(576f, GameFxTuning.SheetWidth(600f, 860f));
+            Assert.AreEqual(860f, GameFxTuning.SheetWidth(1400f, 860f));
+            Assert.AreEqual(568f, GameFxTuning.ToastMaxWidth(600f));
+            Assert.AreEqual(76f, GameFxTuning.ToastVerticalOffset(600f));
+            Assert.AreEqual(0f, GameFxTuning.ToastVerticalOffset(1200f));
+        }
+
+        [Test]
         public void MapTooltip_SupportsSmallViewportWidths()
         {
             var bounds = new UnityEngine.Vector2(200f, 170f);

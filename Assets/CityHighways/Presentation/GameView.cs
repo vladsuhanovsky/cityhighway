@@ -351,6 +351,7 @@ namespace CityHighways.Presentation
         readonly VisualElement _sheetHost;
         readonly VisualElement _actionsSheet, _contractsSheet, _logSheet;
         readonly VisualElement _faceUpRow;
+        readonly VisualElement _actionsLayoutRow, _actionButtons;
         CardView[] _faceUp = new CardView[0];
         readonly UnityEngine.UIElements.Button _deckButton;
         readonly UnityEngine.UIElements.Button _luckButton;
@@ -608,12 +609,14 @@ namespace CityHighways.Presentation
             // Действия: открытый ряд карт и кнопки хода.
             _actionsSheet = Sheet("Действия", 860f, CloseSheet, out var actionsBody);
             var actionsRow = Ui.Row();
+            _actionsLayoutRow = actionsRow;
             actionsRow.style.alignItems = Align.FlexStart;
             actionsBody.Add(actionsRow);
             _faceUpRow = Ui.Row();
             _faceUpRow.style.marginRight = 18f;
             actionsRow.Add(_faceUpRow);
             var actionButtons = Ui.Column();
+            _actionButtons = actionButtons;
             actionButtons.style.flexGrow = 1f;
             actionsRow.Add(actionButtons);
             var firstRow = Ui.Row();
@@ -1052,7 +1055,8 @@ namespace CityHighways.Presentation
             _toastHolder.style.justifyContent = Justify.Center;
             _toast = Ui.Text("", 20f, Theme.Gold, true);
             _toast.style.backgroundColor = new Color(0.08f, 0.09f, 0.11f, 0.92f);
-            _toast.style.whiteSpace = WhiteSpace.NoWrap;
+            _toast.style.whiteSpace = WhiteSpace.Normal;
+            _toast.style.unityTextAlign = TextAnchor.MiddleCenter;
             Ui.Radius(_toast, 22f);
             Ui.Padding(_toast, 10f, 24f);
             _toastHolder.Add(_toast);
@@ -2304,14 +2308,16 @@ namespace CityHighways.Presentation
             int version = ++_toastVersion;
             bool reducedMotion = Ui.ReducedMotion;
             _toastHolder.style.opacity = 0f;
-            _toastHolder.style.top = GameFxTuning.ToastTopAt(0f, reducedMotion);
+            _toastHolder.style.top = GameFxTuning.ToastTopAt(0f, reducedMotion)
+                + GameFxTuning.ToastVerticalOffset(Root.layout.width);
             Ui.Show(_toastHolder, true);
 
             _app.Tweener.Add(2.4f, k =>
             {
                 if (version != _toastVersion) return;
                 _toastHolder.style.opacity = GameFxTuning.ToastOpacity(k);
-                _toastHolder.style.top = GameFxTuning.ToastTopAt(k, reducedMotion);
+                _toastHolder.style.top = GameFxTuning.ToastTopAt(k, reducedMotion)
+                    + GameFxTuning.ToastVerticalOffset(Root.layout.width);
             }, () =>
             {
                 if (version == _toastVersion) Ui.Show(_toastHolder, false);
@@ -5098,13 +5104,23 @@ namespace CityHighways.Presentation
             Ui.Show(_viewHint, width >= 1800f);
             void Fit(VisualElement sheet, float preferred)
             {
-                float w = Mathf.Min(preferred, width - 24f);
+                float w = GameFxTuning.SheetWidth(width, preferred);
                 sheet.style.width = w;
                 sheet.style.marginLeft = -w / 2f;
             }
             Fit(_actionsSheet, 860f);
             Fit(_contractsSheet, ContractsSheetWidth);
-            _logSheet.style.width = Mathf.Min(640f, width - 24f);
+            bool compact = GameFxTuning.CompactActions(width);
+            _actionsLayoutRow.style.flexDirection = compact ? FlexDirection.Column : FlexDirection.Row;
+            _faceUpRow.style.flexWrap = compact ? Wrap.Wrap : Wrap.NoWrap;
+            _faceUpRow.style.marginRight = compact ? 0f : 18f;
+            _faceUpRow.style.marginBottom = compact ? 10f : 0f;
+            _actionButtons.style.width = compact ? Length.Percent(100f) : StyleKeyword.Auto;
+            _logSheet.style.width = GameFxTuning.SheetWidth(width, 640f);
+            _logSheet.style.maxHeight = Mathf.Max(120f, Root.layout.height - TopBarHeight - BottomBarHeight - 12f);
+            _statusBanner.style.maxWidth = GameFxTuning.SheetWidth(width, 760f);
+            _statusBanner.style.top = width < 900f ? 58f : 12f;
+            _toast.style.maxWidth = GameFxTuning.ToastMaxWidth(width);
             _drawer.style.width = Mathf.Min(DrawerWidth, width * 0.9f);
         }
 

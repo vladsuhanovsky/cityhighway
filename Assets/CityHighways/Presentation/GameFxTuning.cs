@@ -92,6 +92,18 @@ namespace CityHighways.Presentation
                 Mathf.Clamp(cursor.y + 18f, 8f, bottom));
         }
 
+        // Compact layout stacks the face-up cards above action buttons.
+        public static bool CompactActions(float screenWidth) => screenWidth < 980f;
+
+        public static float SheetWidth(float screenWidth, float preferred) =>
+            Mathf.Max(100f, Mathf.Min(preferred, screenWidth - 24f));
+
+        public static float ToastMaxWidth(float screenWidth) =>
+            Mathf.Max(120f, screenWidth - 32f);
+
+        public static float ToastVerticalOffset(float screenWidth) =>
+            screenWidth < 900f ? 76f : 0f;
+
         public static float RoadWarningOpacity(float time, bool reducedMotion) =>
             reducedMotion ? 0.82f : 0.72f + 0.18f * Mathf.Sin(time * 2.3f);
 
