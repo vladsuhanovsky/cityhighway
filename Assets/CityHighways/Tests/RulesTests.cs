@@ -117,6 +117,18 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ConstructionPreview_CanBeClearedOnActionTransition()
+        {
+            var map = new MapView();
+            map.SetConstructionPreview("r1", false, false);
+            Assert.AreEqual("r1", map.PreviewRoadId);
+            Assert.IsFalse(map.PreviewAllowed);
+            map.SetConstructionPreview(null, false, false);
+            Assert.IsNull(map.PreviewRoadId);
+            Assert.IsFalse(map.PreviewFree);
+        }
+
+        [Test]
         public void OwnershipMap_IsOnlyAViewMode()
         {
             var map = new MapView();

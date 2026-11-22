@@ -197,7 +197,7 @@ namespace CityHighways.Presentation
         [Flags]
         public enum MapLayer { StationNames = 1, DistrictNames = 2, FreeRoads = 4, Cars = 8, People = 16, Focus = 32 }
 
-        static readonly (MapLayer layer, string title, string hint)[] LayerItems =
+        static (MapLayer layer, string title, string hint)[] LayerItems =>
         {
             (MapLayer.StationNames, LocalizationService.Get("game.ui.001"), LocalizationService.Get("game.ui.002")),
             (MapLayer.DistrictNames, LocalizationService.Get("game.ui.003"), LocalizationService.Get("game.ui.004")),
@@ -1250,6 +1250,8 @@ namespace CityHighways.Presentation
             {
                 _renderedLanguage = LocalizationService.Language;
                 _logShownTotal = -1;
+                // Re-create map layer captions and network button in the active language.
+                BuildLayersList();
                 _dirty = true;
             }
 
@@ -3614,6 +3616,11 @@ namespace CityHighways.Presentation
 
         void RefreshMap()
         {
+            // A preview must never survive the end of a construction action
+            // or remain underneath a modal dialog.
+            if (!HumanToAct || _game.Phase != GamePhase.AwaitingAction ||
+                _overlayKind != OverlayKind.None)
+                _map.SetConstructionPreview(null, false, false);
             _map.Affordable.Clear();
             if (HumanToAct && _game.Phase == GamePhase.AwaitingAction && _overlayKind == OverlayKind.None)
             {
@@ -3678,6 +3685,7 @@ namespace CityHighways.Presentation
             _overlay.Add(content);
             Ui.Show(_overlay, true);
             Ui.Show(_tooltip, false);
+            _map.SetConstructionPreview(null, false, false);
             _overlayKind = kind;
             _map.Interactive = false;
             _map.Affordable.Clear();
@@ -3692,6 +3700,7 @@ namespace CityHighways.Presentation
             _overlayPlayer = -1;
             _map.Interactive = true;
             _map.SelectedRoadId = null;
+            _map.SetConstructionPreview(null, false, false);
             _dirty = true;
         }
 
