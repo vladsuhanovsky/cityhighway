@@ -33,6 +33,26 @@ public static class MapLayoutAuthoring
         ImportMap(asset);
     }
 
+    const string MapsFolder = "Assets/CityHighways/Resources/CityHighways/Maps";
+
+    [MenuItem("City Highways/Map Layout/Import another map...")]
+    static void SelectMap()
+    {
+        var menu = new GenericMenu();
+        int count = 0;
+        foreach (var guid in AssetDatabase.FindAssets("t:TextAsset", new[] { MapsFolder }))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            if (!path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
+            string selectedPath = path;
+            menu.AddItem(new GUIContent(Path.GetFileNameWithoutExtension(path)), false,
+                () => ImportMap(AssetDatabase.LoadAssetAtPath<TextAsset>(selectedPath)));
+            count++;
+        }
+        if (count == 0) menu.AddDisabledItem(new GUIContent("No JSON maps found"));
+        menu.ShowAsContext();
+    }
+
     static void ImportMap(TextAsset asset)
     {
         CityMapDto dto;
@@ -74,6 +94,11 @@ public static class MapLayoutAuthoring
     {
         var preview = Selection.activeGameObject != null
             ? Selection.activeGameObject.GetComponentInParent<MapLayoutPreview>() : null;
+        ExportPreview(preview);
+    }
+
+    public static void ExportPreview(MapLayoutPreview preview)
+    {
         if (preview == null || preview.SourceMap == null)
         {
             Debug.LogError("Select a Map Layout Preview or one of its location markers.");
