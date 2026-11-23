@@ -2,6 +2,7 @@ using CityHighways.Presentation;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace CityHighways.Tests
 {
@@ -75,6 +76,73 @@ namespace CityHighways.Tests
                 Assert.IsFalse(CityProceduralPrefabBudget.Fits(
                     1, 1, session.Instances, session.Triangles,
                     12000, 12, 120000, setting.allowed));
+            }
+        }
+
+        [Test]
+        public void OneBudgetIsSharedBetweenBuildingAndTreeReplacements()
+        {
+            var serialized = new SerializedObject(budget);
+            serialized.FindProperty("lowQualityInstances").intValue = 1;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            var buildingObject = new GameObject("Building rules");
+            var treeObject = new GameObject("Tree rules");
+            var generatedRoot = new GameObject("Generated root");
+            try
+            {
+                var buildingRules = buildingObject.AddComponent<CityProceduralBuildingPrefabRules>();
+                var b = new SerializedObject(buildingRules);
+                var bArray = b.FindProperty("rules");
+                bArray.arraySize = 1;
+                var bRule = bArray.GetArrayElementAtIndex(0);
+                bRule.FindPropertyRelative("buildingKind").enumValueIndex = (int)CityShapes.Kind.Block;
+                bRule.FindPropertyRelative("visualPrefab").objectReferenceValue = prefab;
+                bRule.FindPropertyRelative("probability").floatValue = 1f;
+                bRule.FindPropertyRelative("maxInstances").intValue = 2;
+                b.ApplyModifiedPropertiesWithoutUndo();
+
+                var treeRules = treeObject.AddComponent<CityProceduralTreePrefabRules>();
+                var t = new SerializedObject(treeRules);
+                var tArray = t.FindProperty("rules");
+                tArray.arraySize = 1;
+                var tRule = tArray.GetArrayElementAtIndex(0);
+                tRule.FindPropertyRelative("treeKind").enumValueIndex = (int)CityShapes.Tree.Round;
+                tRule.FindPropertyRelative("visualPrefab").objectReferenceValue = prefab;
+                tRule.FindPropertyRelative("probability").floatValue = 1f;
+                tRule.FindPropertyRelative("maxInstances").intValue = 2;
+                t.ApplyModifiedPropertiesWithoutUndo();
+
+                var plan = new CityPlanner.Plan();
+                plan.Buildings.Add(new CityPlanner.Building
+                {
+                    Kind = CityShapes.Kind.Block, Width = 10f, Depth = 10f,
+                    Height = 0.1f, Center = new Vector2(100f, 100f), Seed = 1
+                });
+                plan.Footprints.Add(Vector4.zero);
+                plan.Trees.Add(new CityPlanner.TreeSpot
+                {
+                    Kind = CityShapes.Tree.Round, Size = 0.1f,
+                    At = new Vector2(110f, 110f), Seed = 2
+                });
+
+                var session = budget.Begin(0);
+                Assert.AreEqual(1, CityProceduralBuildingPrefabSpawner.Apply(
+                    plan, "Random Magnate", buildingRules, generatedRoot.transform, session));
+                LogAssert.Expect(LogType.Warning,
+                    "Procedural Prefab budget: skipping Prefab model " +
+                    "(meshes=1, triangles=1, used instances=1/1).");
+                Assert.AreEqual(0, CityProceduralTreePrefabSpawner.Apply(
+                    plan, "Random Magnate", treeRules, generatedRoot.transform, session));
+                Assert.AreEqual(1, session.Instances);
+                Assert.AreEqual(0, plan.Buildings.Count);
+                Assert.AreEqual(1, plan.Trees.Count);
+            }
+            finally
+            {
+                Object.DestroyImmediate(buildingObject);
+                Object.DestroyImmediate(treeObject);
+                Object.DestroyImmediate(generatedRoot);
             }
         }
 
