@@ -171,6 +171,9 @@ namespace CityHighways.Presentation
             // Optional seed-independent rules run after manual replacements so authored
             // stable-ID anchors always take priority over automatic model choices.
             CityProceduralBuildingPrefabSpawner.Apply(plan, _map.Name, _root.transform);
+            // Opt-in tree rules run after manually authored replacements. Distant
+            // CardOnly trees remain in the plan for optimized billboard rendering.
+            CityProceduralTreePrefabSpawner.Apply(plan, _map.Name, _root.transform);
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
 
