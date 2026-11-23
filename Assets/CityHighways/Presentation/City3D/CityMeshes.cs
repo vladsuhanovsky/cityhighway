@@ -23,6 +23,11 @@ namespace CityHighways.Presentation
         /// </summary>
         public MeshBuilder(int expectedQuads = 0)
         {
+            // The index buffer requires six entries per quad. Reject invalid
+            // reservations before integer overflow can wrap its capacity.
+            if (expectedQuads > int.MaxValue / 6)
+                throw new ArgumentOutOfRangeException(nameof(expectedQuads),
+                    "Quad reservation exceeds the supported index count.");
             int quads = Mathf.Max(0, expectedQuads);
             _vertices = new List<Vector3>(quads * 4);
             _normals = new List<Vector3>(quads * 4);
