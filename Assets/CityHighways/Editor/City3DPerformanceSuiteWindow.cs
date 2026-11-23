@@ -57,8 +57,34 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                 baselinePreflight.Explanation,
                 baselinePreflight.RequiresAcknowledgement
                     ? MessageType.Warning : MessageType.Info);
-        using (new EditorGUI.DisabledScope(!EditorApplication.isPlaying ||
-            active == null || active.FrameMonitor == null))
+        var monitor = active != null && EditorApplication.isPlaying
+            ? active.FrameMonitor : null;
+        if (monitor != null)
+        {
+            EditorGUILayout.LabelField("Frame sample window: " +
+                monitor.SampleCount + "/" + monitor.SampleCapacity +
+                " frames (minimum " + City3DFrameMonitor.MinimumFrames + ")");
+            if (monitor.IsWarmingUp)
+                EditorGUILayout.HelpBox(
+                    "Warming up. New frame samples will be collected afterwards.",
+                    MessageType.Info);
+            else if (!monitor.HasMinimumSamples)
+                EditorGUILayout.HelpBox(
+                    "Collect at least " + City3DFrameMonitor.MinimumFrames +
+                    " frames before saving this measurement.", MessageType.Warning);
+            else
+                EditorGUILayout.HelpBox(
+                    "Frame sample count is sufficient. Confirm scene, seed and " +
+                    "camera before saving; this is an Editor frame-interval sample.",
+                    MessageType.Info);
+            if (GUILayout.Button("Restart sampling (clear + warm up)"))
+            {
+                monitor.BeginFreshWindow();
+                Repaint();
+            }
+        }
+        using (new EditorGUI.DisabledScope(monitor == null ||
+            !monitor.HasMinimumSamples || monitor.IsWarmingUp))
         {
             if (GUILayout.Button("Add active 3D capture to CURRENT suite"))
             {

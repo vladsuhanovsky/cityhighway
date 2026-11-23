@@ -66,6 +66,46 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void SampleReadinessRequiresMinimumAcceptedFrames()
+        {
+            Assert.AreEqual(0, monitor.SampleCount);
+            Assert.IsFalse(monitor.HasMinimumSamples);
+            for (int i = 0; i < City3DFrameMonitor.MinimumFrames - 1; i++)
+                monitor.RecordFrame(16f);
+            monitor.RecordFrame(float.NaN);
+            Assert.AreEqual(City3DFrameMonitor.MinimumFrames - 1,
+                monitor.SampleCount);
+            Assert.IsFalse(monitor.HasMinimumSamples);
+            monitor.RecordFrame(16f);
+            Assert.IsTrue(monitor.HasMinimumSamples);
+            Assert.AreEqual(City3DFrameMonitor.MinimumFrames, monitor.Capture().Frames);
+        }
+
+        [Test]
+        public void FreshWindowDiscardsOldSamplesWithoutMutatingPriorSnapshot()
+        {
+            for (int i = 0; i < 120; i++) monitor.RecordFrame(18f);
+            var previous = monitor.Capture();
+            monitor.BeginFreshWindow();
+            Assert.AreEqual(0, monitor.SampleCount);
+            Assert.IsFalse(monitor.HasMinimumSamples);
+            Assert.AreEqual(120, previous.Frames);
+            Assert.AreEqual(18f, previous.P95Ms);
+            monitor.RecordFrame(24f);
+            Assert.AreEqual(1, monitor.Capture().Frames);
+            Assert.AreEqual(24f, monitor.Capture().P95Ms);
+        }
+
+        [Test]
+        public void FrameWindowCapacityIsExposedAndNeverExceeded()
+        {
+            for (int i = 0; i < 1000; i++) monitor.RecordFrame(20f);
+            Assert.AreEqual(600, monitor.SampleCapacity);
+            Assert.AreEqual(monitor.SampleCapacity, monitor.SampleCount);
+            Assert.IsTrue(monitor.HasMinimumSamples);
+        }
+
+        [Test]
         public void InvalidIntervalsAreIgnored()
         {
             monitor.RecordFrame(0f);
