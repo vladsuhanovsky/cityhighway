@@ -92,6 +92,64 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ReusedMeshSwitchesFrom16To32AndBackTo16BitIndices()
+        {
+            var builder = new MeshBuilder();
+            var mesh = new Mesh();
+            try
+            {
+                Grid(builder, 3, 2);
+                builder.WriteTo(mesh);
+                Assert.AreEqual(IndexFormat.UInt16, mesh.indexFormat);
+                Assert.AreEqual(24, mesh.vertexCount);
+                Assert.AreEqual(36, mesh.triangles.Length);
+
+                builder.Clear();
+                Grid(builder, 130, 127); // 66,040 vertices: exceeds 16-bit limit.
+                builder.WriteTo(mesh);
+                Assert.AreEqual(IndexFormat.UInt32, mesh.indexFormat);
+                Assert.AreEqual(130 * 127 * 4, mesh.vertexCount);
+                Assert.AreEqual(130 * 127 * 6, mesh.triangles.Length);
+
+                builder.Clear();
+                Grid(builder, 2, 1);
+                builder.WriteTo(mesh);
+                Assert.AreEqual(IndexFormat.UInt16, mesh.indexFormat);
+                Assert.AreEqual(8, mesh.vertexCount);
+                Assert.AreEqual(12, mesh.triangles.Length);
+                Assert.That(mesh.bounds.min.x, Is.EqualTo(0f).Within(0.0001f));
+                Assert.That(mesh.bounds.max.x, Is.EqualTo(2f).Within(0.0001f));
+            }
+            finally { Object.DestroyImmediate(mesh); }
+        }
+
+        [Test]
+        public void ReusedMeshCanClearLarge32BitGeometryAndBuildSmallAgain()
+        {
+            var builder = new MeshBuilder(130 * 127);
+            var mesh = new Mesh();
+            try
+            {
+                Grid(builder, 130, 127);
+                builder.WriteTo(mesh);
+                Assert.AreEqual(IndexFormat.UInt32, mesh.indexFormat);
+
+                builder.Clear();
+                builder.WriteTo(mesh);
+                Assert.AreEqual(0, mesh.vertexCount);
+                Assert.AreEqual(0, mesh.triangles.Length);
+                Assert.AreEqual(IndexFormat.UInt16, mesh.indexFormat);
+
+                Grid(builder, 1, 1);
+                builder.WriteTo(mesh);
+                Assert.AreEqual(4, mesh.vertexCount);
+                Assert.AreEqual(6, mesh.triangles.Length);
+                Assert.AreEqual(IndexFormat.UInt16, mesh.indexFormat);
+            }
+            finally { Object.DestroyImmediate(mesh); }
+        }
+
+        [Test]
         public void ReusingReservedTerrainBuilderDoesNotKeepOldQuads()
         {
             var builder = new MeshBuilder(24);
