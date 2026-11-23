@@ -73,10 +73,20 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                     "Collect at least " + City3DFrameMonitor.MinimumFrames +
                     " frames before saving this measurement.", MessageType.Warning);
             else
+            {
+                var stability = monitor.AnalyzeStability();
+                EditorGUILayout.LabelField(
+                    "Sample stability: median " + stability.MedianMs.ToString("F2") +
+                    " ms, P95/median " +
+                    stability.P95ToMedianRatio.ToString("F2") +
+                    ", spikes (>2x median) " + stability.SpikeFrames +
+                    " (" + stability.SpikePercent.ToString("F1") + "%)");
                 EditorGUILayout.HelpBox(
-                    "Frame sample count is sufficient. Confirm scene, seed and " +
-                    "camera before saving; this is an Editor frame-interval sample.",
-                    MessageType.Info);
+                    stability.Explanation +
+                    "\nThese metrics are advisory; camera, seed and workload " +
+                    "still require manual verification.",
+                    stability.HasWarning ? MessageType.Warning : MessageType.Info);
+            }
             if (GUILayout.Button("Restart sampling (clear + warm up)"))
             {
                 monitor.BeginFreshWindow();
@@ -102,6 +112,19 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                         "\n\nCapture anyway? This cannot count as a verified baseline pass.",
                         "Capture anyway", "Cancel"))
                     return;
+                var stability = monitor.AnalyzeStability();
+                if (stability.HasWarning &&
+                    !EditorUtility.DisplayDialog("Variable frame intervals",
+                        stability.Explanation +
+                        "\nP95/median: " + stability.P95ToMedianRatio.ToString("F2") +
+                        "; spikes: " + stability.SpikePercent.ToString("F1") +
+                        "%.\n\nCapture this noisy sample anyway?",
+                        "Capture anyway", "Restart sampling"))
+                {
+                    monitor.BeginFreshWindow();
+                    Repaint();
+                    return;
+                }
                 var item = City3DPerformanceBaseline.Create(active.CityName,
                     active.GraphicsQuality, scenario, active.FrameMonitor.Capture(),
                     captureEnvironment: observedEnvironment);
