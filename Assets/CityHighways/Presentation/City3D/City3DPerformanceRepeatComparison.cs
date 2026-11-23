@@ -75,10 +75,14 @@ namespace CityHighways.Presentation
             result.HasComparableDelta = true;
             result.P95ChangePercent = (float)(100d *
                 ((double)after.MedianP95Ms / before.MedianP95Ms - 1d));
-            if (result.P95ChangePercent > allowedRegressionPercent)
+            // Ignore sub-micropercentage rounding noise at the exact threshold.
+            const float boundaryEpsilon = 0.0001f;
+            if ((double)result.P95ChangePercent >
+                (double)allowedRegressionPercent + boundaryEpsilon)
                 return Set(result, Verdict.Regression,
                     "Median P95 increase exceeds the allowed regression threshold.");
-            if (result.P95ChangePercent < -allowedRegressionPercent)
+            if ((double)result.P95ChangePercent <
+                -(double)allowedRegressionPercent - boundaryEpsilon)
                 return Set(result, Verdict.Improvement,
                     "Median P95 decreases by more than the selected threshold.");
             return Set(result, Verdict.WithinThreshold,
