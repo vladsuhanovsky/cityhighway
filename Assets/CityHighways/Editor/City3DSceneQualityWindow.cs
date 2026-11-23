@@ -45,6 +45,7 @@ public sealed class City3DSceneQualityWindow : EditorWindow
     City3DGeometryAudit.Totals baselineTotals;
     City3DGeometryAudit.Entry[] baselineEntries = new City3DGeometryAudit.Entry[0];
     bool frameCaptured, frameBaselineCaptured;
+    int lowTargetFps = 30, mediumTargetFps = 45, highTargetFps = 60;
     string frameCity, frameBaselineCity;
     int frameQuality, frameBaselineQuality;
     City3DFrameMonitor.Snapshot frameSnapshot, frameBaseline;
@@ -188,9 +189,24 @@ public sealed class City3DSceneQualityWindow : EditorWindow
         EditorGUILayout.LabelField("Snapshot: " + frameCity +
             "    Quality: " + QualityName(frameQuality) +
             "    Samples: " + frameSnapshot.Frames, EditorStyles.boldLabel);
-        if (frameSnapshot.Frames < 60)
-            EditorGUILayout.HelpBox("Fewer than 60 frames sampled. " +
-                "Collect more frames before comparing runs.", MessageType.Warning);
+        EditorGUILayout.LabelField("Advisory frame targets (not guaranteed hardware performance)", EditorStyles.boldLabel);
+        lowTargetFps = Mathf.Max(0, EditorGUILayout.IntField("Low target FPS", lowTargetFps));
+        mediumTargetFps = Mathf.Max(0, EditorGUILayout.IntField("Medium target FPS", mediumTargetFps));
+        highTargetFps = Mathf.Max(0, EditorGUILayout.IntField("High target FPS", highTargetFps));
+        var frameTarget = City3DFrameBudget.TargetForQuality(frameQuality,
+            lowTargetFps, mediumTargetFps, highTargetFps);
+        var frameResult = City3DFrameBudget.Evaluate(frameSnapshot, frameTarget);
+        if (frameResult == City3DFrameBudget.Result.InsufficientSamples)
+            EditorGUILayout.HelpBox("At least 60 valid frames are needed for a budget result.",
+                MessageType.Info);
+        else if (frameResult == City3DFrameBudget.Result.OverBudget)
+            EditorGUILayout.HelpBox("P95 frame time " + frameSnapshot.P95Ms.ToString("F2") +
+                " ms exceeds the " + City3DFrameBudget.LimitMs(frameTarget).ToString("F2") +
+                " ms limit for target " + frameTarget + " FPS.", MessageType.Warning);
+        else if (frameResult == City3DFrameBudget.Result.Pass)
+            EditorGUILayout.LabelField("P95 budget status: PASS (" + frameTarget + " FPS target)");
+        else
+            EditorGUILayout.LabelField("P95 budget status: Disabled (target 0)");
         if (frameSnapshot.Frames > 0)
         {
             EditorGUILayout.LabelField("Estimated FPS: " +
@@ -249,7 +265,7 @@ public sealed class City3DSceneQualityWindow : EditorWindow
         sb.AppendLine(CityProceduralAuditReport.CsvRow(
             "Capture", "City", "Quality", "Frames", "EstimatedFPS",
             "AverageFrameMs", "P95FrameMs", "P99FrameMs", "MaxFrameMs",
-            "Approx1PercentLowFPS"));
+            "Approx1PercentLowFPS", "TargetFPS", "P95BudgetStatus"));
         AppendFrameCsv(sb, "Current", frameCity, frameQuality, frameSnapshot);
         if (frameBaselineCaptured)
             AppendFrameCsv(sb, "Baseline", frameBaselineCity,
@@ -278,7 +294,12 @@ public sealed class City3DSceneQualityWindow : EditorWindow
             measurement.P95Ms.ToString("F3", culture),
             measurement.P99Ms.ToString("F3", culture),
             measurement.MaxMs.ToString("F3", culture),
-            measurement.OnePercentLowFps.ToString("F3", culture)));
+            measurement.OnePercentLowFps.ToString("F3", culture),
+            City3DFrameBudget.TargetForQuality(quality,
+                lowTargetFps, mediumTargetFps, highTargetFps).ToString(culture),
+            City3DFrameBudget.Evaluate(measurement,
+                City3DFrameBudget.TargetForQuality(quality,
+                    lowTargetFps, mediumTargetFps, highTargetFps)).ToString()));
     }
 
     void DrawGeometryBudgetsAndComparison()
