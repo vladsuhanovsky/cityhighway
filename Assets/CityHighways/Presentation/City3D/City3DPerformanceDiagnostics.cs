@@ -23,6 +23,7 @@ namespace CityHighways.Presentation
         {
             public Row[] Rows;
             public int Matched, Passed, Regressions, Invalid, Missing, Additional;
+            public int LegacyMatches;
             public float CoveragePercent;
             public float WorstP95Percent;
             public bool HasRegressions;
@@ -73,6 +74,9 @@ namespace CityHighways.Presentation
                         rows.Add(row);
                         continue;
                     }
+                    if (environmentMatch ==
+                        City3DPerformanceEnvironment.Compatibility.BothLegacy)
+                        report.LegacyMatches++;
                     var difference = City3DPerformanceRegression.Compare(
                         before.snapshot, before.city, before.quality, before.scenario,
                         after.snapshot, after.city, after.quality, after.scenario,
