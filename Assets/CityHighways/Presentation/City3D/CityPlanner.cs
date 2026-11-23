@@ -202,6 +202,29 @@ namespace CityHighways.Presentation
             return new Vector3(x, y + Relief.At(x, z), z);
         }
 
+        /// <summary>
+        /// Height used by the existing procedural building mesh on sloping terrain:
+        /// the highest of its center and four rotated footprint corners.
+        /// Requires the currently active Relief field.
+        /// </summary>
+        public static float BuildingBaseHeight(Building building)
+        {
+            float width = building.Width / PixelsPerUnit;
+            float depth = building.Depth / PixelsPerUnit;
+            var rotation = Quaternion.Euler(0f, building.Angle, 0f);
+            var center = ToWorld(building.Center);
+            float highest = center.y;
+            for (int cornerIndex = 0; cornerIndex < 4; cornerIndex++)
+            {
+                var corner = center + rotation * new Vector3(
+                    (cornerIndex & 1) == 0 ? -width * 0.5f : width * 0.5f,
+                    0f,
+                    (cornerIndex & 2) == 0 ? -depth * 0.5f : depth * 0.5f);
+                highest = Mathf.Max(highest, Relief.At(corner.x, corner.z));
+            }
+            return highest;
+        }
+
         public static float Hash(int x, int y, int salt)
         {
             unchecked
