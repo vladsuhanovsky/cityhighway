@@ -28,12 +28,17 @@ namespace CityHighways.Presentation
         public static int Apply(CityPlanner.Plan plan, string mapName, Transform cityRoot)
         {
             var config = CityProceduralBuildingPrefabRules.FindForMap(mapName);
-            return Apply(plan, mapName, config, cityRoot);
+            return Apply(plan, mapName, config, cityRoot, null);
         }
 
         /// <summary>Explicit config overload for testability; absent settings are a no-op.</summary>
         public static int Apply(CityPlanner.Plan plan, string mapName,
             CityProceduralBuildingPrefabRules config, Transform cityRoot)
+            => Apply(plan, mapName, config, cityRoot, null);
+
+        public static int Apply(CityPlanner.Plan plan, string mapName,
+            CityProceduralBuildingPrefabRules config, Transform cityRoot,
+            CityProceduralPrefabBudget.Session budget)
         {
             if (plan == null || cityRoot == null || config == null ||
                 !config.AppliesTo(mapName)) return 0;
@@ -60,6 +65,7 @@ namespace CityHighways.Presentation
                 if (chosen < 0) { i++; continue; }
 
                 var selected = rules[chosen];
+                if (budget != null && !budget.TryReserve(selected.visualPrefab)) { i++; continue; }
                 var instance = Object.Instantiate(selected.visualPrefab, cityRoot);
                 if (instance == null) { i++; continue; }
                 instance.name = "Generated " + building.Kind + " (rule)";

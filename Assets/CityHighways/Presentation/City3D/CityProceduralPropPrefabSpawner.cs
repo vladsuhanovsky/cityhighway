@@ -13,12 +13,18 @@ namespace CityHighways.Presentation
             IDictionary<string, GameObject> districtVisuals, float waterLevel)
         {
             return Apply(plan, cityName, CityProceduralPropPrefabRules.FindForMap(cityName),
-                root, districtVisuals, waterLevel);
+                root, districtVisuals, waterLevel, null);
         }
 
         public static int Apply(CityPlanner.Plan plan, string cityName,
             CityProceduralPropPrefabRules config, Transform root,
             IDictionary<string, GameObject> districtVisuals, float waterLevel)
+            => Apply(plan, cityName, config, root, districtVisuals, waterLevel, null);
+
+        public static int Apply(CityPlanner.Plan plan, string cityName,
+            CityProceduralPropPrefabRules config, Transform root,
+            IDictionary<string, GameObject> districtVisuals, float waterLevel,
+            CityProceduralPrefabBudget.Session budget)
         {
             if (plan == null || config == null || root == null ||
                 !config.AppliesTo(cityName)) return 0;
@@ -49,6 +55,7 @@ namespace CityHighways.Presentation
                 if (selected < 0) { i++; continue; }
 
                 var chosen = rules[selected];
+                if (budget != null && !budget.TryReserve(chosen.visualPrefab)) { i++; continue; }
                 var key = string.IsNullOrEmpty(prop.District) ? "_" : prop.District;
                 if (!groupRoots.TryGetValue(key, out var group))
                 {
