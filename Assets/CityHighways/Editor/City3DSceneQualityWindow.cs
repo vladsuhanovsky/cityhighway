@@ -282,7 +282,7 @@ public sealed class City3DSceneQualityWindow : EditorWindow
         }
     }
 
-    static void AppendFrameCsv(StringBuilder sb, string label, string map,
+    void AppendFrameCsv(StringBuilder sb, string label, string map,
         int quality, City3DFrameMonitor.Snapshot measurement)
     {
         var culture = System.Globalization.CultureInfo.InvariantCulture;
