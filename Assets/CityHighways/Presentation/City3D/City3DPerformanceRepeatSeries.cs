@@ -111,7 +111,12 @@ namespace CityHighways.Presentation
                     return false;
                 }
                 var parsed = JsonUtility.FromJson<City3DPerformanceRepeatSeries>(json);
-                if (parsed == null || !parsed.IsValid(out reason)) return false;
+                if (parsed == null)
+                {
+                    reason = "Repeat journal JSON has no object.";
+                    return false;
+                }
+                if (!parsed.IsValid(out reason)) return false;
                 series = parsed;
                 reason = null;
                 return true;
