@@ -33,11 +33,27 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             MessageType.Info);
         var active = City3DScene.ActiveScene;
         scenario = EditorGUILayout.TextField("Scenario (seed/camera/viewport)", scenario);
+        var preflight = City3DPerformanceScenarioPreflight.Check(
+            scenario, EditorApplication.isPlaying
+                ? City3DPerformanceEnvironment.Capture() : null);
+        if (preflight.HasWarnings)
+            EditorGUILayout.HelpBox(
+                "Scenario preflight (advisory):\n" + preflight.Warnings +
+                "\nThe label cannot verify the generator seed or camera.",
+                MessageType.Warning);
         using (new EditorGUI.DisabledScope(!EditorApplication.isPlaying ||
             active == null || active.FrameMonitor == null))
         {
             if (GUILayout.Button("Add active 3D capture to CURRENT suite"))
             {
+                // A warning is not proof of a wrong seed. Require explicit
+                // acknowledgement rather than silently rewriting legacy labels.
+                if (preflight.HasWarnings &&
+                    !EditorUtility.DisplayDialog("Capture scenario warnings",
+                        preflight.Warnings +
+                        "\n\nCapture anyway? The procedural seed and camera are not verified.",
+                        "Capture anyway", "Cancel"))
+                    return;
                 var item = City3DPerformanceBaseline.Create(active.CityName,
                     active.GraphicsQuality, scenario, active.FrameMonitor.Capture(),
                     captureEnvironment: City3DPerformanceEnvironment.Capture());
