@@ -1,3 +1,4 @@
+using CityHighways.Core;
 using CityHighways.Presentation;
 using NUnit.Framework;
 using UnityEditor;
@@ -115,6 +116,38 @@ namespace CityHighways.Tests
             Assert.AreEqual(3, plan.Buildings.Count);
             Assert.IsTrue(config.AppliesTo("Special city"));
             Assert.IsFalse(config.AppliesTo("Another city"));
+        }
+
+        [TestCase(7)]
+        [TestCase(42)]
+        public void RandomMagnateMapAcceptsRulesWithoutChangingLogicalCity(int seed)
+        {
+            var city = CityGenerator.Generate(seed);
+            var plan = CityPlanner.Build(city.Map, 0.55f);
+            Assert.Greater(plan.Buildings.Count, 0);
+            int beforeBuildings = plan.Buildings.Count;
+            int beforeRoads = city.Map.Roads.Count;
+            int beforeLocations = city.Map.Locations.Count;
+
+            var serialized = new SerializedObject(config);
+            var rules = serialized.FindProperty("rules");
+            rules.arraySize = 1;
+            var rule = rules.GetArrayElementAtIndex(0);
+            rule.FindPropertyRelative("buildingKind").enumValueIndex =
+                (int)plan.Buildings[0].Kind;
+            rule.FindPropertyRelative("visualPrefab").objectReferenceValue = prefab;
+            rule.FindPropertyRelative("probability").floatValue = 1f;
+            rule.FindPropertyRelative("prefabScale").floatValue = 1f;
+            rule.FindPropertyRelative("maxInstances").intValue = 1;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            int applied = CityProceduralBuildingPrefabSpawner.Apply(
+                plan, city.Map.Name, config, root.transform);
+            Assert.AreEqual(1, applied);
+            Assert.AreEqual(beforeBuildings - 1, plan.Buildings.Count);
+            Assert.AreEqual(1, root.transform.childCount);
+            Assert.AreEqual(beforeRoads, city.Map.Roads.Count);
+            Assert.AreEqual(beforeLocations, city.Map.Locations.Count);
         }
 
         [Test]
