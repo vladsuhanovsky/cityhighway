@@ -9,7 +9,8 @@ namespace CityHighways.Presentation
     public sealed class City3DPerformanceSuite
     {
         public const int CurrentVersion = 1;
-        public int version = CurrentVersion;
+        public int version;
+        public City3DPerformanceSuite() { version = CurrentVersion; }
         public List<City3DPerformanceBaseline> entries = new List<City3DPerformanceBaseline>();
 
         public bool TryAdd(City3DPerformanceBaseline capture, out string reason)
@@ -32,6 +33,46 @@ namespace CityHighways.Presentation
             reason = null;
             return true;
         }
+
+        /// <summary>Explicitly replace a single matching capture after user confirmation.</summary>
+        public bool TryReplace(City3DPerformanceBaseline capture, out string reason)
+        {
+            if (capture == null)
+            {
+                reason = "Capture is null.";
+                return false;
+            }
+            if (!capture.IsValid(out reason)) return false;
+            if (entries != null)
+                for (int i = 0; i < entries.Count; i++)
+                    if (SameKey(entries[i], capture))
+                    {
+                        entries[i] = capture;
+                        reason = null;
+                        return true;
+                    }
+            reason = "Scenario not present in suite.";
+            return false;
+        }
+
+        /// <summary>Remove one scenario without clearing unrelated captures.</summary>
+        public bool TryRemove(string city, int quality, string scenario)
+        {
+            if (entries == null) return false;
+            for (int i = 0; i < entries.Count; i++)
+                if (entries[i] != null &&
+                    string.Equals(entries[i].city, city, StringComparison.Ordinal) &&
+                    entries[i].quality == quality &&
+                    string.Equals(entries[i].scenario, scenario, StringComparison.Ordinal))
+                {
+                    entries.RemoveAt(i);
+                    return true;
+                }
+            return false;
+        }
+
+        [Serializable]
+        sealed class VersionHeader { public int version; }
 
         static bool SameKey(City3DPerformanceBaseline a, City3DPerformanceBaseline b) =>
             a != null && string.Equals(a.city, b.city, StringComparison.Ordinal) &&
@@ -82,6 +123,14 @@ namespace CityHighways.Presentation
             }
             try
             {
+                // Parse an independent zero-default header: do not accept JSON missing
+                // the explicit version even if Unity applies field initializers.
+                var header = JsonUtility.FromJson<VersionHeader>(json);
+                if (header == null || header.version != CurrentVersion)
+                {
+                    reason = "Unsupported or missing performance suite version.";
+                    return false;
+                }
                 var parsed = JsonUtility.FromJson<City3DPerformanceSuite>(json);
                 if (parsed == null)
                 {
