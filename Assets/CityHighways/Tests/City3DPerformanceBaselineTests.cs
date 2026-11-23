@@ -74,6 +74,10 @@ namespace CityHighways.Tests
                 "not a JSON object", out _, out _));
             Assert.IsFalse(City3DPerformanceBaseline.TryFromJson(
                 "", out _, out _));
+            Assert.IsFalse(City3DPerformanceBaseline.TryFromJson(
+                "null", out var parsedNull, out var nullReason));
+            Assert.IsNull(parsedNull);
+            Assert.IsNotEmpty(nullReason);
         }
 
         [Test]
