@@ -34,6 +34,10 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     int kindFilter;
     Vector2 scroll;
     int shownLimit = 100;
+    bool showSceneMarkers;
+    string selectedObjectId;
+    const float SceneMarkerReach = 2.5f;
+    const int MaxSceneMarkers = 120;
 
     [MenuItem("City Highways/3D Objects/Procedural Object Catalog")]
     static void Open() => GetWindow<CityProceduralObjectCatalogWindow>("3D Object Catalog");
@@ -42,9 +46,14 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     {
         LoadSnapshot();
         EditorApplication.playModeStateChanged += OnPlayModeChanged;
+        SceneView.duringSceneGui += DrawSceneMarkers;
     }
 
-    void OnDisable() => EditorApplication.playModeStateChanged -= OnPlayModeChanged;
+    void OnDisable()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeChanged;
+        SceneView.duringSceneGui -= DrawSceneMarkers;
+    }
 
     void OnPlayModeChanged(PlayModeStateChange change)
     {
@@ -124,12 +133,37 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
 
         GUILayout.Label((live != null ? "LIVE" : "SAVED") + "  " + data.city +
                         "  —  " + data.rows.Count + " visuals", EditorStyles.boldLabel);
+        var selected = Selection.activeGameObject != null
+            ? Selection.activeGameObject.GetComponent<CityProceduralReplacement>() : null;
         filter = EditorGUILayout.TextField("Find ID", filter);
         kindFilter = EditorGUILayout.Popup("Type", kindFilter, new[] { "All", "Buildings", "Trees" });
         shownLimit = EditorGUILayout.IntSlider("Maximum rows", shownLimit, 20, 300);
+        showSceneMarkers = EditorGUILayout.ToggleLeft("Show clickable markers in Scene View", showSceneMarkers);
+        if (showSceneMarkers)
+            EditorGUILayout.HelpBox(
+                "Scene View: markers within 2.5 world units of its camera pivot (maximum 120) are clickable. " +
+                "Use Focus on a row to navigate elsewhere. Click a marker to select its ID; " +
+                "then select a replacement anchor in Hierarchy and click Assign selected marker.",
+                MessageType.None);
+        if (showSceneMarkers && !string.IsNullOrEmpty(selectedObjectId))
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.SelectableLabel(selectedObjectId, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+            using (new EditorGUI.DisabledScope(EditorApplication.isPlaying || selected == null))
+            {
+                if (GUILayout.Button("Assign selected marker", GUILayout.Width(165)))
+                {
+                    foreach (var row in data.rows)
+                        if (row.id == selectedObjectId)
+                        {
+                            AssignToAnchor(selected, data.city, row);
+                            break;
+                        }
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+        }
 
-        var selected = Selection.activeGameObject != null
-            ? Selection.activeGameObject.GetComponent<CityProceduralReplacement>() : null;
         if (!EditorApplication.isPlaying && selected == null)
             EditorGUILayout.HelpBox("Select a Procedural Object Replacement in Hierarchy to enable Assign ID.", MessageType.None);
 
@@ -151,11 +185,18 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             if (GUILayout.Button("Copy", GUILayout.Width(43)))
                 EditorGUIUtility.systemCopyBuffer = item.id;
             if (GUILayout.Button("Focus", GUILayout.Width(48)))
+            {
+                selectedObjectId = item.id;
                 FocusPosition(item);
+                SceneView.RepaintAll();
+            }
 
             using (new EditorGUI.DisabledScope(EditorApplication.isPlaying || selected == null))
                 if (GUILayout.Button("Assign", GUILayout.Width(52)))
+                {
+                    selectedObjectId = item.id;
                     AssignToAnchor(selected, data.city, item);
+                }
             EditorGUILayout.EndHorizontal();
         }
         EditorGUILayout.EndScrollView();
@@ -163,12 +204,73 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                                    (matching > shownLimit ? " (displaying first " + shownLimit + ")" : ""));
     }
 
+
+    static Vector3 ToScenePosition(SnapshotRow row)
+    {
+        return new Vector3(
+            row.x / CityPlanner.PixelsPerUnit - BoardLayout.WorldWidth * 0.5f,
+            0f,
+            BoardLayout.WorldDepth * 0.5f - row.y / CityPlanner.PixelsPerUnit);
+    }
+
+    void DrawSceneMarkers(SceneView scene)
+    {
+        if (!showSceneMarkers || scene == null || scene.camera == null) return;
+        var data = EditorApplication.isPlaying ? ReadLive() : snapshot;
+        if (data == null) return;
+
+        // Avoid thousands of editor handles: only show objects near the Scene View pivot.
+        var near = new List<SnapshotRow>();
+        float distanceLimit = SceneMarkerReach * SceneMarkerReach;
+        Vector3 pivot = scene.pivot;
+        foreach (var row in data.rows)
+        {
+            if (kindFilter == 1 && row.kind != (int)CityProceduralReplacement.TargetKind.Building) continue;
+            if (kindFilter == 2 && row.kind != (int)CityProceduralReplacement.TargetKind.Tree) continue;
+            if (!string.IsNullOrEmpty(filter) && row.id.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0) continue;
+            var point = ToScenePosition(row);
+            float dx = point.x - pivot.x, dz = point.z - pivot.z;
+            if (dx * dx + dz * dz <= distanceLimit) near.Add(row);
+        }
+        near.Sort((a, b) =>
+        {
+            var pa = ToScenePosition(a);
+            var pb = ToScenePosition(b);
+            float da = (pa.x - pivot.x) * (pa.x - pivot.x) + (pa.z - pivot.z) * (pa.z - pivot.z);
+            float db = (pb.x - pivot.x) * (pb.x - pivot.x) + (pb.z - pivot.z) * (pb.z - pivot.z);
+            int cmp = da.CompareTo(db);
+            return cmp != 0 ? cmp : string.CompareOrdinal(a.id, b.id);
+        });
+
+        int count = Mathf.Min(MaxSceneMarkers, near.Count);
+        for (int i = 0; i < count; i++)
+        {
+            var row = near[i];
+            var position = ToScenePosition(row);
+            bool active = row.id == selectedObjectId;
+            Handles.color = active ? Color.yellow :
+                row.kind == (int)CityProceduralReplacement.TargetKind.Building
+                    ? new Color(0.15f, 0.75f, 1f, 0.9f)
+                    : new Color(0.25f, 0.95f, 0.5f, 0.9f);
+
+            float size = Mathf.Min(0.085f, HandleUtility.GetHandleSize(position) * 0.06f);
+            if (Handles.Button(position, Quaternion.identity, size, size * 1.4f, Handles.DotHandleCap))
+            {
+                selectedObjectId = row.id;
+                Repaint();
+            }
+            if (active)
+            {
+                Handles.color = Color.white;
+                Handles.Label(position + Vector3.up * 0.12f, row.id);
+            }
+        }
+        Handles.color = Color.white;
+    }
+
     static void FocusPosition(SnapshotRow entry)
     {
-        var world = new Vector3(
-            entry.x / CityPlanner.PixelsPerUnit - BoardLayout.WorldWidth * 0.5f,
-            0f,
-            BoardLayout.WorldDepth * 0.5f - entry.y / CityPlanner.PixelsPerUnit);
+        var world = ToScenePosition(entry);
         var view = SceneView.lastActiveSceneView;
         if (view != null)
             view.Frame(new Bounds(world, Vector3.one * 0.6f), false);
