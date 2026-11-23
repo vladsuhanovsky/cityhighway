@@ -304,6 +304,13 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             FindObjectsInactive.Include, FindObjectsSortMode.None);
         Array.Sort(anchors, (a, b) => string.CompareOrdinal(
             a.gameObject.name, b.gameObject.name));
+        var currentCityIds = new List<string>();
+        foreach (var candidate in anchors)
+            if (candidate != null && candidate.gameObject.scene.IsValid() &&
+                candidate.gameObject.scene.isLoaded && candidate.isActiveAndEnabled &&
+                string.Equals(candidate.MapName, data.city, StringComparison.Ordinal))
+                currentCityIds.Add(candidate.StableObjectId);
+        var duplicateIds = CityProceduralAuditReport.DuplicateIds(currentCityIds);
 
         foreach (var anchor in anchors)
         {
@@ -315,6 +322,15 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             }
 
             auditCount++;
+            if (string.Equals(anchor.MapName, data.city, StringComparison.Ordinal) &&
+                duplicateIds.Contains(anchor.StableObjectId))
+            {
+                auditIssues.Add(new AuditIssue { anchor = anchor,
+                    problem = "Duplicate stable ID: " + anchor.StableObjectId +
+                              " (multiple active anchors target the same object)",
+                    category = CityProceduralAuditReport.Category.DuplicateId });
+                continue;
+            }
             SnapshotRow entry = null;
             if (!string.IsNullOrEmpty(anchor.StableObjectId))
                 byId.TryGetValue(anchor.StableObjectId, out entry);
@@ -483,6 +499,11 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             if (!string.IsNullOrEmpty(row.id) && !catalog.ContainsKey(row.id))
                 catalog.Add(row.id, row);
 
+        var unsafeAnchors = new HashSet<CityProceduralReplacement>();
+        foreach (var issue in auditIssues)
+            if (issue.anchor != null && issue.category == CityProceduralAuditReport.Category.DuplicateId)
+                unsafeAnchors.Add(issue.anchor);
+
         var flags = new Dictionary<CityProceduralReplacement, int>();
         foreach (var issue in filtered)
         {
@@ -498,7 +519,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         foreach (var pair in flags)
         {
             var anchor = pair.Key;
-            if (anchor == null || !anchor.isActiveAndEnabled ||
+            if (anchor == null || unsafeAnchors.Contains(anchor) ||
+                !anchor.isActiveAndEnabled ||
                 !string.Equals(anchor.MapName, data.city, StringComparison.Ordinal) ||
                 !catalog.TryGetValue(anchor.StableObjectId, out var entry) ||
                 entry.kind != (int)anchor.Target || !entry.hasTerrainY) continue;

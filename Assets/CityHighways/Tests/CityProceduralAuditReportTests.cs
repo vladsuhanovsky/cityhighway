@@ -17,6 +17,40 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void DuplicateIdsDetectEveryRepeatedNonEmptyStableId()
+        {
+            var duplicates = CityProceduralAuditReport.DuplicateIds(new[]
+            {
+                "B:1:10:20", "T:9:30:40", "B:1:10:20", "", "",
+                "T:9:30:40", "B:7:50:60"
+            });
+            Assert.AreEqual(2, duplicates.Count);
+            Assert.IsTrue(duplicates.Contains("B:1:10:20"));
+            Assert.IsTrue(duplicates.Contains("T:9:30:40"));
+            Assert.IsFalse(duplicates.Contains(""));
+            Assert.IsFalse(duplicates.Contains("B:7:50:60"));
+        }
+
+        [Test]
+        public void DuplicateFilterKeepsOtherAuditCategoriesSeparate()
+        {
+            Assert.IsTrue(CityProceduralAuditReport.Matches(
+                CityProceduralAuditReport.Category.DuplicateId,
+                CityProceduralAuditReport.Category.DuplicateId));
+            Assert.IsFalse(CityProceduralAuditReport.Matches(
+                CityProceduralAuditReport.Category.DuplicateId,
+                CityProceduralAuditReport.Category.Configuration));
+        }
+
+        [Test]
+        public void NullAndUniqueIdsProduceNoConflict()
+        {
+            Assert.AreEqual(0, CityProceduralAuditReport.DuplicateIds(null).Count);
+            Assert.AreEqual(0, CityProceduralAuditReport.DuplicateIds(
+                new[] { "B:1:1:1", "T:1:1:1" }).Count);
+        }
+
+        [Test]
         public void CsvQuotesCommasNewlinesAndDoubleQuotes()
         {
             Assert.AreEqual("\"one,two\",\"say \"\"hi\"\"\",\"line1\nline2\"",
