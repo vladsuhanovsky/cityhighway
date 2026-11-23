@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using CityHighways.Presentation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -53,6 +54,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     {
         public CityProceduralReplacement anchor;
         public string problem;
+        public CityProceduralAuditReport.Category category;
     }
     readonly List<AuditIssue> auditIssues = new List<AuditIssue>();
     bool auditWasRun;
@@ -60,6 +62,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     int auditSkipped;
     int auditCount;
     Vector2 auditScroll;
+    CityProceduralAuditReport.Category auditCategory;
     const int MaxAuditRows = 150;
     const float SceneMarkerReach = 2.5f;
     const int MaxSceneMarkers = 120;
@@ -322,14 +325,18 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             }
             if (status != CityProceduralBatchAuditRules.Status.Ready)
             {
-                auditIssues.Add(new AuditIssue { anchor = anchor, problem = status.ToString() });
+                auditIssues.Add(new AuditIssue { anchor = anchor, problem = status.ToString(),
+                    category = status == CityProceduralBatchAuditRules.Status.InvalidGeometry
+                        ? CityProceduralAuditReport.Category.Geometry
+                        : CityProceduralAuditReport.Category.Configuration });
                 continue;
             }
 
             if (!entry.hasTerrainY)
             {
                 auditIssues.Add(new AuditIssue { anchor = anchor,
-                    problem = "Missing captured terrain height (recapture catalog)" });
+                    problem = "Missing captured terrain height (recapture catalog)",
+                    category = CityProceduralAuditReport.Category.MissingTerrain });
                 continue;
             }
 
@@ -338,7 +345,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                     sourceSize, targetSize, anchor.transform.position, TargetPosition(entry),
                     lowestY, entry.terrainY, out var diagnostics))
             {
-                auditIssues.Add(new AuditIssue { anchor = anchor, problem = "Invalid measurements" });
+                auditIssues.Add(new AuditIssue { anchor = anchor, problem = "Invalid measurements",
+                    category = CityProceduralAuditReport.Category.Geometry });
                 continue;
             }
             bool hasWarnings = false;
@@ -346,20 +354,23 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             {
                 hasWarnings = true;
                 auditIssues.Add(new AuditIssue { anchor = anchor,
-                    problem = "Oversized: " + diagnostics.MaximumSizeRatio.ToString("F2") + "x" });
+                    problem = "Oversized: " + diagnostics.MaximumSizeRatio.ToString("F2") + "x",
+                    category = CityProceduralAuditReport.Category.Oversized });
             }
             if (diagnostics.Offset)
             {
                 hasWarnings = true;
                 auditIssues.Add(new AuditIssue { anchor = anchor,
-                    problem = "Horizontal offset: " + diagnostics.HorizontalOffset.ToString("F3") });
+                    problem = "Horizontal offset: " + diagnostics.HorizontalOffset.ToString("F3"),
+                    category = CityProceduralAuditReport.Category.Offset });
             }
             if (diagnostics.BelowGround)
             {
                 hasWarnings = true;
                 auditIssues.Add(new AuditIssue { anchor = anchor,
                     problem = "Possible ground intersection: " +
-                        diagnostics.GroundPenetration.ToString("F3") });
+                        diagnostics.GroundPenetration.ToString("F3"),
+                    category = CityProceduralAuditReport.Category.BelowGround });
             }
             if (!hasWarnings) auditReady++;
         }
@@ -386,11 +397,24 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             "Each warning is listed independently; a single anchor can appear several times.",
             MessageType.None);
 
-        int shown = Mathf.Min(MaxAuditRows, auditIssues.Count);
+        auditCategory = (CityProceduralAuditReport.Category)EditorGUILayout.EnumPopup(
+            "Issue type", auditCategory);
+        var filtered = new List<AuditIssue>();
+        foreach (var issue in auditIssues)
+            if (CityProceduralAuditReport.Matches(auditCategory, issue.category))
+                filtered.Add(issue);
+        EditorGUILayout.LabelField("Matching issues: " + filtered.Count);
+        using (new EditorGUI.DisabledScope(EditorApplication.isPlaying || filtered.Count == 0))
+        {
+            if (GUILayout.Button("Export filtered issues as CSV..."))
+                ExportBatchAuditCsv(data.city, filtered);
+        }
+
+        int shown = Mathf.Min(MaxAuditRows, filtered.Count);
         auditScroll = EditorGUILayout.BeginScrollView(auditScroll, GUILayout.MaxHeight(210f));
         for (int i = 0; i < shown; i++)
         {
-            var issue = auditIssues[i];
+            var issue = filtered[i];
             if (issue.anchor == null) continue;
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label(issue.anchor.name + " — " + issue.problem, GUILayout.ExpandWidth(true));
@@ -406,9 +430,43 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             EditorGUILayout.EndHorizontal();
         }
         EditorGUILayout.EndScrollView();
-        if (auditIssues.Count > shown)
+        if (filtered.Count > shown)
             EditorGUILayout.LabelField("Displaying first " + shown +
                 " issues; refine the map or fix visible anchors and scan again.");
+    }
+
+    static void ExportBatchAuditCsv(string city, List<AuditIssue> filtered)
+    {
+        var path = EditorUtility.SaveFilePanel(
+            "Export procedural replacement audit", "", "CityHighwaysReplacementAudit.csv", "csv");
+        if (string.IsNullOrEmpty(path)) return;
+
+        var csv = new StringBuilder();
+        csv.AppendLine(CityProceduralAuditReport.CsvRow(
+            "City", "Scene", "Anchor", "TargetKind", "StableObjectId",
+            "IssueCategory", "Description", "WorldX", "WorldY", "WorldZ"));
+        foreach (var issue in filtered)
+        {
+            if (issue.anchor == null) continue;
+            var anchor = issue.anchor;
+            var position = anchor.transform.position;
+            csv.AppendLine(CityProceduralAuditReport.CsvRow(
+                city, anchor.gameObject.scene.path, anchor.name, anchor.Target.ToString(),
+                anchor.StableObjectId, issue.category.ToString(), issue.problem,
+                position.x.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+                position.y.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+                position.z.ToString("R", System.Globalization.CultureInfo.InvariantCulture)));
+        }
+        try
+        {
+            File.WriteAllText(path, csv.ToString(), new UTF8Encoding(true));
+            Debug.Log("Exported procedural replacement audit to " + path);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Could not export procedural replacement audit: " + e.Message);
+            EditorUtility.DisplayDialog("CSV export failed", e.Message, "OK");
+        }
     }
 
     /// <summary>Compare a selected catalog volume to the assigned Prefab's static meshes.</summary>
