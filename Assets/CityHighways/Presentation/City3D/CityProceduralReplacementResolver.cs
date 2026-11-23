@@ -21,10 +21,12 @@ namespace CityHighways.Presentation
             public readonly float Height;
             public readonly float Angle;
             public readonly float TerrainY;
+            public readonly float BuildingBaseY;
 
             // Dimensions are in world units. Trees are shown as approximate vertical volumes.
             public CatalogEntry(string id, CityProceduralReplacement.TargetKind kind, Vector2 position,
-                float width = 0f, float depth = 0f, float height = 0f, float angle = 0f, float terrainY = 0f)
+                float width = 0f, float depth = 0f, float height = 0f, float angle = 0f,
+                float terrainY = 0f, float buildingBaseY = 0f)
             {
                 Id = id;
                 Kind = kind;
@@ -34,6 +36,7 @@ namespace CityHighways.Presentation
                 Height = height;
                 Angle = angle;
                 TerrainY = terrainY;
+                BuildingBaseY = buildingBaseY;
             }
         }
 
@@ -69,7 +72,8 @@ namespace CityHighways.Presentation
                     CityProceduralReplacement.TargetKind.Building, building.Center,
                     building.Width / CityPlanner.PixelsPerUnit,
                     building.Depth / CityPlanner.PixelsPerUnit, building.Height, building.Angle,
-                    CityPlanner.ToWorld(building.Center).y));
+                    CityPlanner.ToWorld(building.Center).y,
+                    CityPlanner.BuildingBaseHeight(building)));
             foreach (var tree in plan.Trees)
                 Catalog.Add(new CatalogEntry(TreeId(tree),
                     CityProceduralReplacement.TargetKind.Tree, tree.At,
