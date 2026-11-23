@@ -14,7 +14,12 @@ namespace CityHighways.Presentation
 
         public bool TryAdd(City3DPerformanceBaseline capture, out string reason)
         {
-            if (capture == null || !capture.IsValid(out reason)) { reason = reason ?? "Invalid capture."; return false; }
+            if (capture == null)
+            {
+                reason = "Capture is null.";
+                return false;
+            }
+            if (!capture.IsValid(out reason)) return false;
             if (entries == null) entries = new List<City3DPerformanceBaseline>();
             for (int i = 0; i < entries.Count; i++)
                 if (SameKey(entries[i], capture))
