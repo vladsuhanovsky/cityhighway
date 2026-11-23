@@ -124,6 +124,36 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         if (GUILayout.Button("Clear BASELINE")) baseline = new City3DPerformanceSuite();
         EditorGUILayout.EndHorizontal();
 
+        var collection = City3DPerformanceSuiteReadiness.Check(baseline, current);
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Capture collection checklist", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(collection.Summary,
+            collection.HasBaseline && !collection.Complete
+                ? MessageType.Warning : MessageType.Info);
+        if (collection.HasBaseline)
+        {
+            foreach (var item in collection.Items)
+            {
+                if (item.Present && item.EnvironmentCompatible) continue;
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(
+                    (item.Present ? "INCOMPATIBLE" : "MISSING") + " — " +
+                    item.City + " [" + item.Quality + "] " + item.Scenario);
+                if (GUILayout.Button("Use label", GUILayout.Width(90f)))
+                    scenario = item.Scenario;
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.LabelField("  " + item.Reason);
+            }
+            if (collection.UnverifiedLabels > 0)
+                EditorGUILayout.HelpBox(collection.UnverifiedLabels +
+                    " baseline scenario labels have unverified/malformed seed, camera " +
+                    "or viewport annotations. This does not invalidate old captures.",
+                    MessageType.Warning);
+        }
+        using (new EditorGUI.DisabledScope(!collection.HasBaseline))
+            if (GUILayout.Button("Export collection checklist CSV..."))
+                ExportCollectionChecklist(collection);
+
         allowedRegression = Mathf.Max(0f, EditorGUILayout.FloatField(
             "Allowed P95 regression (%)", allowedRegression));
         var summary = City3DPerformanceSuite.Compare(baseline, current, allowedRegression);
@@ -432,6 +462,28 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         catch (Exception e)
         {
             EditorUtility.DisplayDialog("Markdown export failed", e.Message, "OK");
+        }
+    }
+
+    static void ExportCollectionChecklist(City3DPerformanceSuiteReadiness.Report report)
+    {
+        var path = EditorUtility.SaveFilePanel("Export capture checklist", "",
+            "CityHighwaysCaptureChecklist.csv", "csv");
+        if (string.IsNullOrEmpty(path)) return;
+        var csv = new StringBuilder();
+        csv.AppendLine(CityProceduralAuditReport.CsvRow(
+            "City", "Quality", "Scenario", "Captured", "EnvironmentCompatible",
+            "Reason"));
+        foreach (var item in report.Items)
+            csv.AppendLine(CityProceduralAuditReport.CsvRow(
+                item.City,
+                item.Quality.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                item.Scenario, item.Present ? "yes" : "no",
+                item.EnvironmentCompatible ? "yes" : "no", item.Reason));
+        try { File.WriteAllText(path, csv.ToString(), new UTF8Encoding(true)); }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Checklist export failed", e.Message, "OK");
         }
     }
 
