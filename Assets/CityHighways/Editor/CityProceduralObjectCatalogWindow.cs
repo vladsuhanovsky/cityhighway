@@ -49,6 +49,18 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     bool snapToCapturedTerrain;
     bool useBuildingBaseHeight;
     string selectedObjectId;
+    sealed class AuditIssue
+    {
+        public CityProceduralReplacement anchor;
+        public string problem;
+    }
+    readonly List<AuditIssue> auditIssues = new List<AuditIssue>();
+    bool auditWasRun;
+    int auditReady;
+    int auditSkipped;
+    int auditCount;
+    Vector2 auditScroll;
+    const int MaxAuditRows = 150;
     const float SceneMarkerReach = 2.5f;
     const int MaxSceneMarkers = 120;
 
@@ -111,6 +123,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         // Library is a local Unity cache, not a tracked game or map asset.
         File.WriteAllText(SnapshotFile, JsonUtility.ToJson(live));
         snapshot = live;
+        auditWasRun = false;
+        auditIssues.Clear();
         Repaint();
         Debug.Log("Saved local 3D object catalog for " + live.city + " (" + live.rows.Count + " visuals).");
     }
@@ -118,6 +132,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     void LoadSnapshot()
     {
         snapshot = null;
+        auditWasRun = false;
+        auditIssues.Clear();
         if (!File.Exists(SnapshotFile)) return;
         try
         {
@@ -209,6 +225,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             EditorGUILayout.HelpBox("Select a Procedural Object Replacement in Hierarchy to enable assignment or placement.", MessageType.None);
 
         DrawPrefabComparison(data, selected);
+        DrawBatchAudit(data, live != null);
 
         int matching = 0, rendered = 0;
         scroll = EditorGUILayout.BeginScrollView(scroll);
@@ -255,6 +272,144 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                                    (matching > shownLimit ? " (displaying first " + shownLimit + ")" : ""));
     }
 
+
+    /// <summary>Batch scan of authored anchors in loaded scenes against the saved catalog.</summary>
+    void RunBatchAudit(Snapshot data)
+    {
+        auditIssues.Clear();
+        auditWasRun = true;
+        auditReady = 0;
+        auditSkipped = 0;
+        auditCount = 0;
+
+        var byId = new Dictionary<string, SnapshotRow>(StringComparer.Ordinal);
+        foreach (var row in data.rows)
+            if (!string.IsNullOrEmpty(row.id) && !byId.ContainsKey(row.id))
+                byId.Add(row.id, row);
+
+        var anchors = UnityEngine.Object.FindObjectsByType<CityProceduralReplacement>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Array.Sort(anchors, (a, b) => string.CompareOrdinal(
+            a.gameObject.name, b.gameObject.name));
+
+        foreach (var anchor in anchors)
+        {
+            if (anchor == null || !anchor.gameObject.scene.IsValid() ||
+                !anchor.gameObject.scene.isLoaded || !anchor.isActiveAndEnabled)
+            {
+                auditSkipped++;
+                continue;
+            }
+
+            auditCount++;
+            SnapshotRow entry = null;
+            if (!string.IsNullOrEmpty(anchor.StableObjectId))
+                byId.TryGetValue(anchor.StableObjectId, out entry);
+            var targetSize = entry != null
+                ? new Vector3(entry.width, entry.height, entry.depth) : Vector3.zero;
+            Vector3 sourceSize = Vector3.zero;
+            bool geometryValid = entry != null && CityProceduralPrefabFitting.TryFit(
+                anchor, targetSize, out sourceSize, out _);
+
+            var status = CityProceduralBatchAuditRules.Classify(
+                data.city, anchor.MapName, anchor.StableObjectId, anchor.VisualPrefab != null,
+                entry != null, entry != null && entry.kind == (int)anchor.Target,
+                geometryValid);
+            if (status == CityProceduralBatchAuditRules.Status.SkippedOtherCity)
+            {
+                auditSkipped++;
+                continue;
+            }
+            if (status != CityProceduralBatchAuditRules.Status.Ready)
+            {
+                auditIssues.Add(new AuditIssue { anchor = anchor, problem = status.ToString() });
+                continue;
+            }
+
+            if (!entry.hasTerrainY)
+            {
+                auditIssues.Add(new AuditIssue { anchor = anchor,
+                    problem = "Missing captured terrain height (recapture catalog)" });
+                continue;
+            }
+
+            if (!CityProceduralPrefabFitting.TryWorldLowestY(anchor, out var lowestY) ||
+                !CityProceduralPlacementDiagnostics.TryEvaluate(
+                    sourceSize, targetSize, anchor.transform.position, TargetPosition(entry),
+                    lowestY, entry.terrainY, out var diagnostics))
+            {
+                auditIssues.Add(new AuditIssue { anchor = anchor, problem = "Invalid measurements" });
+                continue;
+            }
+            bool hasWarnings = false;
+            if (diagnostics.Oversized)
+            {
+                hasWarnings = true;
+                auditIssues.Add(new AuditIssue { anchor = anchor,
+                    problem = "Oversized: " + diagnostics.MaximumSizeRatio.ToString("F2") + "x" });
+            }
+            if (diagnostics.Offset)
+            {
+                hasWarnings = true;
+                auditIssues.Add(new AuditIssue { anchor = anchor,
+                    problem = "Horizontal offset: " + diagnostics.HorizontalOffset.ToString("F3") });
+            }
+            if (diagnostics.BelowGround)
+            {
+                hasWarnings = true;
+                auditIssues.Add(new AuditIssue { anchor = anchor,
+                    problem = "Possible ground intersection: " +
+                        diagnostics.GroundPenetration.ToString("F3") });
+            }
+            if (!hasWarnings) auditReady++;
+        }
+    }
+
+    void DrawBatchAudit(Snapshot data, bool liveCatalog)
+    {
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Batch replacement diagnostics", EditorStyles.boldLabel);
+        using (new EditorGUI.DisabledScope(EditorApplication.isPlaying || liveCatalog))
+        {
+            if (GUILayout.Button("Scan all replacement anchors in loaded scenes"))
+                RunBatchAudit(data);
+        }
+        if (liveCatalog)
+            EditorGUILayout.HelpBox("Exit Play Mode to scan scene-authored anchors.", MessageType.None);
+        if (!auditWasRun) return;
+
+        EditorGUILayout.LabelField("Scanned: " + auditCount + "    Clean: " + auditReady +
+            "    Skipped (inactive/other city): " + auditSkipped +
+            "    Issues: " + auditIssues.Count);
+        EditorGUILayout.HelpBox(
+            "Snapshot-based results. Scan again after editing transforms, Prefabs or the scene. " +
+            "Each warning is listed independently; a single anchor can appear several times.",
+            MessageType.None);
+
+        int shown = Mathf.Min(MaxAuditRows, auditIssues.Count);
+        auditScroll = EditorGUILayout.BeginScrollView(auditScroll, GUILayout.MaxHeight(210f));
+        for (int i = 0; i < shown; i++)
+        {
+            var issue = auditIssues[i];
+            if (issue.anchor == null) continue;
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Label(issue.anchor.name + " — " + issue.problem, GUILayout.ExpandWidth(true));
+            if (GUILayout.Button("Select", GUILayout.Width(55)))
+                Selection.activeGameObject = issue.anchor.gameObject;
+            if (GUILayout.Button("Focus", GUILayout.Width(50)))
+            {
+                Selection.activeGameObject = issue.anchor.gameObject;
+                var view = SceneView.lastActiveSceneView;
+                if (view != null)
+                    view.Frame(new Bounds(issue.anchor.transform.position, Vector3.one * 0.6f), false);
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+        EditorGUILayout.EndScrollView();
+        if (auditIssues.Count > shown)
+            EditorGUILayout.LabelField("Displaying first " + shown +
+                " issues; refine the map or fix visible anchors and scan again.");
+    }
 
     /// <summary>Compare a selected catalog volume to the assigned Prefab's static meshes.</summary>
     void DrawPrefabComparison(Snapshot data, CityProceduralReplacement anchor)
