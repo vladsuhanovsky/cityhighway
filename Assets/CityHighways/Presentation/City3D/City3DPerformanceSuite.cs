@@ -137,6 +137,9 @@ namespace CityHighways.Presentation
                     reason = "Suite JSON has no object.";
                     return false;
                 }
+                if (parsed.entries != null)
+                    foreach (var entry in parsed.entries)
+                        if (entry != null) entry.NormalizeLegacyEnvironment();
                 if (!parsed.IsValid(out reason)) return false;
                 suite = parsed;
                 return true;
