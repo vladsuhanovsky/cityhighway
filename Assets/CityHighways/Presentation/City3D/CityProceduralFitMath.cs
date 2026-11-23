@@ -24,6 +24,31 @@ namespace CityHighways.Presentation
             return true;
         }
 
+        /// <summary>
+        /// Comparison metadata for an authored replacement against a generated target.
+        /// Each size ratio is replacement / target; a value of 1 means matching size.
+        /// </summary>
+        public static bool TryCompare(Vector3 replacementSize, Vector3 targetSize,
+            Vector3 replacementPosition, Vector3 targetPosition,
+            out Vector3 sizeRatios, out float centerOffset)
+        {
+            sizeRatios = Vector3.zero;
+            centerOffset = 0f;
+            if (!Valid(replacementSize) || !Valid(targetSize) ||
+                !FinitePosition(replacementPosition) || !FinitePosition(targetPosition)) return false;
+            sizeRatios = new Vector3(
+                replacementSize.x / targetSize.x,
+                replacementSize.y / targetSize.y,
+                replacementSize.z / targetSize.z);
+            centerOffset = Vector3.Distance(replacementPosition, targetPosition);
+            return FinitePosition(sizeRatios) && !float.IsInfinity(centerOffset);
+        }
+
+        static bool FinitePosition(Vector3 position) =>
+            !float.IsNaN(position.x) && !float.IsInfinity(position.x) &&
+            !float.IsNaN(position.y) && !float.IsInfinity(position.y) &&
+            !float.IsNaN(position.z) && !float.IsInfinity(position.z);
+
         static bool Valid(Vector3 size)
         {
             return IsPositiveFinite(size.x) && IsPositiveFinite(size.y) && IsPositiveFinite(size.z);

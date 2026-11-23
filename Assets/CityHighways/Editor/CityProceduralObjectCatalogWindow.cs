@@ -44,6 +44,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     int shownLimit = 100;
     bool showSceneMarkers;
     bool showApproximateShapes;
+    bool showPrefabComparison;
     bool alignBuildingRotation;
     bool snapToCapturedTerrain;
     bool useBuildingBaseHeight;
@@ -160,7 +161,10 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         shownLimit = EditorGUILayout.IntSlider("Maximum rows", shownLimit, 20, 300);
         showSceneMarkers = EditorGUILayout.ToggleLeft("Show clickable markers in Scene View", showSceneMarkers);
         using (new EditorGUI.DisabledScope(!showSceneMarkers))
+        {
             showApproximateShapes = EditorGUILayout.ToggleLeft("Show approximate building/tree volumes", showApproximateShapes);
+            showPrefabComparison = EditorGUILayout.ToggleLeft("Compare selected Prefab bounds in Scene View", showPrefabComparison);
+        }
         if (showSceneMarkers)
             EditorGUILayout.HelpBox(
                 "After capturing a 3D catalog, Scene View shows clickable markers in Edit Mode. " +
@@ -256,7 +260,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     void DrawPrefabComparison(Snapshot data, CityProceduralReplacement anchor)
     {
         if (anchor == null) return;
-        string id = !string.IsNullOrEmpty(selectedObjectId) ? selectedObjectId : anchor.StableObjectId;
+        string id = !string.IsNullOrEmpty(anchor.StableObjectId) ? anchor.StableObjectId : selectedObjectId;
         SnapshotRow match = null;
         foreach (var row in data.rows)
             if (row.id == id) { match = row; break; }
@@ -280,6 +284,15 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         EditorGUILayout.LabelField("Assigned Prefab (W/H/D, meters)",
             sourceSize.x.ToString("F3") + " / " + sourceSize.y.ToString("F3") + " / " + sourceSize.z.ToString("F3"));
         EditorGUILayout.LabelField("Uniform fit multiplier", factor.ToString("F3") + "x");
+        var targetWorld = TargetPosition(match);
+        if (CityProceduralFitMath.TryCompare(sourceSize, targetSize,
+            anchor.transform.position, targetWorld, out var ratios, out var offset))
+        {
+            EditorGUILayout.LabelField("Prefab / target (W/H/D)",
+                ratios.x.ToString("F2") + "x / " + ratios.y.ToString("F2") + "x / " + ratios.z.ToString("F2") + "x");
+            EditorGUILayout.LabelField("Anchor offset from generated center",
+                offset.ToString("F3") + " world units");
+        }
 
         using (new EditorGUI.DisabledScope(EditorApplication.isPlaying))
         {
@@ -354,6 +367,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             }
         }
         Handles.color = Color.white;
+        if (showPrefabComparison)
+            DrawSelectedPrefabComparison(data);
     }
 
     /// <summary>
@@ -385,6 +400,59 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         }
         Handles.matrix = previous;
         Handles.color = previousColor;
+    }
+
+    static Vector3 TargetPosition(SnapshotRow entry)
+    {
+        float height = entry.hasBuildingBaseY
+            ? entry.buildingBaseY
+            : entry.hasTerrainY ? entry.terrainY : 0f;
+        return CityPlanner.ToFlatWorld(new Vector2(entry.x, entry.y), height);
+    }
+
+    /// <summary>
+    /// Compare two oriented bounding boxes in Edit Mode without creating GameObjects.
+    /// Target is the catalog's simplified volume; Prefab is its aggregated local mesh bounds.
+    /// </summary>
+    void DrawSelectedPrefabComparison(Snapshot data)
+    {
+        var selected = Selection.activeGameObject != null
+            ? Selection.activeGameObject.GetComponent<CityProceduralReplacement>() : null;
+        if (selected == null || selected.VisualPrefab == null ||
+            string.IsNullOrEmpty(selected.StableObjectId) ||
+            !string.Equals(selected.MapName, data.city, StringComparison.Ordinal)) return;
+
+        SnapshotRow entry = null;
+        foreach (var row in data.rows)
+            if (row.id == selected.StableObjectId && row.kind == (int)selected.Target)
+            {
+                entry = row;
+                break;
+            }
+        if (entry == null || entry.width <= 0f || entry.depth <= 0f || entry.height <= 0f ||
+            !CityProceduralPrefabFitting.TryLocalBounds(selected.VisualPrefab, out var prefabBounds)) return;
+
+        var oldMatrix = Handles.matrix;
+        var oldColor = Handles.color;
+
+        var targetPosition = TargetPosition(entry);
+        Handles.matrix = Matrix4x4.TRS(targetPosition,
+            Quaternion.Euler(0f, entry.angle, 0f), Vector3.one);
+        Handles.color = new Color(0.15f, 0.8f, 1f, 0.95f);
+        Handles.DrawWireCube(new Vector3(0f, entry.height * 0.5f, 0f),
+            new Vector3(entry.width, entry.height, entry.depth));
+
+        // Preserve mesh offsets, internal pivot and author-set TRS for preview.
+        Handles.matrix = selected.transform.localToWorldMatrix;
+        Handles.color = new Color(1f, 0.55f, 0.12f, 0.95f);
+        Handles.DrawWireCube(prefabBounds.center, prefabBounds.size);
+
+        Handles.matrix = Matrix4x4.identity;
+        Handles.color = new Color(1f, 0.95f, 0.2f, 0.85f);
+        Handles.DrawDottedLine(targetPosition, selected.transform.position, 3f);
+
+        Handles.matrix = oldMatrix;
+        Handles.color = oldColor;
     }
 
     static void FocusPosition(SnapshotRow entry)
