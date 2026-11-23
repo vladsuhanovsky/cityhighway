@@ -87,6 +87,57 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void DirectTranslationWorksWithNegativeOffsetsAndMultipleQuads()
+        {
+            var source = new MeshBuilder();
+            AddQuad(source, -2f);
+            AddQuad(source, 10f);
+            var destination = new MeshBuilder();
+            var offset = new Vector3(-8f, 4f, -3f);
+            destination.Append(source, Matrix4x4.Translate(offset));
+            var original = source.ToMesh("original");
+            var moved = destination.ToMesh("moved");
+            try
+            {
+                Assert.AreEqual(8, moved.vertexCount);
+                for (int i = 0; i < original.vertexCount; i++)
+                {
+                    Assert.That(Vector3.Distance(moved.vertices[i],
+                        original.vertices[i] + offset), Is.LessThan(0.00001f));
+                    Assert.That(Vector3.Distance(moved.normals[i],
+                        original.normals[i]), Is.LessThan(0.00001f));
+                }
+                CollectionAssert.AreEqual(original.triangles, moved.triangles);
+                CollectionAssert.AreEqual(original.uv, moved.uv);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(original);
+                UnityEngine.Object.DestroyImmediate(moved);
+            }
+        }
+
+        [Test]
+        public void IdentityAppendWorksAfterTranslatedAppend()
+        {
+            var source = new MeshBuilder();
+            AddQuad(source, 1f);
+            var destination = new MeshBuilder();
+            destination.Append(source, Matrix4x4.Translate(new Vector3(4f, 0f, 0f)));
+            destination.Append(source, Matrix4x4.identity);
+            var mesh = destination.ToMesh("mixed");
+            try
+            {
+                Assert.AreEqual(8, mesh.vertexCount);
+                Assert.That(mesh.vertices[0].x, Is.EqualTo(5f).Within(0.00001f));
+                Assert.That(mesh.vertices[4].x, Is.EqualTo(1f).Within(0.00001f));
+                CollectionAssert.AreEqual(
+                    new[] { 0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7 }, mesh.triangles);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(mesh); }
+        }
+
+        [Test]
         public void TranslationAppendPreservesNormalsAndMovesAllVertices()
         {
             var source = new MeshBuilder();
