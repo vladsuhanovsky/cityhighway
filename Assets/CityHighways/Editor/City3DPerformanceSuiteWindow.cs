@@ -91,6 +91,15 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         bool bothValid = baseline.IsValid(out _) && current.IsValid(out _);
         var diagnostics = City3DPerformanceDiagnostics.Build(
             baseline, current, allowedRegression);
+        var overallStatus = City3DPerformanceSuiteVerdict.Evaluate(
+            baseline.IsValid(out _), current.IsValid(out _), diagnostics);
+        EditorGUILayout.HelpBox(
+            "Overall performance audit: " + overallStatus + "\n" +
+            City3DPerformanceSuiteVerdict.Explain(overallStatus),
+            overallStatus == City3DPerformanceSuiteVerdict.Status.Pass
+                ? MessageType.Info
+                : overallStatus == City3DPerformanceSuiteVerdict.Status.Regression
+                    ? MessageType.Error : MessageType.Warning);
         if (!bothValid)
             EditorGUILayout.HelpBox(
                 "Load or capture at least one valid scenario in each suite to compare.",
@@ -104,7 +113,8 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                 "    Additional in current: " + summary.Additional +
                 "    Rejected: " + summary.Rejected);
             EditorGUILayout.LabelField("Baseline scenario coverage: " +
-                diagnostics.CoveragePercent.ToString("F1") + "%");
+                diagnostics.CoveragePercent.ToString("F1") + "%" +
+                "    Legacy environment comparisons: " + diagnostics.LegacyMatches);
             if (!diagnostics.CompleteCoverage)
                 EditorGUILayout.HelpBox(
                     "Incomplete scenario coverage: " + diagnostics.Missing +
@@ -135,8 +145,12 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             }
         }
         using (new EditorGUI.DisabledScope(!bothValid))
-            if (GUILayout.Button("Export matched scenario comparison CSV..."))
+        {
+            if (GUILayout.Button("Export scenario comparison CSV..."))
                 ExportComparison();
+            if (GUILayout.Button("Export audit summary TXT..."))
+                ExportAuditSummary();
+        }
 
         scroll = EditorGUILayout.BeginScrollView(scroll);
         ShowEntries("Baseline scenarios", baseline);
@@ -202,6 +216,35 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             else current = loaded;
         }
         catch (Exception e) { EditorUtility.DisplayDialog("Load failed", e.Message, "OK"); }
+    }
+
+    void ExportAuditSummary()
+    {
+        var path = EditorUtility.SaveFilePanel("Export performance audit summary", "",
+            "CityHighwaysPerformanceAuditSummary.txt", "txt");
+        if (string.IsNullOrEmpty(path)) return;
+        var report = City3DPerformanceDiagnostics.Build(
+            baseline, current, allowedRegression);
+        var verdict = City3DPerformanceSuiteVerdict.Evaluate(
+            baseline.IsValid(out _), current.IsValid(out _), report);
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        var text = new StringBuilder();
+        text.AppendLine("City Highways 3D Performance Scenario Audit");
+        text.AppendLine("Status: " + verdict);
+        text.AppendLine(City3DPerformanceSuiteVerdict.Explain(verdict));
+        text.AppendLine("P95 allowed regression (%): " +
+            allowedRegression.ToString("F2", culture));
+        text.AppendLine("Matched: " + report.Matched + " | Passed: " +
+            report.Passed + " | Regressions: " + report.Regressions);
+        text.AppendLine("Missing: " + report.Missing + " | Additional: " +
+            report.Additional + " | Invalid: " + report.Invalid);
+        text.AppendLine("Unverified legacy comparisons: " + report.LegacyMatches);
+        text.AppendLine("Coverage (%): " +
+            report.CoveragePercent.ToString("F1", culture));
+        text.AppendLine("Note: manually entered seeds/cameras and runtime load are not verified.");
+        text.AppendLine("Note: frame intervals are not isolated GPU/CPU timings.");
+        try { File.WriteAllText(path, text.ToString(), new UTF8Encoding(true)); }
+        catch (Exception e) { EditorUtility.DisplayDialog("Summary export failed", e.Message, "OK"); }
     }
 
     void ExportComparison()
