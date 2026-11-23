@@ -42,22 +42,13 @@ public static class CityProceduralBatchFixPlanner
             factor = Mathf.Min(1f, factor);
         }
 
-        if (fixOffset)
-            position = CityProceduralPlacementFixMath.AlignHorizontal(position, targetPosition);
-
-        if (fixGround)
-        {
-            if (float.IsNaN(groundY) || float.IsInfinity(groundY) ||
-                !CityProceduralPrefabFitting.TryWorldLowestY(anchor, out float lowest))
-                return false;
-            // Uniform root scale changes each bound point's offset from the pivot by factor.
-            float predictedLowest = position.y + factor * (lowest - anchor.transform.position.y);
-            if (!CityProceduralPlacementFixMath.TryRaiseAboveGround(
-                position.y, predictedLowest, groundY, out float newY)) return false;
-            position.y = newY;
-        }
-
-        var newScale = scale * factor;
+        float lowestY = 0f;
+        if (fixGround && !CityProceduralPrefabFitting.TryWorldLowestY(anchor, out lowestY))
+            return false;
+        if (!CityProceduralBatchFixMath.TryPropose(
+            position, scale, targetPosition, factor, lowestY, groundY,
+            fixOffset, fixOversize, fixGround, out position, out var newScale))
+            return false;
         if ((position - anchor.transform.position).sqrMagnitude < 0.0000000001f &&
             (newScale - scale).sqrMagnitude < 0.0000000001f) return false;
 
