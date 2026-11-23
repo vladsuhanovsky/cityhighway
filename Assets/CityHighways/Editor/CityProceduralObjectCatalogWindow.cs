@@ -25,6 +25,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         public float angle;
         public float terrainY;
         public bool hasTerrainY;
+        public float buildingBaseY;
+        public bool hasBuildingBaseY;
     }
 
     [Serializable]
@@ -44,6 +46,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     bool showApproximateShapes;
     bool alignBuildingRotation;
     bool snapToCapturedTerrain;
+    bool useBuildingBaseHeight;
     string selectedObjectId;
     const float SceneMarkerReach = 2.5f;
     const int MaxSceneMarkers = 120;
@@ -89,7 +92,9 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                 height = item.Height,
                 angle = item.Angle,
                 terrainY = item.TerrainY,
-                hasTerrainY = true
+                hasTerrainY = true,
+                buildingBaseY = item.BuildingBaseY,
+                hasBuildingBaseY = item.Kind == CityProceduralReplacement.TargetKind.Building
             });
         return data;
     }
@@ -183,7 +188,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                     foreach (var row in data.rows)
                         if (row.id == selectedObjectId)
                         {
-                            AssignAndPlace(selected, data.city, row, alignBuildingRotation, snapToCapturedTerrain);
+                            AssignAndPlace(selected, data.city, row, alignBuildingRotation,
+                                snapToCapturedTerrain, useBuildingBaseHeight);
                             break;
                         }
                 }
@@ -193,6 +199,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
 
         alignBuildingRotation = EditorGUILayout.ToggleLeft("Match building yaw when placing anchor", alignBuildingRotation);
         snapToCapturedTerrain = EditorGUILayout.ToggleLeft("Snap Y to captured terrain height", snapToCapturedTerrain);
+        using (new EditorGUI.DisabledScope(!snapToCapturedTerrain))
+            useBuildingBaseHeight = EditorGUILayout.ToggleLeft("Use highest building footprint corner for Y", useBuildingBaseHeight);
         if (!EditorApplication.isPlaying && selected == null)
             EditorGUILayout.HelpBox("Select a Procedural Object Replacement in Hierarchy to enable assignment or placement.", MessageType.None);
 
@@ -230,7 +238,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                 if (GUILayout.Button("Place", GUILayout.Width(48)))
                 {
                     selectedObjectId = item.id;
-                    AssignAndPlace(selected, data.city, item, alignBuildingRotation, snapToCapturedTerrain);
+                    AssignAndPlace(selected, data.city, item, alignBuildingRotation,
+                        snapToCapturedTerrain, useBuildingBaseHeight);
                 }
             }
             EditorGUILayout.EndHorizontal();
@@ -345,14 +354,16 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     }
 
     static void AssignAndPlace(CityProceduralReplacement anchor, string city, SnapshotRow entry,
-        bool alignBuildingRotation, bool useCapturedTerrainHeight)
+        bool alignBuildingRotation, bool useCapturedTerrainHeight, bool useBuildingBaseHeight)
     {
         if (anchor == null || EditorApplication.isPlaying) return;
         // Assign is recorded separately from placement; both operations remain undoable.
         AssignToAnchor(anchor, city, entry);
         CityProceduralAnchorPlacement.Place(anchor, new Vector2(entry.x, entry.y), entry.angle,
             alignBuildingRotation && entry.kind == (int)CityProceduralReplacement.TargetKind.Building,
-            entry.terrainY, useCapturedTerrainHeight, entry.hasTerrainY);
+            useBuildingBaseHeight && entry.hasBuildingBaseY ? entry.buildingBaseY : entry.terrainY,
+            useCapturedTerrainHeight,
+            useBuildingBaseHeight && entry.hasBuildingBaseY || entry.hasTerrainY);
     }
 
     static void AssignToAnchor(CityProceduralReplacement anchor, string city, SnapshotRow entry)
