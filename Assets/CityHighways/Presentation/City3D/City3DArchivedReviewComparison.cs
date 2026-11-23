@@ -60,7 +60,7 @@ namespace CityHighways.Presentation
                 ComparableP95 = sameBaseline && sameAllowance,
                 Warning = sameBaseline && sameAllowance
                     ? "P95 movement requires matching recorded current environments for each " +
-                      "scenario; baseline labels and thresholds are user-entered, not verified."
+                      "scenario; baseline labels and thresholds are user-entered, not independently verified."
                     : "P95 movement hidden: archived reports have different or unknown " +
                       "baseline revision labels or different regression thresholds."
             };
@@ -185,7 +185,7 @@ namespace CityHighways.Presentation
                 "  |  **P95 blocked rows:** " + report.BlockedRows);
             text.AppendLine();
             text.AppendLine("| City | Quality | Scenario | Change | Previous | Latest | Current P95 movement | Reason |");
-            text.AppendLine("| --- | --- | --- | --- | --- | ---: | --- |");
+            text.AppendLine("| --- | --- | --- | --- | --- | --- | ---: | --- |");
             foreach (var row in report.Rows)
                 text.AppendLine("| " + Cell(row.City) + " | " + row.Quality +
                     " | " + Cell(row.Scenario) + " | " + row.Kind +
