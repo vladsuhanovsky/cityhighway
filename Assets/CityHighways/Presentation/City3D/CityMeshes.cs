@@ -105,6 +105,16 @@ namespace CityHighways.Presentation
             items.Capacity = Mathf.Max(required, Mathf.Max(4, doubled));
         }
 
+        // Exact pure-translation check: retain the general inverse-transpose
+        // path for rotation, scale, shear and malformed matrices.
+        static bool IsTranslationOnly(Matrix4x4 m)
+        {
+            return m.m00 == 1f && m.m11 == 1f && m.m22 == 1f && m.m33 == 1f &&
+                   m.m01 == 0f && m.m02 == 0f && m.m10 == 0f && m.m12 == 0f &&
+                   m.m20 == 0f && m.m21 == 0f &&
+                   m.m30 == 0f && m.m31 == 0f && m.m32 == 0f;
+        }
+
         public void Append(MeshBuilder other, Matrix4x4 transform)
         {
             if (other == null) throw new ArgumentNullException(nameof(other));
@@ -126,11 +136,16 @@ namespace CityHighways.Presentation
             EnsureAppendCapacity(_triangles, targetTriangles);
 
             int offset = _vertices.Count;
-            var normalMatrix = transform.inverse.transpose;
+            bool translationOnly = IsTranslationOnly(transform);
+            // Identity/translation needs no inverse matrix or normal transform.
+            var normalMatrix = translationOnly ? Matrix4x4.identity : transform.inverse.transpose;
             for (int i = 0; i < other._vertices.Count; i++)
             {
                 _vertices.Add(transform.MultiplyPoint3x4(other._vertices[i]));
-                _normals.Add(SafeNormal(normalMatrix.MultiplyVector(other._normals[i])));
+                Vector3 normal = translationOnly
+                    ? other._normals[i]
+                    : normalMatrix.MultiplyVector(other._normals[i]);
+                _normals.Add(SafeNormal(normal));
                 _uvs.Add(other._uvs[i]);
             }
             foreach (var t in other._triangles) _triangles.Add(t + offset);
