@@ -17,10 +17,16 @@ namespace CityHighways.Presentation
         public string capturedUtc;
         public int quality;
         public City3DFrameMonitor.Snapshot snapshot;
+        // Optional in v1 files; historical captures remain readable.
+        public City3DPerformanceEnvironment environment;
+        // Explicit presence bit: JsonUtility can materialize a default object for
+        // a missing optional nested field during deserialization.
+        public bool environmentRecorded;
 
         public static City3DPerformanceBaseline Create(string cityName, int graphicsQuality,
             string scenarioLabel, City3DFrameMonitor.Snapshot captured,
-            string utcTimestamp = null)
+            string utcTimestamp = null,
+            City3DPerformanceEnvironment captureEnvironment = null)
         {
             return new City3DPerformanceBaseline
             {
@@ -29,9 +35,22 @@ namespace CityHighways.Presentation
                 quality = graphicsQuality,
                 scenario = scenarioLabel?.Trim(),
                 snapshot = captured,
+                environment = captureEnvironment,
+                environmentRecorded = captureEnvironment != null,
                 capturedUtc = utcTimestamp ?? DateTime.UtcNow.ToString("o",
                     System.Globalization.CultureInfo.InvariantCulture)
             };
+        }
+
+        /// <summary>
+        /// Unity JsonUtility may instantiate a blank reference for a missing
+        /// optional nested field. Apply to imported baselines, including suite entries.
+        /// </summary>
+        public void NormalizeLegacyEnvironment()
+        {
+            if (!environmentRecorded &&
+                (environment == null || !environment.IsValid()))
+                environment = null;
         }
 
         public bool IsValid(out string reason)
@@ -60,6 +79,16 @@ namespace CityHighways.Presentation
                 snapshot.P99Ms > snapshot.MaxMs)
             {
                 reason = "Baseline needs 60+ samples and consistent, positive frame times.";
+                return false;
+            }
+            if (environmentRecorded && (environment == null || !environment.IsValid()))
+            {
+                reason = "Invalid capture environment metadata.";
+                return false;
+            }
+            if (!environmentRecorded && environment != null && environment.IsValid())
+            {
+                reason = "Environment data is missing its presence flag.";
                 return false;
             }
             reason = null;
@@ -93,6 +122,7 @@ namespace CityHighways.Presentation
                     reason = "Baseline JSON does not contain a valid object.";
                     return false;
                 }
+                parsed.NormalizeLegacyEnvironment();
                 if (!parsed.IsValid(out reason)) return false;
                 baseline = parsed;
                 return true;
