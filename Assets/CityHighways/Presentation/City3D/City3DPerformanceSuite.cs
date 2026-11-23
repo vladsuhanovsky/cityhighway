@@ -179,6 +179,14 @@ namespace CityHighways.Presentation
                     if (SameKey(candidate, now)) { old = candidate; break; }
                 if (old == null) { result.Additional++; continue; }
                 result.Matched++;
+                var env = City3DPerformanceEnvironment.Compare(old.environment,
+                    now.environment);
+                if (env == City3DPerformanceEnvironment.Compatibility.Different ||
+                    env == City3DPerformanceEnvironment.Compatibility.Incomplete)
+                {
+                    result.Rejected++;
+                    continue;
+                }
                 var comparison = City3DPerformanceRegression.Compare(old.snapshot,
                     old.city, old.quality, old.scenario, now.snapshot, now.city,
                     now.quality, now.scenario, allowedP95Percent);
