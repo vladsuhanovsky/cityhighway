@@ -15,6 +15,7 @@ namespace CityHighways.Presentation
             public int Quality;
             public string Scenario;
             public bool Present;
+            public bool IsExtra;
             public bool EnvironmentCompatible;
             public string Reason;
         }
@@ -29,6 +30,7 @@ namespace CityHighways.Presentation
             public int Extra;
             public int UnverifiedLabels;
             public bool Complete;
+            public bool CurrentSuiteInvalid;
             public Item[] Items;
             public string Summary;
         }
@@ -51,6 +53,8 @@ namespace CityHighways.Presentation
             report.HasBaseline = true;
             report.Expected = baseline.entries.Count;
             bool currentValid = current != null && current.IsValid(out _);
+            report.CurrentSuiteInvalid = !currentValid && current != null &&
+                current.entries != null && current.entries.Count > 0;
             var items = new List<Item>();
             foreach (var original in baseline.entries)
             {
@@ -105,17 +109,48 @@ namespace CityHighways.Presentation
                     bool found = false;
                     foreach (var original in baseline.entries)
                         if (Same(original, captured)) { found = true; break; }
-                    if (!found) report.Extra++;
+                    if (!found)
+                    {
+                        report.Extra++;
+                        items.Add(new Item
+                        {
+                            City = captured.city,
+                            Quality = captured.quality,
+                            Scenario = captured.scenario,
+                            Present = true,
+                            IsExtra = true,
+                            Reason = "No corresponding BASELINE scenario."
+                        });
+                    }
                 }
+            items.Sort((a, b) =>
+            {
+                int problem = Priority(a).CompareTo(Priority(b));
+                if (problem != 0) return problem;
+                int city = string.CompareOrdinal(a.City, b.City);
+                if (city != 0) return city;
+                int quality = a.Quality.CompareTo(b.Quality);
+                return quality != 0 ? quality :
+                    string.CompareOrdinal(a.Scenario, b.Scenario);
+            });
             report.Items = items.ToArray();
-            report.Complete = report.Missing == 0 && report.Incompatible == 0 &&
+            report.Complete = !report.CurrentSuiteInvalid &&
+                report.Missing == 0 && report.Incompatible == 0 &&
                 report.Extra == 0 && report.Ready == report.Expected;
             report.Summary = report.Ready + "/" + report.Expected +
                 " matching captures; " + report.Missing + " missing, " +
                 report.Incompatible + " incomparable, " + report.Extra +
                 " extra; " + report.UnverifiedLabels +
-                " baseline labels need manual inspection.";
+                " baseline labels need manual inspection." +
+                (report.CurrentSuiteInvalid ? " CURRENT suite is invalid." : "");
             return report;
+        }
+
+        static int Priority(Item item)
+        {
+            if (!item.Present) return 0;
+            if (item.IsExtra) return 2;
+            return item.EnvironmentCompatible ? 3 : 1;
         }
     }
 }

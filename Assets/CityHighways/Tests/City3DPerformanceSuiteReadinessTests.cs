@@ -49,8 +49,9 @@ namespace CityHighways.Tests
                 Suite(Capture(First), Capture(Second)), new City3DPerformanceSuite());
             Assert.AreEqual(2, report.Expected);
             Assert.AreEqual(2, report.Missing);
-            Assert.AreEqual(First, report.Items[0].Scenario);
-            Assert.AreEqual(Second, report.Items[1].Scenario);
+            CollectionAssert.AreEquivalent(
+                new[] { First, Second },
+                new[] { report.Items[0].Scenario, report.Items[1].Scenario });
             Assert.IsFalse(report.Complete);
         }
 
@@ -82,6 +83,9 @@ namespace CityHighways.Tests
                 Suite(Capture(First)), Suite(Capture(Second)));
             Assert.AreEqual(1, report.Missing);
             Assert.AreEqual(1, report.Extra);
+            Assert.AreEqual(2, report.Items.Length);
+            Assert.AreEqual("Extra", City3DPerformanceChecklistExport.State(
+                System.Array.Find(report.Items, item => item.IsExtra)));
         }
 
         [Test]
