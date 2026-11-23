@@ -43,6 +43,7 @@ namespace CityHighways.Presentation
         /// </summary>
         public void Drape(System.Func<float, float, float> height)
         {
+            if (height == null) throw new ArgumentNullException(nameof(height));
             for (int i = 0; i < _vertices.Count; i++)
             {
                 var v = _vertices[i];
@@ -185,6 +186,7 @@ namespace CityHighways.Presentation
         /// <summary>Переписать готовый меш (карточки деревьев пересобираются при смене угла камеры).</summary>
         public void WriteTo(Mesh mesh)
         {
+            if (mesh == null) throw new ArgumentNullException(nameof(mesh));
             mesh.Clear();
             mesh.indexFormat = _vertices.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16;
             mesh.SetVertices(_vertices);
