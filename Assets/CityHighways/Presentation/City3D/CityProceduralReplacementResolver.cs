@@ -28,6 +28,10 @@ namespace CityHighways.Presentation
         static readonly List<CatalogEntry> Catalog = new List<CatalogEntry>();
         static string catalogMapName;
 
+        /// <summary>Editor-readable copy; callers cannot mutate the live runtime catalog.</summary>
+        public static CatalogEntry[] GetCatalogSnapshot() => Catalog.ToArray();
+        public static string CurrentCatalogMapName => catalogMapName;
+
         // Quantize positions to one-thousandth of a field pixel. Identity is independent of
         // list order, density and runtime InstanceID, but does change if placement is edited.
         static string MakeId(char prefix, int seed, Vector2 position)
