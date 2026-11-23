@@ -12,3 +12,9 @@ Each trial creates a destination MeshBuilder and appends the same twelve-quad so
 - Profiling **GC Alloc**, **CPU time** and **peak memory** in the real scene is still necessary. Do not claim a performance gain based on these microbenchmarks alone.
 
 The menu command intentionally is not an automated CI assertion: performance tests on shared CI runners are noisy and should not gate correctness checks.
+
+## CSV export
+
+After all three scenarios complete, the Editor offers a Save dialog. Cancel skips saving and leaves the Console result intact. When accepted, the CSV records every **unsorted** measurement in collection order, with UTC capture date, Unity version, scenario, run number, elapsed milliseconds, source-quad count and append count. Values are invariant-culture and CSV-escaped, suitable for later spreadsheet comparison. Capture revision/commit SHA separately in the file name or experiment journal: the exporter does not know the exact source revision.
+
+Do not compare CSV values from different hardware, Unity versions or workloads as if they were controlled A/B results. The original samples remain separate instead of being pooled into one unexplained mean.
