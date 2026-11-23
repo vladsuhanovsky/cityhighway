@@ -43,6 +43,9 @@ namespace CityHighways.Presentation
             public Vector3 Center;
             public GameObject Root, Full, Cards;
             public Mesh CardMesh;
+            // One reusable scratch builder per chunk. Camera movement can refresh
+            // billboard geometry frequently without allocating new List buffers.
+            public MeshBuilder CardBuilder;
             public bool ShowCards;
             public float CardLean = float.NaN, CardYaw = float.NaN;
             public readonly List<CardSpot> Spots = new List<CardSpot>();
@@ -1046,7 +1049,10 @@ namespace CityHighways.Presentation
             var cardRight = yaw * Vector3.right;
             // Нормаль почти вверх — карточка освещается как крона, а не как стена.
             var normal = (Vector3.up + toCamera * 0.4f).normalized;
-            var builder = new MeshBuilder();
+            if (chunk.CardBuilder == null)
+                chunk.CardBuilder = new MeshBuilder(chunk.Spots.Count);
+            var builder = chunk.CardBuilder;
+            builder.Clear();
             foreach (var spot in chunk.Spots)
                 {
                     float size = spot.Size * 1.05f, half = size / 2f;
