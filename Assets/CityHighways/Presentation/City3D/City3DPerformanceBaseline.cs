@@ -88,7 +88,12 @@ namespace CityHighways.Presentation
             try
             {
                 var parsed = JsonUtility.FromJson<City3DPerformanceBaseline>(json);
-                if (parsed == null || !parsed.IsValid(out reason)) return false;
+                if (parsed == null)
+                {
+                    reason = "Baseline JSON does not contain a valid object.";
+                    return false;
+                }
+                if (!parsed.IsValid(out reason)) return false;
                 baseline = parsed;
                 return true;
             }
