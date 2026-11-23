@@ -42,6 +42,17 @@ namespace CityHighways.Presentation
             };
         }
 
+        /// <summary>
+        /// Unity JsonUtility may instantiate a blank reference for a missing
+        /// optional nested field. Apply to imported baselines, including suite entries.
+        /// </summary>
+        public void NormalizeLegacyEnvironment()
+        {
+            if (!environmentRecorded &&
+                (environment == null || !environment.IsValid()))
+                environment = null;
+        }
+
         public bool IsValid(out string reason)
         {
             if (version != CurrentVersion)
@@ -111,12 +122,7 @@ namespace CityHighways.Presentation
                     reason = "Baseline JSON does not contain a valid object.";
                     return false;
                 }
-                // Legacy records have no presence flag. Unity's JSON serializer
-                // may create a zero-filled object even when environment was absent.
-                // Normalize it only when no valid unflagged environment exists.
-                if (!parsed.environmentRecorded &&
-                    (parsed.environment == null || !parsed.environment.IsValid()))
-                    parsed.environment = null;
+                parsed.NormalizeLegacyEnvironment();
                 if (!parsed.IsValid(out reason)) return false;
                 baseline = parsed;
                 return true;
