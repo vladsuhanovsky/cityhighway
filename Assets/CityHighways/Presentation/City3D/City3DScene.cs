@@ -170,10 +170,17 @@ namespace CityHighways.Presentation
             CityProceduralReplacementResolver.Apply(plan, _map.Name, _root.transform);
             // Optional seed-independent rules run after manual replacements so authored
             // stable-ID anchors always take priority over automatic model choices.
-            CityProceduralBuildingPrefabSpawner.Apply(plan, _map.Name, _root.transform);
+            var prefabBudgetConfig = CityProceduralPrefabBudget.FindForMap(_map.Name);
+            var prefabBudget = prefabBudgetConfig != null
+                ? prefabBudgetConfig.Begin(quality) : null;
+            CityProceduralBuildingPrefabSpawner.Apply(plan, _map.Name,
+                CityProceduralBuildingPrefabRules.FindForMap(_map.Name),
+                _root.transform, prefabBudget);
             // Opt-in tree rules run after manually authored replacements. Distant
             // CardOnly trees remain in the plan for optimized billboard rendering.
-            CityProceduralTreePrefabSpawner.Apply(plan, _map.Name, _root.transform);
+            CityProceduralTreePrefabSpawner.Apply(plan, _map.Name,
+                CityProceduralTreePrefabRules.FindForMap(_map.Name),
+                _root.transform, prefabBudget);
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
 
@@ -188,7 +195,8 @@ namespace CityHighways.Presentation
             // Optional capped visual replacements; unselected props still use
             // the original district-batched geometry and visibility rules.
             CityProceduralPropPrefabSpawner.Apply(
-                plan, _map.Name, _root.transform, _districts, WaterLevel);
+                plan, _map.Name, CityProceduralPropPrefabRules.FindForMap(_map.Name),
+                _root.transform, _districts, WaterLevel, prefabBudget);
             BuildProps(plan);
             SetupRoads();
             BuildJunctions();
