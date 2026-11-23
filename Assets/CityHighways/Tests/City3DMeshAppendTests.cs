@@ -39,13 +39,16 @@ namespace CityHighways.Tests
             Assert.GreaterOrEqual(second, 8);
             Assert.Greater(second, first);
 
-            // There is room for further quads without growing the buffers.
+            // Third append grows to 16 vertices; fourth fits without another allocation.
             destination.Append(source, Matrix4x4.identity);
-            Assert.AreEqual(second, Capacity<Vector3>(destination, "_vertices"));
-            Assert.AreEqual(second, Capacity<Vector3>(destination, "_normals"));
-            Assert.AreEqual(second, Capacity<Vector2>(destination, "_uvs"));
-            Assert.GreaterOrEqual(Capacity<int>(destination, "_triangles"), 18);
-            Assert.AreEqual(12, destination.VertexCount);
+            int third = Capacity<Vector3>(destination, "_vertices");
+            Assert.GreaterOrEqual(third, 12);
+            destination.Append(source, Matrix4x4.identity);
+            Assert.AreEqual(third, Capacity<Vector3>(destination, "_vertices"));
+            Assert.AreEqual(third, Capacity<Vector3>(destination, "_normals"));
+            Assert.AreEqual(third, Capacity<Vector2>(destination, "_uvs"));
+            Assert.GreaterOrEqual(Capacity<int>(destination, "_triangles"), 24);
+            Assert.AreEqual(16, destination.VertexCount);
         }
 
         [Test]
