@@ -44,6 +44,11 @@ public sealed class City3DSceneQualityWindow : EditorWindow
     string baselineCity;
     City3DGeometryAudit.Totals baselineTotals;
     City3DGeometryAudit.Entry[] baselineEntries = new City3DGeometryAudit.Entry[0];
+    bool frameCaptured, frameBaselineCaptured;
+    string frameCity, frameBaselineCity;
+    int frameQuality, frameBaselineQuality;
+    City3DFrameMonitor.Snapshot frameSnapshot, frameBaseline;
+
 
     [MenuItem("City Highways/3D Objects/Scene Quality Audit")]
     static void Open() => GetWindow<City3DSceneQualityWindow>("Scene Quality");
@@ -63,6 +68,7 @@ public sealed class City3DSceneQualityWindow : EditorWindow
                 Analyze();
         }
         DrawRuntimeGeometry();
+        DrawFrameStatistics();
         if (!hasResults) return;
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Visuals: " + summary.Visuals +
@@ -147,6 +153,132 @@ public sealed class City3DSceneQualityWindow : EditorWindow
                 entry.Vertices + " vertices, " + entry.MeshCount + " meshes" + warning);
         }
         EditorGUILayout.EndScrollView();
+    }
+
+    void DrawFrameStatistics()
+    {
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("3D frame intervals (Play Mode)", EditorStyles.boldLabel);
+        var active = City3DScene.ActiveScene;
+        var monitor = active != null ? active.FrameMonitor : null;
+        using (new EditorGUI.DisabledScope(!EditorApplication.isPlaying ||
+            monitor == null))
+        {
+            if (GUILayout.Button("Capture recent frame statistics"))
+            {
+                frameSnapshot = monitor.Capture();
+                frameCity = active.CityName;
+                frameQuality = active.GraphicsQuality;
+                frameCaptured = true;
+            }
+            if (GUILayout.Button("Reset frame sampling window"))
+            {
+                monitor.ResetSamples();
+                frameCaptured = false;
+            }
+        }
+        if (!frameCaptured)
+        {
+            EditorGUILayout.HelpBox(
+                "Start a 3D city in Play Mode, let it settle, then capture recent frames. " +
+                "Sampling starts after a 2-second warmup, uses up to 600 recent frame intervals.",
+                MessageType.Info);
+            return;
+        }
+        EditorGUILayout.LabelField("Snapshot: " + frameCity +
+            "    Quality: " + QualityName(frameQuality) +
+            "    Samples: " + frameSnapshot.Frames, EditorStyles.boldLabel);
+        if (frameSnapshot.Frames < 60)
+            EditorGUILayout.HelpBox("Fewer than 60 frames sampled. " +
+                "Collect more frames before comparing runs.", MessageType.Warning);
+        if (frameSnapshot.Frames > 0)
+        {
+            EditorGUILayout.LabelField("Estimated FPS: " +
+                frameSnapshot.EstimatedFps.ToString("F1") +
+                "    Approx. 1% low: " + frameSnapshot.OnePercentLowFps.ToString("F1"));
+            EditorGUILayout.LabelField("Average frame: " +
+                frameSnapshot.AverageMs.ToString("F2") +
+                " ms    P95: " + frameSnapshot.P95Ms.ToString("F2") +
+                " ms    P99: " + frameSnapshot.P99Ms.ToString("F2") +
+                " ms    Max: " + frameSnapshot.MaxMs.ToString("F2") + " ms");
+        }
+        EditorGUILayout.HelpBox(
+            "FPS is estimated from Time.unscaledDeltaTime wall-clock frame intervals, " +
+            "not isolated rendering work. It includes Editor/Play Mode overhead, " +
+            "VSync and frame caps. P95/P99 are frame-time percentiles. " +
+            "This is NOT CPU main-thread time, render-thread time or GPU time. " +
+            "Use a standalone Development Build and Unity Profiler for reliable profiling.",
+            MessageType.None);
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Save frame snapshot as baseline"))
+        {
+            frameBaseline = frameSnapshot;
+            frameBaselineCity = frameCity;
+            frameBaselineQuality = frameQuality;
+            frameBaselineCaptured = true;
+        }
+        if (GUILayout.Button("Export frame statistics CSV..."))
+            ExportFrameStatisticsCsv();
+        EditorGUILayout.EndHorizontal();
+
+        if (!frameBaselineCaptured) return;
+        EditorGUILayout.LabelField("Baseline: " + frameBaselineCity +
+            " [" + QualityName(frameBaselineQuality) + "] → " +
+            frameCity + " [" + QualityName(frameQuality) + "]");
+        if (!string.Equals(frameBaselineCity, frameCity, StringComparison.Ordinal))
+            EditorGUILayout.HelpBox("Different cities (and potentially different seeds): " +
+                "FPS comparison is not controlled.", MessageType.Warning);
+        EditorGUILayout.LabelField("Δ average frame: " +
+            (frameSnapshot.AverageMs - frameBaseline.AverageMs).ToString("+0.00;-0.00;0.00") +
+            " ms    Δ P95: " +
+            (frameSnapshot.P95Ms - frameBaseline.P95Ms).ToString("+0.00;-0.00;0.00") +
+            " ms    Δ FPS: " +
+            (frameSnapshot.EstimatedFps - frameBaseline.EstimatedFps).ToString("+0.0;-0.0;0.0"));
+    }
+
+    static string QualityName(int quality) =>
+        quality == 0 ? "Low" : quality == 1 ? "Medium" : "High";
+
+    void ExportFrameStatisticsCsv()
+    {
+        var path = EditorUtility.SaveFilePanel("Export 3D frame statistics", "",
+            "CityHighwaysFrameAudit.csv", "csv");
+        if (string.IsNullOrEmpty(path)) return;
+        var sb = new StringBuilder();
+        sb.AppendLine(CityProceduralAuditReport.CsvRow(
+            "Capture", "City", "Quality", "Frames", "EstimatedFPS",
+            "AverageFrameMs", "P95FrameMs", "P99FrameMs", "MaxFrameMs",
+            "Approx1PercentLowFPS"));
+        AppendFrameCsv(sb, "Current", frameCity, frameQuality, frameSnapshot);
+        if (frameBaselineCaptured)
+            AppendFrameCsv(sb, "Baseline", frameBaselineCity,
+                frameBaselineQuality, frameBaseline);
+        try
+        {
+            File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));
+            Debug.Log("Exported 3D frame statistics to " + path);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Could not export frame statistics: " + e.Message);
+            EditorUtility.DisplayDialog("Frame CSV export failed", e.Message, "OK");
+        }
+    }
+
+    static void AppendFrameCsv(StringBuilder sb, string label, string map,
+        int quality, City3DFrameMonitor.Snapshot measurement)
+    {
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        sb.AppendLine(CityProceduralAuditReport.CsvRow(
+            label, map, QualityName(quality),
+            measurement.Frames.ToString(culture),
+            measurement.EstimatedFps.ToString("F3", culture),
+            measurement.AverageMs.ToString("F3", culture),
+            measurement.P95Ms.ToString("F3", culture),
+            measurement.P99Ms.ToString("F3", culture),
+            measurement.MaxMs.ToString("F3", culture),
+            measurement.OnePercentLowFps.ToString("F3", culture)));
     }
 
     void DrawGeometryBudgetsAndComparison()
