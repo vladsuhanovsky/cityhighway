@@ -37,6 +37,13 @@ namespace CityHighways.Presentation
                 return false;
             }
             string signature = capture.environment.Describe();
+            foreach (var existing in repeats)
+                if (string.Equals(existing.capturedUtc, capture.capturedUtc,
+                    StringComparison.Ordinal))
+                {
+                    reason = "Capture timestamp is already in the repeat journal.";
+                    return false;
+                }
             if (repeats.Count == 0)
             {
                 city = capture.city;
@@ -70,6 +77,45 @@ namespace CityHighways.Presentation
                 quality = 0;
             }
             return true;
+        }
+
+        [Serializable]
+        sealed class Header { public int version; }
+
+        public string ToJson()
+        {
+            if (!IsValid(out var reason)) throw new InvalidOperationException(reason);
+            return JsonUtility.ToJson(this, true);
+        }
+
+        public static bool TryFromJson(string json,
+            out City3DPerformanceRepeatSeries series, out string reason)
+        {
+            series = null;
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                reason = "Repeat journal JSON is empty.";
+                return false;
+            }
+            try
+            {
+                var header = JsonUtility.FromJson<Header>(json);
+                if (header == null || header.version != CurrentVersion)
+                {
+                    reason = "Missing or unsupported repeat journal version.";
+                    return false;
+                }
+                var parsed = JsonUtility.FromJson<City3DPerformanceRepeatSeries>(json);
+                if (parsed == null || !parsed.IsValid(out reason)) return false;
+                series = parsed;
+                reason = null;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                reason = "Malformed repeat journal: " + ex.Message;
+                return false;
+            }
         }
 
         public bool IsValid(out string reason)
