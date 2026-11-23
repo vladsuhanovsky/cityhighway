@@ -185,6 +185,13 @@ public sealed class City3DSceneQualityWindow : EditorWindow
                 frameCaptured = false;
             }
         }
+        // Loading an existing baseline must work before any fresh Play Mode capture.
+        if (GUILayout.Button("Load baseline JSON..."))
+            LoadFrameBaselineJson();
+        if (frameBaselineCaptured)
+            EditorGUILayout.LabelField("Saved baseline: " + frameBaselineCity +
+                " [" + QualityName(frameBaselineQuality) + "] — " +
+                frameBaselineScenario);
         if (!frameCaptured)
         {
             EditorGUILayout.HelpBox(
@@ -247,8 +254,6 @@ public sealed class City3DSceneQualityWindow : EditorWindow
             if (GUILayout.Button("Save baseline JSON..."))
                 SaveFrameBaselineJson();
         }
-        if (GUILayout.Button("Load baseline JSON..."))
-            LoadFrameBaselineJson();
         if (GUILayout.Button("Export frame statistics CSV..."))
             ExportFrameStatisticsCsv();
         EditorGUILayout.EndHorizontal();
