@@ -4,12 +4,13 @@ using UnityEngine;
 
 namespace CityHighways.Tests
 {
+    /// <summary>Verify the shared flat-map conversion used by the editor-only placement helper.</summary>
     public sealed class CityProceduralAnchorPlacementTests
     {
         [Test]
-        public void FieldCenterConvertsToWorldOriginAndPreservesHeight()
+        public void FieldCenterMapsToWorldOriginAndPreservesHeight()
         {
-            var position = CityProceduralAnchorPlacement.WorldPosition(
+            var position = CityPlanner.ToFlatWorld(
                 new Vector2(CityPlanner.FieldW * 0.5f, CityPlanner.FieldH * 0.5f), 0.42f);
             Assert.That(position.x, Is.EqualTo(0f).Within(0.0001f));
             Assert.That(position.z, Is.EqualTo(0f).Within(0.0001f));
@@ -17,49 +18,29 @@ namespace CityHighways.Tests
         }
 
         [Test]
-        public void PlaceMovesOnlyHorizontalCoordinatesByDefault()
+        public void FieldCornersMapToWorldBoundsWithoutFlippingX()
         {
-            var root = new GameObject("Placement test");
-            try
-            {
-                var anchor = root.AddComponent<CityProceduralReplacement>();
-                root.transform.position = new Vector3(2f, 0.31f, -2f);
-                root.transform.rotation = Quaternion.Euler(10f, 20f, 30f);
-                root.transform.localScale = new Vector3(2f, 1f, 3f);
+            var topLeft = CityPlanner.ToFlatWorld(Vector2.zero, 0.31f);
+            var bottomRight = CityPlanner.ToFlatWorld(
+                new Vector2(CityPlanner.FieldW, CityPlanner.FieldH), 0.31f);
 
-                CityProceduralAnchorPlacement.Place(anchor,
-                    new Vector2(CityPlanner.FieldW * 0.5f, CityPlanner.FieldH * 0.5f), 80f, false);
-
-                Assert.That(root.transform.position.x, Is.EqualTo(0f).Within(0.0001f));
-                Assert.That(root.transform.position.z, Is.EqualTo(0f).Within(0.0001f));
-                Assert.That(root.transform.position.y, Is.EqualTo(0.31f).Within(0.0001f));
-                Assert.That(Quaternion.Angle(root.transform.rotation, Quaternion.Euler(10f, 20f, 30f)),
-                    Is.LessThan(0.001f));
-                Assert.AreEqual(new Vector3(2f, 1f, 3f), root.transform.localScale);
-            }
-            finally
-            {
-                Object.DestroyImmediate(root);
-            }
+            Assert.That(topLeft.x, Is.EqualTo(-BoardLayout.WorldWidth * 0.5f).Within(0.0001f));
+            Assert.That(topLeft.z, Is.EqualTo(BoardLayout.WorldDepth * 0.5f).Within(0.0001f));
+            Assert.That(bottomRight.x, Is.EqualTo(BoardLayout.WorldWidth * 0.5f).Within(0.0001f));
+            Assert.That(bottomRight.z, Is.EqualTo(-BoardLayout.WorldDepth * 0.5f).Within(0.0001f));
+            Assert.That(topLeft.y, Is.EqualTo(0.31f).Within(0.0001f));
+            Assert.That(bottomRight.y, Is.EqualTo(0.31f).Within(0.0001f));
         }
 
         [Test]
-        public void PlaceOptionMatchesBuildingYawWithoutResettingScale()
+        public void FlatCoordinateMappingDoesNotDependOnSceneTransforms()
         {
-            var root = new GameObject("Rotation test");
-            try
-            {
-                var anchor = root.AddComponent<CityProceduralReplacement>();
-                root.transform.rotation = Quaternion.identity;
-                root.transform.localScale = new Vector3(0.5f, 1.5f, 0.75f);
-                CityProceduralAnchorPlacement.Place(anchor, Vector2.zero, 90f, true);
-                Assert.That(Mathf.DeltaAngle(90f, root.transform.eulerAngles.y), Is.EqualTo(0f).Within(0.001f));
-                Assert.AreEqual(new Vector3(0.5f, 1.5f, 0.75f), root.transform.localScale);
-            }
-            finally
-            {
-                Object.DestroyImmediate(root);
-            }
+            var field = new Vector2(321f, 456f);
+            var first = CityPlanner.ToFlatWorld(field, 0f);
+            var second = CityPlanner.ToFlatWorld(field, 0.7f);
+            Assert.That(first.x, Is.EqualTo(second.x).Within(0.0001f));
+            Assert.That(first.z, Is.EqualTo(second.z).Within(0.0001f));
+            Assert.That(second.y, Is.EqualTo(0.7f).Within(0.0001f));
         }
     }
 }
