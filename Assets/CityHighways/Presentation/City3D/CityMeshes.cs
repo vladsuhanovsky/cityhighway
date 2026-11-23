@@ -12,10 +12,23 @@ namespace CityHighways.Presentation
     /// </summary>
     public sealed class MeshBuilder
     {
-        readonly List<Vector3> _vertices = new List<Vector3>();
-        readonly List<Vector3> _normals = new List<Vector3>();
-        readonly List<Vector2> _uvs = new List<Vector2>();
-        readonly List<int> _triangles = new List<int>();
+        readonly List<Vector3> _vertices;
+        readonly List<Vector3> _normals;
+        readonly List<Vector2> _uvs;
+        readonly List<int> _triangles;
+
+        /// <summary>
+        /// Reserve space for predictable mesh counts. A reused builder keeps
+        /// these buffers across Clear(), avoiding repeated managed allocations.
+        /// </summary>
+        public MeshBuilder(int expectedQuads = 0)
+        {
+            int quads = Mathf.Max(0, expectedQuads);
+            _vertices = new List<Vector3>(quads * 4);
+            _normals = new List<Vector3>(quads * 4);
+            _uvs = new List<Vector2>(quads * 4);
+            _triangles = new List<int>(quads * 6);
+        }
 
         public int VertexCount => _vertices.Count;
 
