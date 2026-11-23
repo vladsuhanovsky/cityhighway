@@ -17,6 +17,49 @@ namespace CityHighways.Tests
                 new Rect(0f, 0f, 1f, 1f));
         }
 
+        static int Capacity<T>(MeshBuilder builder, string field)
+        {
+            var info = typeof(MeshBuilder).GetField(field,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(info, field);
+            return ((System.Collections.Generic.List<T>)info.GetValue(builder)).Capacity;
+        }
+
+        [Test]
+        public void RepeatedSmallAppendsUseSpareCapacityInsteadOfReallocatingEveryTime()
+        {
+            var destination = new MeshBuilder();
+            var source = new MeshBuilder();
+            AddQuad(source, 0f);
+
+            destination.Append(source, Matrix4x4.identity);
+            int first = Capacity<Vector3>(destination, "_vertices");
+            destination.Append(source, Matrix4x4.identity);
+            int second = Capacity<Vector3>(destination, "_vertices");
+            Assert.GreaterOrEqual(second, 8);
+            Assert.Greater(second, first);
+
+            // There is room for further quads without growing the buffers.
+            destination.Append(source, Matrix4x4.identity);
+            Assert.AreEqual(second, Capacity<Vector3>(destination, "_vertices"));
+            Assert.AreEqual(second, Capacity<Vector3>(destination, "_normals"));
+            Assert.AreEqual(second, Capacity<Vector2>(destination, "_uvs"));
+            Assert.GreaterOrEqual(Capacity<int>(destination, "_triangles"), 18);
+            Assert.AreEqual(12, destination.VertexCount);
+        }
+
+        [Test]
+        public void LargeAppendStillReservesEnoughForItsEntireGeometry()
+        {
+            var destination = new MeshBuilder();
+            var source = new MeshBuilder();
+            for (int i = 0; i < 128; i++) AddQuad(source, i * 2f);
+            destination.Append(source, Matrix4x4.identity);
+            Assert.AreEqual(512, destination.VertexCount);
+            Assert.GreaterOrEqual(Capacity<Vector3>(destination, "_vertices"), 512);
+            Assert.GreaterOrEqual(Capacity<int>(destination, "_triangles"), 768);
+        }
+
         [Test]
         public void AppendCombinesMeshesWithTransformedVerticesAndShiftedIndices()
         {
