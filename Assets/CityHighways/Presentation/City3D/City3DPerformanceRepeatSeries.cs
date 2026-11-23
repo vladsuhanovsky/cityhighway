@@ -23,7 +23,12 @@ namespace CityHighways.Presentation
 
         public bool TryAdd(City3DPerformanceBaseline capture, out string reason)
         {
-            if (capture == null || !capture.IsValid(out reason)) return false;
+            if (capture == null)
+            {
+                reason = "Repeat capture is null.";
+                return false;
+            }
+            if (!capture.IsValid(out reason)) return false;
             if (!capture.environmentRecorded || capture.environment == null ||
                 !capture.environment.IsValid())
             {
