@@ -101,10 +101,177 @@ namespace CityHighways.Presentation
             return artifact;
         }
 
-        public string ToJson()
+        [Serializable]
+        sealed class VersionHeader { public int version; }
+
+        /// <summary>
+        /// Validate saved review contents rather than trusting a displayed PASS.
+        /// This does not prove the original benchmark captures or user-entered revisions.
+        /// </summary>
+        public bool IsValid(out string reason)
         {
             if (version != CurrentVersion || scenarios == null || scenarios.Length == 0)
-                throw new InvalidOperationException("Review artifact is incomplete.");
+            {
+                reason = "Missing or unsupported review artifact version/scenarios.";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(generatedUtc) ||
+                string.IsNullOrWhiteSpace(overallStatus) ||
+                float.IsNaN(allowedP95RegressionPercent) ||
+                float.IsInfinity(allowedP95RegressionPercent) ||
+                allowedP95RegressionPercent < 0f ||
+                float.IsNaN(coveragePercent) || float.IsInfinity(coveragePercent) ||
+                coveragePercent < 0f || coveragePercent > 100f ||
+                matched < 0 || passed < 0 || regressions < 0 || invalid < 0 ||
+                missing < 0 || additional < 0 || legacyMatches < 0)
+            {
+                reason = "Review metadata or counts are invalid.";
+                return false;
+            }
+            int countedPass = 0, countedRegression = 0, countedInvalid = 0;
+            int countedMissing = 0, countedAdditional = 0;
+            var unique = new System.Collections.Generic.HashSet<string>(
+                StringComparer.Ordinal);
+            foreach (var item in scenarios)
+            {
+                if (string.IsNullOrWhiteSpace(item.city) ||
+                    string.IsNullOrWhiteSpace(item.scenario) ||
+                    item.quality < 0 || item.quality > 2)
+                {
+                    reason = "Review contains a scenario with invalid identity.";
+                    return false;
+                }
+                string key = item.city + "\u001f" + item.quality + "\u001f" + item.scenario;
+                if (!unique.Add(key))
+                {
+                    reason = "Review contains duplicate scenarios.";
+                    return false;
+                }
+                if (item.hasBaseline && (!FinitePositive(item.baselineP95Ms)))
+                {
+                    reason = "Review contains invalid baseline frame time.";
+                    return false;
+                }
+                if (item.hasCurrent && (!FinitePositive(item.currentP95Ms)))
+                {
+                    reason = "Review contains invalid current frame time.";
+                    return false;
+                }
+                switch (item.status)
+                {
+                    case "Pass":
+                    case "Regression":
+                        if (!item.hasBaseline || !item.hasCurrent ||
+                            !item.hasComparableDelta ||
+                            float.IsNaN(item.p95DeltaPercent) ||
+                            float.IsInfinity(item.p95DeltaPercent) ||
+                            Math.Abs(item.p95DeltaPercent -
+                                (item.currentP95Ms / item.baselineP95Ms - 1f) *
+                                100f) > 0.05f)
+                        {
+                            reason = "Review contains an inconsistent comparable result.";
+                            return false;
+                        }
+                        if (item.status == "Pass") countedPass++;
+                        else countedRegression++;
+                        break;
+                    case "Invalid":
+                        if (!item.hasBaseline || !item.hasCurrent ||
+                            item.hasComparableDelta)
+                        {
+                            reason = "Invalid review case must not claim a comparable delta.";
+                            return false;
+                        }
+                        countedInvalid++;
+                        break;
+                    case "Missing":
+                        if (!item.hasBaseline || item.hasCurrent || item.hasComparableDelta)
+                        {
+                            reason = "Missing review case has invalid presence flags.";
+                            return false;
+                        }
+                        countedMissing++;
+                        break;
+                    case "Additional":
+                        if (item.hasBaseline || !item.hasCurrent || item.hasComparableDelta)
+                        {
+                            reason = "Additional review case has invalid presence flags.";
+                            return false;
+                        }
+                        countedAdditional++;
+                        break;
+                    default:
+                        reason = "Unknown review scenario status.";
+                        return false;
+                }
+            }
+            int actualMatched = countedPass + countedRegression + countedInvalid;
+            int baselineTotal = actualMatched + countedMissing;
+            if (actualMatched != matched || countedPass != passed ||
+                countedRegression != regressions || countedInvalid != invalid ||
+                countedMissing != missing || countedAdditional != additional ||
+                baselineTotal <= 0 ||
+                Math.Abs(coveragePercent - 100f * actualMatched / baselineTotal) >
+                    0.11f || legacyMatches > countedPass + countedRegression)
+            {
+                reason = "Review totals or coverage do not match its scenario rows.";
+                return false;
+            }
+            string expectedStatus = matched == 0 || missing > 0 ||
+                additional > 0 || invalid > 0 ? "Incomplete" :
+                legacyMatches > 0 ? "UnverifiedLegacy" : "Pass";
+            if (regressions > 0) expectedStatus = "Regression";
+            if (!string.Equals(overallStatus, expectedStatus, StringComparison.Ordinal))
+            {
+                reason = "Overall review status does not agree with scenario rows.";
+                return false;
+            }
+            reason = null;
+            return true;
+        }
+
+        static bool FinitePositive(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value) && value > 0f;
+
+        public static bool TryFromJson(string json,
+            out City3DPerformanceReviewArtifact artifact, out string reason)
+        {
+            artifact = null;
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                reason = "Review JSON is empty.";
+                return false;
+            }
+            try
+            {
+                // Use an independent header so missing version cannot be defaulted.
+                var header = JsonUtility.FromJson<VersionHeader>(json);
+                if (header == null || header.version != CurrentVersion)
+                {
+                    reason = "Missing or unsupported review format version.";
+                    return false;
+                }
+                var parsed = JsonUtility.FromJson<City3DPerformanceReviewArtifact>(json);
+                if (parsed == null)
+                {
+                    reason = "Review JSON has no object.";
+                    return false;
+                }
+                if (!parsed.IsValid(out reason)) return false;
+                artifact = parsed;
+                return true;
+            }
+            catch (Exception e)
+            {
+                reason = "Invalid review JSON: " + e.Message;
+                return false;
+            }
+        }
+
+        public string ToJson()
+        {
+            if (!IsValid(out var reason))
+                throw new InvalidOperationException(reason);
             return JsonUtility.ToJson(this, true);
         }
     }
