@@ -10,10 +10,16 @@ namespace CityHighways.Presentation
     public sealed class City3DFrameMonitor : MonoBehaviour
     {
         const int Capacity = 600;
-        const float WarmupSeconds = 2f;
+        public const int MinimumFrames = 60;
+        public const float WarmupSeconds = 2f;
         readonly float[] frameMs = new float[Capacity];
         int next, count;
         float warmupUntil;
+
+        public int SampleCount => count;
+        public int SampleCapacity => Capacity;
+        public bool IsWarmingUp => Time.realtimeSinceStartup < warmupUntil;
+        public bool HasMinimumSamples => count >= MinimumFrames;
 
         [Serializable]
         public struct Snapshot
@@ -27,7 +33,10 @@ namespace CityHighways.Presentation
             public float OnePercentLowFps;
         }
 
-        void OnEnable()
+        void OnEnable() => BeginFreshWindow();
+
+        /// <summary>Discard previous measurements and allow a fresh warm-up window.</summary>
+        public void BeginFreshWindow()
         {
             ResetSamples();
             warmupUntil = Time.realtimeSinceStartup + WarmupSeconds;
@@ -35,7 +44,7 @@ namespace CityHighways.Presentation
 
         void Update()
         {
-            if (Time.realtimeSinceStartup < warmupUntil) return;
+            if (IsWarmingUp) return;
             RecordFrame(Time.unscaledDeltaTime * 1000f);
         }
 
