@@ -476,9 +476,10 @@ namespace CityHighways.Presentation
         void BuildGround()
         {
             const float m = TerrainTexture.Margin, span = 1f + 2f * m;
-            var top = new MeshBuilder();
-            // Сетка по рельефу: клетка ~7 см — вдвое мельче полосы вдоль дорог, холмы и подрезки под дорогами видны.
+            // Exact quad count: avoid geometric List growth during map construction.
             const int cellsX = 240, cellsY = 136;
+            var top = new MeshBuilder(cellsX * cellsY);
+            // Сетка по рельефу: клетка ~7 см — вдвое мельче полосы вдоль дорог, холмы и подрезки под дорогами видны.
             for (int iy = 0; iy < cellsY; iy++)
             for (int ix = 0; ix < cellsX; ix++)
             {
@@ -523,8 +524,9 @@ namespace CityHighways.Presentation
         void BuildOutskirtsGround()
         {
             const float extent = CityTextures.OutskirtsExtent, y = -0.003f;
-            var near = new MeshBuilder();
             const int cells = 120;   // клетка 0,5 м: холмы за полем продолжаются, к горизонту сходят на нет
+            // Conservative estimate: river-adjacent cells subdivide further.
+            var near = new MeshBuilder(cells * cells);
             float plateX = BoardLayout.WorldWidth * (0.5f + TerrainTexture.Margin), plateZ = BoardLayout.WorldDepth * (0.5f + TerrainTexture.Margin);
             for (int iz = 0; iz < cells; iz++)
             for (int ix = 0; ix < cells; ix++)
