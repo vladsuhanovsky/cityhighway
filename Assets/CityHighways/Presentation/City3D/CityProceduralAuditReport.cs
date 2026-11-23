@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace CityHighways.Presentation
@@ -16,6 +17,20 @@ namespace CityHighways.Presentation
             BelowGround,
             MissingTerrain,
             DuplicateId
+        }
+
+        /// <summary>Only non-empty repeated stable IDs are conflicts; input already scoped to one city.</summary>
+        public static HashSet<string> DuplicateIds(IEnumerable<string> ids)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var duplicate = new HashSet<string>(StringComparer.Ordinal);
+            if (ids == null) return duplicate;
+            foreach (var id in ids)
+            {
+                if (string.IsNullOrEmpty(id)) continue;
+                if (!seen.Add(id)) duplicate.Add(id);
+            }
+            return duplicate;
         }
 
         public static bool Matches(Category selection, Category actual) =>
