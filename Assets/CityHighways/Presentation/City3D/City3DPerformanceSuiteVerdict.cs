@@ -18,8 +18,10 @@ namespace CityHighways.Presentation
         public static Status Evaluate(bool baselineValid, bool currentValid,
             City3DPerformanceDiagnostics.Report report)
         {
-            if (!baselineValid || !currentValid || report.Matched == 0)
+            if (!baselineValid || !currentValid)
                 return Status.NoData;
+            if (report.Matched == 0)
+                return Status.Incomplete;
             if (report.Regressions > 0)
                 return Status.Regression;
             if (report.Missing > 0 || report.Additional > 0 || report.Invalid > 0 ||
