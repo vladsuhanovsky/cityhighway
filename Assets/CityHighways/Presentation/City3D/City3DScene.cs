@@ -104,6 +104,11 @@ namespace CityHighways.Presentation
         public int BuildingCount { get; private set; }
         public int TreeCount { get; private set; }
 
+        /// <summary>Read-only handle for explicit editor Play Mode geometry audits.</summary>
+        public static City3DScene ActiveScene { get; private set; }
+        public Transform GeneratedRoot => _root != null ? _root.transform : null;
+        public string CityName => _map != null ? _map.Name : null;
+
         City3DScene(CityMap map)
         {
             _map = map;
@@ -130,6 +135,7 @@ namespace CityHighways.Presentation
                 scene = new City3DScene(map);
                 if (hubSites != null) scene._hubSites = hubSites.ToList();
                 scene.Build(Mathf.Clamp(quality, 0, 2));
+                ActiveScene = scene;
                 return scene;
             }
             catch (Exception e)
@@ -1930,6 +1936,7 @@ namespace CityHighways.Presentation
 
         public void Dispose()
         {
+            if (ReferenceEquals(ActiveScene, this)) ActiveScene = null;
             foreach (var (camera, enabled) in _otherCameras)
                 if (camera != null) camera.enabled = enabled;
             _otherCameras.Clear();
