@@ -136,17 +136,27 @@ namespace CityHighways.Presentation
             EnsureAppendCapacity(_triangles, targetTriangles);
 
             int offset = _vertices.Count;
-            bool translationOnly = IsTranslationOnly(transform);
-            // Identity/translation needs no inverse matrix or normal transform.
-            var normalMatrix = translationOnly ? Matrix4x4.identity : transform.inverse.transpose;
-            for (int i = 0; i < other._vertices.Count; i++)
+            if (IsTranslationOnly(transform))
             {
-                _vertices.Add(transform.MultiplyPoint3x4(other._vertices[i]));
-                Vector3 normal = translationOnly
-                    ? other._normals[i]
-                    : normalMatrix.MultiplyVector(other._normals[i]);
-                _normals.Add(SafeNormal(normal));
-                _uvs.Add(other._uvs[i]);
+                // Avoid matrix-vector products and the per-vertex branch for
+                // a pure translation. Preserve SafeNormal's fallback.
+                var translation = new Vector3(transform.m03, transform.m13, transform.m23);
+                for (int i = 0; i < incomingVertices; i++)
+                {
+                    _vertices.Add(other._vertices[i] + translation);
+                    _normals.Add(SafeNormal(other._normals[i]));
+                    _uvs.Add(other._uvs[i]);
+                }
+            }
+            else
+            {
+                var normalMatrix = transform.inverse.transpose;
+                for (int i = 0; i < incomingVertices; i++)
+                {
+                    _vertices.Add(transform.MultiplyPoint3x4(other._vertices[i]));
+                    _normals.Add(SafeNormal(normalMatrix.MultiplyVector(other._normals[i])));
+                    _uvs.Add(other._uvs[i]);
+                }
             }
             foreach (var t in other._triangles) _triangles.Add(t + offset);
         }
