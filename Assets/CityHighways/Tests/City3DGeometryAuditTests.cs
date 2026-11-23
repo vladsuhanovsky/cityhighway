@@ -36,7 +36,11 @@ namespace CityHighways.Tests
             var root = new GameObject("Test 3D Root");
             var district = new GameObject("District East");
             var tree = new GameObject("Trees North#0,0");
-            var cubeMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
+            var cubeMesh = new Mesh
+            {
+                vertices = new[] { Vector3.zero, Vector3.right, Vector3.up },
+                triangles = new[] { 0, 1, 2 }
+            };
             try
             {
                 district.transform.SetParent(root.transform, false);
@@ -51,8 +55,14 @@ namespace CityHighways.Tests
                 Assert.AreEqual(1, totals.Buildings);
                 Assert.AreEqual(1, totals.Trees);
                 Assert.AreEqual((long)cubeMesh.vertexCount * 2, totals.Vertices);
+                Assert.AreEqual(2L, totals.Triangles);
+                Assert.AreEqual(City3DGeometryAudit.Group.Buildings, entries[0].Kind);
             }
-            finally { UnityEngine.Object.DestroyImmediate(root); }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(cubeMesh);
+            }
         }
     }
 }
