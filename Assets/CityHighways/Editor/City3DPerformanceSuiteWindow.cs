@@ -14,6 +14,7 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
     float allowedRegression = 10f;
     Vector2 scroll;
     int maxDiagnosticRows = 30;
+    bool showReadyChecklistRows;
     string baselineRevisionLabel = "";
     string currentRevisionLabel = "";
     City3DPerformanceReviewArtifact archivedReview;
@@ -142,14 +143,18 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                 ? MessageType.Warning : MessageType.Info);
         if (collection.HasBaseline)
         {
+            showReadyChecklistRows = EditorGUILayout.Toggle(
+                "Show ready checklist rows", showReadyChecklistRows);
             foreach (var item in collection.Items)
             {
-                if (item.Present && item.EnvironmentCompatible) continue;
+                if (!showReadyChecklistRows && item.Present &&
+                    item.EnvironmentCompatible && !item.IsExtra) continue;
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(
-                    (item.Present ? "INCOMPATIBLE" : "MISSING") + " — " +
-                    item.City + " [" + item.Quality + "] " + item.Scenario);
-                if (GUILayout.Button("Use label", GUILayout.Width(90f)))
+                    City3DPerformanceChecklistExport.State(item).ToUpperInvariant() +
+                    " — " + item.City + " [" + item.Quality + "] " + item.Scenario);
+                if (!item.IsExtra && !item.EnvironmentCompatible &&
+                    GUILayout.Button("Use label", GUILayout.Width(90f)))
                     scenario = item.Scenario;
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.LabelField("  " + item.Reason);
@@ -161,8 +166,12 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                     MessageType.Warning);
         }
         using (new EditorGUI.DisabledScope(!collection.HasBaseline))
+        {
             if (GUILayout.Button("Export collection checklist CSV..."))
                 ExportCollectionChecklist(collection);
+            if (GUILayout.Button("Export collection checklist Markdown..."))
+                ExportCollectionChecklistMarkdown(collection);
+        }
 
         allowedRegression = Mathf.Max(0f, EditorGUILayout.FloatField(
             "Allowed P95 regression (%)", allowedRegression));
@@ -480,20 +489,33 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         var path = EditorUtility.SaveFilePanel("Export capture checklist", "",
             "CityHighwaysCaptureChecklist.csv", "csv");
         if (string.IsNullOrEmpty(path)) return;
-        var csv = new StringBuilder();
-        csv.AppendLine(CityProceduralAuditReport.CsvRow(
-            "City", "Quality", "Scenario", "Captured", "EnvironmentCompatible",
-            "Reason"));
-        foreach (var item in report.Items)
-            csv.AppendLine(CityProceduralAuditReport.CsvRow(
-                item.City,
-                item.Quality.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                item.Scenario, item.Present ? "yes" : "no",
-                item.EnvironmentCompatible ? "yes" : "no", item.Reason));
-        try { File.WriteAllText(path, csv.ToString(), new UTF8Encoding(true)); }
+        try
+        {
+            File.WriteAllText(path, City3DPerformanceChecklistExport.ToCsv(report),
+                new UTF8Encoding(true));
+        }
         catch (Exception e)
         {
             EditorUtility.DisplayDialog("Checklist export failed", e.Message, "OK");
+        }
+    }
+
+    static void ExportCollectionChecklistMarkdown(
+        City3DPerformanceSuiteReadiness.Report report)
+    {
+        var path = EditorUtility.SaveFilePanel("Export GitHub capture checklist", "",
+            "CityHighwaysCaptureChecklist.md", "md");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            File.WriteAllText(path,
+                City3DPerformanceChecklistExport.ToMarkdown(report),
+                new UTF8Encoding(false));
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Markdown checklist export failed",
+                e.Message, "OK");
         }
     }
 
