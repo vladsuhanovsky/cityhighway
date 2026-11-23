@@ -17,6 +17,7 @@ namespace CityHighways.Presentation
             public int quality;
             public string scenario;
             public string status;
+            public string reason;
             public float baselineP95Ms;
             public float currentP95Ms;
             public float p95DeltaPercent;
@@ -87,6 +88,7 @@ namespace CityHighways.Presentation
                     quality = row.Quality,
                     scenario = row.Scenario,
                     status = row.Status.ToString(),
+                    reason = row.Reason,
                     baselineP95Ms = row.BaselineP95Ms,
                     currentP95Ms = row.CurrentP95Ms,
                     p95DeltaPercent = row.DeltaPercent,
