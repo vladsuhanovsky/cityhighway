@@ -302,14 +302,14 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             }
 
             auditCount++;
-            bool found = !string.IsNullOrEmpty(anchor.StableObjectId) &&
-                         byId.TryGetValue(anchor.StableObjectId, out var row);
-            // An unassigned ID must never accidentally match the first catalog row.
-            SnapshotRow entry = found ? row : null;
+            SnapshotRow entry = null;
+            if (!string.IsNullOrEmpty(anchor.StableObjectId))
+                byId.TryGetValue(anchor.StableObjectId, out entry);
             var targetSize = entry != null
                 ? new Vector3(entry.width, entry.height, entry.depth) : Vector3.zero;
+            Vector3 sourceSize = Vector3.zero;
             bool geometryValid = entry != null && CityProceduralPrefabFitting.TryFit(
-                anchor, targetSize, out var sourceSize, out _);
+                anchor, targetSize, out sourceSize, out _);
 
             var status = CityProceduralBatchAuditRules.Classify(
                 data.city, anchor.MapName, anchor.StableObjectId, anchor.VisualPrefab != null,
