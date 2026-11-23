@@ -141,7 +141,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         showSceneMarkers = EditorGUILayout.ToggleLeft("Show clickable markers in Scene View", showSceneMarkers);
         if (showSceneMarkers)
             EditorGUILayout.HelpBox(
-                "Scene View: markers within 2.5 world units of its camera pivot (maximum 120) are clickable. " +
+                "After capturing a 3D catalog, Scene View shows clickable markers in Edit Mode. " +
+                "Only entries within 2.5 world units of its pivot (maximum 120) are displayed. " +
                 "Use Focus on a row to navigate elsewhere. Click a marker to select its ID; " +
                 "then select a replacement anchor in Hierarchy and click Assign selected marker.",
                 MessageType.None);
@@ -215,8 +216,9 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
 
     void DrawSceneMarkers(SceneView scene)
     {
-        if (!showSceneMarkers || scene == null || scene.camera == null) return;
-        var data = EditorApplication.isPlaying ? ReadLive() : snapshot;
+        // Draw from the saved local snapshot in Edit Mode; no live catalog allocations per frame.
+        if (!showSceneMarkers || EditorApplication.isPlaying || scene == null || scene.camera == null) return;
+        var data = snapshot;
         if (data == null) return;
 
         // Avoid thousands of editor handles: only show objects near the Scene View pivot.
