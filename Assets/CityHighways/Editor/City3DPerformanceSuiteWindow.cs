@@ -14,6 +14,8 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
     float allowedRegression = 10f;
     Vector2 scroll;
     int maxDiagnosticRows = 30;
+    string baselineRevisionLabel = "";
+    string currentRevisionLabel = "";
 
     [MenuItem("City Highways/3D Objects/Performance Scenario Suite")]
     static void Open() => GetWindow<City3DPerformanceSuiteWindow>("3D Scenario Suite");
@@ -144,12 +146,20 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                         ? " (P95 +" + issue.DeltaPercent.ToString("F1") + "%)" : ""));
             }
         }
+        EditorGUILayout.LabelField("Optional revision labels for review handoff",
+            EditorStyles.boldLabel);
+        baselineRevisionLabel = EditorGUILayout.TextField(
+            "Baseline revision", baselineRevisionLabel);
+        currentRevisionLabel = EditorGUILayout.TextField(
+            "Current revision", currentRevisionLabel);
         using (new EditorGUI.DisabledScope(!bothValid))
         {
             if (GUILayout.Button("Export scenario comparison CSV..."))
                 ExportComparison();
             if (GUILayout.Button("Export audit summary TXT..."))
                 ExportAuditSummary();
+            if (GUILayout.Button("Export review artifact JSON..."))
+                ExportReviewArtifact();
         }
 
         scroll = EditorGUILayout.BeginScrollView(scroll);
@@ -216,6 +226,25 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             else current = loaded;
         }
         catch (Exception e) { EditorUtility.DisplayDialog("Load failed", e.Message, "OK"); }
+    }
+
+    void ExportReviewArtifact()
+    {
+        var path = EditorUtility.SaveFilePanel("Export performance review artifact", "",
+            "CityHighwaysPerformanceReview.json", "json");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            var artifact = City3DPerformanceReviewArtifact.Build(
+                baseline, current, allowedRegression,
+                baselineRevisionLabel.Trim(), currentRevisionLabel.Trim());
+            File.WriteAllText(path, artifact.ToJson(), new UTF8Encoding(false));
+            Debug.Log("Exported performance review artifact to " + path);
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Review export failed", e.Message, "OK");
+        }
     }
 
     void ExportAuditSummary()
