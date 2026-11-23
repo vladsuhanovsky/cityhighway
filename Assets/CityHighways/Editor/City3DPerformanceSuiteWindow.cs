@@ -248,6 +248,23 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             EditorGUILayout.EndHorizontal();
         }
 
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Save repeat journal JSON..."))
+            SaveRepeatSeries();
+        if (GUILayout.Button("Load repeat journal JSON..."))
+            LoadRepeatSeries();
+        EditorGUILayout.EndHorizontal();
+        using (new EditorGUI.DisabledScope(repeatSeries.repeats == null ||
+            repeatSeries.repeats.Count == 0))
+        {
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Export repeat CSV..."))
+                ExportRepeatSeries(false);
+            if (GUILayout.Button("Export repeat Markdown..."))
+                ExportRepeatSeries(true);
+            EditorGUILayout.EndHorizontal();
+        }
+
         var collection = City3DPerformanceSuiteReadiness.Check(baseline, current);
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Capture collection checklist", EditorStyles.boldLabel);
@@ -429,6 +446,73 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         ShowEntries("Baseline scenarios", baseline);
         ShowEntries("Current scenarios", current);
         EditorGUILayout.EndScrollView();
+    }
+
+    void SaveRepeatSeries()
+    {
+        if (!repeatSeries.IsValid(out var reason))
+        {
+            EditorUtility.DisplayDialog("No valid repeats to save", reason, "OK");
+            return;
+        }
+        var path = EditorUtility.SaveFilePanel("Save repeat journal", "",
+            "CityHighways3DRepeats.json", "json");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            File.WriteAllText(path, repeatSeries.ToJson(), new UTF8Encoding(false));
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Repeat save failed", e.Message, "OK");
+        }
+    }
+
+    void LoadRepeatSeries()
+    {
+        var path = EditorUtility.OpenFilePanel("Load repeat journal", "", "json");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            if (!City3DPerformanceRepeatSeries.TryFromJson(
+                File.ReadAllText(path, Encoding.UTF8), out var loaded, out var reason))
+            {
+                EditorUtility.DisplayDialog("Invalid repeat journal", reason, "OK");
+                return;
+            }
+            // Validation first: a bad file cannot destroy a useful journal.
+            if (repeatSeries.repeats != null && repeatSeries.repeats.Count > 0 &&
+                !EditorUtility.DisplayDialog("Replace repeat journal?",
+                    "Replace the current repeat journal with this imported file? " +
+                    "CURRENT and BASELINE suites are unaffected.",
+                    "Replace", "Cancel"))
+                return;
+            repeatSeries = loaded;
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Repeat load failed", e.Message, "OK");
+        }
+    }
+
+    void ExportRepeatSeries(bool markdown)
+    {
+        var path = EditorUtility.SaveFilePanel(
+            markdown ? "Export repeat Markdown" : "Export repeat CSV", "",
+            markdown ? "CityHighways3DRepeats.md" : "CityHighways3DRepeats.csv",
+            markdown ? "md" : "csv");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            File.WriteAllText(path, markdown
+                ? City3DPerformanceRepeatExport.ToMarkdown(repeatSeries)
+                : City3DPerformanceRepeatExport.ToCsv(repeatSeries),
+                new UTF8Encoding(false));
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Repeat export failed", e.Message, "OK");
+        }
     }
 
     static void ShowEntries(string title, City3DPerformanceSuite suite)
