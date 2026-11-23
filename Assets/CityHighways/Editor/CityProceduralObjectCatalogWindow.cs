@@ -260,7 +260,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     void DrawPrefabComparison(Snapshot data, CityProceduralReplacement anchor)
     {
         if (anchor == null) return;
-        string id = !string.IsNullOrEmpty(selectedObjectId) ? selectedObjectId : anchor.StableObjectId;
+        string id = !string.IsNullOrEmpty(anchor.StableObjectId) ? anchor.StableObjectId : selectedObjectId;
         SnapshotRow match = null;
         foreach (var row in data.rows)
             if (row.id == id) { match = row; break; }
