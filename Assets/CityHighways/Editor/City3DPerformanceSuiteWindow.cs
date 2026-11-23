@@ -142,6 +142,7 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                 var issue = diagnostics.Rows[i];
                 EditorGUILayout.LabelField(issue.Status + " — " + issue.City +
                     " [" + issue.Quality + "] " + issue.Scenario +
+                    " — " + issue.Reason +
                     (issue.Status == City3DPerformanceDiagnostics.Kind.Regression
                         ? " (P95 +" + issue.DeltaPercent.ToString("F1") + "%)" : ""));
             }
@@ -308,7 +309,7 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         sb.AppendLine(CityProceduralAuditReport.CsvRow(
             "City", "Quality", "Scenario", "BaselineP95Ms",
             "CurrentP95Ms", "P95ChangePercent", "Verdict",
-            "BaselineEnvironment", "CurrentEnvironment"));
+            "BaselineEnvironment", "CurrentEnvironment", "Reason"));
         var culture = System.Globalization.CultureInfo.InvariantCulture;
         var diagnostics = City3DPerformanceDiagnostics.Build(
             baseline, current, allowedRegression);
@@ -332,7 +333,8 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                     ? entry.DeltaPercent.ToString("F3", culture) : "",
                 entry.Status.ToString(),
                 before?.environment?.Describe() ?? "",
-                after?.environment?.Describe() ?? ""));
+                after?.environment?.Describe() ?? "",
+                entry.Reason));
         }
         try { File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true)); }
         catch (Exception e) { EditorUtility.DisplayDialog("CSV export failed", e.Message, "OK"); }
