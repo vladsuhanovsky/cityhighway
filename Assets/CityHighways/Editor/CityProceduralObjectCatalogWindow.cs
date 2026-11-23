@@ -19,6 +19,10 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         public int kind;
         public float x;
         public float y;
+        public float width;
+        public float depth;
+        public float height;
+        public float angle;
     }
 
     [Serializable]
@@ -35,6 +39,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     Vector2 scroll;
     int shownLimit = 100;
     bool showSceneMarkers;
+    bool showApproximateShapes;
     string selectedObjectId;
     const float SceneMarkerReach = 2.5f;
     const int MaxSceneMarkers = 120;
@@ -74,7 +79,11 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                 id = item.Id,
                 kind = (int)item.Kind,
                 x = item.FieldPosition.x,
-                y = item.FieldPosition.y
+                y = item.FieldPosition.y,
+                width = item.Width,
+                depth = item.Depth,
+                height = item.Height,
+                angle = item.Angle
             });
         return data;
     }
@@ -139,6 +148,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         kindFilter = EditorGUILayout.Popup("Type", kindFilter, new[] { "All", "Buildings", "Trees" });
         shownLimit = EditorGUILayout.IntSlider("Maximum rows", shownLimit, 20, 300);
         showSceneMarkers = EditorGUILayout.ToggleLeft("Show clickable markers in Scene View", showSceneMarkers);
+        using (new EditorGUI.DisabledScope(!showSceneMarkers))
+            showApproximateShapes = EditorGUILayout.ToggleLeft("Show approximate building/tree volumes", showApproximateShapes);
         if (showSceneMarkers)
             EditorGUILayout.HelpBox(
                 "After capturing a 3D catalog, Scene View shows clickable markers in Edit Mode. " +
@@ -261,6 +272,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                 selectedObjectId = row.id;
                 Repaint();
             }
+            if (showApproximateShapes)
+                DrawApproximateShape(row, position, active);
             if (active)
             {
                 Handles.color = Color.white;
@@ -268,6 +281,37 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             }
         }
         Handles.color = Color.white;
+    }
+
+    /// <summary>
+    /// Editor-only simplified visual volumes. These are not production mesh geometry.
+    /// Catalog snapshots created before dimensions were introduced simply draw markers.
+    /// </summary>
+    static void DrawApproximateShape(SnapshotRow row, Vector3 position, bool active)
+    {
+        if (row.width <= 0f || row.depth <= 0f || row.height <= 0f) return;
+        var previous = Handles.matrix;
+        var previousColor = Handles.color;
+        Handles.color = active ? new Color(1f, 0.85f, 0.2f, 0.95f) :
+            row.kind == (int)CityProceduralReplacement.TargetKind.Building
+                ? new Color(0.2f, 0.7f, 1f, 0.6f)
+                : new Color(0.25f, 0.9f, 0.45f, 0.6f);
+        if (row.kind == (int)CityProceduralReplacement.TargetKind.Building)
+        {
+            Handles.matrix = Matrix4x4.TRS(position, Quaternion.Euler(0f, row.angle, 0f), Vector3.one);
+            Handles.DrawWireCube(new Vector3(0f, row.height * 0.5f, 0f),
+                new Vector3(row.width, row.height, row.depth));
+        }
+        else
+        {
+            // Trees use a coarse vertical guide, not the actual procedural canopy.
+            Handles.matrix = Matrix4x4.identity;
+            var center = position + Vector3.up * row.height * 0.5f;
+            Handles.DrawWireDisc(center, Vector3.up, row.width * 0.5f);
+            Handles.DrawLine(position, position + Vector3.up * row.height);
+        }
+        Handles.matrix = previous;
+        Handles.color = previousColor;
     }
 
     static void FocusPosition(SnapshotRow entry)

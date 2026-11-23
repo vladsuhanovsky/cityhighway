@@ -16,12 +16,22 @@ namespace CityHighways.Presentation
             public readonly string Id;
             public readonly CityProceduralReplacement.TargetKind Kind;
             public readonly Vector2 FieldPosition;
+            public readonly float Width;
+            public readonly float Depth;
+            public readonly float Height;
+            public readonly float Angle;
 
-            public CatalogEntry(string id, CityProceduralReplacement.TargetKind kind, Vector2 position)
+            // Dimensions are in world units. Trees are shown as approximate vertical volumes.
+            public CatalogEntry(string id, CityProceduralReplacement.TargetKind kind, Vector2 position,
+                float width = 0f, float depth = 0f, float height = 0f, float angle = 0f)
             {
                 Id = id;
                 Kind = kind;
                 FieldPosition = position;
+                Width = width;
+                Depth = depth;
+                Height = height;
+                Angle = angle;
             }
         }
 
@@ -54,10 +64,13 @@ namespace CityHighways.Presentation
             if (plan == null) return;
             foreach (var building in plan.Buildings)
                 Catalog.Add(new CatalogEntry(BuildingId(building),
-                    CityProceduralReplacement.TargetKind.Building, building.Center));
+                    CityProceduralReplacement.TargetKind.Building, building.Center,
+                    building.Width / CityPlanner.PixelsPerUnit,
+                    building.Depth / CityPlanner.PixelsPerUnit, building.Height, building.Angle));
             foreach (var tree in plan.Trees)
                 Catalog.Add(new CatalogEntry(TreeId(tree),
-                    CityProceduralReplacement.TargetKind.Tree, tree.At));
+                    CityProceduralReplacement.TargetKind.Tree, tree.At,
+                    tree.Size, tree.Size, tree.Size));
         }
 
         public static void ClearCatalog()
