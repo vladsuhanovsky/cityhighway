@@ -11,10 +11,7 @@ public static class CityProceduralAnchorPlacement
 {
     public static Vector3 WorldPosition(Vector2 fieldPosition, float currentY)
     {
-        return new Vector3(
-            fieldPosition.x / CityPlanner.PixelsPerUnit - BoardLayout.WorldWidth * 0.5f,
-            currentY,
-            BoardLayout.WorldDepth * 0.5f - fieldPosition.y / CityPlanner.PixelsPerUnit);
+        return CityPlanner.ToFlatWorld(fieldPosition, currentY);
     }
 
     public static void Place(CityProceduralReplacement anchor, Vector2 fieldPosition,
