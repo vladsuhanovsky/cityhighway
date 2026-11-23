@@ -63,6 +63,10 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     int auditCount;
     Vector2 auditScroll;
     CityProceduralAuditReport.Category auditCategory;
+    bool groupIssuesByAnchor = true;
+    readonly List<CityProceduralBatchFixPlanner.Proposal> batchPreview =
+        new List<CityProceduralBatchFixPlanner.Proposal>();
+    bool batchPreviewReady;
     const int MaxAuditRows = 150;
     const float SceneMarkerReach = 2.5f;
     const int MaxSceneMarkers = 120;
@@ -128,6 +132,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         snapshot = live;
         auditWasRun = false;
         auditIssues.Clear();
+        batchPreview.Clear();
+        batchPreviewReady = false;
         Repaint();
         Debug.Log("Saved local 3D object catalog for " + live.city + " (" + live.rows.Count + " visuals).");
     }
@@ -137,6 +143,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         snapshot = null;
         auditWasRun = false;
         auditIssues.Clear();
+        batchPreview.Clear();
+        batchPreviewReady = false;
         if (!File.Exists(SnapshotFile)) return;
         try
         {
@@ -280,6 +288,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     void RunBatchAudit(Snapshot data)
     {
         auditIssues.Clear();
+        batchPreview.Clear();
+        batchPreviewReady = false;
         auditWasRun = true;
         auditReady = 0;
         auditSkipped = 0;
@@ -397,24 +407,52 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             "Each warning is listed independently; a single anchor can appear several times.",
             MessageType.None);
 
-        auditCategory = (CityProceduralAuditReport.Category)EditorGUILayout.EnumPopup(
+        var nextCategory = (CityProceduralAuditReport.Category)EditorGUILayout.EnumPopup(
             "Issue type", auditCategory);
+        if (nextCategory != auditCategory)
+        {
+            auditCategory = nextCategory;
+            batchPreview.Clear();
+            batchPreviewReady = false;
+        }
+        groupIssuesByAnchor = EditorGUILayout.ToggleLeft("Group issues by anchor", groupIssuesByAnchor);
         var filtered = new List<AuditIssue>();
         foreach (var issue in auditIssues)
             if (CityProceduralAuditReport.Matches(auditCategory, issue.category))
                 filtered.Add(issue);
         EditorGUILayout.LabelField("Matching issues: " + filtered.Count);
+        DrawBatchFixPreview(data, filtered);
         using (new EditorGUI.DisabledScope(EditorApplication.isPlaying || filtered.Count == 0))
         {
             if (GUILayout.Button("Export filtered issues as CSV..."))
                 ExportBatchAuditCsv(data.city, filtered);
         }
 
-        int shown = Mathf.Min(MaxAuditRows, filtered.Count);
+        var display = new List<AuditIssue>();
+        if (groupIssuesByAnchor)
+        {
+            var grouped = new Dictionary<CityProceduralReplacement, AuditIssue>();
+            foreach (var issue in filtered)
+            {
+                if (issue.anchor == null) continue;
+                if (grouped.TryGetValue(issue.anchor, out var existing))
+                    existing.problem += "; " + issue.problem;
+                else
+                    grouped.Add(issue.anchor, new AuditIssue
+                    {
+                        anchor = issue.anchor, category = issue.category, problem = issue.problem
+                    });
+            }
+            display.AddRange(grouped.Values);
+            display.Sort((a, b) => string.CompareOrdinal(a.anchor.name, b.anchor.name));
+        }
+        else display.AddRange(filtered);
+
+        int shown = Mathf.Min(MaxAuditRows, display.Count);
         auditScroll = EditorGUILayout.BeginScrollView(auditScroll, GUILayout.MaxHeight(210f));
         for (int i = 0; i < shown; i++)
         {
-            var issue = filtered[i];
+            var issue = display[i];
             if (issue.anchor == null) continue;
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label(issue.anchor.name + " — " + issue.problem, GUILayout.ExpandWidth(true));
@@ -430,9 +468,96 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             EditorGUILayout.EndHorizontal();
         }
         EditorGUILayout.EndScrollView();
-        if (filtered.Count > shown)
+        if (display.Count > shown)
             EditorGUILayout.LabelField("Displaying first " + shown +
-                " issues; refine the map or fix visible anchors and scan again.");
+                " objects/issues; export CSV or filter the report for all details.");
+    }
+
+    void CreateBatchFixPreview(Snapshot data, List<AuditIssue> filtered)
+    {
+        batchPreview.Clear();
+        batchPreviewReady = true;
+
+        var catalog = new Dictionary<string, SnapshotRow>(StringComparer.Ordinal);
+        foreach (var row in data.rows)
+            if (!string.IsNullOrEmpty(row.id) && !catalog.ContainsKey(row.id))
+                catalog.Add(row.id, row);
+
+        var flags = new Dictionary<CityProceduralReplacement, int>();
+        foreach (var issue in filtered)
+        {
+            if (issue.anchor == null) continue;
+            int bit = issue.category == CityProceduralAuditReport.Category.Offset ? 1
+                : issue.category == CityProceduralAuditReport.Category.Oversized ? 2
+                : issue.category == CityProceduralAuditReport.Category.BelowGround ? 4 : 0;
+            if (bit == 0) continue; // Configuration and missing measurements need manual repair.
+            if (!flags.ContainsKey(issue.anchor)) flags[issue.anchor] = 0;
+            flags[issue.anchor] |= bit;
+        }
+
+        foreach (var pair in flags)
+        {
+            var anchor = pair.Key;
+            if (anchor == null || !anchor.isActiveAndEnabled ||
+                !string.Equals(anchor.MapName, data.city, StringComparison.Ordinal) ||
+                !catalog.TryGetValue(anchor.StableObjectId, out var entry) ||
+                entry.kind != (int)anchor.Target || !entry.hasTerrainY) continue;
+            if (CityProceduralBatchFixPlanner.TryPlan(anchor, TargetPosition(entry),
+                new Vector3(entry.width, entry.height, entry.depth), entry.terrainY,
+                (pair.Value & 1) != 0, (pair.Value & 2) != 0, (pair.Value & 4) != 0,
+                out var proposal))
+                batchPreview.Add(proposal);
+        }
+        batchPreview.Sort((a, b) => string.CompareOrdinal(a.Anchor.name, b.Anchor.name));
+    }
+
+    void DrawBatchFixPreview(Snapshot data, List<AuditIssue> filtered)
+    {
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Batch quick fixes", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "Preview only the selected issue category. Only Offset, Oversized and BelowGround " +
+            "can be corrected automatically. Other issues require manual changes. " +
+            "Nothing is modified until Apply is confirmed.", MessageType.None);
+        using (new EditorGUI.DisabledScope(EditorApplication.isPlaying || filtered.Count == 0))
+        {
+            if (GUILayout.Button("Preview fixes for filtered issues"))
+                CreateBatchFixPreview(data, filtered);
+        }
+        if (!batchPreviewReady) return;
+        EditorGUILayout.LabelField("Proposed anchor changes: " + batchPreview.Count);
+        int visible = Mathf.Min(15, batchPreview.Count);
+        for (int i = 0; i < visible; i++)
+        {
+            var item = batchPreview[i];
+            if (item.Anchor == null) continue;
+            EditorGUILayout.LabelField(item.Anchor.name + ": position " +
+                item.BeforePosition.ToString("F3") + " → " + item.AfterPosition.ToString("F3") +
+                "; scale " + item.BeforeScale.ToString("F3") + " → " +
+                item.AfterScale.ToString("F3"));
+        }
+        if (batchPreview.Count > visible)
+            EditorGUILayout.LabelField("... plus " + (batchPreview.Count - visible) + " objects");
+        using (new EditorGUI.DisabledScope(EditorApplication.isPlaying || batchPreview.Count == 0))
+        {
+            if (GUILayout.Button("Apply previewed fixes (single Undo group)"))
+            {
+                if (EditorUtility.DisplayDialog("Apply batch Prefab fixes?",
+                    "Apply " + batchPreview.Count + " previewed Transform corrections? " +
+                    "The operation supports Undo and never modifies original Prefab assets.",
+                    "Apply", "Cancel"))
+                {
+                    int applied = CityProceduralBatchFixPlanner.Apply(batchPreview);
+                    if (applied == 0)
+                        EditorUtility.DisplayDialog("Nothing applied",
+                            "An anchor changed since preview or is no longer valid. " +
+                            "Run Scan and Preview again.", "OK");
+                    batchPreview.Clear();
+                    batchPreviewReady = false;
+                    if (applied > 0) RunBatchAudit(data);
+                }
+            }
+        }
     }
 
     static void ExportBatchAuditCsv(string city, List<AuditIssue> filtered)
