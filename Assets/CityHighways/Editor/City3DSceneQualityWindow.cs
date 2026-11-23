@@ -47,6 +47,10 @@ public sealed class City3DSceneQualityWindow : EditorWindow
     bool frameCaptured, frameBaselineCaptured;
     int lowTargetFps = 30, mediumTargetFps = 45, highTargetFps = 60;
     string frameCity, frameBaselineCity;
+    // Explicit scenario label should include generated Magnate seed, camera and viewport.
+    string frameScenarioInput = "";
+    string frameScenario, frameBaselineScenario;
+    float allowedP95RegressionPercent = 10f;
     int frameQuality, frameBaselineQuality;
     City3DFrameMonitor.Snapshot frameSnapshot, frameBaseline;
 
@@ -162,6 +166,8 @@ public sealed class City3DSceneQualityWindow : EditorWindow
         EditorGUILayout.LabelField("3D frame intervals (Play Mode)", EditorStyles.boldLabel);
         var active = City3DScene.ActiveScene;
         var monitor = active != null ? active.FrameMonitor : null;
+        frameScenarioInput = EditorGUILayout.TextField(
+            "Scenario (seed / camera / viewport)", frameScenarioInput);
         using (new EditorGUI.DisabledScope(!EditorApplication.isPlaying ||
             monitor == null))
         {
@@ -170,6 +176,7 @@ public sealed class City3DSceneQualityWindow : EditorWindow
                 frameSnapshot = monitor.Capture();
                 frameCity = active.CityName;
                 frameQuality = active.GraphicsQuality;
+                frameScenario = frameScenarioInput.Trim();
                 frameCaptured = true;
             }
             if (GUILayout.Button("Reset frame sampling window"))
@@ -232,6 +239,7 @@ public sealed class City3DSceneQualityWindow : EditorWindow
             frameBaseline = frameSnapshot;
             frameBaselineCity = frameCity;
             frameBaselineQuality = frameQuality;
+            frameBaselineScenario = frameScenario;
             frameBaselineCaptured = true;
         }
         if (GUILayout.Button("Export frame statistics CSV..."))
@@ -242,6 +250,27 @@ public sealed class City3DSceneQualityWindow : EditorWindow
         EditorGUILayout.LabelField("Baseline: " + frameBaselineCity +
             " [" + QualityName(frameBaselineQuality) + "] → " +
             frameCity + " [" + QualityName(frameQuality) + "]");
+        allowedP95RegressionPercent = Mathf.Max(0f,
+            EditorGUILayout.FloatField("Allowed P95 regression (%)",
+                allowedP95RegressionPercent));
+        var regression = City3DPerformanceRegression.Compare(
+            frameBaseline, frameBaselineCity, frameBaselineQuality, frameBaselineScenario,
+            frameSnapshot, frameCity, frameQuality, frameScenario,
+            allowedP95RegressionPercent);
+        if (regression.Status == City3DPerformanceRegression.Verdict.Regression)
+            EditorGUILayout.HelpBox("Performance regression: P95 frame time increased by " +
+                regression.P95DeltaPercent.ToString("F1") + "% (allowed " +
+                allowedP95RegressionPercent.ToString("F1") +
+                "%). Investigate the frame captures under identical conditions.",
+                MessageType.Warning);
+        else if (regression.Status == City3DPerformanceRegression.Verdict.Pass)
+            EditorGUILayout.LabelField("Scenario-matched regression check: PASS — " +
+                "P95 change " + regression.P95DeltaPercent.ToString("+0.0;-0.0;0.0") + "%");
+        else
+            EditorGUILayout.HelpBox("Regression verdict unavailable: " +
+                regression.Status + ". Use at least 60 samples, the same city, " +
+                "quality and a matching nonempty scenario label (seed, camera, viewport). " +
+                "Raw deltas below remain descriptive only.", MessageType.Info);
         if (!string.Equals(frameBaselineCity, frameCity, StringComparison.Ordinal))
             EditorGUILayout.HelpBox("Different cities (and potentially different seeds): " +
                 "FPS comparison is not controlled.", MessageType.Warning);
@@ -265,11 +294,24 @@ public sealed class City3DSceneQualityWindow : EditorWindow
         sb.AppendLine(CityProceduralAuditReport.CsvRow(
             "Capture", "City", "Quality", "Frames", "EstimatedFPS",
             "AverageFrameMs", "P95FrameMs", "P99FrameMs", "MaxFrameMs",
-            "Approx1PercentLowFPS", "TargetFPS", "P95BudgetStatus"));
-        AppendFrameCsv(sb, "Current", frameCity, frameQuality, frameSnapshot);
+            "Approx1PercentLowFPS", "TargetFPS", "P95BudgetStatus",
+            "Scenario", "RegressionVerdict", "P95RegressionPercent"));
+        var comparison = frameBaselineCaptured
+            ? City3DPerformanceRegression.Compare(
+                frameBaseline, frameBaselineCity, frameBaselineQuality,
+                frameBaselineScenario, frameSnapshot, frameCity, frameQuality,
+                frameScenario, allowedP95RegressionPercent)
+            : new City3DPerformanceRegression.Result();
+        AppendFrameCsv(sb, "Current", frameCity, frameQuality, frameSnapshot,
+            frameScenario, frameBaselineCaptured ? comparison.Status.ToString() : "",
+            frameBaselineCaptured &&
+                (comparison.Status == City3DPerformanceRegression.Verdict.Pass ||
+                 comparison.Status == City3DPerformanceRegression.Verdict.Regression)
+                ? comparison.P95DeltaPercent.ToString("F3",
+                    System.Globalization.CultureInfo.InvariantCulture) : "");
         if (frameBaselineCaptured)
             AppendFrameCsv(sb, "Baseline", frameBaselineCity,
-                frameBaselineQuality, frameBaseline);
+                frameBaselineQuality, frameBaseline, frameBaselineScenario, "", "");
         try
         {
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));
@@ -283,7 +325,8 @@ public sealed class City3DSceneQualityWindow : EditorWindow
     }
 
     void AppendFrameCsv(StringBuilder sb, string label, string map,
-        int quality, City3DFrameMonitor.Snapshot measurement)
+        int quality, City3DFrameMonitor.Snapshot measurement,
+        string scenario, string regressionVerdict, string regressionPercent)
     {
         var culture = System.Globalization.CultureInfo.InvariantCulture;
         sb.AppendLine(CityProceduralAuditReport.CsvRow(
@@ -299,7 +342,8 @@ public sealed class City3DSceneQualityWindow : EditorWindow
                 lowTargetFps, mediumTargetFps, highTargetFps).ToString(culture),
             City3DFrameBudget.Evaluate(measurement,
                 City3DFrameBudget.TargetForQuality(quality,
-                    lowTargetFps, mediumTargetFps, highTargetFps)).ToString()));
+                    lowTargetFps, mediumTargetFps, highTargetFps)).ToString(),
+            scenario, regressionVerdict, regressionPercent));
     }
 
     void DrawGeometryBudgetsAndComparison()
