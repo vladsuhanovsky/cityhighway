@@ -304,17 +304,32 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             if (!diagnostics.Oversized && !diagnostics.Offset && !diagnostics.BelowGround)
                 EditorGUILayout.HelpBox("No placement warnings at current thresholds.", MessageType.Info);
             if (diagnostics.Oversized)
+            {
                 EditorGUILayout.HelpBox("Oversized: largest dimension is " +
                     diagnostics.MaximumSizeRatio.ToString("F2") +
                     "x the generated target (warning threshold 1.15x).", MessageType.Warning);
+                using (new EditorGUI.DisabledScope(EditorApplication.isPlaying))
+                    if (GUILayout.Button("Fix oversized Prefab: uniform fit"))
+                        CityProceduralPrefabFitting.ApplyUniformFit(anchor, targetSize);
+            }
             if (diagnostics.Offset)
+            {
                 EditorGUILayout.HelpBox("Horizontal displacement: " +
                     diagnostics.HorizontalOffset.ToString("F3") +
                     " world units from generated center.", MessageType.Warning);
+                using (new EditorGUI.DisabledScope(EditorApplication.isPlaying))
+                    if (GUILayout.Button("Fix horizontal offset: align X/Z"))
+                        CityProceduralPlacementQuickFixes.AlignHorizontal(anchor, targetWorld);
+            }
             if (diagnostics.BelowGround)
+            {
                 EditorGUILayout.HelpBox("Possible ground intersection: lower Prefab bounds are " +
                     diagnostics.GroundPenetration.ToString("F3") +
                     " world units below sampled ground at target center.", MessageType.Warning);
+                using (new EditorGUI.DisabledScope(EditorApplication.isPlaying))
+                    if (GUILayout.Button("Fix possible ground intersection: raise Y"))
+                        CityProceduralPlacementQuickFixes.RaiseAboveGround(anchor, match.terrainY);
+            }
         }
         else if (!match.hasTerrainY)
             EditorGUILayout.HelpBox(
