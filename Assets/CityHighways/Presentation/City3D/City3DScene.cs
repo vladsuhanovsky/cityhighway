@@ -44,6 +44,7 @@ namespace CityHighways.Presentation
             public GameObject Root, Full, Cards;
             public Mesh CardMesh;
             public bool ShowCards;
+            public float CardLean = float.NaN, CardYaw = float.NaN;
             public readonly List<CardSpot> Spots = new List<CardSpot>();
         }
 
@@ -65,7 +66,7 @@ namespace CityHighways.Presentation
         Material _buildings, _ground, _water, _cards, _decals;
         int _quality, _rendererIndex = -1;
         readonly List<TreeChunk> _treeChunks = new List<TreeChunk>();
-        float _cardLean = -999f, _cardYaw;
+        // Each chunk tracks its own billboard orientation to avoid rebuilding hidden meshes.
         // Отражения в воде: своя камера рисует зеркальный город в текстуру, шейдер воды берёт из неё картинку.
         bool _reflective;
         Camera _reflectionCamera;
@@ -990,7 +991,8 @@ namespace CityHighways.Presentation
                 chunk.ShowCards = chunk.Full == null;
                 _treeChunks.Add(chunk);
             }
-            RebuildCards(0f, 0f);
+            foreach (var chunk in _treeChunks)
+                RebuildCards(chunk, 0f, 0f);
         }
 
         /// <summary>Плитка карточки — того же вида и оттенка, что объёмное дерево (тот же порядок случайных чисел, что в BuildTree).</summary>
@@ -1010,10 +1012,10 @@ namespace CityHighways.Presentation
         /// Пересобрать карточки под наклон камеры: плоскость перпендикулярна взгляду (сверху — лежит, под углом —
         /// наклонена к зрителю), середина — на половине высоты дерева, низ никогда не уходит под землю.
         /// </summary>
-        void RebuildCards(float leanDegrees, float yawDegrees)
+        void RebuildCards(TreeChunk chunk, float leanDegrees, float yawDegrees)
         {
-            _cardLean = leanDegrees;
-            _cardYaw = yawDegrees;
+            chunk.CardLean = leanDegrees;
+            chunk.CardYaw = yawDegrees;
             float t = leanDegrees * Mathf.Deg2Rad;
             // Карточки повёрнуты к камере и по наклону, и по повороту вокруг вертикали.
             var yaw = Quaternion.Euler(0f, yawDegrees, 0f);
@@ -1023,10 +1025,7 @@ namespace CityHighways.Presentation
             // Нормаль почти вверх — карточка освещается как крона, а не как стена.
             var normal = (Vector3.up + toCamera * 0.4f).normalized;
             var builder = new MeshBuilder();
-            foreach (var chunk in _treeChunks)
-            {
-                builder.Clear();
-                foreach (var spot in chunk.Spots)
+            foreach (var spot in chunk.Spots)
                 {
                     float size = spot.Size * 1.05f, half = size / 2f;
                     var center = spot.At + Vector3.up * half;
@@ -1035,8 +1034,7 @@ namespace CityHighways.Presentation
                     builder.QuadWithNormal(center - right - up, center - right + up, center + right + up, center + right - up,
                         CityTextures.CardUv(spot.Tile), normal);
                 }
-                builder.WriteTo(chunk.CardMesh);
-            }
+            builder.WriteTo(chunk.CardMesh);
         }
 
         /// <summary>Камера отражений (качество среднее и высокое): рисует зеркальный город в текстуру для шейдера воды.</summary>
@@ -1867,25 +1865,38 @@ namespace CityHighways.Presentation
         void UpdateTrees(BoardLayout layout, Func<string, bool> districtOpen)
         {
             float lean = layout.CameraTilt;
-            if (Mathf.Abs(lean - _cardLean) > 3f || Mathf.Abs(Mathf.DeltaAngle(layout.CameraYaw, _cardYaw)) > 4f) RebuildCards(lean, layout.CameraYaw);
+            float yaw = layout.CameraYaw;
             float threshold = _quality == 0 ? 125f : _quality == 1 ? 100f : 80f;
+            // A single shared camera-facing vector instead of per-chunk quaternion work.
+            var across = Quaternion.Euler(0f, yaw, 0f) * Vector3.right;
             foreach (var chunk in _treeChunks)
             {
                 bool open = chunk.District == "_" || districtOpen == null || districtOpen(chunk.District);
                 if (chunk.Root.activeSelf != open) chunk.Root.SetActive(open);
-                if (!open || chunk.Full == null) continue;
-                // Метр поперёк взгляда камеры (при повороте ось X мира может смотреть прямо на камеру).
-                var across = Quaternion.Euler(0f, layout.CameraYaw, 0f) * Vector3.right;
-                var left = layout.WorldToScreen(chunk.Center - across * 0.5f);
-                var right = layout.WorldToScreen(chunk.Center + across * 0.5f);
-                float perUnit = (right - left).magnitude;
-                bool cards = perUnit < (chunk.ShowCards ? threshold + 10f : threshold);
-                if (cards != chunk.ShowCards || chunk.Full.activeSelf == cards)
+                if (!open) continue;
+
+                if (chunk.Full != null)
                 {
-                    chunk.ShowCards = cards;
-                    chunk.Full.SetActive(!cards);
-                    chunk.Cards.SetActive(cards);
+                    // A meter across the camera: keep the existing quality-dependent
+                    // screen-size threshold and switching hysteresis.
+                    var left = layout.WorldToScreen(chunk.Center - across * 0.5f);
+                    var right = layout.WorldToScreen(chunk.Center + across * 0.5f);
+                    float perUnit = (right - left).magnitude;
+                    bool cards = perUnit < (chunk.ShowCards ? threshold + 10f : threshold);
+                    if (cards != chunk.ShowCards || chunk.Full.activeSelf == cards)
+                    {
+                        chunk.ShowCards = cards;
+                        chunk.Full.SetActive(!cards);
+                        chunk.Cards.SetActive(cards);
+                    }
                 }
+
+                // Build the billboard mesh only for visible cards. Far-only chunks,
+                // hidden districts and chunks currently showing full 3D meshes no
+                // longer require card mesh writes on camera movement.
+                if (CityTreeCardRefreshPolicy.ShouldRefresh(chunk.Cards.activeSelf,
+                    chunk.CardLean, chunk.CardYaw, lean, yaw))
+                    RebuildCards(chunk, lean, yaw);
             }
         }
 
