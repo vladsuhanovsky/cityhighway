@@ -44,7 +44,7 @@ namespace CityHighways.Tests
         }
 
         [Test]
-        public void SlowFrameAppearsInP99ButNotMedianOrP95()
+        public void RareSlowFrameAppearsInMaximumButNotP95OrP99()
         {
             for (int i = 0; i < 99; i++) monitor.RecordFrame(10f);
             monitor.RecordFrame(100f);
