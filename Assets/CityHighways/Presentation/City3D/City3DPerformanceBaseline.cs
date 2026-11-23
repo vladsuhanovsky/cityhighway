@@ -11,7 +11,7 @@ namespace CityHighways.Presentation
     public sealed class City3DPerformanceBaseline
     {
         public const int CurrentVersion = 1;
-        public int version = CurrentVersion;
+        public int version;
         public string city;
         public string scenario;
         public string capturedUtc;
@@ -24,6 +24,7 @@ namespace CityHighways.Presentation
         {
             return new City3DPerformanceBaseline
             {
+                version = CurrentVersion,
                 city = cityName,
                 quality = graphicsQuality,
                 scenario = scenarioLabel?.Trim(),
