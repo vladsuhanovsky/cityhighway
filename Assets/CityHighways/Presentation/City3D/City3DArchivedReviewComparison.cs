@@ -25,6 +25,7 @@ namespace CityHighways.Presentation
             public float PreviousP95Ms;
             public float LatestP95Ms;
             public float P95MovementPercent;
+            public string P95ComparisonReason;
         }
 
         public struct Report
@@ -35,6 +36,8 @@ namespace CityHighways.Presentation
             public int Added;
             public int Removed;
             public bool ComparableP95;
+            public int ComparableRows;
+            public int BlockedRows;
             public string Warning;
         }
 
@@ -56,8 +59,8 @@ namespace CityHighways.Presentation
             {
                 ComparableP95 = sameBaseline && sameAllowance,
                 Warning = sameBaseline && sameAllowance
-                    ? "P95 movement compares the current captures only; matching baseline labels " +
-                      "and thresholds are user-entered, not independently verified."
+                    ? "P95 movement requires matching recorded current environments for each " +
+                      "scenario; baseline labels and thresholds are user-entered, not independently verified."
                     : "P95 movement hidden: archived reports have different or unknown " +
                       "baseline revision labels or different regression thresholds."
             };
@@ -89,15 +92,28 @@ namespace CityHighways.Presentation
                     row.Kind = string.Equals(old.status, now.status, StringComparison.Ordinal)
                         ? Change.Unchanged : Change.StatusChanged;
                     if (row.Kind == Change.StatusChanged) report.Changed++;
-                    if (report.ComparableP95 && old.hasComparableDelta &&
-                        now.hasComparableDelta && old.hasCurrent && now.hasCurrent)
+                    if (!report.ComparableP95)
+                        row.P95ComparisonReason = "Baseline labels or thresholds differ.";
+                    else if (!old.hasComparableDelta || !now.hasComparableDelta)
+                        row.P95ComparisonReason = "At least one report lacks a comparable P95.";
+                    else if (!old.hasCurrentEnvironment || !now.hasCurrentEnvironment ||
+                        string.IsNullOrWhiteSpace(old.currentEnvironmentSignature) ||
+                        string.IsNullOrWhiteSpace(now.currentEnvironmentSignature))
+                        row.P95ComparisonReason = "Archived capture environment is unknown.";
+                    else if (!string.Equals(old.currentEnvironmentSignature,
+                        now.currentEnvironmentSignature, StringComparison.Ordinal))
+                        row.P95ComparisonReason = "Archived capture environments differ.";
+                    else
                     {
                         row.HasP95Movement = true;
                         row.PreviousP95Ms = old.currentP95Ms;
                         row.LatestP95Ms = now.currentP95Ms;
                         row.P95MovementPercent =
                             (now.currentP95Ms / old.currentP95Ms - 1f) * 100f;
+                        row.P95ComparisonReason = "Recorded capture environments match.";
                     }
+                    if (row.HasP95Movement) report.ComparableRows++;
+                    else report.BlockedRows++;
                 }
                 rows.Add(row);
             }
@@ -165,16 +181,19 @@ namespace CityHighways.Presentation
                 "  |  **Status changed:** " + report.Changed +
                 "  |  **Added:** " + report.Added +
                 "  |  **Removed:** " + report.Removed);
+            text.AppendLine("**P95 comparable rows:** " + report.ComparableRows +
+                "  |  **P95 blocked rows:** " + report.BlockedRows);
             text.AppendLine();
-            text.AppendLine("| City | Quality | Scenario | Change | Previous | Latest | Current P95 movement |");
-            text.AppendLine("| --- | --- | --- | --- | --- | --- | ---: |");
+            text.AppendLine("| City | Quality | Scenario | Change | Previous | Latest | Current P95 movement | Reason |");
+            text.AppendLine("| --- | --- | --- | --- | --- | --- | ---: | --- |");
             foreach (var row in report.Rows)
                 text.AppendLine("| " + Cell(row.City) + " | " + row.Quality +
                     " | " + Cell(row.Scenario) + " | " + row.Kind +
                     " | " + Cell(row.PreviousStatus) + " | " +
                     Cell(row.LatestStatus) + " | " +
                     (row.HasP95Movement ? row.P95MovementPercent.ToString(
-                        "+0.00;-0.00;0.00", CultureInfo.InvariantCulture) + "%" : "—") + " |");
+                        "+0.00;-0.00;0.00", CultureInfo.InvariantCulture) + "%" : "—") +
+                    " | " + Cell(row.P95ComparisonReason) + " |");
             text.AppendLine();
             text.AppendLine("> " + report.Warning);
             text.AppendLine("> Reports contain manual revision and seed labels. " +

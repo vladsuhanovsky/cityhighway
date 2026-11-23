@@ -24,6 +24,9 @@ namespace CityHighways.Presentation
             public bool hasBaseline;
             public bool hasCurrent;
             public bool hasComparableDelta;
+            // Optional provenance in schema v1. Older review exports omit both fields.
+            public bool hasCurrentEnvironment;
+            public string currentEnvironmentSignature;
         }
 
         public const int CurrentVersion = 1;
@@ -82,6 +85,19 @@ namespace CityHighways.Presentation
                 var row = report.Rows[i];
                 bool hasBaseline = row.Status != City3DPerformanceDiagnostics.Kind.Additional;
                 bool hasCurrent = row.Status != City3DPerformanceDiagnostics.Kind.Missing;
+                City3DPerformanceBaseline nowCapture = null;
+                if (hasCurrent)
+                    foreach (var candidate in current.entries)
+                        if (candidate.city == row.City && candidate.quality == row.Quality &&
+                            candidate.scenario == row.Scenario)
+                        {
+                            nowCapture = candidate;
+                            break;
+                        }
+                bool recorded = nowCapture != null &&
+                    nowCapture.environmentRecorded &&
+                    nowCapture.environment != null &&
+                    nowCapture.environment.IsValid();
                 artifact.scenarios[i] = new Scenario
                 {
                     city = row.City,
@@ -95,7 +111,10 @@ namespace CityHighways.Presentation
                     hasBaseline = hasBaseline,
                     hasCurrent = hasCurrent,
                     hasComparableDelta = hasBaseline && hasCurrent &&
-                        row.Status != City3DPerformanceDiagnostics.Kind.Invalid
+                        row.Status != City3DPerformanceDiagnostics.Kind.Invalid,
+                    hasCurrentEnvironment = recorded,
+                    currentEnvironmentSignature = recorded
+                        ? nowCapture.environment.Describe() : null
                 };
             }
             return artifact;
@@ -155,6 +174,19 @@ namespace CityHighways.Presentation
                 if (item.hasCurrent && (!FinitePositive(item.currentP95Ms)))
                 {
                     reason = "Review contains invalid current frame time.";
+                    return false;
+                }
+                if (item.hasCurrentEnvironment &&
+                    (!item.hasCurrent ||
+                     string.IsNullOrWhiteSpace(item.currentEnvironmentSignature)))
+                {
+                    reason = "Review current environment provenance is inconsistent.";
+                    return false;
+                }
+                if (!item.hasCurrentEnvironment &&
+                    !string.IsNullOrEmpty(item.currentEnvironmentSignature))
+                {
+                    reason = "Review environment signature lacks its presence flag.";
                     return false;
                 }
                 switch (item.status)
