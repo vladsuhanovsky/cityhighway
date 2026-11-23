@@ -14,13 +14,22 @@ public static class CityProceduralAnchorPlacement
         return CityPlanner.ToFlatWorld(fieldPosition, currentY);
     }
 
+    public static float ResolveHeight(float currentY, float capturedTerrainY,
+        bool useCapturedTerrainHeight, bool hasCapturedTerrainHeight)
+    {
+        return useCapturedTerrainHeight && hasCapturedTerrainHeight ? capturedTerrainY : currentY;
+    }
+
     public static void Place(CityProceduralReplacement anchor, Vector2 fieldPosition,
-        float generatedAngle, bool applyBuildingRotation)
+        float generatedAngle, bool applyBuildingRotation, float capturedTerrainY = 0f,
+        bool useCapturedTerrainHeight = false, bool hasCapturedTerrainHeight = false)
     {
         if (anchor == null || EditorApplication.isPlaying) return;
         var transform = anchor.transform;
         Undo.RecordObject(transform, "Place procedural replacement anchor");
-        transform.position = WorldPosition(fieldPosition, transform.position.y);
+        transform.position = WorldPosition(fieldPosition,
+            ResolveHeight(transform.position.y, capturedTerrainY,
+                useCapturedTerrainHeight, hasCapturedTerrainHeight));
         if (applyBuildingRotation)
         {
             var angles = transform.eulerAngles;
