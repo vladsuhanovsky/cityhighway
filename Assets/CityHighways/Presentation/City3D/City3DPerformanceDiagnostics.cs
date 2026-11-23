@@ -63,6 +63,16 @@ namespace CityHighways.Presentation
                 {
                     row.CurrentP95Ms = after.snapshot.P95Ms;
                     report.Matched++;
+                    var environmentMatch = City3DPerformanceEnvironment.Compare(
+                        before.environment, after.environment);
+                    if (environmentMatch == City3DPerformanceEnvironment.Compatibility.Incomplete ||
+                        environmentMatch == City3DPerformanceEnvironment.Compatibility.Different)
+                    {
+                        row.Status = Kind.Invalid;
+                        report.Invalid++;
+                        rows.Add(row);
+                        continue;
+                    }
                     var difference = City3DPerformanceRegression.Compare(
                         before.snapshot, before.city, before.quality, before.scenario,
                         after.snapshot, after.city, after.quality, after.scenario,
