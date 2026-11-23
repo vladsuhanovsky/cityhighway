@@ -67,7 +67,11 @@ namespace CityHighways.Presentation
             result.AverageDeltaPercent = Delta(baseline.AverageMs, current.AverageMs);
             result.P95DeltaPercent = Delta(baseline.P95Ms, current.P95Ms);
             result.P99DeltaPercent = Delta(baseline.P99Ms, current.P99Ms);
-            result.Status = result.P95DeltaPercent > Math.Max(0f, allowedP95RegressionPercent)
+            // Avoid a false regression at an exact boundary due to float rounding.
+            float threshold = float.IsNaN(allowedP95RegressionPercent) ||
+                float.IsInfinity(allowedP95RegressionPercent)
+                ? 0f : Math.Max(0f, allowedP95RegressionPercent);
+            result.Status = result.P95DeltaPercent > threshold + 0.0001f
                 ? Verdict.Regression : Verdict.Pass;
             return result;
         }
