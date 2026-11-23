@@ -96,6 +96,15 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Добавить вершины другого сборщика, переставив их матрицей (поворот, сдвиг, масштаб).</summary>
+        static void EnsureAppendCapacity<T>(List<T> items, int required)
+        {
+            if (items.Capacity >= required) return;
+            // Double the existing capacity, but never overflow near int.MaxValue.
+            int doubled = items.Capacity <= int.MaxValue / 2
+                ? items.Capacity * 2 : int.MaxValue;
+            items.Capacity = Mathf.Max(required, Mathf.Max(4, doubled));
+        }
+
         public void Append(MeshBuilder other, Matrix4x4 transform)
         {
             if (other == null) throw new ArgumentNullException(nameof(other));
@@ -107,14 +116,14 @@ namespace CityHighways.Presentation
             int incomingTriangles = other._triangles.Count;
             if (incomingVertices == 0 && incomingTriangles == 0) return;
 
-            // Reserve once before copying to avoid repeated List growth when
-            // combining many independent meshes into a city chunk.
+            // Amortize repeated small appends: exact-capacity reservations would
+            // copy the growing arrays on almost every append.
             int targetVertices = checked(_vertices.Count + incomingVertices);
             int targetTriangles = checked(_triangles.Count + incomingTriangles);
-            if (_vertices.Capacity < targetVertices) _vertices.Capacity = targetVertices;
-            if (_normals.Capacity < targetVertices) _normals.Capacity = targetVertices;
-            if (_uvs.Capacity < targetVertices) _uvs.Capacity = targetVertices;
-            if (_triangles.Capacity < targetTriangles) _triangles.Capacity = targetTriangles;
+            EnsureAppendCapacity(_vertices, targetVertices);
+            EnsureAppendCapacity(_normals, targetVertices);
+            EnsureAppendCapacity(_uvs, targetVertices);
+            EnsureAppendCapacity(_triangles, targetTriangles);
 
             int offset = _vertices.Count;
             var normalMatrix = transform.inverse.transpose;
