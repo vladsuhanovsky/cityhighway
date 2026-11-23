@@ -80,6 +80,31 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void LegacySuiteRoundTripNormalizesOptionalEnvironment()
+        {
+            var suite = new City3DPerformanceSuite();
+            Assert.IsTrue(suite.TryAdd(Sample(null), out _));
+            Assert.IsTrue(City3DPerformanceSuite.TryFromJson(
+                suite.ToJson(), out var loaded, out var reason), reason);
+            Assert.IsNull(loaded.entries[0].environment);
+            Assert.IsFalse(loaded.entries[0].environmentRecorded);
+        }
+
+        [Test]
+        public void InvalidRecordedEnvironmentCannotBeTreatedAsLegacy()
+        {
+            var invalid = Environment(width: 0);
+            var baseline = Sample(invalid);
+            Assert.IsFalse(baseline.IsValid(out _));
+            Assert.IsTrue(baseline.environmentRecorded);
+            var valid = Sample(Environment());
+            Assert.IsTrue(City3DPerformanceBaseline.TryFromJson(
+                valid.ToJson(), out var loaded, out var reason), reason);
+            Assert.IsTrue(loaded.environmentRecorded);
+            Assert.IsNotNull(loaded.environment);
+        }
+
+        [Test]
         public void LegacyBaselineRemainsReadableButMixedMetadataIsRejected()
         {
             var old = Sample(null);
