@@ -33,9 +33,12 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             MessageType.Info);
         var active = City3DScene.ActiveScene;
         scenario = EditorGUILayout.TextField("Scenario (seed/camera/viewport)", scenario);
+        // Read once per UI pass. Capture and its preflight use the same
+        // observed settings, avoiding inconsistent snapshots inside a single click.
+        var observedEnvironment = EditorApplication.isPlaying && active != null
+            ? City3DPerformanceEnvironment.Capture() : null;
         var preflight = City3DPerformanceScenarioPreflight.Check(
-            scenario, EditorApplication.isPlaying
-                ? City3DPerformanceEnvironment.Capture() : null);
+            scenario, observedEnvironment);
         if (preflight.HasWarnings)
             EditorGUILayout.HelpBox(
                 "Scenario preflight (advisory):\n" + preflight.Warnings +
@@ -44,7 +47,7 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         var baselinePreflight = active != null && EditorApplication.isPlaying
             ? City3DPerformanceBaselinePreflight.Check(baseline,
                 active.CityName, active.GraphicsQuality, scenario,
-                City3DPerformanceEnvironment.Capture())
+                observedEnvironment)
             : City3DPerformanceBaselinePreflight.Check(
                 baseline, "", -1, scenario, null);
         if (EditorApplication.isPlaying && active != null)
@@ -74,7 +77,14 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                     return;
                 var item = City3DPerformanceBaseline.Create(active.CityName,
                     active.GraphicsQuality, scenario, active.FrameMonitor.Capture(),
-                    captureEnvironment: City3DPerformanceEnvironment.Capture());
+                    captureEnvironment: observedEnvironment);
+                if (!item.IsValid(out var invalidReason))
+                {
+                    EditorUtility.DisplayDialog("Capture not ready",
+                        invalidReason + "\nKeep collecting frame samples and try again.",
+                        "OK");
+                    return;
+                }
                 if (!current.TryAdd(item, out var reason))
                 {
                     // Duplicate captures must not be overwritten without approval.
