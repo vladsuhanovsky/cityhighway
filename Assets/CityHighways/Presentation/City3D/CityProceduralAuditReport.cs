@@ -14,7 +14,8 @@ namespace CityHighways.Presentation
             Oversized,
             Offset,
             BelowGround,
-            MissingTerrain
+            MissingTerrain,
+            DuplicateId
         }
 
         public static bool Matches(Category selection, Category actual) =>
