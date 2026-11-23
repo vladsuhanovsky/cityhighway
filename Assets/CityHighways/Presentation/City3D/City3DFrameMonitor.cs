@@ -33,6 +33,58 @@ namespace CityHighways.Presentation
             public float OnePercentLowFps;
         }
 
+        /// <summary>
+        /// Advisory heuristics for unstable sampling, independent from saved
+        /// Snapshot fields. Does not invalidate isolated frame spikes.
+        /// </summary>
+        public struct Stability
+        {
+            public int Frames;
+            public float MedianMs;
+            public float P95ToMedianRatio;
+            public int SpikeFrames;
+            public float SpikePercent;
+            public bool HasEnoughSamples;
+            public bool HasWarning;
+            public string Explanation;
+        }
+
+        public Stability AnalyzeStability()
+        {
+            var result = new Stability { Frames = count };
+            if (count < MinimumFrames)
+            {
+                result.Explanation = "Collect at least " + MinimumFrames +
+                    " accepted frame intervals to inspect stability.";
+                return result;
+            }
+
+            var values = new float[count];
+            Array.Copy(frameMs, values, count);
+            Array.Sort(values);
+            // Even sample counts: average the two middle entries.
+            int middle = count / 2;
+            result.MedianMs = count % 2 == 0
+                ? (float)(((double)values[middle - 1] + values[middle]) / 2d)
+                : values[middle];
+            float p95 = Percentile(values, .95f);
+            result.P95ToMedianRatio = p95 / result.MedianMs;
+            // A spike is strictly greater than twice the median; ties
+            // at exactly 2x are not spikes.
+            double threshold = 2d * result.MedianMs;
+            foreach (var value in values)
+                if (value > threshold) result.SpikeFrames++;
+            result.SpikePercent = 100f * result.SpikeFrames / count;
+            result.HasEnoughSamples = true;
+            result.HasWarning = result.P95ToMedianRatio > 1.5f ||
+                result.SpikePercent >= 5f;
+            result.Explanation = result.HasWarning
+                ? "Variable frame intervals detected. Inspect load and repeat " +
+                  "the measurement; this is an advisory, not an automatic rejection."
+                : "No large variability under the current advisory thresholds.";
+            return result;
+        }
+
         void OnEnable() => BeginFreshWindow();
 
         /// <summary>Discard previous measurements and allow a fresh warm-up window.</summary>
