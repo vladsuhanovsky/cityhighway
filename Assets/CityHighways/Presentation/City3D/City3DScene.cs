@@ -185,6 +185,10 @@ namespace CityHighways.Presentation
             BuildRivers();
             BuildDistricts(plan);
             BuildTrees(plan);
+            // Optional capped visual replacements; unselected props still use
+            // the original district-batched geometry and visibility rules.
+            CityProceduralPropPrefabSpawner.Apply(
+                plan, _map.Name, _root.transform, _districts, WaterLevel);
             BuildProps(plan);
             SetupRoads();
             BuildJunctions();
