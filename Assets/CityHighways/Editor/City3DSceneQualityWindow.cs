@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using CityHighways.Presentation;
 using UnityEditor;
 using UnityEngine;
@@ -36,6 +38,12 @@ public sealed class City3DSceneQualityWindow : EditorWindow
     int runtimeTreeCount;
     bool runtimeCaptured;
     int runtimeLimit = 20;
+    long totalTriangleBudget = 300000;
+    long groupTriangleBudget = 50000;
+    bool baselineCaptured;
+    string baselineCity;
+    City3DGeometryAudit.Totals baselineTotals;
+    City3DGeometryAudit.Entry[] baselineEntries = new City3DGeometryAudit.Entry[0];
 
     [MenuItem("City Highways/3D Objects/Scene Quality Audit")]
     static void Open() => GetWindow<City3DSceneQualityWindow>("Scene Quality");
@@ -125,17 +133,117 @@ public sealed class City3DSceneQualityWindow : EditorWindow
             "inactive child GameObjects and reflect the capture instant. " +
             "This is NOT FPS, draw calls or visible-triangle cost.",
             MessageType.None);
+        DrawGeometryBudgetsAndComparison();
         runtimeLimit = EditorGUILayout.IntSlider("Top geometry groups", runtimeLimit, 5, 100);
         int count = Mathf.Min(runtimeLimit, runtimeEntries.Length);
         runtimeScroll = EditorGUILayout.BeginScrollView(runtimeScroll, GUILayout.MaxHeight(270f));
         for (int i = 0; i < count; i++)
         {
             var entry = runtimeEntries[i];
+            string warning = City3DGeometryComparison.ExceedsBudget(
+                entry.Triangles, groupTriangleBudget) ? " [OVER BUDGET]" : "";
             EditorGUILayout.LabelField((i + 1) + ". [" + entry.Kind + "] " + entry.Name +
                 " — " + entry.Triangles + " triangles, " +
-                entry.Vertices + " vertices, " + entry.MeshCount + " meshes");
+                entry.Vertices + " vertices, " + entry.MeshCount + " meshes" + warning);
         }
         EditorGUILayout.EndScrollView();
+    }
+
+    void DrawGeometryBudgetsAndComparison()
+    {
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Geometry budgets and comparison", EditorStyles.boldLabel);
+        totalTriangleBudget = Math.Max(0L, EditorGUILayout.LongField(
+            "Total triangle budget", totalTriangleBudget));
+        groupTriangleBudget = Math.Max(0L, EditorGUILayout.LongField(
+            "Per-group triangle budget", groupTriangleBudget));
+        if (City3DGeometryComparison.ExceedsBudget(runtimeTotals.Triangles, totalTriangleBudget))
+            EditorGUILayout.HelpBox("Current mesh snapshot exceeds the total triangle budget: " +
+                runtimeTotals.Triangles + " > " + totalTriangleBudget, MessageType.Warning);
+        int exceeding = 0;
+        foreach (var entry in runtimeEntries)
+            if (City3DGeometryComparison.ExceedsBudget(entry.Triangles, groupTriangleBudget))
+                exceeding++;
+        if (exceeding > 0)
+            EditorGUILayout.HelpBox(exceeding +
+                " mesh groups exceed the per-group triangle budget.", MessageType.Warning);
+        EditorGUILayout.HelpBox("A budget of 0 disables its warning. These are manually chosen " +
+            "geometry thresholds, not calibrated FPS or hardware targets.", MessageType.None);
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Save current capture as baseline"))
+        {
+            baselineEntries = (City3DGeometryAudit.Entry[])runtimeEntries.Clone();
+            baselineTotals = runtimeTotals;
+            baselineCity = runtimeCity;
+            baselineCaptured = true;
+        }
+        using (new EditorGUI.DisabledScope(!runtimeCaptured))
+        {
+            if (GUILayout.Button("Export current geometry CSV..."))
+                ExportGeometryCsv();
+        }
+        EditorGUILayout.EndHorizontal();
+        if (!baselineCaptured)
+        {
+            EditorGUILayout.HelpBox("Save a baseline, then recapture after changing the " +
+                "quality setting or city to compare triangle totals.", MessageType.Info);
+            return;
+        }
+        var delta = City3DGeometryComparison.Compare(baselineTotals, runtimeTotals);
+        EditorGUILayout.LabelField("Baseline: " + baselineCity + " → Current: " + runtimeCity);
+        if (!string.Equals(baselineCity, runtimeCity, StringComparison.Ordinal))
+            EditorGUILayout.HelpBox("Different cities: deltas are descriptive, not a " +
+                "like-for-like quality comparison.", MessageType.Warning);
+        EditorGUILayout.LabelField("Δ triangles: " + delta.Triangles +
+            "    Δ vertices: " + delta.Vertices + "    Δ meshes: " + delta.Meshes);
+        EditorGUILayout.LabelField("Δ buildings: " + delta.BuildingTriangles +
+            "    Δ trees: " + delta.TreeTriangles +
+            "    Δ authored: " + delta.AuthoredTriangles +
+            "    Δ other: " + delta.OtherTriangles);
+        if (runtimeEntries.Length > 0)
+        {
+            var heaviest = runtimeEntries[0];
+            EditorGUILayout.LabelField("Top current group vs baseline: " + heaviest.Name +
+                " (Δ " + City3DGeometryComparison.DeltaForGroup(
+                    baselineEntries, runtimeEntries, heaviest.Name) + " triangles)");
+        }
+    }
+
+    void ExportGeometryCsv()
+    {
+        var path = EditorUtility.SaveFilePanel("Export 3D geometry snapshot", "",
+            "CityHighwaysGeometryAudit.csv", "csv");
+        if (string.IsNullOrEmpty(path)) return;
+        var sb = new StringBuilder();
+        sb.AppendLine(CityProceduralAuditReport.CsvRow(
+            "City", "Group", "Category", "Meshes", "Vertices", "Triangles",
+            "GroupBudget", "OverBudget", "BaselineDeltaTriangles"));
+        foreach (var entry in runtimeEntries)
+        {
+            sb.AppendLine(CityProceduralAuditReport.CsvRow(
+                runtimeCity, entry.Name, entry.Kind.ToString(),
+                entry.MeshCount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                entry.Vertices.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                entry.Triangles.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                groupTriangleBudget.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                City3DGeometryComparison.ExceedsBudget(entry.Triangles, groupTriangleBudget) ?
+                    "YES" : "NO",
+                baselineCaptured && string.Equals(baselineCity, runtimeCity, StringComparison.Ordinal) ?
+                    City3DGeometryComparison.DeltaForGroup(baselineEntries,
+                        runtimeEntries, entry.Name).ToString(
+                        System.Globalization.CultureInfo.InvariantCulture) : ""));
+        }
+        try
+        {
+            File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));
+            Debug.Log("Exported 3D geometry snapshot to " + path);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Could not export geometry snapshot: " + e.Message);
+            EditorUtility.DisplayDialog("CSV export failed", e.Message, "OK");
+        }
     }
 
     static bool TryWorldBounds(Component anchor, GameObject prefab, out Bounds world)
