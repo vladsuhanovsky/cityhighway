@@ -114,6 +114,10 @@ public sealed class City3DSceneQualityWindow : EditorWindow
             "    Mesh instances: " + runtimeTotals.Meshes);
         EditorGUILayout.LabelField("Total mesh vertices: " + runtimeTotals.Vertices +
             "    Triangle indices / 3: " + runtimeTotals.Triangles);
+        EditorGUILayout.LabelField("District buildings: " + runtimeTotals.BuildingTriangles +
+            "    Tree chunks: " + runtimeTotals.TreeTriangles + " triangles");
+        EditorGUILayout.LabelField("Authored replacements/decor: " + runtimeTotals.AuthoredTriangles +
+            "    Terrain/roads/other: " + runtimeTotals.OtherTriangles + " triangles");
         EditorGUILayout.HelpBox(
             "Real mesh counts from the generated 3D root, including roads, terrain, authored and " +
             "replacement visuals. The ranking is by combined mesh group (district/chunk/other), " +
