@@ -213,13 +213,16 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                 archiveComparison.Matched + " matched, " +
                 archiveComparison.Changed + " changed status, " +
                 archiveComparison.Added + " added, " +
-                archiveComparison.Removed + " removed.\n" +
+                archiveComparison.Removed + " removed, " +
+                archiveComparison.ComparableRows + " P95 comparable, " +
+                archiveComparison.BlockedRows + " P95 blocked.\n" +
                 archiveComparison.Warning, MessageType.Info);
             foreach (var row in archiveComparison.Rows)
                 if (row.Kind != City3DArchivedReviewComparison.Change.Unchanged)
                     EditorGUILayout.LabelField(row.Kind + " — " + row.City +
                         " [" + row.Quality + "] " + row.Scenario + " / " +
-                        row.PreviousStatus + " → " + row.LatestStatus);
+                        row.PreviousStatus + " → " + row.LatestStatus +
+                        " — " + row.P95ComparisonReason);
             if (GUILayout.Button("Export archived comparison Markdown..."))
                 ExportArchivedComparisonMarkdown();
             if (GUILayout.Button("Close second archive"))
