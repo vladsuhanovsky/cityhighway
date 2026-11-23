@@ -109,6 +109,8 @@ namespace CityHighways.Presentation
         public static City3DScene ActiveScene { get; private set; }
         public Transform GeneratedRoot => _root != null ? _root.transform : null;
         public string CityName => _map != null ? _map.Name : null;
+        public int GraphicsQuality => _quality;
+        public City3DFrameMonitor FrameMonitor { get; private set; }
 
         City3DScene(CityMap map)
         {
@@ -205,6 +207,8 @@ namespace CityHighways.Presentation
             // Optional scene-authored visuals. Core map geometry and rules remain procedural.
             SceneDecorationSpawner.Spawn(_map.Name, _root.transform);
             SetupReflections(quality);
+            // Attach after construction so the first samples exclude one-time map build.
+            FrameMonitor = _root.AddComponent<City3DFrameMonitor>();
         }
 
         void SetupRendering(int quality)
@@ -1966,6 +1970,7 @@ namespace CityHighways.Presentation
         public void Dispose()
         {
             if (ReferenceEquals(ActiveScene, this)) ActiveScene = null;
+            FrameMonitor = null;
             foreach (var (camera, enabled) in _otherCameras)
                 if (camera != null) camera.enabled = enabled;
             _otherCameras.Clear();
