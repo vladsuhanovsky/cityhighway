@@ -160,6 +160,8 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                 ExportAuditSummary();
             if (GUILayout.Button("Export review artifact JSON..."))
                 ExportReviewArtifact();
+            if (GUILayout.Button("Export GitHub PR Markdown..."))
+                ExportReviewMarkdown();
         }
 
         scroll = EditorGUILayout.BeginScrollView(scroll);
@@ -226,6 +228,27 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             else current = loaded;
         }
         catch (Exception e) { EditorUtility.DisplayDialog("Load failed", e.Message, "OK"); }
+    }
+
+    void ExportReviewMarkdown()
+    {
+        var path = EditorUtility.SaveFilePanel("Export GitHub PR Markdown", "",
+            "CityHighwaysPerformanceReview.md", "md");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            var artifact = City3DPerformanceReviewArtifact.Build(
+                baseline, current, allowedRegression,
+                baselineRevisionLabel.Trim(), currentRevisionLabel.Trim());
+            File.WriteAllText(path,
+                City3DPerformanceMarkdownReport.Render(artifact),
+                new UTF8Encoding(false));
+            Debug.Log("Exported GitHub PR benchmark report to " + path);
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Markdown export failed", e.Message, "OK");
+        }
     }
 
     void ExportReviewArtifact()
