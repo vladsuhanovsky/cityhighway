@@ -44,8 +44,11 @@ namespace CityHighways.Tests
                 Capture("seed=42", Env(width: 1280)));
             var report = City3DPerformanceDiagnostics.Build(baseline, current, 10f);
             Assert.AreEqual(2, report.Invalid);
-            Assert.AreEqual("Graphics device differs.", report.Rows[0].Reason);
-            Assert.AreEqual("Viewport resolution differs.", report.Rows[1].Reason);
+            var gpuRow = System.Array.Find(report.Rows, row => row.Scenario == "seed=7");
+            var viewportRow = System.Array.Find(report.Rows,
+                row => row.Scenario == "seed=42");
+            Assert.AreEqual("Graphics device differs.", gpuRow.Reason);
+            Assert.AreEqual("Viewport resolution differs.", viewportRow.Reason);
         }
 
         [Test]
