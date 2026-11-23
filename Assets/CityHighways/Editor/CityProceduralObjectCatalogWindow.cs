@@ -204,6 +204,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         if (!EditorApplication.isPlaying && selected == null)
             EditorGUILayout.HelpBox("Select a Procedural Object Replacement in Hierarchy to enable assignment or placement.", MessageType.None);
 
+        DrawPrefabComparison(data, selected);
+
         int matching = 0, rendered = 0;
         scroll = EditorGUILayout.BeginScrollView(scroll);
         foreach (var item in data.rows)
@@ -249,6 +251,46 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                                    (matching > shownLimit ? " (displaying first " + shownLimit + ")" : ""));
     }
 
+
+    /// <summary>Compare a selected catalog volume to the assigned Prefab's static meshes.</summary>
+    void DrawPrefabComparison(Snapshot data, CityProceduralReplacement anchor)
+    {
+        if (anchor == null) return;
+        string id = !string.IsNullOrEmpty(selectedObjectId) ? selectedObjectId : anchor.StableObjectId;
+        SnapshotRow match = null;
+        foreach (var row in data.rows)
+            if (row.id == id) { match = row; break; }
+        if (match == null || match.kind != (int)anchor.Target) return;
+        if (!string.Equals(data.city, anchor.MapName, StringComparison.Ordinal)) return;
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Prefab size comparison", EditorStyles.boldLabel);
+        var targetSize = new Vector3(match.width, match.height, match.depth);
+        EditorGUILayout.LabelField("Generated target (W/H/D, meters)",
+            targetSize.x.ToString("F3") + " / " + targetSize.y.ToString("F3") + " / " + targetSize.z.ToString("F3"));
+
+        if (!CityProceduralPrefabFitting.TryFit(anchor, targetSize, out var sourceSize, out var factor))
+        {
+            EditorGUILayout.HelpBox(
+                "Assign a visual Prefab with nonzero 3D mesh bounds to compare sizes. " +
+                "An empty or flat mesh cannot be fitted.",
+                MessageType.Info);
+            return;
+        }
+        EditorGUILayout.LabelField("Assigned Prefab (W/H/D, meters)",
+            sourceSize.x.ToString("F3") + " / " + sourceSize.y.ToString("F3") + " / " + sourceSize.z.ToString("F3"));
+        EditorGUILayout.LabelField("Uniform fit multiplier", factor.ToString("F3") + "x");
+
+        using (new EditorGUI.DisabledScope(EditorApplication.isPlaying))
+        {
+            if (GUILayout.Button("Fit Prefab scale to generated volume (uniform)"))
+                CityProceduralPrefabFitting.ApplyUniformFit(anchor, targetSize);
+        }
+        EditorGUILayout.HelpBox(
+            "Uniform scaling preserves proportions and fits all three bounding dimensions. " +
+            "It may leave empty space, and cannot fix a different pivot or model orientation.",
+            MessageType.None);
+    }
 
     static Vector3 ToScenePosition(SnapshotRow row)
     {
