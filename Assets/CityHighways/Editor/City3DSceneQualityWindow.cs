@@ -185,6 +185,13 @@ public sealed class City3DSceneQualityWindow : EditorWindow
                 frameCaptured = false;
             }
         }
+        // Loading an existing baseline must work before any fresh Play Mode capture.
+        if (GUILayout.Button("Load baseline JSON..."))
+            LoadFrameBaselineJson();
+        if (frameBaselineCaptured)
+            EditorGUILayout.LabelField("Saved baseline: " + frameBaselineCity +
+                " [" + QualityName(frameBaselineQuality) + "] — " +
+                frameBaselineScenario);
         if (!frameCaptured)
         {
             EditorGUILayout.HelpBox(
@@ -242,6 +249,11 @@ public sealed class City3DSceneQualityWindow : EditorWindow
             frameBaselineScenario = frameScenario;
             frameBaselineCaptured = true;
         }
+        using (new EditorGUI.DisabledScope(!frameBaselineCaptured))
+        {
+            if (GUILayout.Button("Save baseline JSON..."))
+                SaveFrameBaselineJson();
+        }
         if (GUILayout.Button("Export frame statistics CSV..."))
             ExportFrameStatisticsCsv();
         EditorGUILayout.EndHorizontal();
@@ -280,6 +292,58 @@ public sealed class City3DSceneQualityWindow : EditorWindow
             (frameSnapshot.P95Ms - frameBaseline.P95Ms).ToString("+0.00;-0.00;0.00") +
             " ms    Δ FPS: " +
             (frameSnapshot.EstimatedFps - frameBaseline.EstimatedFps).ToString("+0.0;-0.0;0.0"));
+    }
+
+    void SaveFrameBaselineJson()
+    {
+        var data = City3DPerformanceBaseline.Create(
+            frameBaselineCity, frameBaselineQuality, frameBaselineScenario, frameBaseline);
+        if (!data.IsValid(out var reason))
+        {
+            EditorUtility.DisplayDialog("Invalid frame baseline", reason, "OK");
+            return;
+        }
+        var path = EditorUtility.SaveFilePanel(
+            "Save reusable frame baseline", "", "CityHighwaysFrameBaseline.json", "json");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            File.WriteAllText(path, data.ToJson(), new UTF8Encoding(false));
+            Debug.Log("Saved reusable frame baseline to " + path);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Could not save frame baseline: " + e.Message);
+            EditorUtility.DisplayDialog("Baseline save failed", e.Message, "OK");
+        }
+    }
+
+    void LoadFrameBaselineJson()
+    {
+        var path = EditorUtility.OpenFilePanel(
+            "Load reusable frame baseline", "", "json");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            if (!City3DPerformanceBaseline.TryFromJson(
+                File.ReadAllText(path, Encoding.UTF8), out var data, out var reason))
+            {
+                EditorUtility.DisplayDialog("Invalid frame baseline", reason, "OK");
+                return;
+            }
+            // Assign only after validation; a corrupt file never clears a useful baseline.
+            frameBaselineCity = data.city;
+            frameBaselineQuality = data.quality;
+            frameBaselineScenario = data.scenario;
+            frameBaseline = data.snapshot;
+            frameBaselineCaptured = true;
+            Debug.Log("Loaded reusable frame baseline from " + path);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Could not load frame baseline: " + e.Message);
+            EditorUtility.DisplayDialog("Baseline load failed", e.Message, "OK");
+        }
     }
 
     static string QualityName(int quality) =>

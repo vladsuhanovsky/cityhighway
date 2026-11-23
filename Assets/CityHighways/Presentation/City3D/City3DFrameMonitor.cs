@@ -15,6 +15,7 @@ namespace CityHighways.Presentation
         int next, count;
         float warmupUntil;
 
+        [Serializable]
         public struct Snapshot
         {
             public int Frames;
