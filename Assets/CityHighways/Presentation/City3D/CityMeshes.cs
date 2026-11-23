@@ -98,6 +98,24 @@ namespace CityHighways.Presentation
         /// <summary>Добавить вершины другого сборщика, переставив их матрицей (поворот, сдвиг, масштаб).</summary>
         public void Append(MeshBuilder other, Matrix4x4 transform)
         {
+            if (other == null) throw new ArgumentNullException(nameof(other));
+            // Appending to self would grow the source collection during iteration.
+            if (ReferenceEquals(this, other))
+                throw new ArgumentException("Cannot append a mesh builder to itself.", nameof(other));
+
+            int incomingVertices = other._vertices.Count;
+            int incomingTriangles = other._triangles.Count;
+            if (incomingVertices == 0 && incomingTriangles == 0) return;
+
+            // Reserve once before copying to avoid repeated List growth when
+            // combining many independent meshes into a city chunk.
+            int targetVertices = checked(_vertices.Count + incomingVertices);
+            int targetTriangles = checked(_triangles.Count + incomingTriangles);
+            if (_vertices.Capacity < targetVertices) _vertices.Capacity = targetVertices;
+            if (_normals.Capacity < targetVertices) _normals.Capacity = targetVertices;
+            if (_uvs.Capacity < targetVertices) _uvs.Capacity = targetVertices;
+            if (_triangles.Capacity < targetTriangles) _triangles.Capacity = targetTriangles;
+
             int offset = _vertices.Count;
             var normalMatrix = transform.inverse.transpose;
             for (int i = 0; i < other._vertices.Count; i++)
