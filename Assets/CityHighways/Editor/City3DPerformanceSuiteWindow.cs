@@ -34,7 +34,8 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             if (GUILayout.Button("Add active 3D capture to CURRENT suite"))
             {
                 var item = City3DPerformanceBaseline.Create(active.CityName,
-                    active.GraphicsQuality, scenario, active.FrameMonitor.Capture());
+                    active.GraphicsQuality, scenario, active.FrameMonitor.Capture(),
+                    captureEnvironment: City3DPerformanceEnvironment.Capture());
                 if (!current.TryAdd(item, out var reason))
                 {
                     // Duplicate captures must not be overwritten without approval.
@@ -111,6 +112,11 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                     " additional, " + diagnostics.Invalid +
                     " invalid. Missing seeds or changed graphics quality are NOT a pass.",
                     MessageType.Warning);
+            if (diagnostics.Invalid > 0)
+                EditorGUILayout.HelpBox("Some matched scenarios have incompatible or " +
+                    "incomplete automatic capture environments (Unity version, platform, " +
+                    "GPU, resolution, VSync or frame cap). These are NOT passes. " +
+                    "Inspect baseline/current capture conditions.", MessageType.Warning);
             if (summary.Regressions > 0)
                 EditorGUILayout.HelpBox("Performance regression in " +
                     summary.Regressions + " matched scenarios. Worst P95 increase: " +
@@ -152,7 +158,9 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             EditorGUILayout.LabelField(item.city + " [" +
                 (item.quality == 0 ? "Low" : item.quality == 1 ? "Medium" : "High") +
                 "]  " + item.scenario + " — P95 " +
-                item.snapshot.P95Ms.ToString("F2") + " ms");
+                item.snapshot.P95Ms.ToString("F2") + " ms" +
+                (item.environment == null ? " [legacy metadata unknown]" :
+                    " [" + item.environment.Describe() + "]"));
             if (GUILayout.Button("Remove", GUILayout.Width(65f)) &&
                 EditorUtility.DisplayDialog("Remove benchmark scenario?",
                     "Remove " + item.city + " / " + item.scenario +
@@ -204,12 +212,20 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         var sb = new StringBuilder();
         sb.AppendLine(CityProceduralAuditReport.CsvRow(
             "City", "Quality", "Scenario", "BaselineP95Ms",
-            "CurrentP95Ms", "P95ChangePercent", "Verdict"));
+            "CurrentP95Ms", "P95ChangePercent", "Verdict",
+            "BaselineEnvironment", "CurrentEnvironment"));
         var culture = System.Globalization.CultureInfo.InvariantCulture;
         var diagnostics = City3DPerformanceDiagnostics.Build(
             baseline, current, allowedRegression);
         foreach (var entry in diagnostics.Rows)
         {
+            City3DPerformanceBaseline before = null, after = null;
+            foreach (var capture in baseline.entries)
+                if (capture.city == entry.City && capture.quality == entry.Quality &&
+                    capture.scenario == entry.Scenario) { before = capture; break; }
+            foreach (var capture in current.entries)
+                if (capture.city == entry.City && capture.quality == entry.Quality &&
+                    capture.scenario == entry.Scenario) { after = capture; break; }
             bool hasBaseline = entry.Status != City3DPerformanceDiagnostics.Kind.Additional;
             bool hasCurrent = entry.Status != City3DPerformanceDiagnostics.Kind.Missing;
             bool matched = hasBaseline && hasCurrent;
@@ -217,8 +233,11 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                 entry.City, entry.Quality.ToString(culture), entry.Scenario,
                 hasBaseline ? entry.BaselineP95Ms.ToString("F3", culture) : "",
                 hasCurrent ? entry.CurrentP95Ms.ToString("F3", culture) : "",
-                matched ? entry.DeltaPercent.ToString("F3", culture) : "",
-                entry.Status.ToString()));
+                matched && entry.Status != City3DPerformanceDiagnostics.Kind.Invalid
+                    ? entry.DeltaPercent.ToString("F3", culture) : "",
+                entry.Status.ToString(),
+                before?.environment?.Describe() ?? "",
+                after?.environment?.Describe() ?? ""));
         }
         try { File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true)); }
         catch (Exception e) { EditorUtility.DisplayDialog("CSV export failed", e.Message, "OK"); }
