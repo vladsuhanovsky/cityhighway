@@ -106,6 +106,66 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void UniformFramesHaveNoStabilityWarning()
+        {
+            for (int i = 0; i < 100; i++) monitor.RecordFrame(16f);
+            var result = monitor.AnalyzeStability();
+            Assert.IsTrue(result.HasEnoughSamples);
+            Assert.IsFalse(result.HasWarning);
+            Assert.AreEqual(16f, result.MedianMs);
+            Assert.That(result.P95ToMedianRatio, Is.EqualTo(1f));
+            Assert.AreEqual(0, result.SpikeFrames);
+        }
+
+        [Test]
+        public void SlowFramesTriggerVarianceWarningWithoutDeletingSamples()
+        {
+            for (int i = 0; i < 90; i++) monitor.RecordFrame(10f);
+            for (int i = 0; i < 10; i++) monitor.RecordFrame(40f);
+            var result = monitor.AnalyzeStability();
+            Assert.IsTrue(result.HasWarning);
+            Assert.AreEqual(10, result.SpikeFrames);
+            Assert.That(result.SpikePercent, Is.EqualTo(10f));
+            Assert.That(result.P95ToMedianRatio, Is.EqualTo(4f));
+            Assert.AreEqual(100, monitor.Capture().Frames);
+        }
+
+        [Test]
+        public void SingleOutlierIsReportedButNotAutomaticallyRejected()
+        {
+            for (int i = 0; i < 99; i++) monitor.RecordFrame(10f);
+            monitor.RecordFrame(200f);
+            var result = monitor.AnalyzeStability();
+            Assert.AreEqual(1, result.SpikeFrames);
+            Assert.IsFalse(result.HasWarning);
+            Assert.That(result.P95ToMedianRatio, Is.EqualTo(1f));
+            Assert.AreEqual(200f, monitor.Capture().MaxMs);
+        }
+
+        [Test]
+        public void SmallSamplesDoNotClaimStabilityAndResetClearsStatistics()
+        {
+            for (int i = 0; i < 59; i++) monitor.RecordFrame(20f);
+            var insufficient = monitor.AnalyzeStability();
+            Assert.IsFalse(insufficient.HasEnoughSamples);
+            Assert.IsFalse(insufficient.HasWarning);
+            monitor.RecordFrame(20f);
+            Assert.IsTrue(monitor.AnalyzeStability().HasEnoughSamples);
+            monitor.BeginFreshWindow();
+            Assert.IsFalse(monitor.AnalyzeStability().HasEnoughSamples);
+        }
+
+        [Test]
+        public void EvenMedianAndExactlyDoubleFrameThresholdAreDeterministic()
+        {
+            for (int i = 0; i < 59; i++) monitor.RecordFrame(10f);
+            monitor.RecordFrame(20f);
+            var result = monitor.AnalyzeStability();
+            Assert.That(result.MedianMs, Is.EqualTo(10f));
+            Assert.AreEqual(0, result.SpikeFrames);
+        }
+
+        [Test]
         public void InvalidIntervalsAreIgnored()
         {
             monitor.RecordFrame(0f);
