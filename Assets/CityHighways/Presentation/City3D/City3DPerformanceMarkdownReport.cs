@@ -47,8 +47,8 @@ namespace CityHighways.Presentation
                 artifact.additional + "  |  **Invalid:** " + artifact.invalid +
                 "  |  **Unverified legacy:** " + artifact.legacyMatches);
             output.AppendLine();
-            output.AppendLine("| City | Quality | Scenario | Status | Baseline P95 (ms) | Current P95 (ms) | P95 change |");
-            output.AppendLine("| --- | --- | --- | --- | ---: | ---: | ---: |");
+            output.AppendLine("| City | Quality | Scenario | Status | Reason | Baseline P95 (ms) | Current P95 (ms) | P95 change |");
+            output.AppendLine("| --- | --- | --- | --- | --- | ---: | ---: | ---: |");
             foreach (var item in artifact.scenarios)
             {
                 output.Append("| ").Append(Cell(item.city))
@@ -57,6 +57,7 @@ namespace CityHighways.Presentation
                         item.quality == 2 ? "High" : "Unknown")
                     .Append(" | ").Append(Cell(item.scenario))
                     .Append(" | ").Append(Cell(item.status))
+                    .Append(" | ").Append(Cell(item.reason))
                     .Append(" | ").Append(item.hasBaseline ? Time(item.baselineP95Ms) : "—")
                     .Append(" | ").Append(item.hasCurrent ? Time(item.currentP95Ms) : "—")
                     .Append(" | ").Append(item.hasComparableDelta ?
