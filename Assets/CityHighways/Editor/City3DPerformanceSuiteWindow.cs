@@ -13,6 +13,7 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
     string scenario = "magnate;seed=42;camera=central;viewport=1920x1080";
     float allowedRegression = 10f;
     Vector2 scroll;
+    int maxDiagnosticRows = 30;
 
     [MenuItem("City Highways/3D Objects/Performance Scenario Suite")]
     static void Open() => GetWindow<City3DPerformanceSuiteWindow>("3D Scenario Suite");
@@ -72,6 +73,8 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             "Allowed P95 regression (%)", allowedRegression));
         var summary = City3DPerformanceSuite.Compare(baseline, current, allowedRegression);
         bool bothValid = baseline.IsValid(out _) && current.IsValid(out _);
+        var diagnostics = City3DPerformanceDiagnostics.Build(
+            baseline, current, allowedRegression);
         if (!bothValid)
             EditorGUILayout.HelpBox(
                 "Load or capture at least one valid scenario in each suite to compare.",
@@ -84,11 +87,31 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             EditorGUILayout.LabelField("Missing from current: " + summary.Missing +
                 "    Additional in current: " + summary.Additional +
                 "    Rejected: " + summary.Rejected);
+            EditorGUILayout.LabelField("Baseline scenario coverage: " +
+                diagnostics.CoveragePercent.ToString("F1") + "%");
+            if (!diagnostics.CompleteCoverage)
+                EditorGUILayout.HelpBox(
+                    "Incomplete scenario coverage: " + diagnostics.Missing +
+                    " missing, " + diagnostics.Additional +
+                    " additional, " + diagnostics.Invalid +
+                    " invalid. Missing seeds or changed graphics quality are NOT a pass.",
+                    MessageType.Warning);
             if (summary.Regressions > 0)
                 EditorGUILayout.HelpBox("Performance regression in " +
                     summary.Regressions + " matched scenarios. Worst P95 increase: " +
                     summary.WorstP95Percent.ToString("F1") + "%.",
                     MessageType.Warning);
+            maxDiagnosticRows = EditorGUILayout.IntSlider(
+                "Visible diagnostic rows", maxDiagnosticRows, 5, 100);
+            EditorGUILayout.LabelField("Problem scenarios first", EditorStyles.boldLabel);
+            for (int i = 0; i < Mathf.Min(maxDiagnosticRows, diagnostics.Rows.Length); i++)
+            {
+                var issue = diagnostics.Rows[i];
+                EditorGUILayout.LabelField(issue.Status + " — " + issue.City +
+                    " [" + issue.Quality + "] " + issue.Scenario +
+                    (issue.Status == City3DPerformanceDiagnostics.Kind.Regression
+                        ? " (P95 +" + issue.DeltaPercent.ToString("F1") + "%)" : ""));
+            }
         }
         using (new EditorGUI.DisabledScope(!bothValid))
             if (GUILayout.Button("Export matched scenario comparison CSV..."))
@@ -155,26 +178,19 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             "City", "Quality", "Scenario", "BaselineP95Ms",
             "CurrentP95Ms", "P95ChangePercent", "Verdict"));
         var culture = System.Globalization.CultureInfo.InvariantCulture;
-        foreach (var now in current.entries)
+        var diagnostics = City3DPerformanceDiagnostics.Build(
+            baseline, current, allowedRegression);
+        foreach (var entry in diagnostics.Rows)
         {
-            City3DPerformanceBaseline old = null;
-            foreach (var candidate in baseline.entries)
-                if (string.Equals(candidate.city, now.city, StringComparison.Ordinal) &&
-                    candidate.quality == now.quality &&
-                    string.Equals(candidate.scenario, now.scenario, StringComparison.Ordinal))
-                {
-                    old = candidate;
-                    break;
-                }
-            if (old == null) continue;
-            var result = City3DPerformanceRegression.Compare(
-                old.snapshot, old.city, old.quality, old.scenario,
-                now.snapshot, now.city, now.quality, now.scenario, allowedRegression);
+            bool hasBaseline = entry.Status != City3DPerformanceDiagnostics.Kind.Additional;
+            bool hasCurrent = entry.Status != City3DPerformanceDiagnostics.Kind.Missing;
+            bool matched = hasBaseline && hasCurrent;
             sb.AppendLine(CityProceduralAuditReport.CsvRow(
-                now.city, now.quality.ToString(culture), now.scenario,
-                old.snapshot.P95Ms.ToString("F3", culture),
-                now.snapshot.P95Ms.ToString("F3", culture),
-                result.P95DeltaPercent.ToString("F3", culture), result.Status.ToString()));
+                entry.City, entry.Quality.ToString(culture), entry.Scenario,
+                hasBaseline ? entry.BaselineP95Ms.ToString("F3", culture) : "",
+                hasCurrent ? entry.CurrentP95Ms.ToString("F3", culture) : "",
+                matched ? entry.DeltaPercent.ToString("F3", culture) : "",
+                entry.Status.ToString()));
         }
         try { File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true)); }
         catch (Exception e) { EditorUtility.DisplayDialog("CSV export failed", e.Message, "OK"); }
