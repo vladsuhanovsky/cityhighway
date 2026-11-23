@@ -19,6 +19,31 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ExcessiveQuadReservationThrowsBeforeIntegerOverflow()
+        {
+            // Six triangle indices per quad must fit in a signed 32-bit List count.
+            Assert.Throws<System.ArgumentOutOfRangeException>(
+                () => new MeshBuilder(int.MaxValue / 6 + 1));
+            Assert.Throws<System.ArgumentOutOfRangeException>(
+                () => new MeshBuilder(int.MaxValue));
+        }
+
+        [Test]
+        public void NegativeQuadReservationRetainsEmptyBuilderBehavior()
+        {
+            var builder = new MeshBuilder(-1);
+            Assert.AreEqual(0, builder.VertexCount);
+            Grid(builder, 2, 1);
+            var mesh = builder.ToMesh("negative reservation");
+            try
+            {
+                Assert.AreEqual(8, mesh.vertexCount);
+                Assert.AreEqual(12, mesh.triangles.Length);
+            }
+            finally { Object.DestroyImmediate(mesh); }
+        }
+
+        [Test]
         public void ReservedGridProducesExactlyExpectedGeometry()
         {
             const int width = 12, height = 7;
