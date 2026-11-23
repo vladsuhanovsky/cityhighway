@@ -36,8 +36,23 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                 var item = City3DPerformanceBaseline.Create(active.CityName,
                     active.GraphicsQuality, scenario, active.FrameMonitor.Capture());
                 if (!current.TryAdd(item, out var reason))
-                    EditorUtility.DisplayDialog("Capture not added", reason, "OK");
-                else Repaint();
+                {
+                    // Duplicate captures must not be overwritten without approval.
+                    if (reason != null && reason.StartsWith("Scenario already exists:",
+                        StringComparison.Ordinal) &&
+                        EditorUtility.DisplayDialog("Replace captured scenario?",
+                            item.city + " [" + item.quality + "] " + item.scenario +
+                            "\nReplace the previous CURRENT capture with the new measurement?",
+                            "Replace", "Cancel"))
+                    {
+                        if (!current.TryReplace(item, out var replaceReason))
+                            EditorUtility.DisplayDialog("Replacement failed", replaceReason, "OK");
+                    }
+                    else if (reason == null || !reason.StartsWith("Scenario already exists:",
+                        StringComparison.Ordinal))
+                        EditorUtility.DisplayDialog("Capture not added", reason, "OK");
+                }
+                Repaint();
             }
         }
 
@@ -128,12 +143,25 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         EditorGUILayout.LabelField(title + ": " + (suite.entries?.Count ?? 0),
             EditorStyles.boldLabel);
         if (suite.entries == null) return;
-        foreach (var item in suite.entries)
-            if (item != null)
-                EditorGUILayout.LabelField(item.city + " [" +
-                    (item.quality == 0 ? "Low" : item.quality == 1 ? "Medium" : "High") +
-                    "]  " + item.scenario + " — P95 " +
-                    item.snapshot.P95Ms.ToString("F2") + " ms");
+        // Render actions from a snapshot to keep collection mutation safe in IMGUI.
+        var items = suite.entries.ToArray();
+        foreach (var item in items)
+        {
+            if (item == null) continue;
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(item.city + " [" +
+                (item.quality == 0 ? "Low" : item.quality == 1 ? "Medium" : "High") +
+                "]  " + item.scenario + " — P95 " +
+                item.snapshot.P95Ms.ToString("F2") + " ms");
+            if (GUILayout.Button("Remove", GUILayout.Width(65f)) &&
+                EditorUtility.DisplayDialog("Remove benchmark scenario?",
+                    "Remove " + item.city + " / " + item.scenario +
+                    " from " + title + "?", "Remove", "Cancel"))
+            {
+                suite.TryRemove(item.city, item.quality, item.scenario);
+            }
+            EditorGUILayout.EndHorizontal();
+        }
     }
 
     static void Save(City3DPerformanceSuite suite, string label)
