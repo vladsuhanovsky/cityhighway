@@ -133,7 +133,8 @@ namespace CityHighways.Presentation
             mesh.SetVertices(_vertices);
             mesh.SetNormals(_normals);
             mesh.SetUVs(0, _uvs);
-            mesh.SetTriangles(_triangles, 0);
+            // Recalculate bounds exactly once after the complete mesh is written.
+            mesh.SetTriangles(_triangles, 0, false);
             mesh.RecalculateBounds();
         }
 
@@ -144,7 +145,8 @@ namespace CityHighways.Presentation
             mesh.SetVertices(_vertices);
             mesh.SetNormals(_normals);
             mesh.SetUVs(0, _uvs);
-            mesh.SetTriangles(_triangles, 0);
+            // Recalculate bounds exactly once after the complete mesh is written.
+            mesh.SetTriangles(_triangles, 0, false);
             mesh.RecalculateBounds();
             return mesh;
         }
