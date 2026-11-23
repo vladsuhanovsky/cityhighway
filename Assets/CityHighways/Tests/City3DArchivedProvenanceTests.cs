@@ -103,6 +103,9 @@ namespace CityHighways.Tests
                 Review("after", Env("different"), 25f));
             StringAssert.Contains("P95 blocked rows:** 1", markdown);
             StringAssert.Contains("Archived capture environments differ.", markdown);
+            StringAssert.Contains(
+                "| --- | --- | --- | --- | --- | --- | ---: | --- |", markdown);
+            StringAssert.Contains("not independently verified", markdown);
         }
     }
 }
