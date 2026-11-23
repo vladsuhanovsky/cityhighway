@@ -41,6 +41,18 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                 "Scenario preflight (advisory):\n" + preflight.Warnings +
                 "\nThe label cannot verify the generator seed or camera.",
                 MessageType.Warning);
+        var baselinePreflight = active != null && EditorApplication.isPlaying
+            ? City3DPerformanceBaselinePreflight.Check(baseline,
+                active.CityName, active.GraphicsQuality, scenario,
+                City3DPerformanceEnvironment.Capture())
+            : City3DPerformanceBaselinePreflight.Check(
+                baseline, "", -1, scenario, null);
+        if (EditorApplication.isPlaying && active != null)
+            EditorGUILayout.HelpBox(
+                "Baseline preflight: " + baselinePreflight.State + "\n" +
+                baselinePreflight.Explanation,
+                baselinePreflight.RequiresAcknowledgement
+                    ? MessageType.Warning : MessageType.Info);
         using (new EditorGUI.DisabledScope(!EditorApplication.isPlaying ||
             active == null || active.FrameMonitor == null))
         {
@@ -52,6 +64,12 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                     !EditorUtility.DisplayDialog("Capture scenario warnings",
                         preflight.Warnings +
                         "\n\nCapture anyway? The procedural seed and camera are not verified.",
+                        "Capture anyway", "Cancel"))
+                    return;
+                if (baselinePreflight.RequiresAcknowledgement &&
+                    !EditorUtility.DisplayDialog("Baseline comparison warning",
+                        baselinePreflight.Explanation +
+                        "\n\nCapture anyway? This cannot count as a verified baseline pass.",
                         "Capture anyway", "Cancel"))
                     return;
                 var item = City3DPerformanceBaseline.Create(active.CityName,
