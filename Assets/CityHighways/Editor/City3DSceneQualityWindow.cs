@@ -28,6 +28,14 @@ public sealed class City3DSceneQualityWindow : EditorWindow
     readonly List<Visual> visuals = new List<Visual>();
     readonly List<string> overlaps = new List<string>();
     Vector2 scroll;
+    Vector2 runtimeScroll;
+    City3DGeometryAudit.Entry[] runtimeEntries = new City3DGeometryAudit.Entry[0];
+    City3DGeometryAudit.Totals runtimeTotals;
+    string runtimeCity;
+    int runtimeBuildingCount;
+    int runtimeTreeCount;
+    bool runtimeCaptured;
+    int runtimeLimit = 20;
 
     [MenuItem("City Highways/3D Objects/Scene Quality Audit")]
     static void Open() => GetWindow<City3DSceneQualityWindow>("Scene Quality");
@@ -46,6 +54,7 @@ public sealed class City3DSceneQualityWindow : EditorWindow
             if (GUILayout.Button("Analyze authored 3D visuals"))
                 Analyze();
         }
+        DrawRuntimeGeometry();
         if (!hasResults) return;
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Visuals: " + summary.Visuals +
@@ -68,6 +77,60 @@ public sealed class City3DSceneQualityWindow : EditorWindow
         scroll = EditorGUILayout.BeginScrollView(scroll, GUILayout.MaxHeight(240f));
         foreach (var issue in overlaps)
             EditorGUILayout.LabelField(issue);
+        EditorGUILayout.EndScrollView();
+    }
+
+    void DrawRuntimeGeometry()
+    {
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Generated 3D mesh audit (Play Mode)", EditorStyles.boldLabel);
+        var active = City3DScene.ActiveScene;
+        using (new EditorGUI.DisabledScope(!EditorApplication.isPlaying ||
+            active == null || active.GeneratedRoot == null))
+        {
+            if (GUILayout.Button("Capture actual generated mesh geometry"))
+            {
+                runtimeEntries = City3DGeometryAudit.Capture(active.GeneratedRoot, out runtimeTotals);
+                runtimeCity = active.CityName;
+                runtimeBuildingCount = active.BuildingCount;
+                runtimeTreeCount = active.TreeCount;
+                runtimeCaptured = true;
+            }
+        }
+        if (!runtimeCaptured)
+        {
+            EditorGUILayout.HelpBox(
+                "Start a 3D city in Play Mode and click Capture to analyze actual generated mesh batches. " +
+                "This is not a benchmark or per-object profiling.", MessageType.Info);
+            return;
+        }
+        GUILayout.Label("Captured: " + runtimeCity + " (snapshot; recapture after changes)",
+            EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Generated buildings: " + runtimeBuildingCount +
+            "    Trees: " + runtimeTreeCount +
+            "    District mesh groups: " + runtimeTotals.Buildings +
+            "    Tree mesh groups: " + runtimeTotals.Trees);
+        EditorGUILayout.LabelField("All generated-root mesh groups: " + runtimeEntries.Length +
+            "    Mesh instances: " + runtimeTotals.Meshes);
+        EditorGUILayout.LabelField("Total mesh vertices: " + runtimeTotals.Vertices +
+            "    Triangle indices / 3: " + runtimeTotals.Triangles);
+        EditorGUILayout.HelpBox(
+            "Real mesh counts from the generated 3D root, including roads, terrain, authored and " +
+            "replacement visuals. The ranking is by combined mesh group (district/chunk/other), " +
+            "not by individual procedural building or tree. Triangle counts include meshes in " +
+            "inactive child GameObjects and reflect the capture instant. " +
+            "This is NOT FPS, draw calls or visible-triangle cost.",
+            MessageType.None);
+        runtimeLimit = EditorGUILayout.IntSlider("Top geometry groups", runtimeLimit, 5, 100);
+        int count = Mathf.Min(runtimeLimit, runtimeEntries.Length);
+        runtimeScroll = EditorGUILayout.BeginScrollView(runtimeScroll, GUILayout.MaxHeight(270f));
+        for (int i = 0; i < count; i++)
+        {
+            var entry = runtimeEntries[i];
+            EditorGUILayout.LabelField((i + 1) + ". [" + entry.Kind + "] " + entry.Name +
+                " — " + entry.Triangles + " triangles, " +
+                entry.Vertices + " vertices, " + entry.MeshCount + " meshes");
+        }
         EditorGUILayout.EndScrollView();
     }
 
