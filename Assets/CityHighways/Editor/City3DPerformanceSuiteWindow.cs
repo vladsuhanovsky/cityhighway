@@ -17,6 +17,7 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
     bool showReadyChecklistRows;
     string baselineRevisionLabel = "";
     string currentRevisionLabel = "";
+    City3DPerformanceRepeatSeries repeatSeries = new City3DPerformanceRepeatSeries();
     City3DPerformanceReviewArtifact archivedReview;
     City3DPerformanceReviewArtifact comparisonReview;
     Vector2 archivedReviewScroll;
@@ -183,6 +184,69 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         if (GUILayout.Button("Clear CURRENT")) current = new City3DPerformanceSuite();
         if (GUILayout.Button("Clear BASELINE")) baseline = new City3DPerformanceSuite();
         EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Repeat captures (separate from CURRENT suite)",
+            EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "Repeat the same city, quality, seed/camera label and observed " +
+            "environment in fresh sample windows. This journal does not " +
+            "replace or update CURRENT and BASELINE suites.", MessageType.Info);
+        using (new EditorGUI.DisabledScope(monitor == null ||
+            !monitor.HasMinimumSamples || monitor.IsWarmingUp))
+        {
+            if (GUILayout.Button("Record repeat and restart sampling"))
+            {
+                if (preflight.HasWarnings &&
+                    !EditorUtility.DisplayDialog("Repeat scenario annotation",
+                        preflight.Warnings + "\n\nRecord this labelled repeat anyway?",
+                        "Record anyway", "Cancel"))
+                    return;
+                var stability = monitor.AnalyzeStability();
+                if (stability.HasWarning &&
+                    !EditorUtility.DisplayDialog("Noisy repeat sample",
+                        stability.Explanation + "\n\nKeep this noisy repeat?",
+                        "Record anyway", "Cancel"))
+                    return;
+                var captured = City3DPerformanceBaseline.Create(active.CityName,
+                    active.GraphicsQuality, scenario, monitor.Capture(),
+                    captureEnvironment: observedEnvironment);
+                if (!repeatSeries.TryAdd(captured, out var reason))
+                {
+                    EditorUtility.DisplayDialog("Repeat not recorded", reason, "OK");
+                }
+                else
+                {
+                    monitor.BeginFreshWindow();
+                    Repaint();
+                }
+            }
+        }
+        if (repeatSeries.repeats != null && repeatSeries.repeats.Count > 0)
+        {
+            var repeatReport = City3DPerformanceRepeatAnalysis.Evaluate(repeatSeries);
+            EditorGUILayout.HelpBox(
+                "Repeats: " + repeatReport.Count + "/" +
+                City3DPerformanceRepeatSeries.MaximumRepeats +
+                "; median P95: " + repeatReport.MedianP95Ms.ToString("F2") +
+                " ms; P95 run range: " + repeatReport.RangePercent.ToString("F1") +
+                "%; MAD: " + repeatReport.MedianAbsoluteDeviationMs.ToString("F2") +
+                " ms.\n" + repeatReport.Explanation,
+                repeatReport.HasVariabilityWarning
+                    ? MessageType.Warning : MessageType.Info);
+            foreach (var repeated in repeatSeries.repeats)
+                EditorGUILayout.LabelField(repeated.capturedUtc +
+                    " — P95 " + repeated.snapshot.P95Ms.ToString("F2") + " ms");
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Undo last repeat"))
+                repeatSeries.TryRemoveLast();
+            if (GUILayout.Button("Clear repeat journal") &&
+                EditorUtility.DisplayDialog("Clear repeat journal?",
+                    "Clear all repeats? CURRENT/BASELINE remain untouched.",
+                    "Clear journal", "Cancel"))
+                repeatSeries = new City3DPerformanceRepeatSeries();
+            EditorGUILayout.EndHorizontal();
+        }
 
         var collection = City3DPerformanceSuiteReadiness.Check(baseline, current);
         EditorGUILayout.Space();
