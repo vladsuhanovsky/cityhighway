@@ -18,6 +18,8 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
     string baselineRevisionLabel = "";
     string currentRevisionLabel = "";
     City3DPerformanceRepeatSeries repeatSeries = new City3DPerformanceRepeatSeries();
+    City3DPerformanceRepeatSeries archivedRepeatBaseline;
+    float repeatComparisonThreshold = 10f;
     City3DPerformanceReviewArtifact archivedReview;
     City3DPerformanceReviewArtifact comparisonReview;
     Vector2 archivedReviewScroll;
@@ -265,6 +267,51 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             EditorGUILayout.EndHorizontal();
         }
 
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Compare repeat series (read-only)",
+            EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "Load an older repeat journal to compare against the current repeat " +
+            "journal. This never changes either journal or the active suites.",
+            MessageType.Info);
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Load baseline repeat journal..."))
+            LoadRepeatComparisonBaseline();
+        using (new EditorGUI.DisabledScope(archivedRepeatBaseline == null))
+            if (GUILayout.Button("Close baseline repeat journal"))
+                archivedRepeatBaseline = null;
+        EditorGUILayout.EndHorizontal();
+        repeatComparisonThreshold = Mathf.Max(0f,
+            EditorGUILayout.FloatField("Allowed median P95 regression (%)",
+                repeatComparisonThreshold));
+        if (archivedRepeatBaseline != null)
+        {
+            var comparison = City3DPerformanceRepeatComparison.Compare(
+                archivedRepeatBaseline, repeatSeries, repeatComparisonThreshold);
+            EditorGUILayout.HelpBox(
+                "Repeat series comparison: " + comparison.Status + "\n" +
+                comparison.Explanation +
+                "\nBaseline runs: " + comparison.BaselineRuns +
+                "; current runs: " + comparison.CurrentRuns +
+                (comparison.HasComparableDelta
+                    ? "; median P95 change: " +
+                      comparison.P95ChangePercent.ToString("+0.0;-0.0;0.0") + "%"
+                    : "; median P95 change unavailable"),
+                comparison.Status == City3DPerformanceRepeatComparison.Verdict.Regression
+                    ? MessageType.Error :
+                comparison.HasComparableDelta ? MessageType.Info : MessageType.Warning);
+            using (new EditorGUI.DisabledScope(
+                comparison.Status == City3DPerformanceRepeatComparison.Verdict.Invalid))
+            {
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Export repeat comparison CSV..."))
+                    ExportRepeatComparison(false);
+                if (GUILayout.Button("Export repeat comparison Markdown..."))
+                    ExportRepeatComparison(true);
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
         var collection = City3DPerformanceSuiteReadiness.Check(baseline, current);
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Capture collection checklist", EditorStyles.boldLabel);
@@ -446,6 +493,53 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         ShowEntries("Baseline scenarios", baseline);
         ShowEntries("Current scenarios", current);
         EditorGUILayout.EndScrollView();
+    }
+
+    void LoadRepeatComparisonBaseline()
+    {
+        var path = EditorUtility.OpenFilePanel("Load baseline repeat journal", "", "json");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            if (!City3DPerformanceRepeatSeries.TryFromJson(
+                File.ReadAllText(path, Encoding.UTF8), out var loaded, out var reason))
+            {
+                EditorUtility.DisplayDialog("Invalid baseline repeat journal", reason, "OK");
+                return;
+            }
+            // Import only after full validation. A failed import preserves
+            // previously loaded baseline and the active repeat journal.
+            archivedRepeatBaseline = loaded;
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Baseline repeat import failed", e.Message, "OK");
+        }
+    }
+
+    void ExportRepeatComparison(bool markdown)
+    {
+        if (archivedRepeatBaseline == null) return;
+        var path = EditorUtility.SaveFilePanel(
+            "Export repeat series comparison", "",
+            markdown ? "CityHighwaysRepeatComparison.md"
+                : "CityHighwaysRepeatComparison.csv",
+            markdown ? "md" : "csv");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            var text = markdown
+                ? City3DPerformanceRepeatComparisonExport.ToMarkdown(
+                    archivedRepeatBaseline, repeatSeries, repeatComparisonThreshold)
+                : City3DPerformanceRepeatComparisonExport.ToCsv(
+                    archivedRepeatBaseline, repeatSeries, repeatComparisonThreshold);
+            File.WriteAllText(path, text, new UTF8Encoding(false));
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Repeat comparison export failed",
+                e.Message, "OK");
+        }
     }
 
     void SaveRepeatSeries()
