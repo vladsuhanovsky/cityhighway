@@ -75,6 +75,52 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void MissingVersionWithOtherwiseValidEntriesIsRejected()
+        {
+            var suite = new City3DPerformanceSuite();
+            Assert.IsTrue(suite.TryAdd(Capture("seed=9;camera=A"), out _));
+            string json = suite.ToJson();
+            // Remove only the suite version while leaving the nested capture version intact.
+            int key = json.IndexOf("\"version\"", System.StringComparison.Ordinal);
+            int comma = json.IndexOf(',', key);
+            Assert.GreaterOrEqual(key, 0);
+            Assert.Greater(comma, key);
+            string missing = json.Remove(key, comma - key + 1);
+            Assert.IsFalse(City3DPerformanceSuite.TryFromJson(
+                missing, out var imported, out var reason));
+            Assert.IsNull(imported);
+            Assert.IsNotEmpty(reason);
+        }
+
+        [Test]
+        public void ReplaceRequiresMatchingKeyAndDoesNotAffectOtherSeeds()
+        {
+            var suite = new City3DPerformanceSuite();
+            suite.TryAdd(Capture("seed=7", 20f), out _);
+            suite.TryAdd(Capture("seed=42", 24f), out _);
+            Assert.IsFalse(suite.TryReplace(Capture("seed=99", 30f), out _));
+            Assert.IsTrue(suite.TryReplace(Capture("seed=7", 33f), out _));
+            Assert.AreEqual(2, suite.entries.Count);
+            Assert.AreEqual(33f, suite.entries[0].snapshot.P95Ms);
+            Assert.AreEqual(24f, suite.entries[1].snapshot.P95Ms);
+            Assert.IsFalse(suite.TryReplace(null, out var reason));
+            Assert.IsNotEmpty(reason);
+        }
+
+        [Test]
+        public void RemoveOnlySelectedScenarioAndKeepsOtherQualities()
+        {
+            var suite = new City3DPerformanceSuite();
+            suite.TryAdd(Capture("seed=42", 20f, quality: 0), out _);
+            suite.TryAdd(Capture("seed=42", 18f, quality: 2), out _);
+            Assert.IsFalse(suite.TryRemove("Other", 0, "seed=42"));
+            Assert.IsTrue(suite.TryRemove("Magnate", 0, "seed=42"));
+            Assert.IsFalse(suite.TryRemove("Magnate", 0, "seed=42"));
+            Assert.AreEqual(1, suite.entries.Count);
+            Assert.AreEqual(2, suite.entries[0].quality);
+        }
+
+        [Test]
         public void DifferentQualityAndCityAreNotSameScenarioKey()
         {
             var baseline = new City3DPerformanceSuite();
