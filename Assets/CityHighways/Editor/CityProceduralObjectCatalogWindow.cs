@@ -23,6 +23,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         public float depth;
         public float height;
         public float angle;
+        public float terrainY;
+        public bool hasTerrainY;
     }
 
     [Serializable]
@@ -41,6 +43,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     bool showSceneMarkers;
     bool showApproximateShapes;
     bool alignBuildingRotation;
+    bool snapToCapturedTerrain;
     string selectedObjectId;
     const float SceneMarkerReach = 2.5f;
     const int MaxSceneMarkers = 120;
@@ -84,7 +87,9 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                 width = item.Width,
                 depth = item.Depth,
                 height = item.Height,
-                angle = item.Angle
+                angle = item.Angle,
+                terrainY = item.TerrainY,
+                hasTerrainY = true
             });
         return data;
     }
@@ -178,7 +183,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                     foreach (var row in data.rows)
                         if (row.id == selectedObjectId)
                         {
-                            AssignAndPlace(selected, data.city, row, alignBuildingRotation);
+                            AssignAndPlace(selected, data.city, row, alignBuildingRotation, snapToCapturedTerrain);
                             break;
                         }
                 }
@@ -187,6 +192,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         }
 
         alignBuildingRotation = EditorGUILayout.ToggleLeft("Match building yaw when placing anchor", alignBuildingRotation);
+        snapToCapturedTerrain = EditorGUILayout.ToggleLeft("Snap Y to captured terrain height", snapToCapturedTerrain);
         if (!EditorApplication.isPlaying && selected == null)
             EditorGUILayout.HelpBox("Select a Procedural Object Replacement in Hierarchy to enable assignment or placement.", MessageType.None);
 
@@ -224,7 +230,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                 if (GUILayout.Button("Place", GUILayout.Width(48)))
                 {
                     selectedObjectId = item.id;
-                    AssignAndPlace(selected, data.city, item, alignBuildingRotation);
+                    AssignAndPlace(selected, data.city, item, alignBuildingRotation, snapToCapturedTerrain);
                 }
             }
             EditorGUILayout.EndHorizontal();
@@ -237,10 +243,8 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
 
     static Vector3 ToScenePosition(SnapshotRow row)
     {
-        return new Vector3(
-            row.x / CityPlanner.PixelsPerUnit - BoardLayout.WorldWidth * 0.5f,
-            0f,
-            BoardLayout.WorldDepth * 0.5f - row.y / CityPlanner.PixelsPerUnit);
+        return CityPlanner.ToFlatWorld(new Vector2(row.x, row.y),
+            row.hasTerrainY ? row.terrainY : 0f);
     }
 
     void DrawSceneMarkers(SceneView scene)
@@ -341,13 +345,14 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     }
 
     static void AssignAndPlace(CityProceduralReplacement anchor, string city, SnapshotRow entry,
-        bool alignBuildingRotation)
+        bool alignBuildingRotation, bool useCapturedTerrainHeight)
     {
         if (anchor == null || EditorApplication.isPlaying) return;
         // Assign is recorded separately from placement; both operations remain undoable.
         AssignToAnchor(anchor, city, entry);
         CityProceduralAnchorPlacement.Place(anchor, new Vector2(entry.x, entry.y), entry.angle,
-            alignBuildingRotation && entry.kind == (int)CityProceduralReplacement.TargetKind.Building);
+            alignBuildingRotation && entry.kind == (int)CityProceduralReplacement.TargetKind.Building,
+            entry.terrainY, useCapturedTerrainHeight, entry.hasTerrainY);
     }
 
     static void AssignToAnchor(CityProceduralReplacement anchor, string city, SnapshotRow entry)
