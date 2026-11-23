@@ -17,6 +17,7 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
     string baselineRevisionLabel = "";
     string currentRevisionLabel = "";
     City3DPerformanceReviewArtifact archivedReview;
+    City3DPerformanceReviewArtifact comparisonReview;
     Vector2 archivedReviewScroll;
 
     [MenuItem("City Highways/3D Objects/Performance Scenario Suite")]
@@ -172,12 +173,17 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("Load archived review JSON..."))
             LoadArchivedReview();
+        if (GUILayout.Button("Load second archive to compare..."))
+            LoadComparisonReview();
         using (new EditorGUI.DisabledScope(archivedReview == null))
         {
             if (GUILayout.Button("Export archived review Markdown..."))
                 ExportArchivedReviewMarkdown();
             if (GUILayout.Button("Close archived review"))
+            {
                 archivedReview = null;
+                comparisonReview = null;
+            }
         }
         EditorGUILayout.EndHorizontal();
         if (archivedReview != null)
@@ -197,6 +203,27 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                     " [" + row.quality + "] " + row.scenario +
                     " — " + row.reason);
             EditorGUILayout.EndScrollView();
+        }
+
+        if (archivedReview != null && comparisonReview != null)
+        {
+            var archiveComparison = City3DArchivedReviewComparison.Compare(
+                archivedReview, comparisonReview);
+            EditorGUILayout.HelpBox("Archived comparison: " +
+                archiveComparison.Matched + " matched, " +
+                archiveComparison.Changed + " changed status, " +
+                archiveComparison.Added + " added, " +
+                archiveComparison.Removed + " removed.\n" +
+                archiveComparison.Warning, MessageType.Info);
+            foreach (var row in archiveComparison.Rows)
+                if (row.Kind != City3DArchivedReviewComparison.Change.Unchanged)
+                    EditorGUILayout.LabelField(row.Kind + " — " + row.City +
+                        " [" + row.Quality + "] " + row.Scenario + " / " +
+                        row.PreviousStatus + " → " + row.LatestStatus);
+            if (GUILayout.Button("Export archived comparison Markdown..."))
+                ExportArchivedComparisonMarkdown();
+            if (GUILayout.Button("Close second archive"))
+                comparisonReview = null;
         }
 
         scroll = EditorGUILayout.BeginScrollView(scroll);
@@ -279,11 +306,56 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             }
             // Assign only after validation. Bad data never clears a useful review.
             archivedReview = loaded;
+            comparisonReview = null;
             archivedReviewScroll = Vector2.zero;
         }
         catch (Exception e)
         {
             EditorUtility.DisplayDialog("Review import failed", e.Message, "OK");
+        }
+    }
+
+    void LoadComparisonReview()
+    {
+        if (archivedReview == null)
+        {
+            EditorUtility.DisplayDialog("First review required",
+                "Load the first archived review before comparing.", "OK");
+            return;
+        }
+        var path = EditorUtility.OpenFilePanel("Open second saved review", "", "json");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            if (!City3DPerformanceReviewArtifact.TryFromJson(
+                File.ReadAllText(path, Encoding.UTF8), out var loaded, out var reason))
+            {
+                EditorUtility.DisplayDialog("Invalid second review", reason, "OK");
+                return;
+            }
+            comparisonReview = loaded;
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Second review load failed", e.Message, "OK");
+        }
+    }
+
+    void ExportArchivedComparisonMarkdown()
+    {
+        if (archivedReview == null || comparisonReview == null) return;
+        var path = EditorUtility.SaveFilePanel("Export archived audit comparison", "",
+            "CityHighwaysArchivedComparison.md", "md");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            File.WriteAllText(path,
+                City3DArchivedReviewComparison.ToMarkdown(
+                    archivedReview, comparisonReview), new UTF8Encoding(false));
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Comparison export failed", e.Message, "OK");
         }
     }
 
