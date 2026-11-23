@@ -14,6 +14,7 @@ namespace CityHighways.Presentation
             public int Quality;
             public string Scenario;
             public Kind Status;
+            public string Reason;
             public float BaselineP95Ms;
             public float CurrentP95Ms;
             public float DeltaPercent;
@@ -58,6 +59,7 @@ namespace CityHighways.Presentation
                 if (after == null)
                 {
                     row.Status = Kind.Missing;
+                    row.Reason = "No current capture for this city/quality/scenario.";
                     report.Missing++;
                 }
                 else
@@ -70,6 +72,10 @@ namespace CityHighways.Presentation
                         environmentMatch == City3DPerformanceEnvironment.Compatibility.Different)
                     {
                         row.Status = Kind.Invalid;
+                        row.Reason = environmentMatch ==
+                            City3DPerformanceEnvironment.Compatibility.Incomplete
+                            ? "Environment metadata absent on one side."
+                            : EnvironmentDifference(before.environment, after.environment);
                         report.Invalid++;
                         rows.Add(row);
                         continue;
@@ -85,6 +91,7 @@ namespace CityHighways.Presentation
                     if (difference.Status == City3DPerformanceRegression.Verdict.Regression)
                     {
                         row.Status = Kind.Regression;
+                        row.Reason = "P95 increase exceeds allowed threshold.";
                         report.Regressions++;
                         report.WorstP95Percent = Math.Max(report.WorstP95Percent,
                             difference.P95DeltaPercent);
@@ -92,11 +99,13 @@ namespace CityHighways.Presentation
                     else if (difference.Status == City3DPerformanceRegression.Verdict.Pass)
                     {
                         row.Status = Kind.Pass;
+                        row.Reason = "P95 within allowed threshold.";
                         report.Passed++;
                     }
                     else
                     {
                         row.Status = Kind.Invalid;
+                        row.Reason = "Frame comparison rejected: " + difference.Status;
                         report.Invalid++;
                     }
                 }
@@ -114,7 +123,8 @@ namespace CityHighways.Presentation
                     Quality = after.quality,
                     Scenario = after.scenario,
                     CurrentP95Ms = after.snapshot.P95Ms,
-                    Status = Kind.Additional
+                    Status = Kind.Additional,
+                    Reason = "No baseline capture for this city/quality/scenario."
                 });
                 report.Additional++;
             }
@@ -133,6 +143,20 @@ namespace CityHighways.Presentation
             });
             report.Rows = rows.ToArray();
             return report;
+        }
+
+        static string EnvironmentDifference(City3DPerformanceEnvironment before,
+            City3DPerformanceEnvironment after)
+        {
+            if (before.unityVersion != after.unityVersion) return "Unity version differs.";
+            if (before.platform != after.platform) return "Runtime platform differs.";
+            if (before.graphicsDevice != after.graphicsDevice) return "Graphics device differs.";
+            if (before.width != after.width || before.height != after.height)
+                return "Viewport resolution differs.";
+            if (before.vSyncCount != after.vSyncCount) return "VSync setting differs.";
+            if (before.targetFrameRate != after.targetFrameRate)
+                return "Target frame rate differs.";
+            return "Capture environments differ.";
         }
 
         static int Priority(Kind status)
