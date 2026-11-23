@@ -16,6 +16,9 @@ public static class CityProceduralBatchFixPlanner
         public CityProceduralReplacement Anchor;
         public string MapName;
         public string ObjectId;
+        public GameObject BeforePrefab;
+        public Quaternion BeforeRotation;
+        public Matrix4x4 BeforeLocalToWorld;
         public Vector3 BeforePosition;
         public Vector3 BeforeScale;
         public Vector3 AfterPosition;
@@ -57,6 +60,9 @@ public static class CityProceduralBatchFixPlanner
             Anchor = anchor,
             MapName = anchor.MapName,
             ObjectId = anchor.StableObjectId,
+            BeforePrefab = anchor.VisualPrefab,
+            BeforeRotation = anchor.transform.rotation,
+            BeforeLocalToWorld = anchor.transform.localToWorldMatrix,
             BeforePosition = anchor.transform.position,
             BeforeScale = scale,
             AfterPosition = position,
@@ -77,9 +83,28 @@ public static class CityProceduralBatchFixPlanner
                 !proposal.Anchor.isActiveAndEnabled ||
                 !string.Equals(proposal.Anchor.MapName, proposal.MapName, StringComparison.Ordinal) ||
                 !string.Equals(proposal.Anchor.StableObjectId, proposal.ObjectId, StringComparison.Ordinal) ||
+                proposal.Anchor.VisualPrefab != proposal.BeforePrefab ||
+                proposal.Anchor.transform.rotation != proposal.BeforeRotation ||
+                proposal.Anchor.transform.localToWorldMatrix != proposal.BeforeLocalToWorld ||
                 proposal.Anchor.transform.position != proposal.BeforePosition ||
                 proposal.Anchor.transform.localScale != proposal.BeforeScale)
                 return 0;
+        }
+
+        // Reject a stale preview when another active anchor now targets the same stable ID.
+        var liveAnchors = UnityEngine.Object.FindObjectsByType<CityProceduralReplacement>(
+            FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (var proposal in proposals)
+        {
+            if (string.IsNullOrEmpty(proposal.ObjectId)) return 0;
+            int matching = 0;
+            foreach (var candidate in liveAnchors)
+                if (candidate != null && candidate.gameObject.scene.IsValid() &&
+                    candidate.gameObject.scene.isLoaded && candidate.isActiveAndEnabled &&
+                    string.Equals(candidate.MapName, proposal.MapName, StringComparison.Ordinal) &&
+                    string.Equals(candidate.StableObjectId, proposal.ObjectId, StringComparison.Ordinal))
+                    matching++;
+            if (matching != 1) return 0;
         }
 
         Undo.IncrementCurrentGroup();
