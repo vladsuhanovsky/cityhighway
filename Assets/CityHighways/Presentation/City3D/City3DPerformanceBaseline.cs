@@ -19,6 +19,9 @@ namespace CityHighways.Presentation
         public City3DFrameMonitor.Snapshot snapshot;
         // Optional in v1 files; historical captures remain readable.
         public City3DPerformanceEnvironment environment;
+        // Explicit presence bit: JsonUtility can materialize a default object for
+        // a missing optional nested field during deserialization.
+        public bool environmentRecorded;
 
         public static City3DPerformanceBaseline Create(string cityName, int graphicsQuality,
             string scenarioLabel, City3DFrameMonitor.Snapshot captured,
@@ -33,6 +36,7 @@ namespace CityHighways.Presentation
                 scenario = scenarioLabel?.Trim(),
                 snapshot = captured,
                 environment = captureEnvironment,
+                environmentRecorded = captureEnvironment != null,
                 capturedUtc = utcTimestamp ?? DateTime.UtcNow.ToString("o",
                     System.Globalization.CultureInfo.InvariantCulture)
             };
@@ -66,9 +70,14 @@ namespace CityHighways.Presentation
                 reason = "Baseline needs 60+ samples and consistent, positive frame times.";
                 return false;
             }
-            if (environment != null && !environment.IsValid())
+            if (environmentRecorded && (environment == null || !environment.IsValid()))
             {
                 reason = "Invalid capture environment metadata.";
+                return false;
+            }
+            if (!environmentRecorded && environment != null && environment.IsValid())
+            {
+                reason = "Environment data is missing its presence flag.";
                 return false;
             }
             reason = null;
@@ -102,6 +111,12 @@ namespace CityHighways.Presentation
                     reason = "Baseline JSON does not contain a valid object.";
                     return false;
                 }
+                // Legacy records have no presence flag. Unity's JSON serializer
+                // may create a zero-filled object even when environment was absent.
+                // Normalize it only when no valid unflagged environment exists.
+                if (!parsed.environmentRecorded &&
+                    (parsed.environment == null || !parsed.environment.IsValid()))
+                    parsed.environment = null;
                 if (!parsed.IsValid(out reason)) return false;
                 baseline = parsed;
                 return true;
