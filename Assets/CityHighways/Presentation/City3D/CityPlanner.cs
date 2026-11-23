@@ -186,6 +186,15 @@ namespace CityHighways.Presentation
 
         struct Seg { public Vector2 A, B; }
 
+        /// <summary>Convert field pixels to flat-world X/Z without sampling runtime terrain.</summary>
+        public static Vector3 ToFlatWorld(Vector2 field, float preservedY = 0f)
+        {
+            return new Vector3(
+                field.x / PixelsPerUnit - BoardLayout.WorldWidth * 0.5f,
+                preservedY,
+                BoardLayout.WorldDepth * 0.5f - field.y / PixelsPerUnit);
+        }
+
         /// <summary>Точка поля в мире; y — высота над землёй (с рельефом 3D-города).</summary>
         public static Vector3 ToWorld(Vector2 field, float y = 0f)
         {

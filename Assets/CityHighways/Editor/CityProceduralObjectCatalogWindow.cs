@@ -40,6 +40,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
     int shownLimit = 100;
     bool showSceneMarkers;
     bool showApproximateShapes;
+    bool alignBuildingRotation;
     string selectedObjectId;
     const float SceneMarkerReach = 2.5f;
     const int MaxSceneMarkers = 120;
@@ -172,12 +173,22 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                             break;
                         }
                 }
+                if (GUILayout.Button("Assign + Place", GUILayout.Width(110)))
+                {
+                    foreach (var row in data.rows)
+                        if (row.id == selectedObjectId)
+                        {
+                            AssignAndPlace(selected, data.city, row, alignBuildingRotation);
+                            break;
+                        }
+                }
             }
             EditorGUILayout.EndHorizontal();
         }
 
+        alignBuildingRotation = EditorGUILayout.ToggleLeft("Match building yaw when placing anchor", alignBuildingRotation);
         if (!EditorApplication.isPlaying && selected == null)
-            EditorGUILayout.HelpBox("Select a Procedural Object Replacement in Hierarchy to enable Assign ID.", MessageType.None);
+            EditorGUILayout.HelpBox("Select a Procedural Object Replacement in Hierarchy to enable assignment or placement.", MessageType.None);
 
         int matching = 0, rendered = 0;
         scroll = EditorGUILayout.BeginScrollView(scroll);
@@ -204,11 +215,18 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
             }
 
             using (new EditorGUI.DisabledScope(EditorApplication.isPlaying || selected == null))
+            {
                 if (GUILayout.Button("Assign", GUILayout.Width(52)))
                 {
                     selectedObjectId = item.id;
                     AssignToAnchor(selected, data.city, item);
                 }
+                if (GUILayout.Button("Place", GUILayout.Width(48)))
+                {
+                    selectedObjectId = item.id;
+                    AssignAndPlace(selected, data.city, item, alignBuildingRotation);
+                }
+            }
             EditorGUILayout.EndHorizontal();
         }
         EditorGUILayout.EndScrollView();
@@ -320,6 +338,16 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
         var view = SceneView.lastActiveSceneView;
         if (view != null)
             view.Frame(new Bounds(world, Vector3.one * 0.6f), false);
+    }
+
+    static void AssignAndPlace(CityProceduralReplacement anchor, string city, SnapshotRow entry,
+        bool alignBuildingRotation)
+    {
+        if (anchor == null || EditorApplication.isPlaying) return;
+        // Assign is recorded separately from placement; both operations remain undoable.
+        AssignToAnchor(anchor, city, entry);
+        CityProceduralAnchorPlacement.Place(anchor, new Vector2(entry.x, entry.y), entry.angle,
+            alignBuildingRotation && entry.kind == (int)CityProceduralReplacement.TargetKind.Building);
     }
 
     static void AssignToAnchor(CityProceduralReplacement anchor, string city, SnapshotRow entry)
