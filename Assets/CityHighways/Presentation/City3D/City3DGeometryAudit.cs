@@ -29,6 +29,10 @@ namespace CityHighways.Presentation
             public int Buildings;
             public int Trees;
             public int Other;
+            public long BuildingTriangles;
+            public long TreeTriangles;
+            public long AuthoredTriangles;
+            public long OtherTriangles;
         }
 
         public static Group Classify(string topLevelName)
@@ -70,9 +74,23 @@ namespace CityHighways.Presentation
                 totals.Vertices += item.Vertices;
                 switch (item.Kind)
                 {
-                    case Group.Buildings: totals.Buildings++; break;
-                    case Group.Trees: totals.Trees++; break;
-                    default: totals.Other++; break;
+                    case Group.Buildings:
+                        totals.Buildings++;
+                        totals.BuildingTriangles += item.Triangles;
+                        break;
+                    case Group.Trees:
+                        totals.Trees++;
+                        totals.TreeTriangles += item.Triangles;
+                        break;
+                    case Group.Replacements:
+                    case Group.Decorations:
+                        totals.Other++;
+                        totals.AuthoredTriangles += item.Triangles;
+                        break;
+                    default:
+                        totals.Other++;
+                        totals.OtherTriangles += item.Triangles;
+                        break;
                 }
             }
             return entries.ToArray();
