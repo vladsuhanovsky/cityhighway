@@ -168,6 +168,9 @@ namespace CityHighways.Presentation
                 buildingMultiplier, treeMultiplier, clearances);
             // Replace selected visual instances before district/tree meshes and counts are built.
             CityProceduralReplacementResolver.Apply(plan, _map.Name, _root.transform);
+            // Optional seed-independent rules run after manual replacements so authored
+            // stable-ID anchors always take priority over automatic model choices.
+            CityProceduralBuildingPrefabSpawner.Apply(plan, _map.Name, _root.transform);
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
 
