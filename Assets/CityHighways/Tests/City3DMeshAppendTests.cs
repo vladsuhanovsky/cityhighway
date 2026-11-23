@@ -64,6 +64,87 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void IdentityAppendPreservesNormalsAndUvs()
+        {
+            var source = new MeshBuilder();
+            AddQuad(source, 1f);
+            var original = source.ToMesh("original");
+            var destination = new MeshBuilder();
+            destination.Append(source, Matrix4x4.identity);
+            var copy = destination.ToMesh("copy");
+            try
+            {
+                CollectionAssert.AreEqual(original.vertices, copy.vertices);
+                CollectionAssert.AreEqual(original.normals, copy.normals);
+                CollectionAssert.AreEqual(original.uv, copy.uv);
+                CollectionAssert.AreEqual(original.triangles, copy.triangles);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(original);
+                UnityEngine.Object.DestroyImmediate(copy);
+            }
+        }
+
+        [Test]
+        public void TranslationAppendPreservesNormalsAndMovesAllVertices()
+        {
+            var source = new MeshBuilder();
+            AddQuad(source, 1f);
+            var original = source.ToMesh("original");
+            var destination = new MeshBuilder();
+            var offset = new Vector3(3f, -2f, 7f);
+            destination.Append(source, Matrix4x4.Translate(offset));
+            var translated = destination.ToMesh("translated");
+            try
+            {
+                for (int i = 0; i < original.vertexCount; i++)
+                {
+                    Assert.That(Vector3.Distance(original.vertices[i] + offset,
+                        translated.vertices[i]), Is.LessThan(0.00001f));
+                    Assert.That(Vector3.Distance(original.normals[i],
+                        translated.normals[i]), Is.LessThan(0.00001f));
+                }
+                CollectionAssert.AreEqual(original.uv, translated.uv);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(original);
+                UnityEngine.Object.DestroyImmediate(translated);
+            }
+        }
+
+        [Test]
+        public void NonUniformScaleAndRotationStillTransformNormals()
+        {
+            var source = new MeshBuilder();
+            source.Tri(new Vector3(0f, 0f, 0f),
+                new Vector3(1f, 0f, 0f),
+                new Vector3(0f, 1f, 1f), new Rect(0f, 0f, 1f, 1f));
+            var original = source.ToMesh("original");
+            var matrix = Matrix4x4.TRS(new Vector3(1f, 2f, 3f),
+                Quaternion.Euler(20f, 35f, 10f), new Vector3(2f, 1f, 0.5f));
+            var destination = new MeshBuilder();
+            destination.Append(source, matrix);
+            var transformed = destination.ToMesh("transformed");
+            try
+            {
+                var expected = (matrix.inverse.transpose.MultiplyVector(original.normals[0])).normalized;
+                Assert.That(Vector3.Distance(expected, transformed.normals[0]),
+                    Is.LessThan(0.0001f));
+                Assert.That(Vector3.Distance(original.normals[0], transformed.normals[0]),
+                    Is.GreaterThan(0.01f));
+                Assert.That(Vector3.Distance(matrix.MultiplyPoint3x4(original.vertices[2]),
+                    transformed.vertices[2]), Is.LessThan(0.0001f));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(original);
+                UnityEngine.Object.DestroyImmediate(transformed);
+            }
+        }
+
+        [Test]
         public void AppendCombinesMeshesWithTransformedVerticesAndShiftedIndices()
         {
             var destination = new MeshBuilder();
