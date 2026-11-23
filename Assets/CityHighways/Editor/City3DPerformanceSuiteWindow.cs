@@ -16,6 +16,8 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
     int maxDiagnosticRows = 30;
     string baselineRevisionLabel = "";
     string currentRevisionLabel = "";
+    City3DPerformanceReviewArtifact archivedReview;
+    Vector2 archivedReviewScroll;
 
     [MenuItem("City Highways/3D Objects/Performance Scenario Suite")]
     static void Open() => GetWindow<City3DPerformanceSuiteWindow>("3D Scenario Suite");
@@ -165,6 +167,38 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
                 ExportReviewMarkdown();
         }
 
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Archived review (read-only)", EditorStyles.boldLabel);
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Load archived review JSON..."))
+            LoadArchivedReview();
+        using (new EditorGUI.DisabledScope(archivedReview == null))
+        {
+            if (GUILayout.Button("Export archived review Markdown..."))
+                ExportArchivedReviewMarkdown();
+            if (GUILayout.Button("Close archived review"))
+                archivedReview = null;
+        }
+        EditorGUILayout.EndHorizontal();
+        if (archivedReview != null)
+        {
+            EditorGUILayout.HelpBox(
+                "ARCHIVED (read-only) — " + archivedReview.overallStatus +
+                " | baseline " + archivedReview.baselineRevision +
+                " → current " + archivedReview.currentRevision +
+                " | matched " + archivedReview.matched +
+                " | coverage " + archivedReview.coveragePercent.ToString("F1") +
+                "%. This does not update active captures or verify original source files.",
+                MessageType.Info);
+            archivedReviewScroll = EditorGUILayout.BeginScrollView(
+                archivedReviewScroll, GUILayout.MaxHeight(180f));
+            foreach (var row in archivedReview.scenarios)
+                EditorGUILayout.LabelField(row.status + " — " + row.city +
+                    " [" + row.quality + "] " + row.scenario +
+                    " — " + row.reason);
+            EditorGUILayout.EndScrollView();
+        }
+
         scroll = EditorGUILayout.BeginScrollView(scroll);
         ShowEntries("Baseline scenarios", baseline);
         ShowEntries("Current scenarios", current);
@@ -229,6 +263,46 @@ public sealed class City3DPerformanceSuiteWindow : EditorWindow
             else current = loaded;
         }
         catch (Exception e) { EditorUtility.DisplayDialog("Load failed", e.Message, "OK"); }
+    }
+
+    void LoadArchivedReview()
+    {
+        var path = EditorUtility.OpenFilePanel("Open saved review artifact", "", "json");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            if (!City3DPerformanceReviewArtifact.TryFromJson(
+                File.ReadAllText(path, Encoding.UTF8), out var loaded, out var reason))
+            {
+                EditorUtility.DisplayDialog("Invalid saved review", reason, "OK");
+                return;
+            }
+            // Assign only after validation. Bad data never clears a useful review.
+            archivedReview = loaded;
+            archivedReviewScroll = Vector2.zero;
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Review import failed", e.Message, "OK");
+        }
+    }
+
+    void ExportArchivedReviewMarkdown()
+    {
+        if (archivedReview == null) return;
+        var path = EditorUtility.SaveFilePanel("Export archived GitHub PR Markdown", "",
+            "CityHighwaysArchivedReview.md", "md");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            File.WriteAllText(path,
+                City3DPerformanceMarkdownReport.Render(archivedReview),
+                new UTF8Encoding(false));
+        }
+        catch (Exception e)
+        {
+            EditorUtility.DisplayDialog("Markdown export failed", e.Message, "OK");
+        }
     }
 
     void ExportReviewMarkdown()
