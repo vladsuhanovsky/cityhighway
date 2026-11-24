@@ -355,13 +355,15 @@ namespace CityHighways.Presentation
                 row.Add(box);
                 row.Add(Ui.Text(item.title, 13f, on ? Theme.Text : Theme.TextDim));
                 var layer = item.layer;
-                row.RegisterCallback<ClickEvent>(_ =>
+                void ToggleLayer()
                 {
                     _setup.magnateLayers ^= (int)layer;
                     SaveSetup();
                     ApplyLayers();
                     BuildLayersList();
-                });
+                }
+                row.RegisterCallback<ClickEvent>(_ => ToggleLayer());
+                GamepadSelectable.Attach(row, ToggleLayer);
                 _layersList.Add(row);
             }
         }
