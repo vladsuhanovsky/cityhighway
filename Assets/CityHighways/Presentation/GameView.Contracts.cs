@@ -293,9 +293,8 @@ namespace CityHighways.Presentation
                 if (!selection) RestorePinnedHighlight();
                 else ClearContractHighlight();
             });
-            card.RegisterCallback<ClickEvent>(_ =>
+            void ActivateContract()
             {
-                if (carousel != null && carousel.WasDragged) return;
                 if (selection)
                 {
                     onSelect?.Invoke();
@@ -305,7 +304,19 @@ namespace CityHighways.Presentation
                 else _pinnedContracts[playerIndex] = contract.Id;
                 _app.Sound.Play(Sfx.Click, 0.5f);
                 _dirty = true;
+            }
+            card.RegisterCallback<ClickEvent>(_ =>
+            {
+                if (carousel != null && carousel.WasDragged) return;
+                ActivateContract();
             });
+            GamepadSelectable.Attach(card, ActivateContract,
+                () => ShowContractHighlight(playerIndex, contract),
+                () =>
+                {
+                    if (!selection) RestorePinnedHighlight();
+                    else ClearContractHighlight();
+                });
             return card;
         }
 
