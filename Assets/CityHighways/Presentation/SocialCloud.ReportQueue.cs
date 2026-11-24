@@ -101,6 +101,7 @@ namespace CityHighways.Presentation
                 // Acknowledge only a successful server response; never remove
                 // a report merely because a UnityWebRequest was attempted.
                 ReportOutbox.Complete(entry);
+                Changed?.Invoke();
                 AfterReport(response);
                 TrySendQueuedReport();
             }, reportFailure: (message, status) =>
