@@ -104,6 +104,23 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Malformed requests need human/patch intervention, not a retry every frame.</summary>
+        /// <summary>
+        /// Club targets roll over on Monday 00:00 UTC. Retried reports from an
+        /// earlier week may still update personal records but must never
+        /// contribute to a later week's club goal.
+        /// </summary>
+        public static bool SameUtcWeek(long startedTicks, long nowTicks)
+        {
+            if (startedTicks < DateTime.MinValue.Ticks || startedTicks > DateTime.MaxValue.Ticks ||
+                nowTicks < DateTime.MinValue.Ticks || nowTicks > DateTime.MaxValue.Ticks)
+                return false;
+            var started = new DateTime(startedTicks, DateTimeKind.Utc).Date;
+            var now = new DateTime(nowTicks, DateTimeKind.Utc).Date;
+            int startOffset = ((int)started.DayOfWeek + 6) % 7;
+            int nowOffset = ((int)now.DayOfWeek + 6) % 7;
+            return started.AddDays(-startOffset) == now.AddDays(-nowOffset);
+        }
+
         public static long RetryDelaySeconds(int attempt, long httpStatus)
         {
             if (httpStatus == 400 || httpStatus == 403 || httpStatus == 405 ||
