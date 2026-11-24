@@ -188,5 +188,54 @@ namespace CityHighways.Tests
                 false, false, out var reSecond, out _));
             Assert.AreEqual(Saved(original), Saved(reSecond));
         }
+
+        [Test]
+        public void ChangedCurrentSnapshotMustNotBeOverwrittenByRedo()
+        {
+            var original = Started();
+            Assert.IsTrue(original.DrawCardFromDeck().Success);
+            var undone = Undo(original);
+            undone.Debug_SetHand(0, Resource.Asphalt, Resource.Asphalt);
+            string before = Saved(undone);
+
+            Assert.IsFalse(undone.HasVerifiedUndoHistory());
+            Assert.IsFalse(GameRedo.TryRedo(undone, original, false, false, false,
+                false, false, out var restored, out var journal));
+            Assert.IsNull(restored);
+            Assert.IsEmpty(journal);
+            Assert.AreEqual(before, Saved(undone));
+        }
+
+        [Test]
+        public void ChangedOriginalSnapshotMustNotBeTrustedForRedo()
+        {
+            var original = Started();
+            Assert.IsTrue(original.DrawCardFromDeck().Success);
+            var undone = Undo(original);
+            original.Debug_SetHand(0, Resource.Concrete, Resource.Concrete);
+            string before = Saved(undone);
+
+            Assert.IsFalse(original.HasVerifiedUndoHistory());
+            Assert.IsFalse(GameRedo.TryRedo(undone, original, false, false, false,
+                false, false, out var restored, out var journal));
+            Assert.IsNull(restored);
+            Assert.IsEmpty(journal);
+            Assert.AreEqual(before, Saved(undone));
+        }
+
+        [Test]
+        public void RedoCannotReuseAHistoryWithDifferentExtraCommandKind()
+        {
+            var original = Started();
+            Assert.IsTrue(original.DrawCardFromDeck().Success);
+            var undone = Undo(original);
+            var other = Started();
+            Assert.IsTrue(other.DrawFaceUpCard(0).Success);
+
+            Assert.IsFalse(GameRedo.CanRedo(undone, other, false, false, false, false, false),
+                "Different map object must never be cross-replayed");
+            Assert.IsFalse(GameRedo.SameCommand(original.History.Last(),
+                other.History.Last()));
+        }
     }
 }
