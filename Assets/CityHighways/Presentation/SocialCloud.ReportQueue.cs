@@ -63,6 +63,7 @@ namespace CityHighways.Presentation
                 Changed?.Invoke();
                 return;
             }
+            Changed?.Invoke();
             TrySendQueuedReport();
         }
 
