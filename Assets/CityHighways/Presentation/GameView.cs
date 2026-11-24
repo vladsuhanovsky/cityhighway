@@ -471,6 +471,11 @@ namespace CityHighways.Presentation
             Root.Add(_mapArea);
 
             _map = new MapView();
+            _map.CanGamepadTarget = () => GamepadMapTargetPolicy.AllowsInput(
+                _game != null && HumanToAct,
+                _overlayKind != OverlayKind.None,
+                _modal != Modal.None || _drawerOpen || _playersOpen,
+                NeedsHandoff, false);
             // Дороги лежат на земле 3D-города: камеру можно крутить, и они поворачиваются вместе с ней.
             _map.GroundRoads = true;
             Ui.Fill(_map);
@@ -1303,7 +1308,9 @@ namespace CityHighways.Presentation
 
             // A controller can navigate the existing HUD and dialog buttons
             // without invoking or bypassing any game-rule command.
-            UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive);
+            if (_map.GamepadExitedTargetingThisFrame) _gamepadFocusActive = true;
+            UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
+                _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame);
             TickTurnTimer(deltaTime);
             TickBots(deltaTime);
         }
