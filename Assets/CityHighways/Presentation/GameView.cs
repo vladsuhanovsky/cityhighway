@@ -2568,6 +2568,8 @@ namespace CityHighways.Presentation
             _turnLabel.text = (_game.Phase == GamePhase.SetupContracts ? LocalizationService.Get("game.ui.054") : LocalizationService.Get("game.ui.055") + _game.TurnNumber)
                               + (_game.Scenario != ScenarioKind.Standard ? " · " + Scenarios.Title(_game.Scenario) : "")
                               + (_game.IsCooperative ? LocalizationService.Get("game.ui.056") : "");
+            // Full localized title remains inspectable when the header truncates.
+            _turnLabel.tooltip = _turnLabel.text;
             RefreshEvent();
             RefreshGoals();
             RefreshGhost();
