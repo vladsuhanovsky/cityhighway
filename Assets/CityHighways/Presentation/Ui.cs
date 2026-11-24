@@ -50,6 +50,12 @@ namespace CityHighways.Presentation
         static readonly System.Runtime.CompilerServices.ConditionalWeakTable<VisualElement, Action> BackActions =
             new System.Runtime.CompilerServices.ConditionalWeakTable<VisualElement, Action>();
 
+        /// <summary>Recognize explicit back buttons in both shipped UI languages.</summary>
+        public static bool IsBackLabel(string label) =>
+            !string.IsNullOrEmpty(label) &&
+            (label.StartsWith("← Назад", StringComparison.Ordinal) ||
+             label.StartsWith("← Back", StringComparison.OrdinalIgnoreCase));
+
         /// <summary>Пометить элемент как «Назад»: по Esc вызывается его действие (если он виден).</summary>
         public static void MarkBack(VisualElement element, Action back)
         {
@@ -393,7 +399,7 @@ namespace CityHighways.Presentation
             var button = new UnityEngine.UIElements.Button(click);
             button.text = LocalizationService.TranslateLegacy(text);
             // Кнопки «← Назад» срабатывают и по Esc (см. GoBack).
-            if (text != null && text.StartsWith("← Назад", StringComparison.Ordinal)) MarkBack(button, click);
+            if (IsBackLabel(text) || IsBackLabel(button.text)) MarkBack(button, click);
             button.style.fontSize = fontSize;
             Fonts.Apply(button, fontSize >= Fonts.DisplayFrom ? Fonts.Weight.Bold : Fonts.Weight.SemiBold);
             button.style.unityTextAlign = TextAnchor.MiddleCenter;
