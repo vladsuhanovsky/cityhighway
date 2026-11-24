@@ -24,7 +24,14 @@ export function validateRecordFields(body) {
   if (typeof body.won !== "boolean") fail("won");
   if (typeof body.replay !== "string" || body.replay.length === 0 ||
       body.replay.length > MAX_REPLAY_BASE64) fail("replay size");
-  if (body.stats !== undefined && !object(body.stats)) fail("stats");
+  if (!object(body.stats)) fail("stats");
+  for (const key of ["roadPieces", "contracts", "coopOrders"]) {
+    if (!boundedInt(body.stats[key], 0, 10000))
+      fail("stats." + key);
+  }
+  if (typeof body.stats.won !== "boolean" ||
+      body.stats.won !== body.won)
+    fail("stats.won");
   return body;
 }
 
