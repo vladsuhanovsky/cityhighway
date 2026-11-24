@@ -1,3 +1,4 @@
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace CityHighways.Presentation
@@ -10,6 +11,17 @@ namespace CityHighways.Presentation
     /// </summary>
     public static class GamepadTextEntry
     {
+        /// <summary>Highlight the actual inner input surface, not its container.</summary>
+        public static void InstallFocusBorder(TextField field,
+            VisualElement inputSurface, Color normalBorder)
+        {
+            if (field == null || inputSurface == null) return;
+            field.RegisterCallback<FocusInEvent>(_ =>
+                Ui.Border(inputSurface, 2f, Theme.Accent));
+            field.RegisterCallback<FocusOutEvent>(_ =>
+                Ui.Border(inputSurface, 1f, normalBorder));
+        }
+
         public static TextField EnclosingField(VisualElement element)
         {
             for (var node = element; node != null; node = node.parent)
