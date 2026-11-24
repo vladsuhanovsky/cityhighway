@@ -14,7 +14,7 @@ namespace CityHighways.Presentation
     /// SteamID, подставить чужой нельзя. Без Steam облако молчит, а призраки берутся из других профилей на этом
     /// компьютере (Ghosts).
     /// </summary>
-    public static class SocialCloud
+    public static partial class SocialCloud
     {
         const string Function = "/functions/v1/social";
         const string TicketIdentity = "cityhighways";
