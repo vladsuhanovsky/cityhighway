@@ -72,6 +72,26 @@ namespace CityHighways.Presentation
                     .Append(Milliseconds(scenario.CurrentMaxMs)).AppendLine(" |");
             }
             markdown.AppendLine();
+            markdown.AppendLine("## Sampling quality (advisory only)");
+            markdown.AppendLine();
+            markdown.AppendLine("| Scenario | Measured runs ≥ 7 | Baseline range/median | Current range/median | Observed ranges overlap | Review advised |");
+            markdown.AppendLine("| --- | --- | ---: | ---: | --- | --- |");
+            foreach (var scenario in report.Scenarios)
+            {
+                var advisory = City3DMeshAppendBenchmarkAdvisory.Evaluate(scenario);
+                markdown.Append("| ").Append(Escape(scenario.Name)).Append(" | ")
+                    .Append(advisory.HasEnoughRuns ? "yes" : "no").Append(" | ")
+                    .Append(Spread(advisory.BaselineRangePercent)).Append(" | ")
+                    .Append(Spread(advisory.CurrentRangePercent)).Append(" | ")
+                    .Append(advisory.RangesOverlap ? "yes" : "no").Append(" | ")
+                    .Append(advisory.NeedsReview ? "yes" : "no").AppendLine(" |");
+            }
+            markdown.AppendLine();
+            markdown.AppendLine("Review is advised when fewer than seven runs are recorded, " +
+                "observed time ranges overlap, or either capture's range exceeds " +
+                "10% of its median. These are descriptive heuristics only; " +
+                "a clean result or non-overlapping ranges do not establish significance.");
+            markdown.AppendLine();
             markdown.AppendLine("A negative percentage means shorter measured CPU elapsed time. " +
                 "Differences are advisory, not statistical confidence intervals. " +
                 "The CSV workload metadata is checked for compatibility, " +
@@ -92,6 +112,10 @@ namespace CityHighways.Presentation
             if (string.IsNullOrWhiteSpace(input))
                 throw new ArgumentException("A provenance label is required.", param);
         }
+
+        static string Spread(double value) =>
+            double.IsInfinity(value) ? "unbounded (zero median)" :
+                value.ToString("F2", CultureInfo.InvariantCulture) + "%";
 
         static string Milliseconds(double value) =>
             value.ToString("F6", CultureInfo.InvariantCulture);
