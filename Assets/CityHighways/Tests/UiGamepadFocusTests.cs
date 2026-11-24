@@ -349,5 +349,38 @@ namespace CityHighways.Tests
             Assert.AreSame(hud, UiGamepadFocus.FindEligibleNamedInScope(
                 root, modal, "gamepad-hud-undo"));
         }
+
+        [Test]
+        public void ModalReturnCanFindRebuiltNamedHudAction()
+        {
+            var root = new VisualElement();
+            var oldButton = new Button { name = "gamepad-hud-menu" };
+            root.Add(oldButton);
+            Assert.AreSame(oldButton, GamepadFocusReturn.RestoreCandidate(root, oldButton));
+
+            root.Remove(oldButton);
+            var replacement = new Button { name = "gamepad-hud-menu" };
+            root.Add(replacement);
+            Assert.AreSame(replacement, GamepadFocusReturn.RestoreCandidate(root, oldButton));
+
+            replacement.SetEnabled(false);
+            Assert.IsNull(GamepadFocusReturn.RestoreCandidate(root, oldButton));
+        }
+
+        [Test]
+        public void ModalReturnNeverResurrectsAnonymousOrMapFocus()
+        {
+            var root = new VisualElement();
+            var old = new Button();
+            root.Add(old);
+            root.Remove(old);
+            Assert.IsNull(GamepadFocusReturn.RestoreCandidate(root, old));
+
+            var map = new MapView { focusable = true, name = "gamepad-map" };
+            root.Add(map);
+            Assert.IsNull(GamepadFocusReturn.RestoreCandidate(root, map));
+            Assert.IsNull(GamepadFocusReturn.RestoreCandidate(root, null));
+            Assert.IsNull(GamepadFocusReturn.RestoreCandidate(null, old));
+        }
     }
 }
