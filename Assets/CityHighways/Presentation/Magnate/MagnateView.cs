@@ -313,8 +313,13 @@ namespace CityHighways.Presentation
                 Refresh();
             }
             if (_map.GamepadExitedTargetingThisFrame) _gamepadFocusActive = true;
+            VisualElement controllerScope = _modal != null ? _modalLayer :
+                _awaitingHandoff ? _handoff :
+                _resultsShown ? _results :
+                _popupKind != null ? _popup : Root;
             UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
-                _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame);
+                _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,
+                controllerScope);
             UpdateMapEmphasis();
             CoachTick();
         }
