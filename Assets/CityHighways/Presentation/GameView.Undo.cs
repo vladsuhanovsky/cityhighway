@@ -78,8 +78,11 @@ namespace CityHighways.Presentation
                 var command = _game.History[_game.History.Count - 1];
                 var action = UndoPresentation.ActionLabel(command,
                     LocalizationService.Language == "en");
+                bool onMac = Application.platform == RuntimePlatform.OSXEditor ||
+                    Application.platform == RuntimePlatform.OSXPlayer;
                 _undoButton.tooltip = string.Format(
-                    LocalizationService.Get("game.undo.tooltip"), action);
+                    LocalizationService.Get("game.undo.tooltip"), action,
+                    UndoPresentation.UndoShortcutLabel(onMac));
             }
             else
                 _undoButton.tooltip = LocalizationService.Get("game.undo.disabled_hint");
@@ -102,7 +105,8 @@ namespace CityHighways.Presentation
                     Application.platform == RuntimePlatform.OSXPlayer;
                 _redoButton.tooltip = string.Format(
                     LocalizationService.Get("game.redo.tooltip"), action,
-                    UndoPresentation.RedoShortcutLabel(onMac));
+                    UndoPresentation.RedoShortcutLabel(onMac),
+                    _redoHistory.Count);
             }
             else
                 _redoButton.tooltip = LocalizationService.Get("game.redo.disabled_hint");
