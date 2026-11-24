@@ -832,9 +832,17 @@ namespace CityHighways.Presentation
                 !GamepadTextEntry.TryExit(Root))
                 Ui.GoBack(Root);
 
+            // A physical mouse/Steam Deck trackpad takes back pointer input
+            // on movement, not only on click. Unplugging the pad also releases
+            // focus so the inactive controller does not reselect old pages.
+            var pad = Gamepad.current;
+            var mouse = Mouse.current;
+            if (pad == null || (mouse != null &&
+                UiGamepadFocus.HasMouseIntent(mouse.delta.ReadValue())))
+                _gamepadActive = false;
+
             // Input System already maps UI Navigate / Submit for controllers.
             // Wake initial focus only after a meaningful gamepad action.
-            var pad = Gamepad.current;
             if (pad != null)
             {
                 bool navigating = UiGamepadFocus.HasNavigationIntent(
