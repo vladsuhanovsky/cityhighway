@@ -116,6 +116,23 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void OversizeDiskFileIsNeverReadIntoMemory()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path));
+            using (var file = File.Create(_path))
+                file.SetLength(SocialReportOutbox.MaxFileBytes + 1);
+            Assert.AreEqual(0, new SocialReportOutbox(_path).Count);
+        }
+
+        [Test]
+        public void PayloadBoundIsMeasuredInUtf8BytesNotCharacterCount()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            string unicode = new string('Ж', SocialReportOutbox.MaxPayloadBytes / 2 + 1);
+            Assert.IsFalse(outbox.Enqueue(SteamA, "unicode", unicode, Now));
+        }
+
+        [Test]
         public void QueueHasAnExplicitBound()
         {
             var outbox = new SocialReportOutbox(_path);
