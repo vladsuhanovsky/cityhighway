@@ -145,3 +145,58 @@ achievement IDs to one **currently signed-in local SteamID**.
 Steamworks.NET package is installed in the default project setup.
 The `--release` preflight gate must continue to fail until actual
 Steam build dependencies and partner achievement registration exist.
+
+## Strict static release gate (follow-up)
+
+The regular `python3 scripts/steam_release_preflight.py` command
+intentionally checks **only** the in-game achievement catalog against
+the documented Steamworks Partner API-name table. This remains usable
+on non-Steam developer machines without Steamworks.NET.
+
+The stricter `--release --app-id <REAL_APP_ID>` mode now rejects
+additional misconfiguration before any build is described as Steam-ready:
+
+- API names must be lowercase ASCII identifiers (`a-z`, `0-9`,
+  underscores after the initial letter). Malformed IDs in the
+  `Achievements.All` declarations **or** Partner table cannot be
+  silently omitted from comparison. Duplicate/missing/extra names
+  remain errors; daily tasks remain excluded.
+- `--app-id` must be an ASCII, canonical, positive 32-bit decimal
+  value (1–4,294,967,295) other than shared testing ID `480`.
+  Leading zeroes, whitespace, negative/Unicode digits and overflow
+  are rejected. If `steam_appid.txt` exists, it must match the
+  supplied value; it may be absent from a packaged build.
+- `Packages/manifest.json` must directly declare a nonempty
+  Steamworks.NET package reference **and** `Packages/packages-lock.json`
+  must resolve it as a depth-0 package with a nonempty version.
+  A manifest-only entry is not enough.
+- `Assets/CityHighways/Steam/CityHighways.Steam.asmdef` must reference
+  both the Steamworks.NET package and CityHighways.Net, require
+  `STEAMWORKS_NET`, and map that define to the Steamworks.NET package's
+  Unity version define. `SteamPlatform.cs` must remain guarded by
+  `#if STEAMWORKS_NET`, so non-Steam builds do not accidentally
+  require Steamworks.NET.
+- CI's **Steam achievement catalog preflight** now runs on PRs and
+  main-branch pushes that change these inputs. It includes regression
+  tests and explicitly verifies that test AppID 480 **fails** release
+  mode. This is a negative control, not a production-release test.
+
+### Release operator checklist
+
+1. Create the game's real AppID and publish all canonical achievement
+   API names and localized display metadata in Steamworks Partner.
+2. Add the supported Steamworks.NET package to Unity Package Manager.
+   Commit both `Packages/manifest.json` and a newly resolved
+   `Packages/packages-lock.json`, and compile the optional
+   `CityHighways.Steam` assembly with the real dependency installed.
+3. Configure the correct AppID. Remove or replace the development
+   `steam_appid.txt` used for test AppID 480.
+4. Run the normal catalog check, unit tests, and then
+   `python3 scripts/steam_release_preflight.py --release --app-id REAL_ID`.
+5. Test a Steam build and a separate non-Steam build. Confirm actual
+   Steam callbacks, account switching, achievement persistence, overlay
+   and Steam Deck/gamepad behavior on real clients.
+
+**Passing this static gate never means the Steam SDK was compiled,
+the Partner backend was published, or a Steam release was certified.**
+Those remain explicit manual requirements.
