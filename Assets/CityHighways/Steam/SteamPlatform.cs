@@ -31,11 +31,13 @@ namespace CityHighways.Steam
         Callback<GameLobbyJoinRequested_t> _joinRequested;
         Callback<UserStatsReceived_t> _statsReceived;
         Callback<UserStatsStored_t> _statsStored;
-        readonly HashSet<string> _queuedAchievements = new HashSet<string>(StringComparer.Ordinal);
-        readonly HashSet<string> _stagedAchievements = new HashSet<string>(StringComparer.Ordinal);
-        readonly HashSet<string> _reportedUnknownIds = new HashSet<string>(StringComparer.Ordinal);
+        // This queue is bound to a single authenticated SteamID. All
+        // pending/staged IDs are discarded on account switch or logout.
+        readonly SteamAchievementAccountQueue _achievementQueue =
+            new SteamAchievementAccountQueue();
         bool _statsReady;
         bool _storePending;
+        ulong _pendingStoreAccount;
         float _nextStatsRequest;
         float _nextStoreAttempt;
 
