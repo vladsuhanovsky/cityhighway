@@ -89,6 +89,12 @@ namespace CityHighways.Presentation
             Root.Add(_mapArea);
 
             _map = new MapView();
+            _map.CanGamepadTarget = () => GamepadMapTargetPolicy.AllowsInput(
+                HumanTurn,
+                _resultsShown,
+                _modal != null || _popupKind != null,
+                _awaitingHandoff,
+                _animating != null);
             Ui.Fill(_map);
             _map.Hovered += OnRoadHover;
             _map.LocationHovered += OnLocationHover;
@@ -298,7 +304,9 @@ namespace CityHighways.Presentation
                 _dirty = false;
                 Refresh();
             }
-            UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive);
+            if (_map.GamepadExitedTargetingThisFrame) _gamepadFocusActive = true;
+            UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
+                _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame);
             UpdateMapEmphasis();
             CoachTick();
         }
