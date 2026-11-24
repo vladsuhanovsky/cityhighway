@@ -40,6 +40,7 @@ namespace CityHighways.Presentation
         readonly MenuSettingsPage _settings;
         readonly Label _hint;
         readonly VisualElement _overlay;
+        readonly Label _gamepadGuide;
         bool _gamepadActive;
 
         enum Page { Home, NewGame, Online, Profile, Rules, Stats, Settings, Tutorial, Club }
@@ -134,6 +135,8 @@ namespace CityHighways.Presentation
             _bellPanel = BuildBellPanel();
             Root.Add(_bellPanel);
             Root.Add(_overlay);
+            _gamepadGuide = GamepadControlGuide.Create();
+            Root.Add(_gamepadGuide);
 
             ShowPage(Page.Home);
             Refresh();
@@ -844,6 +847,10 @@ namespace CityHighways.Presentation
                 }
             }
             if (_gamepadActive) UiGamepadFocus.EnsureFocus(Root);
+            GamepadControlGuide.Update(_gamepadGuide,
+                GamepadControlGuide.Context.Menu, pad != null, _gamepadActive,
+                false, LocalizationService.Language == "en",
+                GamepadControlGuide.TextEntryFocused(Root));
             _background.Tick(dt);
             if (_page == Page.Profile) _profile.Tick(dt);
             if (_page != Page.Home) return;
