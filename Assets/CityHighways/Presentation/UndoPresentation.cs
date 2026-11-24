@@ -48,5 +48,15 @@ namespace CityHighways.Presentation
         public static bool WantsShortcut(bool modifier, bool shift, bool zPressed,
             bool textEntryFocused, bool canUndo) =>
             modifier && !shift && zPressed && !textEntryFocused && canUndo;
+
+        /// <summary>
+        /// Redo is Ctrl+Y or Ctrl+Shift+Z on Windows/Linux, and
+        /// Command+Shift+Z on macOS. Never consume text-field editing.
+        /// </summary>
+        public static bool WantsRedoShortcut(bool modifier, bool shift,
+            bool yPressed, bool zPressed, bool textEntryFocused,
+            bool canRedo, bool onMac) =>
+            modifier && !textEntryFocused && canRedo &&
+            ((shift && zPressed) || (!onMac && !shift && yPressed));
     }
 }
