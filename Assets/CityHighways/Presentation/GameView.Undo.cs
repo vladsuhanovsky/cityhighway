@@ -184,7 +184,7 @@ namespace CityHighways.Presentation
             }
 
             var previous = _game;
-            ReplaceGameFromHistory(restored, journal, "game.undo.done");
+            ReplaceGameFromHistory(restored, journal, "game.undo.done", Sfx.Undo);
             _redoHistory.Push(previous);
             RefreshRedoButton();
         }
@@ -203,7 +203,7 @@ namespace CityHighways.Presentation
                 return;
             }
 
-            ReplaceGameFromHistory(restored, journal, "game.redo.done");
+            ReplaceGameFromHistory(restored, journal, "game.redo.done", Sfx.Redo);
             if (!_redoHistory.Consume(candidate))
                 ClearRedoHistory(); // Fail closed on an unexpected stack change.
             RefreshRedoButton();
@@ -215,7 +215,7 @@ namespace CityHighways.Presentation
         /// An internal replay keeps the redo timeline; starting or loading
         /// another game still clears it by default.
         /// </summary>
-        void ReplaceGameFromHistory(Game restored, List<string> journal, string noticeKey)
+        void ReplaceGameFromHistory(Game restored, List<string> journal, string noticeKey, Sfx cue)
         {
             _app.Tweener.Clear();
             _map.StopGamepadTargeting(false);
@@ -234,7 +234,7 @@ namespace CityHighways.Presentation
             foreach (string entry in journal.Skip(Math.Max(0, journal.Count - (LogHistory - 1))))
                 AddLog(entry);
             AddLog(LocalizationService.Get(noticeKey));
-            _app.Sound.Play(Sfx.Undo, 0.55f);
+            _app.Sound.Play(cue, 0.55f);
             _dirty = true;
         }
     }
