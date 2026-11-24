@@ -40,6 +40,10 @@ namespace CityHighways.Presentation
             historyLength > 0 && historyLength == armedHistoryLength &&
             lastPlayer == armedPlayer && now <= expiresAt;
 
+        /// <summary>Windows/Steam Deck must not treat the system Win key as Cmd.</summary>
+        public static bool UndoModifier(bool ctrlPressed, bool metaPressed, bool onMac) =>
+            ctrlPressed || (onMac && metaPressed);
+
         /// <summary>Ctrl/Cmd+Z is reserved for undo outside text fields.</summary>
         public static bool WantsShortcut(bool modifier, bool shift, bool zPressed,
             bool textEntryFocused, bool canUndo) =>
