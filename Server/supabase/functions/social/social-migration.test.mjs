@@ -25,6 +25,15 @@ test("a single per-player game hash is the receipt primary key", () => {
   assert.match(sql, /submission_hash text not null check \(submission_hash ~ '\^\[0-9a-f\]\{64\}\$'\)/i);
 });
 
+test("game receipts outlive club deletion but honor player deletion", () => {
+  const begin = sql.indexOf("create table if not exists public.club_report_receipts");
+  const end = sql.indexOf(");", begin);
+  const ddl = sql.slice(begin, end + 2);
+  assert.match(ddl, /player_id text not null references public.players \(id\) on delete cascade/i);
+  assert.match(ddl, /club_id uuid not null/i);
+  assert.doesNotMatch(ddl, /club_id uuid not null references public.clubs/i);
+});
+
 test("receipt insert and contribution execute in one security definer RPC", () => {
   const pos = sql.indexOf("create or replace function public.club_contribute_once(");
   assert.ok(pos >= 0);
