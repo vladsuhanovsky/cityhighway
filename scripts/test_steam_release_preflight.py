@@ -132,6 +132,42 @@ class SteamPreflightTests(unittest.TestCase):
         (self.root / "steam_appid.txt").write_text("480\n", encoding="utf-8")
         self.assertTrue(any("steam_appid.txt differs" in x for x in validate(self.root, release=True, app_id="123456")))
 
+    def test_release_rejects_broken_optional_steam_assembly(self):
+        asmdef = self.root / "Assets/CityHighways/Steam/CityHighways.Steam.asmdef"
+        for settings in [
+            {"references": ["CityHighways.Net"], "defineConstraints": ["STEAMWORKS_NET"],
+             "versionDefines": []},
+            {"references": ["CityHighways.Net", "com.rlabrecque.steamworks.net"],
+             "defineConstraints": [], "versionDefines": []},
+            {"references": ["CityHighways.Net", "com.rlabrecque.steamworks.net"],
+             "defineConstraints": ["STEAMWORKS_NET"],
+             "versionDefines": [{"name": "com.other", "define": "STEAMWORKS_NET"}]}
+        ]:
+            with self.subTest(settings=settings):
+                asmdef.write_text(json.dumps(settings), encoding="utf-8")
+                self.assertTrue(any("Steam assembly definition" in x
+                                    for x in validate(self.root, release=True,
+                                                      app_id="123456")))
+
+    def test_release_rejects_unguarded_native_steam_platform(self):
+        source = self.root / "Assets/CityHighways/Steam/SteamPlatform.cs"
+        source.write_text("public class SteamPlatform {}\n", encoding="utf-8")
+        self.assertTrue(any("guarded by #if STEAMWORKS_NET" in x
+                            for x in validate(self.root, release=True,
+                                              app_id="123456")))
+
+    def test_release_rejects_missing_native_steam_source(self):
+        (self.root / "Assets/CityHighways/Steam/SteamPlatform.cs").unlink()
+        self.assertTrue(any("Cannot validate Steam native platform source" in x
+                            for x in validate(self.root, release=True,
+                                              app_id="123456")))
+
+    def test_normal_catalog_audit_remains_independent_of_steam_sdk(self):
+        (self.root / "Packages/packages-lock.json").unlink()
+        (self.root / "Assets/CityHighways/Steam/SteamPlatform.cs").unlink()
+        (self.root / "Assets/CityHighways/Steam/CityHighways.Steam.asmdef").unlink()
+        self.assertEqual(validate(self.root), [])
+
     def test_configured_release_passes(self):
         self.assertEqual(validate(self.root, release=True, app_id="123456"), [])
 
