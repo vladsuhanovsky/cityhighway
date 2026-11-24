@@ -331,24 +331,30 @@ namespace CityHighways.Steam
             }
 
             if (SteamUserStats.StoreStats())
+            {
                 _storePending = true;
+                _pendingStoreAccount = _achievementQueue.AccountId;
+            }
             else
                 _nextStoreAttempt = Time.unscaledTime + 30f;
         }
 
         void OnStatsStored(UserStatsStored_t result)
         {
-            if (!_initialized || !_storePending) return;
+            if (!EnsureAchievementAccount() || !_storePending ||
+                !_achievementQueue.BelongsTo(_pendingStoreAccount))
+                return;
+
+            ulong storeAccount = _pendingStoreAccount;
             _storePending = false;
+            _pendingStoreAccount = 0UL;
             if (result.m_eResult == EResult.k_EResultOK)
             {
-                foreach (string id in _stagedAchievements)
-                    _queuedAchievements.Remove(id);
-                _stagedAchievements.Clear();
+                _achievementQueue.CompleteStore(storeAccount, true);
             }
             else
             {
-                // Keep staged changes for a delayed StoreStats retry.
+                // Keep all staged changes for this account's delayed retry.
                 _nextStoreAttempt = Time.unscaledTime + 30f;
             }
         }
