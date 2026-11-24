@@ -112,14 +112,14 @@ namespace CityHighways.Tests
             root.Add(row);
             row.Add(wrapper);
             wrapper.Add(field);
-            wrapper.Add(inner);
+            field.Add(inner);
             row.Add(outside);
 
-            // A nested input group can include an internal focusable button.
-            // Prefer it only when a field's own branch does not contain it.
-            Assert.AreSame(inner, GamepadTextEntry.ExitTarget(root, field));
-            inner.style.display = DisplayStyle.None;
+            // An internal focusable control must never keep the user inside
+            // the field when B/Escape explicitly ends editing.
             Assert.AreSame(outside, GamepadTextEntry.ExitTarget(root, field));
+            outside.SetEnabled(false);
+            Assert.IsNull(GamepadTextEntry.ExitTarget(root, field));
         }
     }
 }
