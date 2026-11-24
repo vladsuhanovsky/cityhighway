@@ -117,9 +117,20 @@ namespace CityHighways.Net
         void QueryLobbies(Action<List<OpenLobby>, string> done, bool background = false);
     }
 
+    /// <summary>
+    /// Optional Steam achievement publishing capability. Separate from
+    /// ISteamPlatform so non-Steam builds and test fakes stay compatible.
+    /// Implementation queues IDs and waits for user stats before publishing.
+    /// </summary>
+    public interface ISteamAchievements
+    {
+        void QueueUnlockedAchievements(IReadOnlyCollection<string> achievementIds);
+    }
+
     public static class NetPlatforms
     {
         public static ISteamPlatform Steam;
+        public static ISteamAchievements SteamAchievements;
         public static IUgsPlatform Ugs;
     }
 }
