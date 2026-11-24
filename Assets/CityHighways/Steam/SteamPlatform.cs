@@ -291,7 +291,8 @@ namespace CityHighways.Steam
             _achievementQueue.QueueForAccount(
                 _achievementQueue.AccountId, achievementIds);
             if (_statsReady) FlushQueuedAchievements();
-            else RequestAchievementStats();
+            else if (Time.unscaledTime >= _nextStatsRequest)
+                RequestAchievementStats();
             return true;
         }
 
