@@ -139,5 +139,34 @@ namespace CityHighways.Tests
             Assert.AreEqual(game.History.Count - 1, restored.History.Count);
             Assert.Greater(journal.Count, 0, "Replay observer must rebuild past action log");
         }
+
+        [Test]
+        public void ReplayJournalObserverDetachesBeforeReturningLiveGame()
+        {
+            var game = Started();
+            Assert.IsTrue(game.DrawCardFromDeck().Success);
+            var events = new System.Collections.Generic.List<string>();
+            var replayed = Game.Replay(game.Map, game.StartInfo, game.History, events.Add);
+            int atReplayEnd = events.Count;
+            Assert.IsTrue(replayed.DrawCardFromDeck().Success);
+            Assert.AreEqual(atReplayEnd, events.Count,
+                "Replay journal capture must not stay attached to the live Game");
+        }
+
+        [Test]
+        public void ConsecutiveUndosArePureReplaysWithDecreasingHistory()
+        {
+            var game = Started();
+            int setupActions = game.History.Count;
+            Assert.IsTrue(game.DrawCardFromDeck().Success);
+            Assert.IsTrue(game.DrawCardFromDeck().Success);
+
+            Assert.IsTrue(GameUndo.TryUndo(game, false, false, false, false, false,
+                out var oneStep, out _));
+            Assert.IsTrue(GameUndo.TryUndo(oneStep, false, false, false, false, false,
+                out var twoSteps, out _));
+            Assert.AreEqual(setupActions, twoSteps.History.Count);
+            Assert.IsFalse(GameUndo.CanUndo(twoSteps, false, false, false, false, false));
+        }
     }
 }
