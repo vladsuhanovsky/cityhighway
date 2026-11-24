@@ -6211,6 +6211,34 @@
     {
       "key": "game.error.dynamic.018",
       "value": "Contract {0} is listed twice."
+    },
+    {
+      "key": "menu.settings.music",
+      "value": "Background music"
+    },
+    {
+      "key": "menu.settings.music_hint",
+      "value": "Original quiet city theme; opt in when you want it."
+    },
+    {
+      "key": "menu.settings.music_volume",
+      "value": "Music volume"
+    },
+    {
+      "key": "menu.settings.music_volume_hint",
+      "value": "Separate from action sounds; master volume still applies."
+    },
+    {
+      "key": "menu.settings.music_on",
+      "value": "Background music enabled"
+    },
+    {
+      "key": "menu.settings.music_off",
+      "value": "Background music disabled"
+    },
+    {
+      "key": "menu.settings.music_volume_saved",
+      "value": "Music volume saved"
     }
   ]
 }
