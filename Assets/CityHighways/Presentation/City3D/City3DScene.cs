@@ -537,22 +537,29 @@ namespace CityHighways.Presentation
             const int cellsX = 240, cellsY = 136;
             var top = new MeshBuilder(cellsX * cellsY);
             // Сетка по рельефу: клетка ~7 см — вдвое мельче полосы вдоль дорог, холмы и подрезки под дорогами видны.
-            for (int iy = 0; iy < cellsY; iy++)
-            for (int ix = 0; ix < cellsX; ix++)
+            using (City3DHotspotMarkers.GroundGeometry.Auto())
             {
-                float x0 = -m + span * ix / cellsX, x1 = -m + span * (ix + 1) / cellsX;
-                float y0 = -m + span * iy / cellsY, y1 = -m + span * (iy + 1) / cellsY;
-                var a = BoardLayout.World(x0, y1); var b = BoardLayout.World(x0, y0);
-                var c = BoardLayout.World(x1, y0); var d = BoardLayout.World(x1, y1);
-                var uv = new Rect((x0 + m) / span, 1f - (y1 + m) / span, (x1 - x0) / span, (y1 - y0) / span);
-                top.Quad(a, b, c, d, uv);
+                for (int iy = 0; iy < cellsY; iy++)
+                for (int ix = 0; ix < cellsX; ix++)
+                {
+                    float x0 = -m + span * ix / cellsX, x1 = -m + span * (ix + 1) / cellsX;
+                    float y0 = -m + span * iy / cellsY, y1 = -m + span * (iy + 1) / cellsY;
+                    var a = BoardLayout.World(x0, y1); var b = BoardLayout.World(x0, y0);
+                    var c = BoardLayout.World(x1, y0); var d = BoardLayout.World(x1, y1);
+                    var uv = new Rect((x0 + m) / span, 1f - (y1 + m) / span, (x1 - x0) / span, (y1 - y0) / span);
+                    top.Quad(a, b, c, d, uv);
+                }
             }
-            var groundMesh = top.ToMesh("City3D Ground");
-            groundMesh.RecalculateNormals();   // склоны освещаются по-настоящему
-            groundMesh.RecalculateTangents(); // карте неровностей нужны касательные, иначе освещение ломается
-            AddMesh("Ground", groundMesh, _ground, _root.transform, false);
+            using (City3DHotspotMarkers.GroundMeshUpload.Auto())
+            {
+                var groundMesh = top.ToMesh("City3D Ground");
+                groundMesh.RecalculateNormals();   // склоны освещаются по-настоящему
+                groundMesh.RecalculateTangents(); // карте неровностей нужны касательные, иначе освещение ломается
+                AddMesh("Ground", groundMesh, _ground, _root.transform, false);
+            }
 
-            BuildOutskirtsGround();
+            using (City3DHotspotMarkers.Outskirts.Auto())
+                BuildOutskirtsGround();
         }
 
         /// <summary>Расстояние по горизонтали до ближайшего сглаженного русла (не дальше limit).</summary>
