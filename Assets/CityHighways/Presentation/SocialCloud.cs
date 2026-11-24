@@ -233,6 +233,7 @@ namespace CityHighways.Presentation
             float now = Time.realtimeSinceStartup;
             if (!_friendsBusy && now - _friendsAt > FriendsPeriod) RefreshFriends();
             if (!_clubBusy && now - _clubAt > ClubPeriod) RefreshClub();
+            TrySendQueuedReport();
         }
 
         // ---------------------------------------------------------------- Транспорт
