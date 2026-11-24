@@ -310,8 +310,14 @@ namespace CityHighways.Presentation
 
             if (_dirty)
             {
+                string selectedControl = _gamepadFocusActive && Root.panel != null
+                    ? (Root.panel.focusController.focusedElement as VisualElement)?.name
+                    : null;
                 _dirty = false;
                 Refresh();
+                if (!string.IsNullOrEmpty(selectedControl) &&
+                    selectedControl.StartsWith("gamepad-magnate-", StringComparison.Ordinal))
+                    UiGamepadFocus.RestoreNamedFocus(Root, selectedControl);
             }
             if (_map.GamepadExitedTargetingThisFrame) _gamepadFocusActive = true;
             VisualElement controllerScope = _modal != null ? _modalLayer :
