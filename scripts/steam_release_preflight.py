@@ -9,6 +9,10 @@ from pathlib import Path
 CATALOG = Path("Assets/CityHighways/Presentation/Achievements.cs")
 PARTNER_DOC = Path("Docs/STEAM_ACHIEVEMENT_API_IDS.md")
 MANIFEST = Path("Packages/manifest.json")
+LOCKFILE = Path("Packages/packages-lock.json")
+STEAM_ASMDEF = Path("Assets/CityHighways/Steam/CityHighways.Steam.asmdef")
+STEAM_SOURCE = Path("Assets/CityHighways/Steam/SteamPlatform.cs")
+STEAM_PACKAGE = "com.rlabrecque.steamworks.net"
 APPID_FILE = Path("steam_appid.txt")
 ID_PATTERN = re.compile(r'\bId\s*=\s*"([a-z][a-z0-9_]*)"')
 DOC_PATTERN = re.compile(r'^\|\s*`([a-z][a-z0-9_]*)`\s*\|', re.MULTILINE)
