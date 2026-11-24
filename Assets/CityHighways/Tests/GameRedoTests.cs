@@ -274,5 +274,24 @@ namespace CityHighways.Tests
             distinct.contracts = new[] { "c2" };
             Assert.IsFalse(GameRedo.SameCommand(empty, distinct));
         }
+
+        [Test]
+        public void OptionalRoadStringNullAndEmptyAreEquivalentOnlyWhenAbsent()
+        {
+            var fromDeck = GameCommand.DrawCardFromDeck(0);
+            var roundTripped = GameCommand.DrawCardFromDeck(0);
+            roundTripped.road = "";
+            Assert.IsTrue(GameRedo.SameCommand(fromDeck, roundTripped));
+            Assert.IsTrue(GameRedo.SameCommand(roundTripped, fromDeck));
+
+            roundTripped.road = "r1";
+            Assert.IsFalse(GameRedo.SameCommand(fromDeck, roundTripped));
+            Assert.IsFalse(GameRedo.SameCommand(roundTripped, fromDeck));
+
+            var road = GameCommand.BuildRoad(0, "r1", Resource.Asphalt, 1);
+            var otherRoad = GameCommand.BuildRoad(0, "R1", Resource.Asphalt, 1);
+            Assert.IsFalse(GameRedo.SameCommand(road, otherRoad),
+                "Nonempty road IDs must stay case-sensitive.");
+        }
     }
 }
