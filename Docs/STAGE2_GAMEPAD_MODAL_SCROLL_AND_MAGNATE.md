@@ -18,6 +18,14 @@ This is the next large batch after merged PR #79 (virtual map cursor). It contin
 - The Magnate bottom-section cards, truck chips, clickable cargo detail rows and cargo-type filter chips use the existing `GamepadSelectable.Attach` (A/Submit), reusing their original click action and its validation. Their named UI elements let focus be restored after the popup rebuilds.
 - Existing nested cargo row Pick buttons continue to process their own Submit: the parent GamepadSelectable refuses Submit events originating from children, so controller A cannot both open details and pick a cargo in one action.
 
+## CI regression fixed after the first run
+
+Initial PR #80 Edit Mode CI (Unity 6000.6.8f1) ran **669 tests: 668 passed, 1 failed**. The failure was `GamepadScrollFocusTests.NestedControlWithinScrollContentCanBeRevealed`, line 17: the test assumed `ScrollView.contentContainer` always appears in `VisualElement.parent` ancestry for a card added with `ScrollView.Add`. This assumption failed in the Unity Edit Mode test environment.
+
+The focus helper now validates that the target belongs to the ScrollView's visual subtree, while **excluding its internal horizontal and vertical scrollers**. It no longer assumes the content container is an exact ancestor. Regression tests cover ordinary `scroll.Add`, explicit `scroll.contentContainer.Add`, detached elements and scrollbar controls.
+
+This fix needs a **new Unity CI run**. The previous failure remains valid evidence; static source inspection is not proof that the new implementation passes.
+
 ## Tests
 
 - `GamepadScrollFocusTests`: nested/flat scroll descendants, detached/unrelated elements, null content and registration on vertical/horizontal scrolls.
