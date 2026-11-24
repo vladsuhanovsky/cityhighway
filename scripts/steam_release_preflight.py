@@ -33,6 +33,13 @@ def catalog_ids(source):
     return ids
 
 
+def valid_release_app_id(value):
+    """A canonical, non-test 32-bit Steam AppID (decimal ASCII only)."""
+    return (isinstance(value, str) and
+            re.fullmatch(r"[1-9][0-9]{0,9}", value) is not None and
+            0 < int(value) <= 4294967295 and int(value) != 480)
+
+
 def validate(root, release=False, app_id=None):
     errors = []
     try:
@@ -57,7 +64,7 @@ def validate(root, release=False, app_id=None):
     if extra:
         errors.append("Unknown Steamworks API IDs: " + ", ".join(extra))
     if release:
-        if not app_id or not app_id.isdecimal() or int(app_id) in (0, 480):
+        if not valid_release_app_id(app_id):
             errors.append("Release requires --app-id with the real, non-480 Steam AppID")
         try:
             packages = json.loads((root / MANIFEST).read_text(encoding="utf-8"))["dependencies"]
