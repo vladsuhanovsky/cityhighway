@@ -530,6 +530,97 @@ namespace CityHighways.Presentation
             SetHoverLocation(null, now);
         }
 
+        Rect GamepadTargetBounds => new Rect(0f, 0f,
+            Mathf.Max(0f, contentRect.width), Mathf.Max(0f, contentRect.height));
+
+        bool CanTargetWithGamepad()
+        {
+            if (_game == null || _layout == null || !Interactive || panel == null ||
+                contentRect.width < 80f || contentRect.height < 80f)
+                return false;
+            if (panel.focusController?.focusedElement is TextField) return false;
+            return CanGamepadTarget == null || CanGamepadTarget();
+        }
+
+        void StartGamepadTargeting()
+        {
+            _gamepadCursor.Activate(GamepadTargetBounds);
+            focusable = true;
+            Focus();
+            Ui.Show(_gamepadCursorMarker, true);
+            Ui.Show(_gamepadCursorHint, true);
+            RefreshGamepadTarget();
+        }
+
+        /// <summary>Leave virtual targeting and let the HUD reclaim UI focus.</summary>
+        public void StopGamepadTargeting()
+        {
+            if (!_gamepadCursor.Active) return;
+            _gamepadCursor.Deactivate();
+            focusable = false;
+            Blur();
+            Ui.Show(_gamepadCursorMarker, false);
+            Ui.Show(_gamepadCursorHint, false);
+            SetHover(null, Vector2.zero);
+            SetHoverLocation(null, Vector2.zero);
+            _gamepadExitedThisFrame = true;
+        }
+
+        void RefreshGamepadTarget()
+        {
+            if (!_gamepadCursor.Active) return;
+            Vector2 point = GamepadMapCursorState.Clamp(
+                _gamepadCursor.Position, GamepadTargetBounds);
+            _gamepadCursorMarker.style.left = point.x - 14f;
+            _gamepadCursorMarker.style.top = point.y - 14f;
+            Road road = OpenRoadAt(point);
+            Location location = LocationClicked != null ? LocationAt(point) : null;
+            bool hasTarget = road != null || location != null;
+            Ui.Border(_gamepadCursorMarker, 3f, hasTarget ? Theme.Success : Theme.Gold);
+            SetHover(road, point);
+            SetHoverLocation(road == null ? location : null, point);
+            _gamepadCursorHint.text = LocalizationService.Language == "en"
+                ? "Right stick: aim   A: select   B/R3: HUD"
+                : "Правый стик: цель   A: выбрать   B/R3: интерфейс";
+        }
+
+        void GamepadTargetInput(float deltaTime)
+        {
+            _gamepadExitedThisFrame = false;
+            var pad = UnityEngine.InputSystem.Gamepad.current;
+            if (pad == null || !CanTargetWithGamepad())
+            {
+                StopGamepadTargeting();
+                return;
+            }
+
+            if (pad.rightStickButton.wasPressedThisFrame)
+            {
+                if (_gamepadCursor.Active) StopGamepadTargeting();
+                else StartGamepadTargeting();
+                return;
+            }
+
+            if (!_gamepadCursor.Active) return;
+            if (pad.buttonEast.wasPressedThisFrame)
+            {
+                StopGamepadTargeting();
+                return;
+            }
+
+            if (_gamepadCursor.Move(pad.rightStick.ReadValue(),
+                    Mathf.Max(0f, deltaTime), GamepadTargetBounds))
+                RefreshGamepadTarget();
+
+            if (pad.buttonSouth.wasPressedThisFrame)
+            {
+                // Same station-first hit testing and event pipeline as mouse,
+                // including GameView/Magnate gameplay validation and overlays.
+                Click(_gamepadCursor.Position);
+                if (!CanTargetWithGamepad()) StopGamepadTargeting();
+            }
+        }
+
         /// <summary>Клик левой кнопкой: станция (магнат — «ехать сюда») раньше дороги под ней. true — что-то выбрано.</summary>
         bool Click(Vector2 position)
         {
@@ -948,6 +1039,7 @@ namespace CityHighways.Presentation
         /// <summary>Кадр: время для анимаций, наклон, свет, плавная подсветка — и перерисовка живых слоёв.</summary>
         public void Tick(float deltaTime)
         {
+            GamepadTargetInput(deltaTime);
             PulseTime += deltaTime;
             if (_game != null)
             {
