@@ -137,6 +137,24 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ReportsFromSundayCannotCreditTheFollowingMonday()
+        {
+            long sunday = new DateTime(2026, 11, 29, 23, 59, 0, DateTimeKind.Utc).Ticks;
+            long monday = new DateTime(2026, 11, 30, 0, 0, 0, DateTimeKind.Utc).Ticks;
+            Assert.IsFalse(SocialReportOutbox.SameUtcWeek(sunday, monday));
+            Assert.IsTrue(SocialReportOutbox.SameUtcWeek(sunday,
+                new DateTime(2026, 11, 23, 0, 0, 0, DateTimeKind.Utc).Ticks));
+        }
+
+        [Test]
+        public void IsoWeekBoundaryAcrossNewYearDoesNotUseCalendarYear()
+        {
+            long december = new DateTime(2026, 12, 31, 23, 50, 0, DateTimeKind.Utc).Ticks;
+            long january = new DateTime(2027, 1, 1, 0, 10, 0, DateTimeKind.Utc).Ticks;
+            Assert.IsTrue(SocialReportOutbox.SameUtcWeek(december, january));
+        }
+
+        [Test]
         public void RemovingUnknownReportDoesNotChangeQueue()
         {
             var outbox = new SocialReportOutbox(_path);
