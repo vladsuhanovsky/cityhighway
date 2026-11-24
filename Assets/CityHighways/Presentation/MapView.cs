@@ -465,7 +465,7 @@ namespace CityHighways.Presentation
             RegisterCallback<PointerDownEvent>(e =>
             {
                 // Physical pointer interaction always takes ownership back.
-                if (_gamepadCursor.Active) StopGamepadTargeting();
+                if (_gamepadCursor.Active) StopGamepadTargeting(false);
                 if (_game == null) return;
                 Vector2 position = e.localPosition;
                 bool leftRotates = LeftRotates && CanRotate;
@@ -567,7 +567,7 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Leave virtual targeting and let the HUD reclaim UI focus.</summary>
-        public void StopGamepadTargeting()
+        public void StopGamepadTargeting(bool restoreHudFocus = true)
         {
             if (!_gamepadCursor.Active) return;
             _gamepadCursor.Deactivate();
@@ -577,7 +577,7 @@ namespace CityHighways.Presentation
             Ui.Show(_gamepadCursorHint, false);
             SetHover(null, Vector2.zero);
             SetHoverLocation(null, Vector2.zero);
-            _gamepadExitedThisFrame = true;
+            _gamepadExitedThisFrame = restoreHudFocus;
         }
 
         void RefreshGamepadTarget()
