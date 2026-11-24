@@ -50,23 +50,33 @@ namespace CityHighways.Presentation
             if (Time.unscaledTime < _nextRefresh) return;
             _nextRefresh = Time.unscaledTime + 3f;
 
-            var steam = NetPlatforms.Steam;
-            var publisher = NetPlatforms.SteamAchievements;
-            if (steam == null || publisher == null || !steam.Available) return;
-            var profile = Profiles.Active;
-            var steamId = steam.SteamId;
-            if (!ShouldPublish(profile, steamId)) return;
+            try
+            {
+                var steam = NetPlatforms.Steam;
+                var publisher = NetPlatforms.SteamAchievements;
+                if (steam == null || publisher == null || !steam.Available) return;
+                var profile = Profiles.Active;
+                var steamId = steam.SteamId;
+                if (!ShouldPublish(profile, steamId)) return;
 
-            var ids = EligibleIds(profile, steamId);
-            string signature = string.Join("|", ids);
-            if (ReferenceEquals(_lastPublisher, publisher) &&
-                _lastSteamId == steamId && _lastSignature == signature)
-                return;
+                var ids = EligibleIds(profile, steamId);
+                string signature = string.Join("|", ids);
+                if (ReferenceEquals(_lastPublisher, publisher) &&
+                    _lastSteamId == steamId && _lastSignature == signature)
+                    return;
 
-            publisher.QueueUnlockedAchievements(ids);
-            _lastPublisher = publisher;
-            _lastSteamId = steamId;
-            _lastSignature = signature;
+                publisher.QueueUnlockedAchievements(ids);
+                _lastPublisher = publisher;
+                _lastSteamId = steamId;
+                _lastSignature = signature;
+            }
+            catch (Exception e)
+            {
+                // Steam is optional. A platform/API failure must not interrupt
+                // gameplay or local achievement rewards; retry at a slow pace.
+                _nextRefresh = Time.unscaledTime + 30f;
+                Debug.LogWarning("City Highways: Steam achievement sync failed. " + e.Message);
+            }
         }
 
         /// <summary>For new sessions/tests: force a full owned-ID reconciliation.</summary>
