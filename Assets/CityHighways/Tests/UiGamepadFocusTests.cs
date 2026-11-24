@@ -196,6 +196,19 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void FocusReturnManagerDoesNotActOnDetachedPanels()
+        {
+            var memory = new GamepadFocusReturn();
+            var root = new VisualElement();
+            var modal = new VisualElement();
+            root.Add(modal);
+            Assert.DoesNotThrow(() => memory.Update(root, modal, true));
+            Assert.DoesNotThrow(() => memory.Update(root, root, true));
+            Assert.DoesNotThrow(() => memory.Update(root, null, false));
+            Assert.DoesNotThrow(() => memory.Update(null, modal, true));
+        }
+
+        [Test]
         public void EmptyOrDetachedUiDoesNotStealFocus()
         {
             Assert.IsNull(UiGamepadFocus.FirstEligible(null));
