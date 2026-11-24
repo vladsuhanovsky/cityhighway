@@ -1317,8 +1317,13 @@ namespace CityHighways.Presentation
             // A controller can navigate the existing HUD and dialog buttons
             // without invoking or bypassing any game-rule command.
             if (_map.GamepadExitedTargetingThisFrame) _gamepadFocusActive = true;
+            VisualElement controllerScope = _overlayKind != OverlayKind.None ? _overlay :
+                _modal != Modal.None ? _modalLayer :
+                _drawerOpen ? _drawer :
+                _playersOpen ? _playersPanel : Root;
             UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
-                _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame);
+                _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,
+                controllerScope);
             TickTurnTimer(deltaTime);
             TickBots(deltaTime);
         }
