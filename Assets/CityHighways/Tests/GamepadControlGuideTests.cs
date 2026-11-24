@@ -102,5 +102,155 @@ namespace CityHighways.Tests
             Assert.AreNotEqual(english, hint.text);
             StringAssert.Contains("Крестовина", hint.text);
         }
+
+        [Test]
+        public void DeviceIdentityMapsKnownControllersAndDefaultsUnknownToXbox()
+        {
+            Assert.AreEqual(GamepadControlGuide.ControllerLayout.PlayStation,
+                GamepadControlGuide.DetectLayout("Sony", "DualSense Wireless Controller"));
+            Assert.AreEqual(GamepadControlGuide.ControllerLayout.PlayStation,
+                GamepadControlGuide.DetectLayout("", "DualShock 4"));
+            Assert.AreEqual(GamepadControlGuide.ControllerLayout.Nintendo,
+                GamepadControlGuide.DetectLayout("Nintendo", "Switch Pro Controller"));
+            Assert.AreEqual(GamepadControlGuide.ControllerLayout.Nintendo,
+                GamepadControlGuide.DetectLayout("", "Joy-Con Left"));
+            Assert.AreEqual(GamepadControlGuide.ControllerLayout.Xbox,
+                GamepadControlGuide.DetectLayout("Microsoft", "Xbox Wireless Controller"));
+            Assert.AreEqual(GamepadControlGuide.ControllerLayout.Xbox,
+                GamepadControlGuide.DetectLayout("Valve", "Steam Deck Controller"));
+            Assert.AreEqual(GamepadControlGuide.ControllerLayout.Xbox,
+                GamepadControlGuide.DetectLayout(null, null));
+        }
+
+        [Test]
+        public void ControllerFaceButtonsReflectActualSouthAndEastBindings()
+        {
+            Assert.AreEqual("Cross", GamepadControlGuide.SubmitLabel(
+                GamepadControlGuide.ControllerLayout.PlayStation, true));
+            Assert.AreEqual("Круг", GamepadControlGuide.BackLabel(
+                GamepadControlGuide.ControllerLayout.PlayStation, false));
+            Assert.AreEqual("B", GamepadControlGuide.SubmitLabel(
+                GamepadControlGuide.ControllerLayout.Nintendo, true));
+            Assert.AreEqual("A", GamepadControlGuide.BackLabel(
+                GamepadControlGuide.ControllerLayout.Nintendo, true));
+            Assert.AreEqual("A", GamepadControlGuide.SubmitLabel(
+                GamepadControlGuide.ControllerLayout.Xbox, true));
+            Assert.AreEqual("B", GamepadControlGuide.BackLabel(
+                GamepadControlGuide.ControllerLayout.Xbox, true));
+        }
+
+        [Test]
+        public void EveryContextUsesDeviceCorrectLabelsInBothLanguages()
+        {
+            foreach (var context in new[]
+            {
+                GamepadControlGuide.Context.Menu,
+                GamepadControlGuide.Context.Game,
+                GamepadControlGuide.Context.Magnate
+            })
+            {
+                StringAssert.Contains("Cross: select",
+                    GamepadControlGuide.Hint(context, true, false,
+                        GamepadControlGuide.ControllerLayout.PlayStation));
+                StringAssert.Contains("Circle: back",
+                    GamepadControlGuide.Hint(context, true, false,
+                        GamepadControlGuide.ControllerLayout.PlayStation));
+                StringAssert.Contains(context == GamepadControlGuide.Context.Menu
+                        ? "B: открыть" : "B: выбрать",
+                    GamepadControlGuide.Hint(context, false, false,
+                        GamepadControlGuide.ControllerLayout.Nintendo));
+                StringAssert.Contains("A: назад",
+                    GamepadControlGuide.Hint(context, false, false,
+                        GamepadControlGuide.ControllerLayout.Nintendo));
+            }
+        }
+
+        [Test]
+        public void ChangingDeviceLayoutRefreshesVisibleControllerHelp()
+        {
+            var hint = GamepadControlGuide.Create();
+            GamepadControlGuide.Update(hint, GamepadControlGuide.Context.Menu,
+                true, true, false, true, false,
+                GamepadControlGuide.ControllerLayout.Xbox);
+            StringAssert.Contains("A: select", hint.text);
+
+            GamepadControlGuide.Update(hint, GamepadControlGuide.Context.Menu,
+                true, true, false, true, false,
+                GamepadControlGuide.ControllerLayout.Nintendo);
+            StringAssert.Contains("B: select", hint.text);
+            StringAssert.Contains("A: back", hint.text);
+
+            GamepadControlGuide.Update(hint, GamepadControlGuide.Context.Menu,
+                true, true, false, false, false,
+                GamepadControlGuide.ControllerLayout.PlayStation);
+            StringAssert.Contains("Крест: открыть", hint.text);
+            StringAssert.Contains("Круг: назад", hint.text);
+        }
+
+        [Test]
+        public void CameraButtonLabelsMatchDetectedDeviceLayout()
+        {
+            var ps = GamepadControlGuide.ControllerLayout.PlayStation;
+            var switchPad = GamepadControlGuide.ControllerLayout.Nintendo;
+            var xbox = GamepadControlGuide.ControllerLayout.Xbox;
+
+            Assert.AreEqual("L1/R1", GamepadControlGuide.ShoulderLabel(ps));
+            Assert.AreEqual("L/R", GamepadControlGuide.ShoulderLabel(switchPad));
+            Assert.AreEqual("LB/RB", GamepadControlGuide.ShoulderLabel(xbox));
+
+            Assert.AreEqual("L2/R2", GamepadControlGuide.TriggerLabel(ps));
+            Assert.AreEqual("ZL/ZR", GamepadControlGuide.TriggerLabel(switchPad));
+            Assert.AreEqual("LT/RT", GamepadControlGuide.TriggerLabel(xbox));
+
+            StringAssert.Contains("L1/R1: rotate",
+                GamepadControlGuide.Hint(GamepadControlGuide.Context.Game,
+                    true, false, ps));
+            StringAssert.Contains("ZL/ZR: zoom",
+                GamepadControlGuide.Hint(GamepadControlGuide.Context.Magnate,
+                    true, false, switchPad));
+        }
+
+        [Test]
+        public void MapTargetingHelpMatchesControllerLabelsInBothLanguages()
+        {
+            foreach (var layout in new[]
+            {
+                GamepadControlGuide.ControllerLayout.PlayStation,
+                GamepadControlGuide.ControllerLayout.Nintendo,
+                GamepadControlGuide.ControllerLayout.Xbox
+            })
+            {
+                foreach (var english in new[] { false, true })
+                {
+                    var hint = GamepadControlGuide.MapTargetHint(english, layout);
+                    StringAssert.Contains(GamepadControlGuide.SubmitLabel(layout, english) +
+                        (english ? ": select" : ": выбрать"), hint);
+                    StringAssert.Contains(GamepadControlGuide.BackLabel(layout, english) +
+                        "/R3:", hint);
+                    StringAssert.Contains("R3", hint);
+                }
+            }
+        }
+
+        [Test]
+        public void TextEntryShortcutDoesNotDependOnControllerIdentity()
+        {
+            foreach (var layout in new[]
+            {
+                GamepadControlGuide.ControllerLayout.Xbox,
+                GamepadControlGuide.ControllerLayout.PlayStation,
+                GamepadControlGuide.ControllerLayout.Nintendo
+            })
+            {
+                foreach (var english in new[] { false, true })
+                {
+                    var message = GamepadControlGuide.Hint(
+                        GamepadControlGuide.Context.Menu, english, true, layout);
+                    StringAssert.Contains("STEAM + X", message);
+                    StringAssert.DoesNotContain("Cross:", message);
+                    StringAssert.DoesNotContain("Circle:", message);
+                }
+            }
+        }
     }
 }

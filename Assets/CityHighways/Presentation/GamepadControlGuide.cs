@@ -1,3 +1,5 @@
+using System;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace CityHighways.Presentation
@@ -10,6 +12,61 @@ namespace CityHighways.Presentation
     public static class GamepadControlGuide
     {
         public enum Context { Menu, Game, Magnate }
+        public enum ControllerLayout { Xbox, PlayStation, Nintendo }
+
+        /// <summary>
+        /// Classify the identity exposed by Unity Input System, not arbitrary
+        /// Steam Input remappings. Unknown and Steam Deck virtual Xbox pads
+        /// deliberately keep Xbox/Deck A/B legends.
+        /// </summary>
+        public static ControllerLayout DetectLayout(string manufacturer, string product)
+        {
+            string identity = (manufacturer ?? "") + " " + (product ?? "");
+            if (identity.IndexOf("nintendo", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                identity.IndexOf("joy-con", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                identity.IndexOf("switch pro", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ControllerLayout.Nintendo;
+
+            if (identity.IndexOf("sony", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                identity.IndexOf("playstation", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                identity.IndexOf("dualshock", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                identity.IndexOf("dualsense", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ControllerLayout.PlayStation;
+
+            return ControllerLayout.Xbox;
+        }
+
+        public static ControllerLayout CurrentLayout()
+        {
+            var pad = Gamepad.current;
+            return pad == null ? ControllerLayout.Xbox :
+                DetectLayout(pad.description.manufacturer,
+                    (pad.description.product ?? "") + " " + (pad.displayName ?? ""));
+        }
+
+        public static string SubmitLabel(ControllerLayout layout, bool english)
+        {
+            if (layout == ControllerLayout.PlayStation) return english ? "Cross" : "Крест";
+            return layout == ControllerLayout.Nintendo ? "B" : "A";
+        }
+
+        public static string BackLabel(ControllerLayout layout, bool english)
+        {
+            if (layout == ControllerLayout.PlayStation) return english ? "Circle" : "Круг";
+            return layout == ControllerLayout.Nintendo ? "A" : "B";
+        }
+
+        public static string ShoulderLabel(ControllerLayout layout)
+        {
+            if (layout == ControllerLayout.PlayStation) return "L1/R1";
+            return layout == ControllerLayout.Nintendo ? "L/R" : "LB/RB";
+        }
+
+        public static string TriggerLabel(ControllerLayout layout)
+        {
+            if (layout == ControllerLayout.PlayStation) return "L2/R2";
+            return layout == ControllerLayout.Nintendo ? "ZL/ZR" : "LT/RT";
+        }
 
         public static bool IsTextEntryElement(VisualElement element)
         {
@@ -26,25 +83,44 @@ namespace CityHighways.Presentation
             return IsTextEntryElement(focused);
         }
 
-        public static string Hint(Context context, bool english, bool textEntry)
+        public static string Hint(Context context, bool english, bool textEntry) =>
+            Hint(context, english, textEntry, ControllerLayout.Xbox);
+
+        public static string Hint(Context context, bool english, bool textEntry,
+            ControllerLayout layout)
         {
             if (textEntry)
                 return english
                     ? "Text entry: type with keyboard  |  Steam Deck: STEAM + X"
                     : "Ввод текста: клавиатура  |  Steam Deck: STEAM + X";
 
+            string submit = SubmitLabel(layout, english);
+            string back = BackLabel(layout, english);
+            string shoulders = ShoulderLabel(layout);
+            string triggers = TriggerLabel(layout);
+
             if (context == Context.Menu)
                 return english
-                    ? "D-pad / left stick: navigate   A: select   B: back"
-                    : "Крестовина / левый стик: выбор   A: открыть   B: назад";
+                    ? $"D-pad / left stick: navigate   {submit}: select   {back}: back"
+                    : $"Крестовина / левый стик: выбор   {submit}: открыть   {back}: назад";
 
             return context == Context.Magnate
                 ? english
-                    ? "D-pad: HUD   A: select   B: back   R3: map cursor   LT/RT: zoom"
-                    : "Крестовина: интерфейс   A: выбрать   B: назад   R3: курсор   LT/RT: масштаб"
+                    ? $"D-pad: HUD   {submit}: select   {back}: back   R3: map cursor   {triggers}: zoom"
+                    : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   {triggers}: масштаб"
                 : english
-                    ? "D-pad: HUD   A: select   B: back   R3: map cursor   LB/RB: rotate"
-                    : "Крестовина: интерфейс   A: выбрать   B: назад   R3: курсор   LB/RB: поворот";
+                    ? $"D-pad: HUD   {submit}: select   {back}: back   R3: map cursor   {shoulders}: rotate"
+                    : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   {shoulders}: поворот";
+        }
+
+        /// <summary>Virtual map cursor has its own legend while HUD help is hidden.</summary>
+        public static string MapTargetHint(bool english, ControllerLayout layout)
+        {
+            string submit = SubmitLabel(layout, english);
+            string back = BackLabel(layout, english);
+            return english
+                ? $"Right stick: aim   D-pad: fine   {submit}: select   {back}/R3: HUD"
+                : $"Правый стик: цель   Крестовина: точнее   {submit}: выбрать   {back}/R3: интерфейс";
         }
 
         public static bool ShouldDisplay(bool gamepadConnected, bool controllerActive,
@@ -69,14 +145,19 @@ namespace CityHighways.Presentation
         }
 
         public static void Update(Label label, Context context, bool connected,
-            bool active, bool targetingMap, bool english, bool textEntry)
+            bool active, bool targetingMap, bool english, bool textEntry,
+            ControllerLayout? layout = null)
         {
             if (label == null) return;
             bool visible = ShouldDisplay(connected, active, targetingMap);
+            // Recompute both device labels and language in live views, so a
+            // controller hot swap does not leave the previous guide onscreen.
+            string hint = visible ? Hint(context, english, textEntry,
+                layout ?? CurrentLayout()) : null;
             if (label.style.display.value == (visible ? DisplayStyle.Flex : DisplayStyle.None)
-                && (!visible || label.text == Hint(context, english, textEntry)))
+                && (!visible || label.text == hint))
                 return;
-            if (visible) label.text = Hint(context, english, textEntry);
+            if (visible) label.text = hint;
             Ui.Show(label, visible);
         }
     }
