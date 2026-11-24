@@ -15,6 +15,7 @@ namespace CityHighways.Tests
                 foreach (Sfx sound in Enum.GetValues(typeof(Sfx)))
                     Assert.IsTrue(bank.HasClip(sound), "Missing generated clip: " + sound);
                 Assert.IsTrue(bank.HasClip(Sfx.Undo));
+                Assert.IsTrue(bank.HasClip(Sfx.Redo));
             }
             finally
             {
@@ -29,6 +30,7 @@ namespace CityHighways.Tests
             Assert.IsTrue(bank.HasClip(Sfx.Undo));
             bank.Dispose();
             Assert.IsFalse(bank.HasClip(Sfx.Undo));
+            Assert.IsFalse(bank.HasClip(Sfx.Redo));
             Assert.DoesNotThrow(bank.Dispose);
         }
     }
