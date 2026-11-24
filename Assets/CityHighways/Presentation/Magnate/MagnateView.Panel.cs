@@ -106,7 +106,9 @@ namespace CityHighways.Presentation
             if (onClick != null)
             {
                 card.pickingMode = PickingMode.Position;
+                card.name = "gamepad-magnate-section-" + index;
                 card.RegisterCallback<ClickEvent>(_ => onClick());
+                GamepadSelectable.Attach(card, onClick);
                 card.RegisterCallback<PointerEnterEvent>(_ => card.style.backgroundColor = Theme.PanelHover);
                 card.RegisterCallback<PointerLeaveEvent>(_ => card.style.backgroundColor = Theme.PanelLight);
             }
