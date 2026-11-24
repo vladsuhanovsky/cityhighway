@@ -14,8 +14,11 @@ STEAM_ASMDEF = Path("Assets/CityHighways/Steam/CityHighways.Steam.asmdef")
 STEAM_SOURCE = Path("Assets/CityHighways/Steam/SteamPlatform.cs")
 STEAM_PACKAGE = "com.rlabrecque.steamworks.net"
 APPID_FILE = Path("steam_appid.txt")
-ID_PATTERN = re.compile(r'\bId\s*=\s*"([a-z][a-z0-9_]*)"')
-DOC_PATTERN = re.compile(r'^\|\s*`([a-z][a-z0-9_]*)`\s*\|', re.MULTILINE)
+# Parse all quoted Id values first; do not silently skip an invalid
+# uppercase/noncanonical ID or a Markdown API row with an invalid name.
+ID_PATTERN = re.compile(r'\bId\s*=\s*"([^"]*)"')
+DOC_PATTERN = re.compile(r'^\|\s*`([^`]+)`\s*\|', re.MULTILINE)
+VALID_ID = re.compile(r'[a-z][a-z0-9_]*\Z')
 
 
 def catalog_ids(source):
@@ -23,7 +26,11 @@ def catalog_ids(source):
     if len(section) != 2:
         raise ValueError("Achievements.All declaration not found")
     section = section[1].split("IReadOnlyList<DailyTask> DailyTasks =", 1)[0]
-    return ID_PATTERN.findall(section)
+    ids = ID_PATTERN.findall(section)
+    invalid = [value for value in ids if VALID_ID.fullmatch(value) is None]
+    if invalid:
+        raise ValueError("Invalid achievement API IDs: " + ", ".join(invalid))
+    return ids
 
 
 def validate(root, release=False, app_id=None):
@@ -35,6 +42,10 @@ def validate(root, release=False, app_id=None):
         return [str(exc)]
     if not ids:
         errors.append("Achievements.All has no parsed IDs")
+    invalid_doc = [value for value in listed if VALID_ID.fullmatch(value) is None]
+    if invalid_doc:
+        errors.append("Invalid Steamworks API IDs in table: " +
+                      ", ".join(sorted(set(invalid_doc))))
     for name, values in (("catalog", ids), ("Steamworks API table", listed)):
         duplicates = sorted({value for value in values if values.count(value) > 1})
         if duplicates:
