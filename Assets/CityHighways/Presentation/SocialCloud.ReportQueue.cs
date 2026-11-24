@@ -69,6 +69,8 @@ namespace CityHighways.Presentation
                     throw new InvalidOperationException("Invalid pending social report");
                 request.ticket = null;
                 request.claimedId = null;
+                request.skipClub = !SocialReportOutbox.SameUtcWeek(
+                    entry.createdUtcTicks, DateTime.UtcNow.Ticks);
             }
             catch (Exception error)
             {
