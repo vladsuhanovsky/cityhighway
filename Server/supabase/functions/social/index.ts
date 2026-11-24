@@ -20,6 +20,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { validateReplayReport } from "./report-validator.mjs";
 import { replayFingerprint } from "./report-fingerprint.mjs";
+import { magnateReportFingerprint } from "./magnate-report.mjs";
 import { upsertPersonalBest, creditClubGameOnce } from "./report-persistence.mjs";
 import { readBoundedBody, RequestTooLargeError } from "./body-limit.mjs";
 
@@ -204,7 +205,11 @@ async function report(db: Db, me: string, body: any) {
   if (mode === "classic" || mode === "coop") {
     const validated = await validateReplayReport(body);
     gameFingerprint = await replayFingerprint(mode, mapPath, validated.replay);
-  } else if (mode !== "magnate") {
+  } else if (mode === "magnate") {
+    // Legacy Magnate requests without a runId cannot be credited safely:
+    // require the updated client and reject malformed reports before SQL.
+    gameFingerprint = await magnateReportFingerprint(body);
+  } else {
     throw new Error("invalid report mode");
   }
 
@@ -250,23 +255,12 @@ async function report(db: Db, me: string, body: any) {
     const amount = contribution(kind!, stats);
     let accepted = true;
     let closed = false;
-    if (gameFingerprint) {
-      // Receipt and progress increment are committed in one SQL transaction.
-      // Retries of the same deterministic game do not increase progress.
-      ({ accepted, closed } = await creditClubGameOnce(db, {
-        clubId: member.club_id, week: week.id, playerId: me,
-        kind, target, amount, fingerprint: gameFingerprint,
-      }));
-    } else {
-      // Magnate currently has no replay or stable match identifier.
-      // Preserve its existing behavior until dedicated run IDs are added.
-      const result = await db.rpc("club_contribute", {
-        p_club: member.club_id, p_week: week.id, p_player: me,
-        p_kind: kind, p_target: target, p_amount: amount,
-      });
-      if (result.error) throw new Error(result.error.message);
-      closed = !!result.data;
-    }
+    // Both replay-based Classic/Coop and nonce-based Magnate reports
+    // use the same atomic SQL receipt + weekly contribution transaction.
+    ({ accepted, closed } = await creditClubGameOnce(db, {
+      clubId: member.club_id, week: week.id, playerId: me,
+      kind, target, amount, fingerprint: gameFingerprint!,
+    }));
     let logo: string | null = null;
     if (closed) {
       // Цель закрыта — клубу новый уникальный логотип.

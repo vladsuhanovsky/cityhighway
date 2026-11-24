@@ -233,6 +233,13 @@ namespace CityHighways.Core
         /// <summary>Вложения компаний в хабы (очки стройки): хабом владеет вложивший больше всех.</summary>
         readonly Dictionary<string, int[]> _hubInvested = new Dictionary<string, int[]>();
 
+        /// <summary>
+        /// Stable for this game object, regenerated for each new match.
+        /// Sent only when the final results are reported to the club.
+        /// Never used as a procedural RNG seed.
+        /// </summary>
+        public string ReportRunId { get; } = MagnateRunIdentity.Create();
+
         public Game Board { get; }
         public CityMap Map => Board.Map;
         public GeneratedCity City { get; }

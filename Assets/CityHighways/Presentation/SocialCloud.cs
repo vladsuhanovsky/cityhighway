@@ -169,6 +169,8 @@ namespace CityHighways.Presentation
             public int seats;
             public int seed;
             public string replay;
+            /// <summary>One Magnate match, reused for any HTTP retry.</summary>
+            public string runId;
             public ReportStats stats;
             // friends
             public string[] ids;
@@ -431,13 +433,20 @@ namespace CityHighways.Presentation
         /// <summary>Магнат: рекордов и повторов нет, но доставки и победы идут в цель клуба.</summary>
         public static void ReportMagnate(LogisticsGame game, int humanIndex)
         {
-            if (!Available || game == null || humanIndex < 0 || humanIndex >= game.Players.Count) return;
+            // Never send a provisional score or a bot-owned result.
+            // The run ID belongs to the finished game object and survives
+            // retransmission of the same report within this session.
+            if (!Available || game == null || game.Phase != MagnatePhase.GameOver ||
+                humanIndex < 0 || humanIndex >= game.Players.Count ||
+                game.Players[humanIndex].IsBot ||
+                !MagnateRunIdentity.IsValid(game.ReportRunId)) return;
             var player = game.Players[humanIndex];
             int best = game.Players.Max(p => p.Score);
             Send<ReportResponse>(new Request
             {
                 action = "report",
                 mode = "magnate",
+                runId = game.ReportRunId,
                 mapName = game.Map.Name,
                 score = player.Score,
                 won = player.Score == best,
