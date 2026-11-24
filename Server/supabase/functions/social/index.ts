@@ -188,11 +188,21 @@ type Db = ReturnType<typeof createClient>;
 async function report(db: Db, me: string, body: any) {
   const mode = str(body.mode, 16);
   const mapPath = str(body.mapPath, 200);
-  const score = clamp(int(body.score), -100, 1000);
+  // A client-provided score is not authoritative. Reject malformed
+  // or internally inconsistent compressed replays before any DB write
+  // or club contribution; do not silently clamp a forged result.
+  if (mode === "classic" || mode === "coop")
+    await validateReplayReport(body);
+  else if (mode !== "magnate")
+    throw new Error("invalid report mode");
+
+  const score = mode === "magnate"
+    ? clamp(int(body.score), -100, 1000)
+    : body.score;
   const stats = body.stats ?? {};
   let improved = false, best = score;
 
-  if ((mode === "classic" || mode === "coop") && mapPath) {
+  if (mode === "classic" || mode === "coop") {
     const { data: old } = await db.from("records").select("id, score").eq("player_id", me).eq("mode", mode)
       .eq("map_path", mapPath).maybeSingle();
     if (!old || score > old.score) {
