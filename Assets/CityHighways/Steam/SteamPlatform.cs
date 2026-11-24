@@ -270,7 +270,7 @@ namespace CityHighways.Steam
         {
             if (achievementIds == null || !Available ||
                 !EnsureAchievementAccount()) return;
-            QueueUnlockedAchievementsForAccount(
+            TryQueueUnlockedAchievementsForAccount(
                 _achievementQueue.AccountId.ToString(), achievementIds);
         }
 
@@ -279,19 +279,20 @@ namespace CityHighways.Steam
         /// authenticated SteamID. No amount of local dispatch caching can
         /// authorize a prior account after Steam changed mid-frame.
         /// </summary>
-        public void QueueUnlockedAchievementsForAccount(string sourceSteamId,
+        public bool TryQueueUnlockedAchievementsForAccount(string sourceSteamId,
             IReadOnlyCollection<string> achievementIds)
         {
             if (achievementIds == null || !Available ||
-                !EnsureAchievementAccount()) return;
+                !EnsureAchievementAccount()) return false;
             if (!string.Equals(sourceSteamId,
                     _achievementQueue.AccountId.ToString(), StringComparison.Ordinal))
-                return;
+                return false;
 
             _achievementQueue.QueueForAccount(
                 _achievementQueue.AccountId, achievementIds);
             if (_statsReady) FlushQueuedAchievements();
             else RequestAchievementStats();
+            return true;
         }
 
         void FlushQueuedAchievements()
