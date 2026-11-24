@@ -431,8 +431,10 @@ namespace CityHighways.Presentation
 
         /// <summary>Полусторона квадрата окрестностей (м сцены) — текстура Outskirts покрывает [−Extent, Extent]².</summary>
         public const float OutskirtsExtent = 30f;
+        // Outskirts pixels use only fixed world dimensions, palette, and seeded
+        // CityPlanner noise. The CityMap argument is retained for API callers,
+        // but its object identity must not invalidate this shared texture.
         static Texture2D _outskirts;
-        static CityMap _outskirtsMap;
 
         /// <summary>
         /// Земля вокруг доски: трава пятнами и лоскуты полей (те же цвета, что у местности доски), тёмная лесная
@@ -441,8 +443,7 @@ namespace CityHighways.Presentation
         /// </summary>
         public static Texture2D Outskirts(CityMap map)
         {
-            if (_outskirts != null && _outskirtsMap == map) return _outskirts;
-            if (_outskirts != null) Object.Destroy(_outskirts);
+            if (_outskirts != null) return _outskirts;
             const int size = 1024;
             const float m = TerrainTexture.Margin;
             float boardX = BoardLayout.WorldWidth * (0.5f + m), boardZ = BoardLayout.WorldDepth * (0.5f + m);
@@ -478,7 +479,6 @@ namespace CityHighways.Presentation
             _outskirts = New("City3D Outskirts", size, size, false, TextureWrapMode.Clamp);
             _outskirts.SetPixels32(pixels);
             _outskirts.Apply(true, false);
-            _outskirtsMap = map;
             return _outskirts;
         }
 
