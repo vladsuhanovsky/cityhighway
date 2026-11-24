@@ -47,7 +47,7 @@ test("receipt insert and contribution execute in one security definer RPC", () =
 });
 
 test("receipt insert checks current membership in same SQL transaction", () => {
-  assert.match(sql, /from public\.club_members\s+where club_id = p_club and player_id = p_player/i);
+  assert.match(sql, /from public\.club_members\s+where club_id = p_club and player_id = p_player\s+for key share/i);
   assert.match(sql, /raise exception 'club membership changed'/);
 });
 
