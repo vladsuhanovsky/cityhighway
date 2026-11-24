@@ -792,6 +792,8 @@ namespace CityHighways.Presentation
             _eventPill.Add(_eventPillDot);
             _eventPillText = Ui.Text("", 13f, null, true);
             _eventPillText.style.whiteSpace = WhiteSpace.NoWrap;
+            _eventPillText.style.overflow = Overflow.Hidden;
+            _eventPillText.style.textOverflow = TextOverflow.Ellipsis;
             _eventPill.Add(_eventPillText);
             _eventPill.name = "gamepad-hud-event";
             _eventPill.RegisterCallback<ClickEvent>(_ => ToggleDrawer());
@@ -4237,6 +4239,7 @@ namespace CityHighways.Presentation
             // remains accessible through tooltip/drawer; only its long
             // caption is hidden to preserve actionable HUD buttons.
             Ui.Show(_eventPillText, GameHudLayout.ShowClassicEventText(tier));
+            _eventPillText.style.maxWidth = GameHudLayout.ClassicEventMaxWidth(tier);
             Ui.Padding(_topBar, 0f, GameHudLayout.HorizontalPadding(tier));
             _gamepadGuide.style.maxWidth = GameHudLayout.GuideMaxWidth(width);
             _turnLabel.style.maxWidth = GameHudLayout.ClassicTurnMaxWidth(tier);
