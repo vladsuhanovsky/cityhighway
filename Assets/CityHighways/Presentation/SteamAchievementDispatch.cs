@@ -68,7 +68,13 @@ namespace CityHighways.Presentation
             // profile account at queue time. This closes the identity
             // race between reading the profile and sending achievements.
             if (publisher is IAccountBoundSteamAchievements accountBound)
-                accountBound.QueueUnlockedAchievementsForAccount(steamId, ids);
+            {
+                if (!accountBound.TryQueueUnlockedAchievementsForAccount(steamId, ids))
+                {
+                    Reset(); // A rejected account handoff was never queued.
+                    return false;
+                }
+            }
             else
                 publisher.QueueUnlockedAchievements(ids);
             _lastPublisher = publisher;
