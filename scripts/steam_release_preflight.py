@@ -75,6 +75,20 @@ def validate(root, release=False, app_id=None):
                 errors.append("Steamworks.NET package is absent or has no version in Unity manifest")
         except (OSError, ValueError, KeyError, TypeError) as exc:
             errors.append("Cannot validate Unity package manifest: " + str(exc))
+        try:
+            lock = json.loads((root / LOCKFILE).read_text(encoding="utf-8"))
+            entries = lock["dependencies"]
+            if not isinstance(entries, dict):
+                raise ValueError("dependencies must be an object")
+            resolved = entries.get(STEAM_PACKAGE)
+            if (not isinstance(resolved, dict) or
+                    not isinstance(resolved.get("version"), str) or
+                    not resolved["version"].strip() or
+                    resolved.get("depth") != 0):
+                errors.append("Steamworks.NET package is missing or unresolved as a direct dependency in Unity packages-lock.json")
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            errors.append("Cannot validate Unity packages-lock.json: " + str(exc))
+
         if (root / APPID_FILE).exists():
             value = (root / APPID_FILE).read_text(encoding="utf-8").strip()
             if not app_id or value != app_id:
