@@ -155,10 +155,10 @@ namespace CityHighways.Tests
                 StringAssert.Contains("Circle: back",
                     GamepadControlGuide.Hint(context, true, false,
                         GamepadControlGuide.ControllerLayout.PlayStation));
-                StringAssert.Contains("B: выбрать",
+                StringAssert.Contains(context == GamepadControlGuide.Context.Menu
+                        ? "B: открыть" : "B: выбрать",
                     GamepadControlGuide.Hint(context, false, false,
-                        GamepadControlGuide.ControllerLayout.Nintendo).Replace(
-                            "B: открыть", "B: выбрать"));
+                        GamepadControlGuide.ControllerLayout.Nintendo));
                 StringAssert.Contains("A: назад",
                     GamepadControlGuide.Hint(context, false, false,
                         GamepadControlGuide.ControllerLayout.Nintendo));
@@ -185,6 +185,29 @@ namespace CityHighways.Tests
                 GamepadControlGuide.ControllerLayout.PlayStation);
             StringAssert.Contains("Крест: открыть", hint.text);
             StringAssert.Contains("Круг: назад", hint.text);
+        }
+
+        [Test]
+        public void CameraButtonLabelsMatchDetectedDeviceLayout()
+        {
+            var ps = GamepadControlGuide.ControllerLayout.PlayStation;
+            var switchPad = GamepadControlGuide.ControllerLayout.Nintendo;
+            var xbox = GamepadControlGuide.ControllerLayout.Xbox;
+
+            Assert.AreEqual("L1/R1", GamepadControlGuide.ShoulderLabel(ps));
+            Assert.AreEqual("L/R", GamepadControlGuide.ShoulderLabel(switchPad));
+            Assert.AreEqual("LB/RB", GamepadControlGuide.ShoulderLabel(xbox));
+
+            Assert.AreEqual("L2/R2", GamepadControlGuide.TriggerLabel(ps));
+            Assert.AreEqual("ZL/ZR", GamepadControlGuide.TriggerLabel(switchPad));
+            Assert.AreEqual("LT/RT", GamepadControlGuide.TriggerLabel(xbox));
+
+            StringAssert.Contains("L1/R1: rotate",
+                GamepadControlGuide.Hint(GamepadControlGuide.Context.Game,
+                    true, false, ps));
+            StringAssert.Contains("ZL/ZR: zoom",
+                GamepadControlGuide.Hint(GamepadControlGuide.Context.Magnate,
+                    true, false, switchPad));
         }
 
         [Test]
