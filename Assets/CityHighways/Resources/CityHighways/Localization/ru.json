@@ -6239,6 +6239,18 @@
     {
       "key": "menu.settings.music_volume_saved",
       "value": "Громкость музыки сохранена"
+    },
+    {
+      "key": "game.undo.action",
+      "value": "Отменить ход"
+    },
+    {
+      "key": "game.undo.done",
+      "value": "Последнее действие отменено."
+    },
+    {
+      "key": "game.undo.unavailable",
+      "value": "Сейчас отмена действия недоступна."
     }
   ]
 }
