@@ -63,7 +63,12 @@ namespace CityHighways.Core
         static bool SameContracts(string[] a, string[] b)
         {
             if (ReferenceEquals(a, b)) return true;
-            if (a == null || b == null) return false;
+            // Unity JsonUtility can materialize an optional null array as
+            // an empty array after a save/replay round-trip. Both forms mean
+            // "no contract IDs" in Game.Execute and must compare equally.
+            if (a == null || a.Length == 0)
+                return b == null || b.Length == 0;
+            if (b == null || b.Length == 0) return false;
             return a.SequenceEqual(b);
         }
 
