@@ -594,8 +594,8 @@ namespace CityHighways.Presentation
             SetHover(road, point);
             SetHoverLocation(road == null ? location : null, point);
             _gamepadCursorHint.text = LocalizationService.Language == "en"
-                ? "Right stick: aim   A: select   B/R3: HUD"
-                : "Правый стик: цель   A: выбрать   B/R3: интерфейс";
+                ? "Right stick: aim   D-pad: fine   A: select   B/R3: HUD"
+                : "Правый стик: цель   Крестовина: точнее   A: выбрать   B/R3: интерфейс";
         }
 
         void GamepadTargetInput(float deltaTime)
@@ -622,8 +622,12 @@ namespace CityHighways.Presentation
                 return;
             }
 
-            if (_gamepadCursor.Move(pad.rightStick.ReadValue(),
-                    Mathf.Max(0f, deltaTime), GamepadTargetBounds))
+            Vector2 stick = pad.rightStick.ReadValue();
+            bool fine = !GamepadMapCursorState.HasMovement(stick);
+            Vector2 movement = fine ? pad.dpad.ReadValue() : stick;
+            float speed = fine ? 145f : 620f;
+            if (_gamepadCursor.Move(movement, Mathf.Max(0f, deltaTime),
+                    GamepadTargetBounds, speed))
                 RefreshGamepadTarget();
 
             if (pad.buttonSouth.wasPressedThisFrame)
