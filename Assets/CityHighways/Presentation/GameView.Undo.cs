@@ -10,6 +10,28 @@ namespace CityHighways.Presentation
     public sealed partial class GameView
     {
         UnityEngine.UIElements.Button _undoButton;
+        int _undoArmedHistory = -1;
+        int _undoArmedPlayer = -1;
+        float _undoArmedUntil;
+
+        void ClearUndoConfirmation()
+        {
+            _undoArmedHistory = -1;
+            _undoArmedPlayer = -1;
+            _undoArmedUntil = 0f;
+        }
+
+        bool UndoConfirmationActive
+        {
+            get
+            {
+                if (_game == null || _game.History.Count == 0) return false;
+                var last = _game.History[_game.History.Count - 1];
+                return UndoPresentation.ConfirmationValid(_game.History.Count,
+                    _undoArmedHistory, last.player, _undoArmedPlayer,
+                    Time.unscaledTime, _undoArmedUntil);
+            }
+        }
 
         /// <summary>
         /// Only a shared, fully local hot-seat session without timers,
@@ -29,13 +51,74 @@ namespace CityHighways.Presentation
         void RefreshUndoButton()
         {
             if (_undoButton == null) return;
-            _undoButton.text = LocalizationService.Get("game.undo.action");
-            Ui.SetEnabled(_undoButton, CanUndoAction);
+            bool available = CanUndoAction;
+            if (!available && _undoArmedHistory >= 0) ClearUndoConfirmation();
+            bool confirm = available && UndoConfirmationActive;
+            _undoButton.text = LocalizationService.Get(confirm
+                ? "game.undo.confirm_button" : "game.undo.action");
+            if (available && _game.History.Count > 0)
+            {
+                var command = _game.History[_game.History.Count - 1];
+                var action = UndoPresentation.ActionLabel(command,
+                    LocalizationService.Language == "en");
+                _undoButton.tooltip = string.Format(
+                    LocalizationService.Get("game.undo.tooltip"), action);
+            }
+            else
+                _undoButton.tooltip = LocalizationService.Get("game.undo.disabled_hint");
+            Ui.SetEnabled(_undoButton, available);
+        }
+
+        /// <summary>
+        /// Do not intercept typing, Ctrl+Shift+Z, mouse-only play, dialogs
+        /// or anything disallowed by the exact same HUD button policy.
+        /// </summary>
+        void TickUndoShortcut()
+        {
+            if (_undoArmedHistory >= 0 && !UndoConfirmationActive)
+            {
+                ClearUndoConfirmation();
+                RefreshUndoButton();
+            }
+
+            var keyboard = UnityEngine.InputSystem.Keyboard.current;
+            if (keyboard == null) return;
+            bool onMac = Application.platform == RuntimePlatform.OSXEditor ||
+                Application.platform == RuntimePlatform.OSXPlayer;
+            bool meta = onMac && (keyboard[UnityEngine.InputSystem.Key.LeftMeta].isPressed ||
+                keyboard[UnityEngine.InputSystem.Key.RightMeta].isPressed);
+            bool modifier = UndoPresentation.UndoModifier(
+                keyboard.ctrlKey.isPressed, meta, onMac);
+            if (UndoPresentation.WantsShortcut(
+                    modifier, keyboard.shiftKey.isPressed,
+                    keyboard.zKey.wasPressedThisFrame,
+                    GamepadControlGuide.TextEntryFocused(Root), CanUndoAction))
+                UndoLastAction();
         }
 
         void UndoLastAction()
         {
-            if (!CanUndoAction) return;
+            if (!CanUndoAction)
+            {
+                ClearUndoConfirmation();
+                return;
+            }
+
+            var last = _game.History[_game.History.Count - 1];
+            if (UndoPresentation.RequiresConfirmation(last, _game.ActingPlayerIndex) &&
+                !UndoConfirmationActive)
+            {
+                _undoArmedHistory = _game.History.Count;
+                _undoArmedPlayer = last.player;
+                _undoArmedUntil = Time.unscaledTime + 6f;
+                RefreshUndoButton();
+                string owner = last.player < _game.Players.Count
+                    ? _game.Players[last.player].Name : "?";
+                Toast(string.Format(LocalizationService.Get("game.undo.confirm_other"),
+                    owner), Theme.Gold);
+                return;
+            }
+            ClearUndoConfirmation();
             if (!GameUndo.TryUndo(_game, Online,
                     _setup.players != null && _setup.players.Any(p => p.isBot),
                     _setup.tutorial, _setup.turnSeconds > 0, _setup.hideCardsBetweenTurns,
@@ -65,6 +148,7 @@ namespace CityHighways.Presentation
             foreach (string entry in journal.Skip(Math.Max(0, journal.Count - (LogHistory - 1))))
                 AddLog(entry);
             AddLog(LocalizationService.Get("game.undo.done"));
+            _app.Sound.Play(Sfx.Undo, 0.55f);
             _dirty = true;
         }
     }

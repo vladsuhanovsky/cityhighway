@@ -33,14 +33,16 @@ namespace CityHighways.Presentation
         /// <summary>Чиновник: тяжёлый удар печати по бумаге.</summary>
         CharOfficial,
         /// <summary>Мостовик: гулкий звон стальной балки.</summary>
-        CharBridger
+        CharBridger,
+        /// <summary>Brief descending, quiet two-tone confirmation for undo.</summary>
+        Undo
     }
 
     /// <summary>
     /// Звуки, синтезированные кодом при запуске, — без единого аудиофайла.
     /// Позже их легко заменить настоящими сэмплами: достаточно подменить клипы в словаре.
     /// </summary>
-    public sealed class SoundBank
+    public sealed class SoundBank : IDisposable
     {
         const int SampleRate = 44100;
 
@@ -107,6 +109,17 @@ namespace CityHighways.Presentation
                 + Mathf.Sin(2f * Mathf.PI * (700f - 900f * t) * t) * Mathf.Sin(Mathf.PI * t / 0.16f) * 0.08f);
             _clips[Sfx.Tick] = Make("tick", 0.03f, t =>
                 Mathf.Sin(2f * Mathf.PI * 2600f * t) * Mathf.Exp(-t * 160f) * 0.22f);
+
+            // Action undo: soft descending signal, distinct from error and
+            // original card sounds. Generated locally with all other SFX.
+            _clips[Sfx.Undo] = Make("undo", 0.24f, t =>
+            {
+                float fade = Mathf.Clamp01((0.24f - t) / 0.10f);
+                float pitch = 700f - 1200f * t;
+                return (Mathf.Sin(2f * Mathf.PI * pitch * t) +
+                        0.3f * Mathf.Sin(2f * Mathf.PI * pitch * 1.5f * t))
+                       * Mathf.Exp(-t * 9f) * fade * 0.13f;
+            });
 
             // Везунчик: щелчок большого пальца, звон вращающейся монетки и три затухающих «динь» при падении.
             _clips[Sfx.CharLucky] = Make("char_lucky", 0.9f, t =>
@@ -222,6 +235,20 @@ namespace CityHighways.Presentation
         {
             if (!Enabled || _source == null) return;
             if (_clips.TryGetValue(sfx, out var clip)) _source.PlayOneShot(clip, volume * Volume);
+        }
+
+        /// <summary>Allows coverage of every synthesized SFX ID at Edit Mode time.</summary>
+        public bool HasClip(Sfx sfx) => _clips.ContainsKey(sfx);
+
+        public void Dispose()
+        {
+            foreach (var clip in _clips.Values)
+            {
+                if (clip == null) continue;
+                if (Application.isPlaying) UnityEngine.Object.Destroy(clip);
+                else UnityEngine.Object.DestroyImmediate(clip);
+            }
+            _clips.Clear();
         }
 
         float Noise() => (float)(_noise.NextDouble() * 2.0 - 1.0);

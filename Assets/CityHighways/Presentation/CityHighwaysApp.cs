@@ -123,6 +123,7 @@ namespace CityHighways.Presentation
         void OnDestroy()
         {
             Music?.Dispose();
+            Sound?.Dispose();
             _game?.Release3D();
             _magnate?.Release3D();
             _magnate = null;
