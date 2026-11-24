@@ -19,6 +19,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { validateReplayReport } from "./report-validator.mjs";
+import { replayFingerprint } from "./report-fingerprint.mjs";
+import { upsertPersonalBest, creditClubGameOnce } from "./report-persistence.mjs";
 import { readBoundedBody, RequestTooLargeError } from "./body-limit.mjs";
 
 const cors = {
@@ -198,10 +200,13 @@ async function report(db: Db, me: string, body: any) {
   // A client-provided score is not authoritative. Reject malformed
   // or internally inconsistent compressed replays before any DB write
   // or club contribution; do not silently clamp a forged result.
-  if (mode === "classic" || mode === "coop")
-    await validateReplayReport(body);
-  else if (mode !== "magnate")
+  let gameFingerprint: string | null = null;
+  if (mode === "classic" || mode === "coop") {
+    const validated = await validateReplayReport(body);
+    gameFingerprint = await replayFingerprint(mode, mapPath, validated.replay);
+  } else if (mode !== "magnate") {
     throw new Error("invalid report mode");
+  }
 
   const score = mode === "magnate"
     ? clamp(int(body.score), -100, 1000)
@@ -210,28 +215,22 @@ async function report(db: Db, me: string, body: any) {
   let improved = false, best = score;
 
   if (mode === "classic" || mode === "coop") {
-    const { data: old } = await db.from("records").select("id, score").eq("player_id", me).eq("mode", mode)
-      .eq("map_path", mapPath).maybeSingle();
-    if (!old || score > old.score) {
-      const row = {
-        player_id: me,
-        mode,
-        map_path: mapPath,
-        map_name: str(body.mapName, 64),
-        score,
-        won: !!body.won,
-        seats: clamp(int(body.seats), 1, 8),
-        seed: int(body.seed),
-        // Bounded/decoded/metadata-checked by validateReplayReport.
-        // Never truncate a gzip-base64 stream into an unreadable record.
-        replay: body.replay,
-        game_version: str(body.version, 32),
-        created_at: new Date().toISOString(),
-      };
-      const { error } = await db.from("records").upsert(row, { onConflict: "player_id,mode,map_path" });
-      if (error) throw new Error(error.message);
-      improved = true;
-    } else best = old.score;
+    const row = {
+      mode,
+      map_path: mapPath,
+      map_name: body.mapName,
+      score,
+      won: body.won,
+      seats: body.seats,
+      seed: body.seed,
+      // Bounded/decoded/metadata-checked by validateReplayReport.
+      // Preserve the complete original gzip stream.
+      replay: body.replay,
+      game_version: str(body.version, 32),
+    };
+    // Atomic INSERT ... ON CONFLICT DO UPDATE ... WHERE score improves.
+    // Avoid the old SELECT -> UPSERT race that could lower a record.
+    ({ improved, best } = await upsertPersonalBest(db, me, row));
   }
 
   // Вклад в недельную цель клуба.
@@ -249,10 +248,25 @@ async function report(db: Db, me: string, body: any) {
       target = goal.target;
     }
     const amount = contribution(kind!, stats);
-    const { data: closed, error } = await db.rpc("club_contribute", {
-      p_club: member.club_id, p_week: week.id, p_player: me, p_kind: kind, p_target: target, p_amount: amount,
-    });
-    if (error) throw new Error(error.message);
+    let accepted = true;
+    let closed = false;
+    if (gameFingerprint) {
+      // Receipt and progress increment are committed in one SQL transaction.
+      // Retries of the same deterministic game do not increase progress.
+      ({ accepted, closed } = await creditClubGameOnce(db, {
+        clubId: member.club_id, week: week.id, playerId: me,
+        kind, target, amount, fingerprint: gameFingerprint,
+      }));
+    } else {
+      // Magnate currently has no replay or stable match identifier.
+      // Preserve its existing behavior until dedicated run IDs are added.
+      const result = await db.rpc("club_contribute", {
+        p_club: member.club_id, p_week: week.id, p_player: me,
+        p_kind: kind, p_target: target, p_amount: amount,
+      });
+      if (result.error) throw new Error(result.error.message);
+      closed = !!result.data;
+    }
     let logo: string | null = null;
     if (closed) {
       // Цель закрыта — клубу новый уникальный логотип.
@@ -262,7 +276,9 @@ async function report(db: Db, me: string, body: any) {
       logo = earnedLogo(member.club_id, week.id, done ?? 1, new Set((logos ?? []).map((l: any) => l.logo)));
       await db.from("club_logos").insert({ club_id: member.club_id, logo, week: week.id });
     }
-    club = { kind, amount, closed: !!closed, logo };
+    // A replayed request gets the old record response but no new
+    // weekly progress or "contribution" notification in the client.
+    club = { kind, amount: accepted ? amount : 0, closed, logo };
   }
   return { improved, best, club };
 }
