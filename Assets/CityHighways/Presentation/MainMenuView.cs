@@ -40,6 +40,7 @@ namespace CityHighways.Presentation
         readonly MenuSettingsPage _settings;
         readonly Label _hint;
         readonly VisualElement _overlay;
+        readonly Label _gamepadGuide;
         bool _gamepadActive;
 
         enum Page { Home, NewGame, Online, Profile, Rules, Stats, Settings, Tutorial, Club }
@@ -134,6 +135,8 @@ namespace CityHighways.Presentation
             _bellPanel = BuildBellPanel();
             Root.Add(_bellPanel);
             Root.Add(_overlay);
+            _gamepadGuide = GamepadControlGuide.Create();
+            Root.Add(_gamepadGuide);
 
             ShowPage(Page.Home);
             Refresh();
@@ -825,7 +828,8 @@ namespace CityHighways.Presentation
         {
             // Esc — в предыдущий раздел (самая вложенная видимая кнопка «← Назад»).
             var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame &&
+                !GamepadTextEntry.TryExit(Root))
                 Ui.GoBack(Root);
 
             // Input System already maps UI Navigate / Submit for controllers.
@@ -840,10 +844,15 @@ namespace CityHighways.Presentation
                 if (pad.buttonEast.wasPressedThisFrame)
                 {
                     _gamepadActive = true;
-                    Ui.GoBack(Root);
+                    if (!GamepadTextEntry.TryExit(Root))
+                        Ui.GoBack(Root);
                 }
             }
             if (_gamepadActive) UiGamepadFocus.EnsureFocus(Root);
+            GamepadControlGuide.Update(_gamepadGuide,
+                GamepadControlGuide.Context.Menu, pad != null, _gamepadActive,
+                false, LocalizationService.Language == "en",
+                GamepadControlGuide.TextEntryFocused(Root));
             _background.Tick(dt);
             if (_page == Page.Profile) _profile.Tick(dt);
             if (_page != Page.Home) return;
@@ -1140,6 +1149,7 @@ namespace CityHighways.Presentation
             Ui.Radius(input, 8f);
             Ui.Border(input, 1f, Theme.Line);
             Ui.Padding(input, 6f, 10f);
+            GamepadTextEntry.InstallFocusBorder(field, input, Theme.Line);
             field.RegisterValueChangedCallback(e => slot.name = e.newValue);
             row.Add(field);
 

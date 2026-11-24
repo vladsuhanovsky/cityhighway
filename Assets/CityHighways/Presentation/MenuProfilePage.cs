@@ -1504,6 +1504,7 @@ namespace CityHighways.Presentation
             Ui.Radius(input, 8f);
             Ui.Border(input, 1f, Theme.TextDim);
             Ui.Padding(input, 6f, 10f);
+            GamepadTextEntry.InstallFocusBorder(field, input, Theme.TextDim);
             return field;
         }
 
