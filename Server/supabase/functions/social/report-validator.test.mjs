@@ -40,7 +40,7 @@ const request = (replay = baseReplay()) => ({
   seats: replay.players.length,
   seed: replay.start.seed,
   replay: pack(replay),
-  stats: { roadPieces: 12, contracts: 2, coopOrders: 0, won: true },
+  stats: { roadPieces: 12, contracts: 2, coopOrders: 0, won: replay.won },
 });
 const reject = (body, part) => assert.rejects(() => validateReplayReport(body),
   (error) => error.message.includes(part));
