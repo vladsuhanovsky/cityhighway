@@ -54,6 +54,19 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void FocusBorderCanBeAttachedToNativeTextFieldWithoutPanel()
+        {
+            var field = new TextField();
+            var input = field.Q(className: TextField.inputUssClassName) ?? field;
+            Assert.DoesNotThrow(() =>
+                GamepadTextEntry.InstallFocusBorder(field, input, Theme.TextDim));
+            Assert.DoesNotThrow(() =>
+                GamepadTextEntry.InstallFocusBorder(null, input, Theme.Line));
+            Assert.DoesNotThrow(() =>
+                GamepadTextEntry.InstallFocusBorder(field, null, Theme.Line));
+        }
+
+        [Test]
         public void DetachedFieldsCannotAffectUnrelatedMenus()
         {
             var root = new VisualElement();
