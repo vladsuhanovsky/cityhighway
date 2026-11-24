@@ -26,7 +26,7 @@ const baseReplay = () => ({
   scores: [120, 50],
   humans: [true, false],
   start: { seed: -17 },
-  history: [{ type: 1, player: 0 }],
+  history: [{ kind: "draw_deck", player: 0 }],
 });
 
 const pack = (replay) => gzipSync(Buffer.from(JSON.stringify(replay), "utf8")).toString("base64");
@@ -137,6 +137,29 @@ test("rejects missing game start metadata", async () => {
   replay.start = null;
   incoming.replay = pack(replay);
   await reject(incoming, "initial seed");
+});
+
+test("rejects unknown command kinds and invalid actor indices", async () => {
+  const replay = baseReplay();
+  replay.history = [{ kind: "teleport_score", player: 0 }];
+  await reject(request(replay), "action history");
+  replay.history = [{ kind: "draw_deck", player: 99 }];
+  await reject(request(replay), "action history");
+  replay.history = [{ kind: "draw_deck", player: "0" }];
+  await reject(request(replay), "action history");
+});
+
+test("accepts all supported serialized game-command kinds", async () => {
+  const replay = baseReplay();
+  const kinds = [
+    "keep_initial", "draw_face_up", "draw_deck", "build", "build_free",
+    "draw_contracts", "keep_contracts", "pass", "draw_luck",
+    "choose_luck", "upgrade", "propose_trade", "respond_trade",
+    "influence", "bid", "bribe", "accuse", "choose_character"
+  ];
+  replay.history = kinds.map((kind) => ({ kind, player: 0 }));
+  const result = await validateReplayReport(request(replay));
+  assert.equal(result.replay.history.length, kinds.length);
 });
 
 test("rejects absent and malformed command history", async () => {
