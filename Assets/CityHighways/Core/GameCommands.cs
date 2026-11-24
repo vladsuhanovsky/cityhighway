@@ -212,6 +212,26 @@ namespace CityHighways.Core
             return game;
         }
 
+        /// <summary>
+        /// A snapshot-fallback save can retain StartInfo and a truncated
+        /// history; CanReplay alone does not certify that undo is safe.
+        /// Verify full reconstruction against the live saved state only
+        /// on an explicit undo attempt, not during every HUD refresh.
+        /// </summary>
+        public bool HasVerifiedUndoHistory()
+        {
+            if (!CanReplay) return false;
+            try
+            {
+                var rebuilt = Replay(Map, StartInfo, History);
+                return rebuilt.SameStateAs(CreateSave());
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         void Record(GameCommand command) => _history.Add(command);
 
         // ================================================================== Действия: выполнить и записать
