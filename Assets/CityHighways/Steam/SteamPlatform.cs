@@ -14,7 +14,7 @@ namespace CityHighways.Steam
     /// Сборка компилируется только при установленном Steamworks.NET и сама регистрируется в NetPlatforms.
     /// Для разработки используется тестовый AppID 480 (файл steam_appid.txt в корне проекта).
     /// </summary>
-    public sealed class SteamPlatform : ISteamPlatform, ISteamAchievements
+    public sealed class SteamPlatform : ISteamPlatform, IAccountBoundSteamAchievements
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Register()
@@ -245,16 +245,17 @@ namespace CityHighways.Steam
         // until UserStatsReceived confirms the current local Steam account.
         void RequestAchievementStats()
         {
+            if (!EnsureAchievementAccount()) return;
             _nextStatsRequest = Time.unscaledTime + 15f;
-            if (!_initialized || _statsReady) return;
+            if (_statsReady) return;
             if (!SteamUserStats.RequestCurrentStats())
                 Debug.LogWarning("City Highways: Steam stats not ready; will retry.");
         }
 
         void OnStatsReceived(UserStatsReceived_t result)
         {
-            if (!_initialized ||
-                result.m_steamIDUser.m_SteamID != SteamUser.GetSteamID().m_SteamID)
+            if (!EnsureAchievementAccount() ||
+                result.m_steamIDUser.m_SteamID != _achievementQueue.AccountId)
                 return;
             _statsReady = result.m_eResult == EResult.k_EResultOK;
             if (!_statsReady)
