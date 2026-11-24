@@ -42,7 +42,7 @@ namespace CityHighways.Presentation
     /// Звуки, синтезированные кодом при запуске, — без единого аудиофайла.
     /// Позже их легко заменить настоящими сэмплами: достаточно подменить клипы в словаре.
     /// </summary>
-    public sealed class SoundBank
+    public sealed class SoundBank : IDisposable
     {
         const int SampleRate = 44100;
 
@@ -235,6 +235,20 @@ namespace CityHighways.Presentation
         {
             if (!Enabled || _source == null) return;
             if (_clips.TryGetValue(sfx, out var clip)) _source.PlayOneShot(clip, volume * Volume);
+        }
+
+        /// <summary>Allows coverage of every synthesized SFX ID at Edit Mode time.</summary>
+        public bool HasClip(Sfx sfx) => _clips.ContainsKey(sfx);
+
+        public void Dispose()
+        {
+            foreach (var clip in _clips.Values)
+            {
+                if (clip == null) continue;
+                if (Application.isPlaying) UnityEngine.Object.Destroy(clip);
+                else UnityEngine.Object.DestroyImmediate(clip);
+            }
+            _clips.Clear();
         }
 
         float Noise() => (float)(_noise.NextDouble() * 2.0 - 1.0);
