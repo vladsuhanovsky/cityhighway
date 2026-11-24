@@ -49,6 +49,10 @@ namespace CityHighways.Presentation
             bool textEntryFocused, bool canUndo) =>
             modifier && !shift && zPressed && !textEntryFocused && canUndo;
 
+        /// <summary>Platform-specific hint, while the binding itself stays universal.</summary>
+        public static string RedoShortcutLabel(bool onMac) =>
+            onMac ? "Cmd+Shift+Z" : "Ctrl+Y / Ctrl+Shift+Z";
+
         /// <summary>
         /// Redo is Ctrl+Y or Ctrl+Shift+Z on Windows/Linux, and
         /// Command+Shift+Z on macOS. Never consume text-field editing.
