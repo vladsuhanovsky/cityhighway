@@ -209,8 +209,11 @@ namespace CityHighways.Presentation
             generation.Mark("Prefab replacements", System.Diagnostics.Stopwatch.GetTimestamp());
 
             _quality = quality;
-            SetupRendering(quality);
-            CreateMaterials(plan);
+            using (City3DGenerationMarkers.Materials.Auto())
+            {
+                SetupRendering(quality);
+                CreateMaterials(plan);
+            }
             generation.Mark("Rendering and materials", System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Ground.Auto())
                 BuildGround();
@@ -229,10 +232,13 @@ namespace CityHighways.Presentation
             generation.Mark("Trees", System.Diagnostics.Stopwatch.GetTimestamp());
             // Optional capped visual replacements; unselected props still use
             // the original district-batched geometry and visibility rules.
-            CityProceduralPropPrefabSpawner.Apply(
-                plan, _map.Name, CityProceduralPropPrefabRules.FindForMap(_map.Name),
-                _root.transform, _districts, WaterLevel, prefabBudget);
-            BuildProps(plan);
+            using (City3DGenerationMarkers.Props.Auto())
+            {
+                CityProceduralPropPrefabSpawner.Apply(
+                    plan, _map.Name, CityProceduralPropPrefabRules.FindForMap(_map.Name),
+                    _root.transform, _districts, WaterLevel, prefabBudget);
+                BuildProps(plan);
+            }
             generation.Mark("Props and replacement models", System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Roads.Auto())
                 SetupRoads();
@@ -250,9 +256,12 @@ namespace CityHighways.Presentation
             using (City3DGenerationMarkers.Decorations.Auto())
                 SceneDecorationSpawner.Spawn(_map.Name, _root.transform);
             generation.Mark("Authored scene decorations", System.Diagnostics.Stopwatch.GetTimestamp());
-            SetupReflections(quality);
-            // Attach after construction so the first samples exclude one-time map build.
-            FrameMonitor = _root.AddComponent<City3DFrameMonitor>();
+            using (City3DGenerationMarkers.Reflections.Auto())
+            {
+                SetupReflections(quality);
+                // Frame sampling starts after construction, excluding one-time map build.
+                FrameMonitor = _root.AddComponent<City3DFrameMonitor>();
+            }
             generation.Mark("Reflections and sampling setup",
                 System.Diagnostics.Stopwatch.GetTimestamp());
             GenerationTiming = generation;
