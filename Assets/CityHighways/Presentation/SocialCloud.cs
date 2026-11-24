@@ -237,18 +237,27 @@ namespace CityHighways.Presentation
 
         // ---------------------------------------------------------------- Транспорт
 
-        static void Send<T>(Request request, Action<T> done, Action<string> failed = null) where T : class
+        static void Send<T>(Request request, Action<T> done, Action<string> failed = null,
+            Action<string, long> reportFailure = null, string expectedSteamId = null) where T : class
         {
             var steam = NetPlatforms.Steam;
             if (!Available || steam == null)
             {
                 failed?.Invoke(Unavailable);
+                reportFailure?.Invoke(Unavailable, 0);
                 return;
             }
             steam.RequestWebApiTicket(TicketIdentity, ticket =>
             {
                 try
                 {
+                    // If Steam account changes during async ticket acquisition,
+                    // do NOT publish a queued report as the newly signed-in user.
+                    if (expectedSteamId != null && steam.SteamId != expectedSteamId)
+                    {
+                        reportFailure?.Invoke("Steam account changed", 0);
+                        return;
+                    }
                     request.ticket = ticket ?? "";
                     request.claimedId = steam.SteamId;
                     request.version = Application.version;
@@ -271,6 +280,7 @@ namespace CityHighways.Presentation
                             {
                                 Problem = Russian(error ?? web.error ?? "нет ответа");
                                 failed?.Invoke(Problem);
+                                reportFailure?.Invoke(Problem, web.responseCode);
                                 return;
                             }
                             Problem = "";
@@ -280,6 +290,7 @@ namespace CityHighways.Presentation
                         {
                             Problem = e.Message;
                             failed?.Invoke(e.Message);
+                            reportFailure?.Invoke(e.Message, 0);
                         }
                         finally
                         {
@@ -291,6 +302,7 @@ namespace CityHighways.Presentation
                 {
                     Problem = e.Message;
                     failed?.Invoke(e.Message);
+                    reportFailure?.Invoke(e.Message, 0);
                 }
             });
         }
