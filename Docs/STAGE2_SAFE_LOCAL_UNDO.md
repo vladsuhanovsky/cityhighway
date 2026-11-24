@@ -7,6 +7,12 @@ implemented by deterministic replay from the original seed and original
 command history with the last command omitted, **not** by manually reversing
 money, cards, road ownership or the random-number generator.
 
+Before attempting to undo, the full available history must be replayed
+and checked against the **current live snapshot**. This protects an older or
+corrupt save that fell back to snapshot loading despite retaining a partial
+command history. The expensive validation only runs when Undo is requested,
+not on every frame or HUD refresh.
+
 The current live `Game` is untouched while a replacement is built. If
 replay fails, the original remains authoritative. The view swaps the game
 only after replay succeeds, unhooks the old listeners, cancels pending
