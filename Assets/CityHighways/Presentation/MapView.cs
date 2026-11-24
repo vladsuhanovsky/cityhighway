@@ -433,7 +433,15 @@ namespace CityHighways.Presentation
                 evt.StopPropagation();
             });
 
-            RegisterCallback<GeometryChangedEvent>(_ => Relayout());
+            RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                Relayout();
+                if (_gamepadCursor.Active)
+                {
+                    _gamepadCursor.Constrain(GamepadTargetBounds);
+                    RefreshGamepadTarget();
+                }
+            });
             RegisterCallback<PointerMoveEvent>(e =>
             {
                 Vector2 position = e.localPosition;
@@ -645,7 +653,10 @@ namespace CityHighways.Presentation
                 return;
             }
 
+            Vector2 previousPosition = _gamepadCursor.Position;
             _gamepadCursor.Constrain(GamepadTargetBounds);
+            if ((previousPosition - _gamepadCursor.Position).sqrMagnitude > 0.0001f)
+                RefreshGamepadTarget();
             Vector2 stick = pad.rightStick.ReadValue();
             bool fine = !GamepadMapCursorState.HasMovement(stick);
             Vector2 movement = fine ? pad.dpad.ReadValue() : stick;
@@ -1084,14 +1095,22 @@ namespace CityHighways.Presentation
         {
             GamepadTargetInput(deltaTime);
             PulseTime += deltaTime;
+            float priorYaw = _yaw, priorPitch = _pitch;
+            float priorZoom = _zoom, priorTilt = _tiltProgress;
+            Vector2 priorPan = _pan;
             if (_game != null)
             {
                 float dt = Mathf.Clamp(deltaTime, 0f, 0.1f);
                 Animate(dt);
             }
-            // Rotation, zoom, resize and pan can change which road lies under
-            // a stationary UI cursor without any new stick input.
-            if (_gamepadCursor.Active) RefreshGamepadTarget();
+            // Do not repeat map-hover callbacks on every idle frame.
+            // Re-evaluate only when camera projection moves under a fixed
+            // target (stick movement and resize are handled elsewhere).
+            if (_gamepadCursor.Active &&
+                (priorYaw != _yaw || priorPitch != _pitch ||
+                 priorZoom != _zoom || priorTilt != _tiltProgress ||
+                 priorPan != _pan))
+                RefreshGamepadTarget();
             Repaint();
         }
 
