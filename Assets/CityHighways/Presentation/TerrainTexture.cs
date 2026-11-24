@@ -205,22 +205,49 @@ namespace CityHighways.Presentation
                 timing.Track("Terrain base pixel fill"))
             {
                 for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
                 {
-                    float u = Urban(Ring(x, y));
-                    var c = Color.Lerp(GrassDark, GrassLight, Fbm(x, y, 11));
-                    float field = Mathf.Clamp01((ValueNoise(x, y, 70f, 21) - 0.62f) / 0.08f) * (1f - u);
-                    c = Color.Lerp(c, Field, field * 0.8f);
-                    float grey = Mathf.Clamp01(u * 0.85f + (ValueNoise(x, y, 40f, 31) - 0.5f) * 0.5f) * 0.75f;
-                    c = Color.Lerp(c, Pavement, grey);
-                    float grain = (Hash(x, y, 5) - 0.5f) * 0.04f;
+                    // Keep the flat-map path on the original noise code.
+                    // In 3D, five independent value-noise layers reuse their
+                    // corner hashes while x moves through the same grid cell.
+                    TerrainNoiseRowSampler grassLarge = default(TerrainNoiseRowSampler);
+                    TerrainNoiseRowSampler grassMedium = default(TerrainNoiseRowSampler);
+                    TerrainNoiseRowSampler grassSmall = default(TerrainNoiseRowSampler);
+                    TerrainNoiseRowSampler fields = default(TerrainNoiseRowSampler);
+                    TerrainNoiseRowSampler pavement = default(TerrainNoiseRowSampler);
                     if (city3D)
                     {
-                        // У края 3D-доски земля сходит в цвет шва — дальше её продолжают окрестности.
-                        float edge = Mathf.Min(Mathf.Min(x, w - 1 - x), Mathf.Min(y, h - 1 - y)) / Mathf.Max(1f, 70f * k);
-                        c = Color.Lerp(SeamColor, c, Mathf.Clamp01(edge));
+                        grassLarge = new TerrainNoiseRowSampler(y, 90f, 11);
+                        grassMedium = new TerrainNoiseRowSampler(y, 34f, 12);
+                        grassSmall = new TerrainNoiseRowSampler(y, 11f, 13);
+                        fields = new TerrainNoiseRowSampler(y, 70f, 21);
+                        pavement = new TerrainNoiseRowSampler(y, 40f, 31);
                     }
-                    canvas.Pixels[(h - 1 - y) * w + x] = new Color(c.r + grain, c.g + grain, c.b + grain, 1f);
+                    for (int x = 0; x < w; x++)
+                    {
+                        float u = Urban(Ring(x, y));
+                        float grassNoise = city3D
+                            ? grassLarge.Sample(x) * 0.5f +
+                                grassMedium.Sample(x) * 0.3f +
+                                grassSmall.Sample(x) * 0.2f
+                            : Fbm(x, y, 11);
+                        var c = Color.Lerp(GrassDark, GrassLight, grassNoise);
+                        float fieldNoise = city3D
+                            ? fields.Sample(x) : ValueNoise(x, y, 70f, 21);
+                        float field = Mathf.Clamp01((fieldNoise - 0.62f) / 0.08f) * (1f - u);
+                        c = Color.Lerp(c, Field, field * 0.8f);
+                        float pavementNoise = city3D
+                            ? pavement.Sample(x) : ValueNoise(x, y, 40f, 31);
+                        float grey = Mathf.Clamp01(u * 0.85f + (pavementNoise - 0.5f) * 0.5f) * 0.75f;
+                        c = Color.Lerp(c, Pavement, grey);
+                        float grain = (Hash(x, y, 5) - 0.5f) * 0.04f;
+                        if (city3D)
+                        {
+                            // The 3D board fades into the shared outskirts seam.
+                            float edge = Mathf.Min(Mathf.Min(x, w - 1 - x), Mathf.Min(y, h - 1 - y)) / Mathf.Max(1f, 70f * k);
+                            c = Color.Lerp(SeamColor, c, Mathf.Clamp01(edge));
+                        }
+                        canvas.Pixels[(h - 1 - y) * w + x] = new Color(c.r + grain, c.g + grain, c.b + grain, 1f);
+                    }
                 }
             }
 
