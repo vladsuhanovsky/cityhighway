@@ -205,7 +205,11 @@ async function report(db: Db, me: string, body: any) {
   if (mode === "classic" || mode === "coop") {
     const validated = await validateReplayReport(body);
     gameFingerprint = await replayFingerprint(mode, mapPath, validated.replay);
-  } else if (mode !== "magnate") {
+  } else if (mode === "magnate") {
+    // Legacy Magnate requests without a runId cannot be credited safely:
+    // require the updated client and reject malformed reports before SQL.
+    gameFingerprint = await magnateReportFingerprint(body);
+  } else {
     throw new Error("invalid report mode");
   }
 
