@@ -95,6 +95,23 @@ namespace CityHighways.Presentation
             return false;
         }
 
+        /// <summary>Find a newly rebuilt card with a stable controller-focus name.</summary>
+        public static VisualElement FindEligibleNamed(VisualElement root, string name)
+        {
+            if (root == null || string.IsNullOrEmpty(name)) return null;
+            var candidate = root.Q<VisualElement>(name);
+            return IsEligible(candidate, root) ? candidate : null;
+        }
+
+        public static bool RestoreNamedFocus(VisualElement root, string name)
+        {
+            if (root == null || root.panel == null) return false;
+            var candidate = FindEligibleNamed(root, name);
+            if (candidate == null) return false;
+            candidate.Focus();
+            return true;
+        }
+
         public static bool EnsureFocus(VisualElement root)
         {
             if (root == null || root.panel == null) return false;

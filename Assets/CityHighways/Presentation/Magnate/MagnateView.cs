@@ -355,13 +355,19 @@ namespace CityHighways.Presentation
                 row.Add(box);
                 row.Add(Ui.Text(item.title, 13f, on ? Theme.Text : Theme.TextDim));
                 var layer = item.layer;
-                row.RegisterCallback<ClickEvent>(_ =>
+                row.name = "gamepad-layer-magnate-" + (int)layer;
+                void ToggleLayer()
                 {
+                    bool restore = _gamepadFocusActive && row.panel != null &&
+                        row.panel.focusController.focusedElement == row;
                     _setup.magnateLayers ^= (int)layer;
                     SaveSetup();
                     ApplyLayers();
                     BuildLayersList();
-                });
+                    if (restore) UiGamepadFocus.RestoreNamedFocus(_layersList, row.name);
+                }
+                row.RegisterCallback<ClickEvent>(_ => ToggleLayer());
+                GamepadSelectable.Attach(row, ToggleLayer);
                 _layersList.Add(row);
             }
         }

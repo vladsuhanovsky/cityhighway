@@ -234,8 +234,11 @@ namespace CityHighways.Presentation
                 row.Add(box);
                 row.Add(Ui.Text(item.title, 13f, on ? Theme.Text : Theme.TextDim));
                 var layer = item.layer;
-                row.RegisterCallback<ClickEvent>(_ =>
+                row.name = "gamepad-layer-classic-" + (int)layer;
+                void ToggleLayer()
                 {
+                    bool restore = _gamepadFocusActive && row.panel != null &&
+                        row.panel.focusController.focusedElement == row;
                     _layers ^= (int)layer;
                     // Слои — личная настройка игрока: в сохранённые настройки, даже в тренировке и сетевой партии.
                     _setup.classicLayers = _layers;
@@ -244,7 +247,10 @@ namespace CityHighways.Presentation
                     stored.Save();
                     ApplyLayers();
                     BuildLayersList();
-                });
+                    if (restore) UiGamepadFocus.RestoreNamedFocus(_layersList, row.name);
+                }
+                row.RegisterCallback<ClickEvent>(_ => ToggleLayer());
+                GamepadSelectable.Attach(row, ToggleLayer);
                 _layersList.Add(row);
             }
 
@@ -1285,8 +1291,14 @@ namespace CityHighways.Presentation
 
             if (_dirty)
             {
+                string selectedCard = _gamepadFocusActive && Root.panel != null
+                    ? (Root.panel.focusController.focusedElement as VisualElement)?.name
+                    : null;
                 _dirty = false;
                 Refresh();
+                if (selectedCard != null &&
+                    selectedCard.StartsWith("gamepad-contract-", StringComparison.Ordinal))
+                    UiGamepadFocus.RestoreNamedFocus(Root, selectedCard);
             }
 
             // A controller can navigate the existing HUD and dialog buttons
@@ -2510,7 +2522,20 @@ namespace CityHighways.Presentation
             {
                 int slot = i;
                 var card = new CardView(64f, 92f, false);
-                card.RegisterCallback<ClickEvent>(_ => Act(() => _game.DrawFaceUpCard(slot)));
+                void DrawCard() => Act(() => _game.DrawFaceUpCard(slot));
+                card.RegisterCallback<ClickEvent>(_ => DrawCard());
+                GamepadSelectable.Attach(card, DrawCard,
+                    () =>
+                    {
+                        bool drawing = _game.Phase == GamePhase.AwaitingAction ||
+                                       _game.Phase == GamePhase.DrawingSecondCard;
+                        bool forbidden = _game.Phase == GamePhase.DrawingSecondCard &&
+                                         _game.FaceUpCards[slot] == Resource.Machinery;
+                        bool available = GameFxTuning.CanHighlightFaceUp(HumanToAct, drawing,
+                            _game.FaceUpCards[slot].HasValue, forbidden);
+                        card.style.top = GameFxTuning.FaceUpHoverOffset(available, Ui.ReducedMotion);
+                    },
+                    () => card.style.top = 0f);
                 Ui.Transitions(card, 0.14f, "top");
                 card.RegisterCallback<PointerEnterEvent>(_ =>
                 {
@@ -2536,9 +2561,12 @@ namespace CityHighways.Presentation
                 var card = _game.FaceUpCards[i];
                 bool forbidden = _game.Phase == GamePhase.DrawingSecondCard && card == Resource.Machinery;
                 _faceUp[i].Set(card, null, card.HasValue && forbidden);
-                // A card must not remain raised if the current action made it unavailable.
-                if (!GameFxTuning.CanHighlightFaceUp(HumanToAct, canDraw, card.HasValue, forbidden))
-                    _faceUp[i].style.top = 0f;
+                bool available = GameFxTuning.CanHighlightFaceUp(
+                    HumanToAct, canDraw, card.HasValue, forbidden);
+                // Keep mouse click validation in Act(), but exclude unavailable
+                // cards from controller/tab focus navigation.
+                _faceUp[i].focusable = available;
+                if (!available) _faceUp[i].style.top = 0f;
             }
             _faceUpRow.style.opacity = canDraw ? 1f : 0.7f;
 
