@@ -23,7 +23,8 @@ namespace CityHighways.Core
                       (ch >= 'a' && ch <= 'f')))
                     return false;
             }
-            return Guid.TryParseExact(value, "N", out _);
+            return Guid.TryParseExact(value, "N", out var parsed) &&
+                   parsed != Guid.Empty;
         }
     }
 }
