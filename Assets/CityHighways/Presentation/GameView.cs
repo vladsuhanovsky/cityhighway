@@ -789,7 +789,9 @@ namespace CityHighways.Presentation
             _eventPillText = Ui.Text("", 13f, null, true);
             _eventPillText.style.whiteSpace = WhiteSpace.NoWrap;
             _eventPill.Add(_eventPillText);
+            _eventPill.name = "gamepad-hud-event";
             _eventPill.RegisterCallback<ClickEvent>(_ => ToggleDrawer());
+            GamepadSelectable.Attach(_eventPill, ToggleDrawer);
             AttachTooltip(_eventPill, () => _game == null ? "" : _eventText.text);
             _topBar.Add(_eventPill);
 
