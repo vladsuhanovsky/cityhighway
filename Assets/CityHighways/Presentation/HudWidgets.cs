@@ -580,6 +580,7 @@ namespace CityHighways.Presentation
             _compass.tooltip = LocalizationService.Language == "en" ? "North up (Home)" : "Север сверху (Home)";
             _compass.generateVisualContent += DrawCompass;
             _compass.RegisterCallback<ClickEvent>(_ => _map.ResetCamera());
+            GamepadSelectable.Attach(_compass, _map.ResetCamera);
             _cameraRow.Add(_compass);
             CameraButton(IconButton.Glyph.RotateRight, (LocalizationService.Language == "en" ? "Rotate right (E)" : "Повернуть вправо (E)"), () => _map.RotateBy(45f));
             CameraButton(IconButton.Glyph.TiltDown, (LocalizationService.Language == "en" ? "Tilt toward top-down (F)" : "Ближе к виду сверху (F)"), () => _map.TiltBy(-10f));
