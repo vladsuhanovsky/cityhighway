@@ -833,9 +833,9 @@ namespace CityHighways.Presentation
             var pad = Gamepad.current;
             if (pad != null)
             {
-                bool navigating = pad.dpad.ReadValue().sqrMagnitude > 0.2f ||
-                    pad.leftStick.ReadValue().sqrMagnitude > 0.49f ||
-                    pad.buttonSouth.wasPressedThisFrame;
+                bool navigating = UiGamepadFocus.HasNavigationIntent(
+                    pad.dpad.ReadValue(), pad.leftStick.ReadValue(),
+                    pad.buttonSouth.wasPressedThisFrame);
                 if (navigating) _gamepadActive = true;
                 if (pad.buttonEast.wasPressedThisFrame)
                 {
