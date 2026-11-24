@@ -136,7 +136,12 @@ namespace CityHighways.Net
     /// </summary>
     public interface IAccountBoundSteamAchievements : ISteamAchievements
     {
-        void QueueUnlockedAchievementsForAccount(string sourceSteamId,
+        /// <summary>
+        /// True only when the source account is still the currently signed-in
+        /// Steam user and the queue accepted the request. False means the
+        /// caller must not memoize this as a successful dispatch.
+        /// </summary>
+        bool TryQueueUnlockedAchievementsForAccount(string sourceSteamId,
             IReadOnlyCollection<string> achievementIds);
     }
 
