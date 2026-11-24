@@ -33,7 +33,9 @@ namespace CityHighways.Presentation
         /// <summary>Чиновник: тяжёлый удар печати по бумаге.</summary>
         CharOfficial,
         /// <summary>Мостовик: гулкий звон стальной балки.</summary>
-        CharBridger
+        CharBridger,
+        /// <summary>Brief descending, quiet two-tone confirmation for undo.</summary>
+        Undo
     }
 
     /// <summary>
@@ -107,6 +109,17 @@ namespace CityHighways.Presentation
                 + Mathf.Sin(2f * Mathf.PI * (700f - 900f * t) * t) * Mathf.Sin(Mathf.PI * t / 0.16f) * 0.08f);
             _clips[Sfx.Tick] = Make("tick", 0.03f, t =>
                 Mathf.Sin(2f * Mathf.PI * 2600f * t) * Mathf.Exp(-t * 160f) * 0.22f);
+
+            // Action undo: soft descending signal, distinct from error and
+            // original card sounds. Generated locally with all other SFX.
+            _clips[Sfx.Undo] = Make("undo", 0.24f, t =>
+            {
+                float fade = Mathf.Clamp01((0.24f - t) / 0.10f);
+                float pitch = 700f - 1200f * t;
+                return (Mathf.Sin(2f * Mathf.PI * pitch * t) +
+                        0.3f * Mathf.Sin(2f * Mathf.PI * pitch * 1.5f * t))
+                       * Mathf.Exp(-t * 9f) * fade * 0.13f;
+            });
 
             // Везунчик: щелчок большого пальца, звон вращающейся монетки и три затухающих «динь» при падении.
             _clips[Sfx.CharLucky] = Make("char_lucky", 0.9f, t =>
