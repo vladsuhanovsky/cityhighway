@@ -254,8 +254,29 @@ namespace CityHighways.Tests
             {
                 var copy = JsonUtility.FromJson<GameCommand>(JsonUtility.ToJson(original));
                 Assert.IsTrue(GameRedo.SameCommand(original, copy),
-                    "JSON round-trip should keep command semantics: " + original);
+                    "JSON round-trip should keep command semantics: " + original +
+                    "\\nBefore: " + DescribeCommand(original) +
+                    "\\nAfter: " + DescribeCommand(copy));
             }
+        }
+
+        static string DescribeCommand(GameCommand c)
+        {
+            if (c == null) return "<null>";
+            return "kind=" + (c.kind ?? "<null>") +
+                " player=" + c.player + " slot=" + c.slot +
+                " road=" + (c.road ?? "<null>") +
+                " resource=" + c.resource + " machinery=" + c.machinery +
+                " contracts=" + (c.contracts == null
+                    ? "<null>" : string.Join(",", c.contracts)) +
+                " index=" + c.index + " to=" + c.to +
+                " give=" + c.giveResource + "/" + c.giveCount +
+                " get=" + c.getResource + "/" + c.getCount +
+                " accept=" + c.accept +
+                " giveInfluence=" + c.giveInfluence +
+                " getInfluence=" + c.getInfluence +
+                " givePass=" + c.givePass + " getPass=" + c.getPass +
+                " option=" + c.option + " bid=" + c.bid;
         }
 
         [Test]
