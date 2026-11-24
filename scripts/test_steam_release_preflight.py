@@ -16,6 +16,20 @@ class SteamPreflightTests(unittest.TestCase):
             "Assets/CityHighways/Presentation/Achievements.cs": 'public static readonly IReadOnlyList<Achievement> All = new[] { new Achievement { Id = "first_win" }, new Achievement { Id = "mg_win" } }; public static readonly IReadOnlyList<DailyTask> DailyTasks = new[] {};',
             "Docs/STEAM_ACHIEVEMENT_API_IDS.md": "| API | Group |\n| --- | --- |\n| `first_win` | Classic |\n| `mg_win` | Magnate |\n",
             "Packages/manifest.json": json.dumps({"dependencies": {"com.rlabrecque.steamworks.net": "1.0.0"}}),
+            "Packages/packages-lock.json": json.dumps({"dependencies": {
+                "com.rlabrecque.steamworks.net": {"version": "1.0.0", "depth": 0, "source": "registry"}
+            }}),
+            "Assets/CityHighways/Steam/CityHighways.Steam.asmdef": json.dumps({
+                "name": "CityHighways.Steam",
+                "references": ["CityHighways.Net", "com.rlabrecque.steamworks.net"],
+                "defineConstraints": ["STEAMWORKS_NET"],
+                "versionDefines": [{
+                    "name": "com.rlabrecque.steamworks.net",
+                    "expression": "",
+                    "define": "STEAMWORKS_NET"
+                }]
+            }),
+            "Assets/CityHighways/Steam/SteamPlatform.cs": "#if STEAMWORKS_NET\n#endif\n",
             "steam_appid.txt": "123456\n",
         }.items():
             path = self.root / name
