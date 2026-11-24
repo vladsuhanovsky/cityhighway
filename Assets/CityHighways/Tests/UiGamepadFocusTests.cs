@@ -85,6 +85,19 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void BackButtonsAreRecognizedInRussianAndEnglish()
+        {
+            Assert.IsTrue(Ui.IsBackLabel("← Назад"));
+            Assert.IsTrue(Ui.IsBackLabel("← Назад к настройкам"));
+            Assert.IsTrue(Ui.IsBackLabel("← Back"));
+            Assert.IsTrue(Ui.IsBackLabel("← Back to menu"));
+            Assert.IsFalse(Ui.IsBackLabel("← Continue"));
+            Assert.IsFalse(Ui.IsBackLabel("Назад без стрелки"));
+            Assert.IsFalse(Ui.IsBackLabel(""));
+            Assert.IsFalse(Ui.IsBackLabel(null));
+        }
+
+        [Test]
         public void EmptyOrDetachedUiDoesNotStealFocus()
         {
             Assert.IsNull(UiGamepadFocus.FirstEligible(null));

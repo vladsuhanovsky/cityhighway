@@ -577,21 +577,60 @@ namespace CityHighways.Presentation
             }
         }
 
-        /// <summary>Клавиши камеры: Q/E — поворот, R/F — наклон, Home — север сверху.</summary>
+        /// <summary>
+        /// Keyboard: Q/E rotate, R/F tilt, Home reset.
+        /// Gamepad: LB/RB rotate, X/Y tilt, LT/RT zoom, L3 reset view.
+        /// The gamepad controls avoid both sticks and the D-pad, which belong
+        /// to the existing UI Toolkit navigation action map.
+        /// </summary>
         void CameraKeys(float dt)
         {
-            if (!CanRotate || panel == null) return;
+            if (panel == null) return;
             if (panel.focusController?.focusedElement is TextField) return;
-            var keyboard = UnityEngine.InputSystem.Keyboard.current;
-            if (keyboard == null) return;
-            float turn = (keyboard.eKey.isPressed ? 1f : 0f) - (keyboard.qKey.isPressed ? 1f : 0f);
-            float lean = (keyboard.rKey.isPressed ? 1f : 0f) - (keyboard.fKey.isPressed ? 1f : 0f);
-            if (Mathf.Abs(turn) > 0f || Mathf.Abs(lean) > 0f)
+
+            if (CanRotate)
             {
-                float speed = DisplaySettings.Active?.CameraSpeedFactor ?? 1f;
-                SetAngles(_yawTarget + turn * 90f * speed * dt, PitchTarget + lean * 40f * speed * dt, true);
+                var keyboard = UnityEngine.InputSystem.Keyboard.current;
+                if (keyboard != null)
+                {
+                    float turn = (keyboard.eKey.isPressed ? 1f : 0f) - (keyboard.qKey.isPressed ? 1f : 0f);
+                    float lean = (keyboard.rKey.isPressed ? 1f : 0f) - (keyboard.fKey.isPressed ? 1f : 0f);
+                    if (Mathf.Abs(turn) > 0f || Mathf.Abs(lean) > 0f)
+                    {
+                        float speed = DisplaySettings.Active?.CameraSpeedFactor ?? 1f;
+                        SetAngles(_yawTarget + turn * 90f * speed * dt,
+                            PitchTarget + lean * 40f * speed * dt, true);
+                    }
+                    if (keyboard.homeKey.wasPressedThisFrame) ResetCamera();
+                }
             }
-            if (keyboard.homeKey.wasPressedThisFrame) ResetCamera();
+
+            // Hidden/modal interactions must not accidentally steer the camera.
+            if (_game == null || !Interactive) return;
+            var pad = UnityEngine.InputSystem.Gamepad.current;
+            if (pad == null) return;
+            var motion = GamepadCameraMotion.Read(
+                pad.leftShoulder.isPressed, pad.rightShoulder.isPressed,
+                pad.buttonWest.isPressed, pad.buttonNorth.isPressed,
+                pad.leftTrigger.ReadValue(), pad.rightTrigger.ReadValue(),
+                pad.leftStickButton.wasPressedThisFrame);
+
+            if (motion.Reset)
+            {
+                ResetView();
+                if (CanRotate) ResetCamera();
+                return;
+            }
+
+            float factor = DisplaySettings.Active?.CameraSpeedFactor ?? 1f;
+            if (CanRotate && (motion.Turn != 0f || motion.Tilt != 0f))
+                SetAngles(_yawTarget + motion.Turn * 90f * factor * dt,
+                    PitchTarget + motion.Tilt * 40f * factor * dt, true);
+
+            // Zoom also works on the flat map.
+            if (motion.Zoom > 0f && _zoomTarget < MaxZoom ||
+                motion.Zoom < 0f && _zoomTarget > 1.001f)
+                ZoomBy(Mathf.Exp(motion.Zoom * 1.3f * factor * dt));
         }
 
         /// <summary>Показать всю карту.</summary>

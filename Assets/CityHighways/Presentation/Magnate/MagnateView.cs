@@ -30,6 +30,7 @@ namespace CityHighways.Presentation
         readonly System.Random _botRandom = new System.Random(17);
 
         public VisualElement Root { get; }
+        bool _gamepadFocusActive;
         readonly VisualElement _mapArea, _players, _handoff, _results;
         readonly Label _roundLabel, _eventChip, _tooltip, _banner;
         readonly VisualElement _eventIcon;
@@ -77,6 +78,7 @@ namespace CityHighways.Presentation
             Root = new VisualElement();
             Root.style.flexGrow = 1f;
             Root.style.backgroundColor = Theme.Background;
+            Root.RegisterCallback<PointerDownEvent>(_ => _gamepadFocusActive = false);
 
             _mapArea = Ui.Box();
             _mapArea.style.position = Position.Absolute;
@@ -296,6 +298,7 @@ namespace CityHighways.Presentation
                 _dirty = false;
                 Refresh();
             }
+            UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive);
             UpdateMapEmphasis();
             CoachTick();
         }
