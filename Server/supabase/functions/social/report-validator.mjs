@@ -8,6 +8,12 @@ export const REPLAY_VERSION = 1;
 
 const fail = (reason) => { throw new Error("invalid replay report: " + reason); };
 const object = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+const VALID_COMMAND_KINDS = new Set([
+  "keep_initial", "draw_face_up", "draw_deck", "build", "build_free",
+  "draw_contracts", "keep_contracts", "pass", "draw_luck",
+  "choose_luck", "upgrade", "propose_trade", "respond_trade",
+  "influence", "bid", "bribe", "accuse", "choose_character"
+]);
 const boundedInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
 const reportString = (v, max) => typeof v === "string" && v.length > 0 &&
   v.length <= max && !/[\x00-\x1f\x7f]/.test(v);
@@ -112,7 +118,10 @@ function validateReplayMetadata(body, replay) {
   if (!Array.isArray(replay.history) ||
       replay.history.length === 0 ||
       replay.history.length > MAX_REPLAY_ACTIONS ||
-      !replay.history.every(object))
+      !replay.history.every((command) =>
+        object(command) &&
+        VALID_COMMAND_KINDS.has(command.kind) &&
+        boundedInt(command.player, -1, body.seats - 1)))
     fail("action history");
   if (!boundedInt(replay.turns, 0, 1000000))
     fail("turn count");
