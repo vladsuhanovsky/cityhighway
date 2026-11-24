@@ -2510,7 +2510,20 @@ namespace CityHighways.Presentation
             {
                 int slot = i;
                 var card = new CardView(64f, 92f, false);
-                card.RegisterCallback<ClickEvent>(_ => Act(() => _game.DrawFaceUpCard(slot)));
+                void DrawCard() => Act(() => _game.DrawFaceUpCard(slot));
+                card.RegisterCallback<ClickEvent>(_ => DrawCard());
+                GamepadSelectable.Attach(card, DrawCard,
+                    () =>
+                    {
+                        bool drawing = _game.Phase == GamePhase.AwaitingAction ||
+                                       _game.Phase == GamePhase.DrawingSecondCard;
+                        bool forbidden = _game.Phase == GamePhase.DrawingSecondCard &&
+                                         _game.FaceUpCards[slot] == Resource.Machinery;
+                        bool available = GameFxTuning.CanHighlightFaceUp(HumanToAct, drawing,
+                            _game.FaceUpCards[slot].HasValue, forbidden);
+                        card.style.top = GameFxTuning.FaceUpHoverOffset(available, Ui.ReducedMotion);
+                    },
+                    () => card.style.top = 0f);
                 Ui.Transitions(card, 0.14f, "top");
                 card.RegisterCallback<PointerEnterEvent>(_ =>
                 {
