@@ -119,6 +119,15 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void MapCursorConsumesBackInsteadOfDismissingGameOverlay()
+        {
+            Assert.IsTrue(UiGamepadFocus.ShouldGoBack(true, false));
+            Assert.IsFalse(UiGamepadFocus.ShouldGoBack(true, true));
+            Assert.IsFalse(UiGamepadFocus.ShouldGoBack(false, true));
+            Assert.IsFalse(UiGamepadFocus.ShouldGoBack(false, false));
+        }
+
+        [Test]
         public void EmptyOrDetachedUiDoesNotStealFocus()
         {
             Assert.IsNull(UiGamepadFocus.FirstEligible(null));
