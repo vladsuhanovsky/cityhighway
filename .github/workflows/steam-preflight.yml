@@ -1,0 +1,23 @@
+name: Steam achievement catalog preflight
+on:
+  pull_request:
+    paths:
+      - "Assets/CityHighways/Presentation/Achievements.cs"
+      - "Docs/STEAM_ACHIEVEMENT_API_IDS.md"
+      - "scripts/steam_release_preflight.py"
+      - "scripts/test_steam_release_preflight.py"
+      - ".github/workflows/steam-preflight.yml"
+  workflow_dispatch:
+
+jobs:
+  validate-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify achievement ID mapping
+        run: python3 scripts/steam_release_preflight.py
+      - name: Run preflight regression tests
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
