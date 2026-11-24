@@ -117,6 +117,7 @@ namespace CityHighways.Presentation
         GamepadMapCursorState _gamepadCursor;
         readonly VisualElement _gamepadCursorMarker;
         readonly Label _gamepadCursorHint;
+        readonly Label _gamepadActivationHint;
         bool _gamepadExitedThisFrame;
         public bool IsGamepadTargeting => _gamepadCursor.Active;
         public bool GamepadExitedTargetingThisFrame => _gamepadExitedThisFrame;
@@ -397,6 +398,20 @@ namespace CityHighways.Presentation
             Add(_gamepadCursorHint);
             Ui.Show(_gamepadCursorHint, false);
 
+            // Discoverable R3 affordance only while a controller is attached
+            // and the current turn/modal state permits map interaction.
+            _gamepadActivationHint = Ui.Text("", 12f, Theme.Text, true);
+            _gamepadActivationHint.name = "gamepad-map-activation-hint";
+            _gamepadActivationHint.pickingMode = PickingMode.Ignore;
+            _gamepadActivationHint.style.position = Position.Absolute;
+            _gamepadActivationHint.style.right = 12f;
+            _gamepadActivationHint.style.bottom = 12f;
+            _gamepadActivationHint.style.backgroundColor = Theme.PanelGlass;
+            Ui.Radius(_gamepadActivationHint, 7f);
+            Ui.Padding(_gamepadActivationHint, 6f, 10f);
+            Add(_gamepadActivationHint);
+            Ui.Show(_gamepadActivationHint, false);
+
             RegisterCallback<NavigationMoveEvent>(evt =>
             {
                 if (!_gamepadCursor.Active) return;
@@ -563,6 +578,7 @@ namespace CityHighways.Presentation
             Focus();
             Ui.Show(_gamepadCursorMarker, true);
             Ui.Show(_gamepadCursorHint, true);
+            Ui.Show(_gamepadActivationHint, false);
             RefreshGamepadTarget();
         }
 
@@ -602,7 +618,12 @@ namespace CityHighways.Presentation
         {
             _gamepadExitedThisFrame = false;
             var pad = UnityEngine.InputSystem.Gamepad.current;
-            if (pad == null || !CanTargetWithGamepad())
+            bool canTarget = pad != null && CanTargetWithGamepad();
+            Ui.Show(_gamepadActivationHint, canTarget && !_gamepadCursor.Active);
+            if (canTarget)
+                _gamepadActivationHint.text = LocalizationService.Language == "en"
+                    ? "R3: aim on map" : "R3: выбрать на карте";
+            if (!canTarget)
             {
                 StopGamepadTargeting();
                 return;
