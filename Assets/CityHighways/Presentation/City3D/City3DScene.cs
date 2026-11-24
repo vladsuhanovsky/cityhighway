@@ -165,37 +165,47 @@ namespace CityHighways.Presentation
             float density = quality == 0 ? 0.55f : quality == 1 ? 0.8f : 1f;
             // Рельеф — до планировки: сначала сглаженные русла (по ним долины), затем поле высот. Планировщик
             // смотрит на высоты (ельники на холмах), а всё дальнейшее встаёт на холмы.
-            PrepareRiverLines();
-            // Места хабов — до рельефа: под ними земля выравнивается (бетонная плита больше не нужна).
-            _hubPlaces = HubPlacement.Plan(_map, _hubSites, RiverWidth / 2f + BankWidth);
-            _relief = new ReliefField(_map, _riverLines, RiverWidth / 2f + BankWidth, _hubPlaces);
-            Relief.Use(_relief);
+            using (City3DGenerationMarkers.Relief.Auto())
+            {
+                PrepareRiverLines();
+                // Места хабов — до рельефа: под ними земля выравнивается.
+                _hubPlaces = HubPlacement.Plan(_map, _hubSites, RiverWidth / 2f + BankWidth);
+                _relief = new ReliefField(_map, _riverLines, RiverWidth / 2f + BankWidth, _hubPlaces);
+                Relief.Use(_relief);
+            }
             generation.Mark("Rivers and relief", System.Diagnostics.Stopwatch.GetTimestamp());
             // Scene-authored visual overrides are optional and default to the legacy layout.
             var tuning = CityGenerationTuning.FindForMap(_map.Name);
             float buildingMultiplier = tuning != null ? tuning.BuildingDensity : 1f;
             float treeMultiplier = tuning != null ? tuning.TreeDensity : 1f;
             var clearances = CityGenerationExclusionZone.Collect(_map.Name);
-            var plan = CityPlanner.Build(_map, density, _hubSites, _hubPlaces.Values.Select(h => h.Origin),
-                buildingMultiplier, treeMultiplier, clearances);
+            CityPlanner.Plan plan;
+            using (City3DGenerationMarkers.Planning.Auto())
+            {
+                plan = CityPlanner.Build(_map, density, _hubSites,
+                    _hubPlaces.Values.Select(h => h.Origin),
+                    buildingMultiplier, treeMultiplier, clearances);
+            }
             generation.Mark("City planning", System.Diagnostics.Stopwatch.GetTimestamp());
             // Replace selected visual instances before district/tree meshes and counts are built.
-            CityProceduralReplacementResolver.Apply(plan, _map.Name, _root.transform);
-            // Optional seed-independent rules run after manual replacements so authored
-            // stable-ID anchors always take priority over automatic model choices.
-            var prefabBudgetConfig = CityProceduralPrefabBudget.FindForMap(_map.Name);
-            var prefabBudget = prefabBudgetConfig != null
-                ? prefabBudgetConfig.Begin(quality) : null;
-            CityProceduralBuildingPrefabSpawner.Apply(plan, _map.Name,
-                CityProceduralBuildingPrefabRules.FindForMap(_map.Name),
-                _root.transform, prefabBudget);
-            // Opt-in tree rules run after manually authored replacements. Distant
-            // CardOnly trees remain in the plan for optimized billboard rendering.
-            CityProceduralTreePrefabSpawner.Apply(plan, _map.Name,
-                CityProceduralTreePrefabRules.FindForMap(_map.Name),
-                _root.transform, prefabBudget);
-            BuildingCount = plan.Buildings.Count;
-            TreeCount = plan.Trees.Count;
+            CityProceduralPrefabBudget.Session prefabBudget;
+            using (City3DGenerationMarkers.Prefabs.Auto())
+            {
+                CityProceduralReplacementResolver.Apply(plan, _map.Name, _root.transform);
+                // Authored stable-ID replacements have priority over automatic rules.
+                var prefabBudgetConfig = CityProceduralPrefabBudget.FindForMap(_map.Name);
+                prefabBudget = prefabBudgetConfig != null
+                    ? prefabBudgetConfig.Begin(quality) : null;
+                CityProceduralBuildingPrefabSpawner.Apply(plan, _map.Name,
+                    CityProceduralBuildingPrefabRules.FindForMap(_map.Name),
+                    _root.transform, prefabBudget);
+                // Distant CardOnly trees remain in the plan for optimized billboard rendering.
+                CityProceduralTreePrefabSpawner.Apply(plan, _map.Name,
+                    CityProceduralTreePrefabRules.FindForMap(_map.Name),
+                    _root.transform, prefabBudget);
+                BuildingCount = plan.Buildings.Count;
+                TreeCount = plan.Trees.Count;
+            }
             generation.Mark("Prefab replacements", System.Diagnostics.Stopwatch.GetTimestamp());
 
             _quality = quality;
