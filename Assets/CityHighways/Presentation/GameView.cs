@@ -769,6 +769,10 @@ namespace CityHighways.Presentation
             _topBar.Add(_logoDivider);
             _turnLabel = Ui.Text("", 16f, null, true);
             _turnLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            _turnLabel.style.overflow = Overflow.Hidden;
+            _turnLabel.style.textOverflow = TextOverflow.Ellipsis;
+            _turnLabel.tooltip = _turnLabel.text;
+            _turnLabel.style.flexShrink = 1f;
             _turnLabel.style.marginRight = 12f;
             _topBar.Add(_turnLabel);
 
