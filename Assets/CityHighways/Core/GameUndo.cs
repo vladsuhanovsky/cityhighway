@@ -50,6 +50,11 @@ namespace CityHighways.Core
             journal = new List<string>();
             if (!CanUndo(game, online, hasBots, tutorial, timerEnabled, hiddenHands))
                 return false;
+            // A loaded legacy/broken-history snapshot can still expose
+            // StartInfo and History. Never replay a shortened history into
+            // a new authoritative state unless the full history first
+            // reconstructs the actual current game.
+            if (!game.HasVerifiedUndoHistory()) return false;
 
             try
             {
