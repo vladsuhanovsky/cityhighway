@@ -108,6 +108,13 @@ def validate(root, release=False, app_id=None):
         except (OSError, ValueError, KeyError, TypeError) as exc:
             errors.append("Cannot validate optional Steam assembly definition: " + str(exc))
 
+        try:
+            native_source = (root / STEAM_SOURCE).read_text(encoding="utf-8")
+            if not native_source.lstrip().startswith("#if STEAMWORKS_NET"):
+                errors.append("Steam native platform must be guarded by #if STEAMWORKS_NET")
+        except OSError as exc:
+            errors.append("Cannot validate Steam native platform source: " + str(exc))
+
         if (root / APPID_FILE).exists():
             value = (root / APPID_FILE).read_text(encoding="utf-8").strip()
             if not app_id or value != app_id:
