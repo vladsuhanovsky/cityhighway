@@ -122,6 +122,9 @@ namespace CityHighways.Presentation
 
         void OnDestroy()
         {
+            // Domain reload may be disabled in the Unity Editor. Never retain
+            // the previous session's Steam profile or publisher references.
+            SteamAchievementSync.Reset();
             Music?.Dispose();
             Sound?.Dispose();
             _game?.Release3D();
