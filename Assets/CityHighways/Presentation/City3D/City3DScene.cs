@@ -211,7 +211,8 @@ namespace CityHighways.Presentation
             _quality = quality;
             using (City3DGenerationMarkers.Materials.Auto())
             {
-                SetupRendering(quality);
+                using (City3DHotspotMarkers.SetupRendering.Auto())
+                    SetupRendering(quality);
                 CreateMaterials(plan);
             }
             generation.Mark(City3DGenerationMarkers.MaterialsName, System.Diagnostics.Stopwatch.GetTimestamp());
@@ -410,7 +411,8 @@ namespace CityHighways.Presentation
         void CreateMaterials(CityPlanner.Plan plan)
         {
             _buildings = LoadMaterial("CityBuildings", Color.white);
-            _buildings.SetTexture("_BaseMap", CityAtlas.Albedo);
+            using (City3DHotspotMarkers.CityAtlas.Auto())
+                _buildings.SetTexture("_BaseMap", CityAtlas.Albedo);
             _buildings.SetTexture("_EmissionMap", CityAtlas.Emission);
             _buildings.SetFloat("_Smoothness", 0.18f);
             NoSpecular(_buildings);
@@ -419,12 +421,14 @@ namespace CityHighways.Presentation
             _buildings.SetColor("_EmissionColor", Color.black);
 
             _ground = LoadMaterial("CityGround", Color.white);
-            _ground.SetTexture("_BaseMap", TerrainTexture.ForCity3D(_map, plan.Footprints));
+            using (City3DHotspotMarkers.TerrainAlbedo.Auto())
+                _ground.SetTexture("_BaseMap", TerrainTexture.ForCity3D(_map, plan.Footprints));
             _ground.SetFloat("_Smoothness", 0.04f);
             NoSpecular(_ground);
             // Неровности земли: крупные (холмы, пригорки парков) на всю доску и мелкая деталь,
             // повторяющаяся по полю, — шероховатость и пятна (множитель ×2: серый 0,5 цвет не меняет).
-            _ground.SetTexture("_BumpMap", CityTextures.GroundNormal(_map));
+            using (City3DHotspotMarkers.GroundNormal.Auto())
+                _ground.SetTexture("_BumpMap", CityTextures.GroundNormal(_map));
             _ground.SetFloat("_BumpScale", 0.8f);
             _ground.EnableKeyword("_NORMALMAP");
             _ground.SetTexture("_DetailAlbedoMap", CityTextures.DetailAlbedo);
