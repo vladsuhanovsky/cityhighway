@@ -15,9 +15,9 @@ namespace CityHighways.Tests
             scroll.Add(row);
             row.Add(card);
             Assert.IsTrue(GamepadScrollFocus.ContainsContentTarget(
-                scroll.contentContainer, card));
+                scroll, card));
             Assert.IsTrue(GamepadScrollFocus.ContainsContentTarget(
-                scroll.contentContainer, row));
+                scroll, row));
         }
 
         [Test]
@@ -28,10 +28,10 @@ namespace CityHighways.Tests
             var child = new Button();
             scroll.Add(child);
             Assert.IsFalse(GamepadScrollFocus.ContainsContentTarget(
-                scroll.contentContainer, outside));
+                scroll, outside));
             child.RemoveFromHierarchy();
             Assert.IsFalse(GamepadScrollFocus.ContainsContentTarget(
-                scroll.contentContainer, child));
+                scroll, child));
         }
 
         [Test]
@@ -39,10 +39,34 @@ namespace CityHighways.Tests
         {
             var scroll = new ScrollView();
             Assert.IsFalse(GamepadScrollFocus.ContainsContentTarget(
-                scroll.contentContainer, scroll.contentContainer));
+                scroll, scroll.contentContainer));
             Assert.IsFalse(GamepadScrollFocus.ContainsContentTarget(null, scroll));
             Assert.IsFalse(GamepadScrollFocus.ContainsContentTarget(
-                scroll.contentContainer, null));
+                scroll, null));
+        }
+
+        [Test]
+        public void ScrollbarControlsAndScrollRootAreNotContentTargets()
+        {
+            var scroll = new ScrollView(ScrollViewMode.Vertical);
+            Assert.IsFalse(GamepadScrollFocus.ContainsContentTarget(scroll, scroll));
+            Assert.IsFalse(GamepadScrollFocus.ContainsContentTarget(
+                scroll, scroll.contentContainer));
+            Assert.IsFalse(GamepadScrollFocus.ContainsContentTarget(
+                scroll, scroll.verticalScroller));
+            Assert.IsFalse(GamepadScrollFocus.ContainsContentTarget(
+                scroll, scroll.verticalScroller.slider));
+            Assert.IsFalse(GamepadScrollFocus.ContainsContentTarget(
+                scroll, scroll.horizontalScroller));
+        }
+
+        [Test]
+        public void ExplicitContentContainerChildCanBeRevealed()
+        {
+            var scroll = new ScrollView(ScrollViewMode.Vertical);
+            var card = new Button();
+            scroll.contentContainer.Add(card);
+            Assert.IsTrue(GamepadScrollFocus.ContainsContentTarget(scroll, card));
         }
 
         [Test]
