@@ -6267,6 +6267,26 @@
     {
       "key": "game.undo.confirm_other",
       "value": "Player {0} made the last move. Press Confirm undo again within 6 seconds."
+    },
+    {
+      "key": "game.redo.action",
+      "value": "Redo"
+    },
+    {
+      "key": "game.redo.done",
+      "value": "Undone action restored."
+    },
+    {
+      "key": "game.redo.unavailable",
+      "value": "Redo is unavailable right now."
+    },
+    {
+      "key": "game.redo.tooltip",
+      "value": "Redo: {0} · Ctrl+Y / Ctrl+Shift+Z"
+    },
+    {
+      "key": "game.redo.disabled_hint",
+      "value": "No undone action or redo is unavailable for this game."
     }
   ]
 }
