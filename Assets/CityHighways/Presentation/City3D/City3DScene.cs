@@ -212,15 +212,20 @@ namespace CityHighways.Presentation
             SetupRendering(quality);
             CreateMaterials(plan);
             generation.Mark("Rendering and materials", System.Diagnostics.Stopwatch.GetTimestamp());
-            BuildGround();
+            using (City3DGenerationMarkers.Ground.Auto())
+                BuildGround();
             generation.Mark("Ground", System.Diagnostics.Stopwatch.GetTimestamp());
-            BuildDecals(plan);
+            using (City3DGenerationMarkers.Decals.Auto())
+                BuildDecals(plan);
             generation.Mark("Decals", System.Diagnostics.Stopwatch.GetTimestamp());
-            BuildRivers();
+            using (City3DGenerationMarkers.Rivers.Auto())
+                BuildRivers();
             generation.Mark("River meshes", System.Diagnostics.Stopwatch.GetTimestamp());
-            BuildDistricts(plan);
+            using (City3DGenerationMarkers.Districts.Auto())
+                BuildDistricts(plan);
             generation.Mark("District buildings", System.Diagnostics.Stopwatch.GetTimestamp());
-            BuildTrees(plan);
+            using (City3DGenerationMarkers.Trees.Auto())
+                BuildTrees(plan);
             generation.Mark("Trees", System.Diagnostics.Stopwatch.GetTimestamp());
             // Optional capped visual replacements; unselected props still use
             // the original district-batched geometry and visibility rules.
@@ -229,16 +234,21 @@ namespace CityHighways.Presentation
                 _root.transform, _districts, WaterLevel, prefabBudget);
             BuildProps(plan);
             generation.Mark("Props and replacement models", System.Diagnostics.Stopwatch.GetTimestamp());
-            SetupRoads();
+            using (City3DGenerationMarkers.Roads.Auto())
+                SetupRoads();
             generation.Mark("Road setup", System.Diagnostics.Stopwatch.GetTimestamp());
-            BuildJunctions();
+            using (City3DGenerationMarkers.Junctions.Auto())
+                BuildJunctions();
             generation.Mark("Junctions", System.Diagnostics.Stopwatch.GetTimestamp());
-            BuildStations();
+            using (City3DGenerationMarkers.Stations.Auto())
+                BuildStations();
             generation.Mark("Stations", System.Diagnostics.Stopwatch.GetTimestamp());
-            BuildBridges();
+            using (City3DGenerationMarkers.Bridges.Auto())
+                BuildBridges();
             generation.Mark("Bridges", System.Diagnostics.Stopwatch.GetTimestamp());
             // Optional scene-authored visuals. Core map geometry and rules remain procedural.
-            SceneDecorationSpawner.Spawn(_map.Name, _root.transform);
+            using (City3DGenerationMarkers.Decorations.Auto())
+                SceneDecorationSpawner.Spawn(_map.Name, _root.transform);
             generation.Mark("Authored scene decorations", System.Diagnostics.Stopwatch.GetTimestamp());
             SetupReflections(quality);
             // Attach after construction so the first samples exclude one-time map build.
