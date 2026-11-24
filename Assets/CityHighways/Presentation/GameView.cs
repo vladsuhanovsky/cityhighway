@@ -1335,16 +1335,14 @@ namespace CityHighways.Presentation
                 _dirty = true;
             }
 
+            string selectedControllerControl = null;
             if (_dirty)
             {
-                string selectedCard = _gamepadFocusActive && Root.panel != null
+                selectedControllerControl = _gamepadFocusActive && Root.panel != null
                     ? (Root.panel.focusController.focusedElement as VisualElement)?.name
                     : null;
                 _dirty = false;
                 Refresh();
-                if (selectedCard != null &&
-                    selectedCard.StartsWith("gamepad-contract-", StringComparison.Ordinal))
-                    UiGamepadFocus.RestoreNamedFocus(Root, selectedCard);
             }
 
             // A controller can navigate the existing HUD and dialog buttons
@@ -1354,6 +1352,12 @@ namespace CityHighways.Presentation
                 _modal != Modal.None ? _modalLayer :
                 _drawerOpen ? _drawer :
                 _playersOpen ? _playersPanel : Root;
+            // A rebuilt card, layer row or HUD action may have a new
+            // VisualElement instance. Restore only within the active modal
+            // scope; never jump back to a blocked underlying HUD control.
+            if (UiGamepadFocus.IsStableControllerName(selectedControllerControl))
+                UiGamepadFocus.RestoreNamedFocus(
+                    Root, controllerScope, selectedControllerControl);
             _gamepadFocusReturn.Update(Root, controllerScope, _gamepadFocusActive);
             UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
                 _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,
