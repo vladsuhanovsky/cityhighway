@@ -16,6 +16,7 @@ namespace CityHighways.Presentation
         {
             _changed = changed;
             pickingMode = PickingMode.Position;
+            focusable = true;
             style.width = 52f;
             style.height = 28f;
             style.flexShrink = 0f;
@@ -32,13 +33,22 @@ namespace CityHighways.Presentation
             Ui.Transitions(_knob, 0.2f, "left");
             Add(_knob);
             Set(value, false);
-            RegisterCallback<ClickEvent>(_ =>
+            RegisterCallback<ClickEvent>(_ => Toggle());
+            RegisterCallback<NavigationSubmitEvent>(evt =>
             {
-                Set(!_value, true);
-                Ui.Changed?.Invoke();
+                Toggle();
+                evt.StopPropagation();
             });
+            RegisterCallback<FocusInEvent>(_ => Ui.Border(this, 2f, Theme.Accent));
+            RegisterCallback<FocusOutEvent>(_ => Ui.Border(this, 0f, Color.clear));
             RegisterCallback<PointerEnterEvent>(_ => style.opacity = 0.9f);
             RegisterCallback<PointerLeaveEvent>(_ => style.opacity = 1f);
+        }
+
+        void Toggle()
+        {
+            Set(!_value, true);
+            Ui.Changed?.Invoke();
         }
 
         public bool Value => _value;
