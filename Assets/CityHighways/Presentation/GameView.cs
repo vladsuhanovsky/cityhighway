@@ -800,6 +800,15 @@ namespace CityHighways.Presentation
             spaceRight.style.flexGrow = 1f;
             _topBar.Add(spaceRight);
 
+            // Undo is visible but disabled unless the offline replay policy
+            // permits reversing the latest action; keyboard/controller focus
+            // uses the standard UI Toolkit button path.
+            _undoButton = Ui.Button(LocalizationService.Get("game.undo.action"),
+                UndoLastAction, ButtonKind.Ghost, 13f);
+            _undoButton.style.marginRight = 6f;
+            _undoButton.style.minHeight = 40f;
+            _topBar.Add(_undoButton);
+
             // Журнал — наверху, рядом с меню; панель журнала выезжает сверху справа.
             _logTab = Ui.Button(LocalizationService.Get("game.ui.021"), () => ToggleSheet(SheetKind.Log), ButtonKind.Ghost, 14f);
             _logTab.style.marginRight = 8f;
@@ -1188,7 +1197,8 @@ namespace CityHighways.Presentation
             Begin(game, file.playSeconds, EnglishUi ? $"Game resumed (saved {file.savedAt})." : $"Партия продолжена (сохранена {file.savedAt}).");
         }
 
-        void Begin(Game game, float playSeconds, string firstLogLine)
+        void Begin(Game game, float playSeconds, string firstLogLine,
+            bool skipTutorialPrompt = false)
         {
             _game = game;
             _playSeconds = playSeconds;
@@ -1250,7 +1260,8 @@ namespace CityHighways.Presentation
             if (_coach != null) _coach.Panel.RemoveFromHierarchy();
             _coach = _setup.tutorial ? new TutorialCoach(_game, _map) : null;
             if (_coach != null) _fx.Add(_coach.Panel);
-            bool showTutorial = !Online && !_setup.tutorial && HumanCount > 0 && PlayerPrefs.GetInt(TutorialPrefsKey, 0) == 0;
+            bool showTutorial = !skipTutorialPrompt && !Online && !_setup.tutorial &&
+                HumanCount > 0 && PlayerPrefs.GetInt(TutorialPrefsKey, 0) == 0;
             Action start = () =>
             {
                 if (showTutorial) _app.Tweener.After(0.5f, () => ShowTutorialStep(0));
@@ -2538,6 +2549,7 @@ namespace CityHighways.Presentation
             RefreshDrawerInfo();
             AutoPanels();
             RefreshTabs();
+            RefreshUndoButton();
             _minimap.Refresh();
         }
 

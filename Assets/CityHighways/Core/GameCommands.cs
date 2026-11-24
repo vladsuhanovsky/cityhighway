@@ -185,20 +185,51 @@ namespace CityHighways.Core
         }
 
         /// <summary>Воспроизвести партию: те же начальные условия и команды дают то же состояние.</summary>
-        public static Game Replay(CityMap map, GameStartInfo start, IEnumerable<GameCommand> commands)
+        public static Game Replay(CityMap map, GameStartInfo start, IEnumerable<GameCommand> commands,
+            Action<string> onLog = null)
         {
             if (start == null) throw new ArgumentNullException(nameof(start));
             var characters = (start.characters ?? new int[start.players.Length]).Select(c => (CharacterKind)c).ToList();
             var game = new Game(map, start.players, start.config, start.seed, characters);
-            int number = 0;
-            foreach (var command in commands ?? Enumerable.Empty<GameCommand>())
+            // Log replay can rebuild the local journal after undo; observer
+            // must never remain subscribed to the returned live Game.
+            if (onLog != null) game.Log += onLog;
+            try
             {
-                number++;
-                var result = game.Execute(command);
-                if (!result.Success)
-                    throw new InvalidOperationException($"Команда {number} ({command}) не выполнилась: {result.Error}");
+                int number = 0;
+                foreach (var command in commands ?? Enumerable.Empty<GameCommand>())
+                {
+                    number++;
+                    var result = game.Execute(command);
+                    if (!result.Success)
+                        throw new InvalidOperationException($"Команда {number} ({command}) не выполнилась: {result.Error}");
+                }
+            }
+            finally
+            {
+                if (onLog != null) game.Log -= onLog;
             }
             return game;
+        }
+
+        /// <summary>
+        /// A snapshot-fallback save can retain StartInfo and a truncated
+        /// history; CanReplay alone does not certify that undo is safe.
+        /// Verify full reconstruction against the live saved state only
+        /// on an explicit undo attempt, not during every HUD refresh.
+        /// </summary>
+        public bool HasVerifiedUndoHistory()
+        {
+            if (!CanReplay) return false;
+            try
+            {
+                var rebuilt = Replay(Map, StartInfo, History);
+                return rebuilt.SameStateAs(CreateSave());
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         void Record(GameCommand command) => _history.Add(command);
