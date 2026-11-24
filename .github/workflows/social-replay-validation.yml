@@ -37,4 +37,6 @@ jobs:
           grep -q 'await replayFingerprint(mode, mapPath, validated.replay)' Server/supabase/functions/social/index.ts
           grep -q 'await upsertPersonalBest(db, me, row)' Server/supabase/functions/social/index.ts
           grep -q 'await creditClubGameOnce(db,' Server/supabase/functions/social/index.ts
+          grep -q 'await magnateReportFingerprint(body)' Server/supabase/functions/social/index.ts
+          grep -q 'runId = game.ReportRunId' Assets/CityHighways/Presentation/SocialCloud.cs
           grep -q 'club.amount' Server/README.md
