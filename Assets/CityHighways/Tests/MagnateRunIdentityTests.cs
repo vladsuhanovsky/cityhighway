@@ -37,6 +37,7 @@ namespace CityHighways.Tests
             Assert.IsFalse(MagnateRunIdentity.IsValid("0123456789abcdef"));
             Assert.IsFalse(MagnateRunIdentity.IsValid(""));
             Assert.IsFalse(MagnateRunIdentity.IsValid(null));
+            Assert.IsFalse(MagnateRunIdentity.IsValid(new string('0', 32)));
             Assert.IsFalse(MagnateRunIdentity.IsValid(new string('g', 32)));
             Assert.IsFalse(MagnateRunIdentity.IsValid(new string(' ', 32)));
         }
