@@ -6242,7 +6242,7 @@
     },
     {
       "key": "game.undo.action",
-      "value": "Отменить ход"
+      "value": "Отменить"
     },
     {
       "key": "game.undo.done",
@@ -6251,6 +6251,22 @@
     {
       "key": "game.undo.unavailable",
       "value": "Сейчас отмена действия недоступна."
+    },
+    {
+      "key": "game.undo.confirm_button",
+      "value": "Подтвердить"
+    },
+    {
+      "key": "game.undo.tooltip",
+      "value": "Отменить: {0} · Ctrl/Cmd+Z"
+    },
+    {
+      "key": "game.undo.disabled_hint",
+      "value": "Недоступно в сети, с ботами, таймером, обучением или без полной истории команд."
+    },
+    {
+      "key": "game.undo.confirm_other",
+      "value": "Последнее действие сделал игрок {0}. Нажмите «Подтвердить» ещё раз в течение 6 секунд."
     }
   ]
 }
