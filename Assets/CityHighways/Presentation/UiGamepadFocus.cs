@@ -1,3 +1,4 @@
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace CityHighways.Presentation
@@ -9,6 +10,13 @@ namespace CityHighways.Presentation
     /// </summary>
     public static class UiGamepadFocus
     {
+        /// <summary>
+        /// Ignore low stick drift and mouse-only sessions: the controller
+        /// should claim menu focus only when the player actually navigates.
+        /// </summary>
+        public static bool HasNavigationIntent(Vector2 dpad, Vector2 stick, bool submit) =>
+            submit || dpad.sqrMagnitude > 0.2f || stick.sqrMagnitude > 0.49f;
+
         /// <summary>Find the first active focusable control in visual-tree order.</summary>
         public static VisualElement FirstEligible(VisualElement root)
         {
