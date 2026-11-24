@@ -215,28 +215,22 @@ async function report(db: Db, me: string, body: any) {
   let improved = false, best = score;
 
   if (mode === "classic" || mode === "coop") {
-    const { data: old } = await db.from("records").select("id, score").eq("player_id", me).eq("mode", mode)
-      .eq("map_path", mapPath).maybeSingle();
-    if (!old || score > old.score) {
-      const row = {
-        player_id: me,
-        mode,
-        map_path: mapPath,
-        map_name: str(body.mapName, 64),
-        score,
-        won: !!body.won,
-        seats: clamp(int(body.seats), 1, 8),
-        seed: int(body.seed),
-        // Bounded/decoded/metadata-checked by validateReplayReport.
-        // Never truncate a gzip-base64 stream into an unreadable record.
-        replay: body.replay,
-        game_version: str(body.version, 32),
-        created_at: new Date().toISOString(),
-      };
-      const { error } = await db.from("records").upsert(row, { onConflict: "player_id,mode,map_path" });
-      if (error) throw new Error(error.message);
-      improved = true;
-    } else best = old.score;
+    const row = {
+      mode,
+      map_path: mapPath,
+      map_name: body.mapName,
+      score,
+      won: body.won,
+      seats: body.seats,
+      seed: body.seed,
+      // Bounded/decoded/metadata-checked by validateReplayReport.
+      // Preserve the complete original gzip stream.
+      replay: body.replay,
+      game_version: str(body.version, 32),
+    };
+    // Atomic INSERT ... ON CONFLICT DO UPDATE ... WHERE score improves.
+    // Avoid the old SELECT -> UPSERT race that could lower a record.
+    ({ improved, best } = await upsertPersonalBest(db, me, row));
   }
 
   // Вклад в недельную цель клуба.
