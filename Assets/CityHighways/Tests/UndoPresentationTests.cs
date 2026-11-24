@@ -143,5 +143,12 @@ namespace CityHighways.Tests
             Assert.IsFalse(UndoPresentation.ConfirmationValid(
                 5, 5, 0, 0, 16f, 15f, armed, armed));
         }
+
+        [Test]
+        public void UndoShortcutHintMatchesOperatingSystem()
+        {
+            Assert.AreEqual("Cmd+Z", UndoPresentation.UndoShortcutLabel(true));
+            Assert.AreEqual("Ctrl+Z", UndoPresentation.UndoShortcutLabel(false));
+        }
     }
 }
