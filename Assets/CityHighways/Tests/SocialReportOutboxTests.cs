@@ -128,6 +128,31 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void CorruptPrimaryRecoversFromPreviousBackup()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "first", "{}", Now));
+            Assert.IsTrue(outbox.Enqueue(SteamA, "second", "{}", Now + 1));
+            File.WriteAllText(_path, "not valid json");
+            var restored = new SocialReportOutbox(_path);
+            Assert.AreEqual(1, restored.Count);
+            Assert.AreEqual("first", restored.Next(SteamA, Now)?.key);
+        }
+
+        [Test]
+        public void RetryKeepsOriginalOwnerAndKeyAfterReload()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "game-key", "{}", Now));
+            var entry = outbox.Next(SteamA, Now);
+            Assert.IsTrue(outbox.Reschedule(entry, Now, 429));
+            var reloaded = new SocialReportOutbox(_path);
+            Assert.AreEqual("game-key", reloaded.Entries[0].key);
+            Assert.AreEqual(SteamA, reloaded.Entries[0].ownerSteamId);
+            Assert.IsNull(reloaded.Next(SteamB, Now + TimeSpan.TicksPerDay));
+        }
+
+        [Test]
         public void OldestEligibleReportIsSelectedBeforeNewer()
         {
             var outbox = new SocialReportOutbox(_path);
