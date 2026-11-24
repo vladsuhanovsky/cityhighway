@@ -166,6 +166,30 @@ test("rejects score and seat clamping instead of silently changing results", asy
   }
 });
 
+test("rejects negative or fractional club progress before contribution", async () => {
+  for (const key of ["roadPieces", "contracts", "coopOrders"]) {
+    for (const amount of [-1, 1.5, "12", 10001]) {
+      const incoming = request();
+      incoming.stats[key] = amount;
+      await reject(incoming, "stats." + key);
+    }
+  }
+});
+
+test("rejects a club victory flag inconsistent with the game report", async () => {
+  const incoming = request();
+  incoming.stats.won = false;
+  await reject(incoming, "stats.won");
+});
+
+test("rejects missing or non-object club statistics", async () => {
+  for (const value of [null, [], "stats", 1, undefined]) {
+    const incoming = request();
+    incoming.stats = value;
+    await reject(incoming, "stats");
+  }
+});
+
 test("rejects malformed modes, identifiers and outcomes", async () => {
   for (const value of ["magnate", "spectator", "", null]) {
     const incoming = request();
