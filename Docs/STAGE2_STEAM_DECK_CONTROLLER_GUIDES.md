@@ -89,3 +89,45 @@ Manual Steam Deck acceptance extension:
 
 **Limit:** Physical Steam Deck/Steam Input emulation has not been exercised by
 Edit Mode CI. This is a controller usability improvement, not certification.
+
+## Follow-up: controller-aware button names
+
+A later Stage 2 iteration changes only the *on-screen input legends*. Actual
+gameplay bindings remain Unity Input System `buttonSouth` (Submit),
+`buttonEast` (Back), R3 (map cursor), and shoulder/trigger camera bindings.
+
+- Xbox and Steam Deck's common Xbox-emulated mapping: **A** to select,
+  **B** to go back, **LB/RB** to rotate and **LT/RT** to zoom.
+- PlayStation controllers identifiable by Sony / PlayStation / DualShock /
+  DualSense device metadata: **Cross** to select, **Circle** to go back,
+  **L1/R1** and **L2/R2** for camera bindings.
+- Nintendo Switch controllers identifiable in Input System metadata: **B** to
+  select, **A** to go back, **L/R** and **ZL/ZR** for camera bindings.
+- Both main-menu and both game modes display the appropriate labels in
+  Russian and English. The R3 virtual map cursor's *separate* overlay
+  displays the same Submit/Back labels. Changing the active controller while
+  the overlay is open updates the labels even without moving the cursor.
+- The display is intentionally text-based. It adds no controller-art assets,
+  Steam SDK/package dependency, save migration or gameplay rule changes.
+
+**Important:** Steam Input can expose a *virtual* controller with Xbox-like
+identity even when the physical controller is a PlayStation or Nintendo pad.
+This fallback describes the input device Unity actually sees; it does **not**
+claim reliable physical-brand detection or respect every remapped Steam Input
+layout. A fully accurate Steam Input action glyph integration requires
+Steam-specific platform support and hardware checks.
+
+### Manual acceptance for the controller-aware legends
+
+1. With an Xbox-like pad or Steam Deck, check menu / Classic / Magnate /
+   active map targeting all still say A to select and B to go back.
+2. With PlayStation, verify Cross / Circle, L1/R1 and L2/R2 where applicable.
+3. With Nintendo, verify B / A, L/R and ZL/ZR where applicable.
+4. Switch devices while keeping the map cursor active and check the map
+   overlay updates without requiring cursor movement.
+5. Change language RU ↔ EN in both modes and confirm wording changes while
+   the button identity stays consistent.
+6. Open a text field and verify the STEAM+X keyboard shortcut remains
+   available. Inspect fallback labels if Steam Input presents an Xbox pad.
+7. Run on real Steam Deck/Steam Input and check hardware-specific
+   remappings manually; Unity Edit Mode cannot validate the physical labels.
