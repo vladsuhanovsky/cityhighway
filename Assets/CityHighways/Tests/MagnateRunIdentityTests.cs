@@ -43,6 +43,17 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void LogisticsGameExposesReadOnlyRunIdWithoutAllowingReassignment()
+        {
+            var property = typeof(LogisticsGame).GetProperty(
+                nameof(LogisticsGame.ReportRunId));
+            Assert.IsNotNull(property);
+            Assert.AreEqual(typeof(string), property.PropertyType);
+            Assert.IsNotNull(property.GetMethod);
+            Assert.IsNull(property.SetMethod);
+        }
+
+        [Test]
         public void RunIdentityMustNotDependOnMatchSeedOrPlayerNames()
         {
             // A fixed procedural map seed can be reused in different matches;
