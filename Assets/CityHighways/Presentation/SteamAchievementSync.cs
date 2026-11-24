@@ -21,9 +21,7 @@ namespace CityHighways.Presentation
 
         public static List<string> EligibleIds(PlayerProfile profile, string localSteamId)
         {
-            if (profile == null || string.IsNullOrEmpty(localSteamId) ||
-                !string.Equals(profile.steamId, localSteamId, StringComparison.Ordinal) ||
-                profile.achievements == null)
+            if (!ShouldPublish(profile, localSteamId))
                 return new List<string>();
 
             return profile.achievements
@@ -34,7 +32,9 @@ namespace CityHighways.Presentation
         }
 
         public static bool ShouldPublish(PlayerProfile profile, string steamId) =>
-            profile != null && !string.IsNullOrEmpty(steamId) &&
+            profile != null &&
+            !string.IsNullOrWhiteSpace(steamId) &&
+            !string.IsNullOrWhiteSpace(profile.steamId) &&
             string.Equals(profile.steamId, steamId, StringComparison.Ordinal) &&
             profile.achievements != null;
 
