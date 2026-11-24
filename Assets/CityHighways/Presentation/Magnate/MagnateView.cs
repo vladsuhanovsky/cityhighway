@@ -258,6 +258,9 @@ namespace CityHighways.Presentation
 
         public void Begin()
         {
+            // A fresh Magnate run cannot inherit controller focus from the
+            // previous game's modals, popups or game HUD.
+            _gamepadFocusReturn.Reset();
             _map.TiltEnabled = _app.Display == null || _app.Display.tiltedBoard;
             // Спокойная карта магната: одно покрытие дорог, крупные фишки, значки хабов, фокус под курсором.
             _map.CalmRoads = true;
