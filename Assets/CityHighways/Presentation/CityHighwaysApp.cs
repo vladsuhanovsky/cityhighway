@@ -78,6 +78,7 @@ namespace CityHighways.Presentation
             Ui.Changed = () => { if (Display.uiSounds) Sound.Play(Sfx.Tick, 0.55f); };
 
             Replays.Play = replay => ShowReplay(replay);
+            SteamAchievementSync.Reset();
             ShowMenu();
 
             // Steam: приглашение друга (оверлей) или запуск игры с +connect_lobby.
@@ -101,6 +102,9 @@ namespace CityHighways.Presentation
         {
             NetPlatforms.Steam?.Poll();
             CloudProfiles.Tick();
+            // Publish only profile achievements belonging to this Steam ID,
+            // including past local/cloud unlocks after login or reconnect.
+            SteamAchievementSync.Tick();
             Net?.Poll();
             Tweener.Tick(Time.deltaTime);
             _game?.Tick(Time.deltaTime);
