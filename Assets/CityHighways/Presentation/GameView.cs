@@ -808,6 +808,11 @@ namespace CityHighways.Presentation
             _undoButton.style.marginRight = 6f;
             _undoButton.style.minHeight = 40f;
             _topBar.Add(_undoButton);
+            _redoButton = Ui.Button(LocalizationService.Get("game.redo.action"),
+                RedoLastAction, ButtonKind.Ghost, 13f);
+            _redoButton.style.marginRight = 6f;
+            _redoButton.style.minHeight = 40f;
+            _topBar.Add(_redoButton);
 
             // Журнал — наверху, рядом с меню; панель журнала выезжает сверху справа.
             _logTab = Ui.Button(LocalizationService.Get("game.ui.021"), () => ToggleSheet(SheetKind.Log), ButtonKind.Ghost, 14f);
@@ -1201,6 +1206,7 @@ namespace CityHighways.Presentation
             bool skipTutorialPrompt = false)
         {
             ClearUndoConfirmation();
+            ClearRedoHistory();
             _game = game;
             _playSeconds = playSeconds;
             _game.Log += AddLog;
@@ -1312,7 +1318,8 @@ namespace CityHighways.Presentation
 
             _map.Tick(deltaTime);
             TickUndoShortcut();
-            if (_undoButton != null && _undoButton.enabledSelf != CanUndoAction)
+            if ((_undoButton != null && _undoButton.enabledSelf != CanUndoAction) ||
+                (_redoButton != null && _redoButton.enabledSelf != CanRedoAction))
                 RefreshUndoButton();
             Sync3D(deltaTime);
             if (_game.Phase != GamePhase.GameOver) _playSeconds += deltaTime;
@@ -1795,6 +1802,9 @@ namespace CityHighways.Presentation
 
         void OnStateChanged()
         {
+            // Any new real game action forks the undo timeline. A stale
+            // "Redo" must never replay an older action into this branch.
+            ClearRedoHistory();
             var now = TakeSnapshot();
             bool finished = now.Phase == GamePhase.GameOver && (_snapshot == null || _snapshot.Phase != GamePhase.GameOver);
             if (_snapshot != null) AnimateChanges(_snapshot, now);
