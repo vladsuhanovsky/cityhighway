@@ -24,7 +24,8 @@ namespace CityHighways.Presentation
         /// Button B uses only a registered visible Back action; mandatory
         /// decisions are never skipped by a synthetic confirm/cancel.
         /// </summary>
-        public static void MaintainGameplayFocus(VisualElement root, ref bool active)
+        public static void MaintainGameplayFocus(VisualElement root, ref bool active,
+            bool suppressBack = false)
         {
             if (root == null || root.panel == null) return;
             var pad = Gamepad.current;
@@ -39,7 +40,9 @@ namespace CityHighways.Presentation
             if (pad.buttonEast.wasPressedThisFrame)
             {
                 active = true;
-                Ui.GoBack(root);
+                // B exits the virtual map cursor first. In that frame it
+                // must not also dismiss a game modal or navigate backward.
+                if (!suppressBack) Ui.GoBack(root);
             }
             if (active) EnsureFocus(root);
         }
