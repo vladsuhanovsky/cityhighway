@@ -215,7 +215,9 @@ async function report(db: Db, me: string, body: any) {
         won: !!body.won,
         seats: clamp(int(body.seats), 1, 8),
         seed: int(body.seed),
-        replay: str(body.replay, 700 * 1024),
+        // Bounded/decoded/metadata-checked by validateReplayReport.
+        // Never truncate a gzip-base64 stream into an unreadable record.
+        replay: body.replay,
         game_version: str(body.version, 32),
         created_at: new Date().toISOString(),
       };
