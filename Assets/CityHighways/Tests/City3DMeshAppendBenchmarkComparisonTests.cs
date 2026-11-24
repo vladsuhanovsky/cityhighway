@@ -24,6 +24,24 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ParsedSevenRunComparisonCanBeReviewedForSamplingQuality()
+        {
+            string before = City3DMeshAppendBenchmarkCsv.Export(CaptureTime,
+                "6000.6.8f1", 12, 250, new[] { "Identity" },
+                new[] { new[] { 9.8d, 9.9d, 10d, 10d, 10d, 10.1d, 10.2d } });
+            string after = City3DMeshAppendBenchmarkCsv.Export(CaptureTime.AddMinutes(2),
+                "6000.6.8f1", 12, 250, new[] { "Identity" },
+                new[] { new[] { 8.8d, 8.9d, 9d, 9d, 9d, 9.1d, 9.2d } });
+            Assert.IsTrue(City3DMeshAppendBenchmarkComparison.TryCompare(
+                before, after, out var report, out var reason), reason);
+            var advisory = City3DMeshAppendBenchmarkAdvisory.Evaluate(report.Scenarios[0]);
+            Assert.AreEqual(7, advisory.Runs);
+            Assert.IsFalse(advisory.NeedsReview);
+            Assert.IsFalse(advisory.RangesOverlap);
+            Assert.AreEqual(-10d, report.Scenarios[0].ChangePercent, 1e-9d);
+        }
+
+        [Test]
         public void CompareReportsMedianElapsedTimePercentChangePerScenario()
         {
             string before = Export();
