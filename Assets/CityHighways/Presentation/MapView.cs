@@ -607,8 +607,10 @@ namespace CityHighways.Presentation
             Location location = LocationClicked != null ? LocationAt(point) : null;
             bool hasTarget = road != null || location != null;
             Ui.Border(_gamepadCursorMarker, 3f, hasTarget ? Theme.Success : Theme.Gold);
-            SetHover(road, point);
-            SetHoverLocation(road == null ? location : null, point);
+            // Click() selects a station before an overlapping road in Magnate.
+            // Match that order in the cursor's hover preview.
+            SetHover(location == null ? road : null, point);
+            SetHoverLocation(location, point);
             _gamepadCursorHint.text = LocalizationService.Language == "en"
                 ? "Right stick: aim   D-pad: fine   A: select   B/R3: HUD"
                 : "Правый стик: цель   Крестовина: точнее   A: выбрать   B/R3: интерфейс";
