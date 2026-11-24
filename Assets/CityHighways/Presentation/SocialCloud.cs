@@ -449,13 +449,13 @@ namespace CityHighways.Presentation
             // Never send a provisional score or a bot-owned result.
             // The run ID belongs to the finished game object and survives
             // retransmission of the same report within this session.
-            if (!Available || game == null || game.Phase != MagnatePhase.GameOver ||
+            if (game == null || game.Phase != MagnatePhase.GameOver ||
                 humanIndex < 0 || humanIndex >= game.Players.Count ||
                 game.Players[humanIndex].IsBot ||
                 !MagnateRunIdentity.IsValid(game.ReportRunId)) return;
             var player = game.Players[humanIndex];
             int best = game.Players.Max(p => p.Score);
-            Send<ReportResponse>(new Request
+            QueueReport(new Request
             {
                 action = "report",
                 mode = "magnate",
@@ -464,7 +464,7 @@ namespace CityHighways.Presentation
                 score = player.Score,
                 won = player.Score == best,
                 stats = new ReportStats { delivered = player.Delivered, won = player.Score == best }
-            }, AfterReport);
+            }, "magnate:" + game.ReportRunId);
         }
 
         static void AfterReport(ReportResponse response)
