@@ -174,5 +174,34 @@ namespace CityHighways.Tests
             Assert.AreEqual(2, fake.Sent.Count);
             Assert.IsFalse(dispatcher.Reconcile(fake, second, "steam1", 3f));
         }
+
+        [Test]
+        public void ReorderingOrDuplicatingUnlocksDoesNotTriggerExtraDispatch()
+        {
+            var dispatcher = new SteamAchievementDispatch();
+            var fake = new Publisher();
+            var p = Profile("steam1", "first_win", "mg_win");
+            Assert.IsTrue(dispatcher.Reconcile(fake, p, "steam1", 1f));
+            p.achievements.Reverse();
+            p.achievements.Add("first_win");
+            Assert.IsFalse(dispatcher.Reconcile(fake, p, "steam1", 2f));
+            Assert.AreEqual(1, fake.Sent.Count);
+        }
+
+        [Test]
+        public void ClearingLocalUnlocksStopsPublishingStaleIds()
+        {
+            var dispatcher = new SteamAchievementDispatch();
+            var fake = new Publisher();
+            var p = Profile("steam1", "first_win");
+            Assert.IsTrue(dispatcher.Reconcile(fake, p, "steam1", 1f));
+            p.achievements.Clear();
+            Assert.IsFalse(dispatcher.Reconcile(fake, p, "steam1", 2f));
+            Assert.IsFalse(dispatcher.Reconcile(fake, p, "steam1", 200f));
+            Assert.AreEqual(1, fake.Sent.Count);
+            p.achievements.Add("mg_win");
+            Assert.IsTrue(dispatcher.Reconcile(fake, p, "steam1", 201f));
+            CollectionAssert.AreEqual(new[] { "mg_win" }, fake.Sent[1]);
+        }
     }
 }
