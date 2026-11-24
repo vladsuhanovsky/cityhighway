@@ -18,3 +18,18 @@ The menu command intentionally is not an automated CI assertion: performance tes
 After all three scenarios complete, the Editor offers a Save dialog. Cancel skips saving and leaves the Console result intact. When accepted, the CSV records every **unsorted** measurement in collection order, with UTC capture date, Unity version, scenario, run number, elapsed milliseconds, source-quad count and append count. Values are invariant-culture and CSV-escaped, suitable for later spreadsheet comparison. Capture revision/commit SHA separately in the file name or experiment journal: the exporter does not know the exact source revision.
 
 Do not compare CSV values from different hardware, Unity versions or workloads as if they were controlled A/B results. The original samples remain separate instead of being pooled into one unexplained mean.
+
+
+## Compare baseline and current CSVs
+
+Open **City Highways → 3D Objects → Compare MeshBuilder Append CSV** in Unity Editor. Load a CSV captured *before* a change and one captured *after* it, then click **Compare median run times**. The tool uses each scenario's median measured **elapsed milliseconds** (not a pooled average) and reports:
+
+- Baseline median, current median, and measured run count for each scenario.
+- Percentage change in elapsed time: (current - baseline) / baseline × 100. Negative means the synthetic benchmark completed faster; positive means slower.
+- Exact scenario labels, including quoted commas and line breaks, are parsed from the CSV.
+
+The comparator refuses files with different **Unity versions**, source-quad counts, appends per run, scenario sets or measured run counts. It also rejects malformed CSV quoting, missing/duplicate run numbers, invalid values, inconsistent metadata within one capture and zero baseline medians. It permits different capture timestamps and scenario row ordering. Comparing workload metadata does **not** verify that the machine, code revision, Editor workload, power mode or graphics settings matched.
+
+For a meaningful experiment, record the Git commit hashes and hardware alongside the CSV filenames, repeat both measurements under controlled conditions, and review the range/variation of raw runs. A single median difference is not a confidence interval and does not establish a real-game FPS or GPU performance change.
+
+This comparison is advisory: it is deliberately **not** an automated CI performance gate.
