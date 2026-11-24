@@ -45,7 +45,9 @@ namespace CityHighways.Presentation
                 active = true;
                 // B exits the virtual map cursor first. In that frame it
                 // must not also dismiss a game modal or navigate backward.
-                if (ShouldGoBack(true, suppressBack)) Ui.GoBack(root);
+                if (ShouldGoBack(true, suppressBack) &&
+                    !GamepadTextEntry.TryExit(root))
+                    Ui.GoBack(root);
             }
             if (active) EnsureFocus(ResolveScope(root, priorityScope));
         }
