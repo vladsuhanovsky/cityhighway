@@ -159,6 +159,43 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void FocusableModalBackdropPrefersNestedCloseButton()
+        {
+            var backdrop = new VisualElement { focusable = true };
+            var dialog = new VisualElement();
+            var close = new Button();
+            backdrop.Add(dialog);
+            dialog.Add(close);
+            Assert.AreSame(close, UiGamepadFocus.FirstEligible(backdrop));
+            close.SetEnabled(false);
+            Assert.AreSame(backdrop, UiGamepadFocus.FirstEligible(backdrop));
+        }
+
+        [Test]
+        public void RestoreCandidateMustBelongToVisibleEnabledHud()
+        {
+            var root = new VisualElement();
+            var action = new Button();
+            root.Add(action);
+            Assert.AreSame(action, GamepadFocusReturn.RestorableControl(root, action));
+            action.style.display = DisplayStyle.None;
+            Assert.IsNull(GamepadFocusReturn.RestorableControl(root, action));
+            action.style.display = DisplayStyle.Flex;
+            action.SetEnabled(false);
+            Assert.IsNull(GamepadFocusReturn.RestorableControl(root, action));
+            Assert.IsNull(GamepadFocusReturn.RestorableControl(root, new Button()));
+        }
+
+        [Test]
+        public void MapViewIsNeverUsedAsHudReturnTarget()
+        {
+            var root = new VisualElement();
+            var map = new MapView { focusable = true };
+            root.Add(map);
+            Assert.IsNull(GamepadFocusReturn.RestorableControl(root, map));
+        }
+
+        [Test]
         public void EmptyOrDetachedUiDoesNotStealFocus()
         {
             Assert.IsNull(UiGamepadFocus.FirstEligible(null));
