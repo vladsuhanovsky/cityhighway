@@ -27,6 +27,20 @@ namespace CityHighways.Presentation
         /// <summary>Local pending reports, including ones from a different Steam account.</summary>
         public static int PendingReports => ReportOutbox.Count;
 
+        /// <summary>Count only the signed-in account's reports in UI.</summary>
+        public static int PendingReportsForCurrentAccount
+        {
+            get
+            {
+                string owner = NetPlatforms.Steam?.SteamId;
+                if (!SocialReportOutbox.ValidOwner(owner)) return 0;
+                int count = 0;
+                foreach (var entry in ReportOutbox.Entries)
+                    if (entry.ownerSteamId == owner) count++;
+                return count;
+            }
+        }
+
         static void QueueReport(Request request, string key)
         {
             // A report can be persisted while the profile is still syncing,
