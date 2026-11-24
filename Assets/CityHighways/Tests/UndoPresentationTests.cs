@@ -119,5 +119,13 @@ namespace CityHighways.Tests
                     true, false, true, true, onMac));
             }
         }
+
+        [Test]
+        public void RedoTooltipShortcutMatchesDesktopPlatform()
+        {
+            Assert.AreEqual("Cmd+Shift+Z", UndoPresentation.RedoShortcutLabel(true));
+            Assert.AreEqual("Ctrl+Y / Ctrl+Shift+Z",
+                UndoPresentation.RedoShortcutLabel(false));
+        }
     }
 }
