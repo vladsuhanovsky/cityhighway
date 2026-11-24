@@ -161,5 +161,18 @@ namespace CityHighways.Tests
                 Profile("steam1", "first_win"), "steam2", 140f));
             Assert.AreEqual(1, fake.Sent.Count);
         }
+
+        [Test]
+        public void SwitchingProfilesOfSameAccountForcesReconciliation()
+        {
+            var dispatcher = new SteamAchievementDispatch();
+            var fake = new Publisher();
+            var first = Profile("steam1", "first_win");
+            var second = Profile("steam1", "first_win");
+            Assert.IsTrue(dispatcher.Reconcile(fake, first, "steam1", 1f));
+            Assert.IsTrue(dispatcher.Reconcile(fake, second, "steam1", 2f));
+            Assert.AreEqual(2, fake.Sent.Count);
+            Assert.IsFalse(dispatcher.Reconcile(fake, second, "steam1", 3f));
+        }
     }
 }
