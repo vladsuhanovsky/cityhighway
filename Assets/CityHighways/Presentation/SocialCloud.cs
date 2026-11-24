@@ -415,7 +415,7 @@ namespace CityHighways.Presentation
         /// </summary>
         public static void ReportGame(Game game, GameSetup setup, ReplayFile replay, Ghost ghost)
         {
-            if (!Available || game?.Result == null || setup == null || setup.tutorial || setup.practice || replay == null) return;
+            if (game?.Result == null || setup == null || setup.tutorial || setup.practice || replay == null) return;
             int seat = replay.authorSeat;
             if (seat < 0 || seat >= game.Players.Count || replay.humans == null || !replay.humans[seat]) return;
             var player = game.Players[seat];
@@ -440,7 +440,7 @@ namespace CityHighways.Presentation
                 replay = Replays.Pack(replay),
                 stats = stats
             };
-            Send<ReportResponse>(request, AfterReport);
+            QueueReport(request, replay.mode + ":" + replay.id);
         }
 
         /// <summary>Магнат: рекордов и повторов нет, но доставки и победы идут в цель клуба.</summary>
