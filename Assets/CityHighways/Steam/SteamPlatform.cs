@@ -362,7 +362,11 @@ namespace CityHighways.Steam
         public void Poll()
         {
             if (!_initialized) return;
+            // Check identity before any Steam callback is allowed to
+            // complete an upload from a previous signed-in account.
+            EnsureAchievementAccount();
             SteamAPI.RunCallbacks();
+            if (!EnsureAchievementAccount()) return;
             if (!_statsReady && Time.unscaledTime >= _nextStatsRequest)
                 RequestAchievementStats();
             if (_statsReady) FlushQueuedAchievements();
@@ -374,11 +378,15 @@ namespace CityHighways.Steam
             _initialized = false;
             _statsReady = false;
             _storePending = false;
+            _pendingStoreAccount = 0UL;
             _statsReceived?.Dispose();
             _statsStored?.Dispose();
-            _queuedAchievements.Clear();
-            _stagedAchievements.Clear();
-            _reportedUnknownIds.Clear();
+            _achievementQueue.Reset();
+            if (_avatar != null)
+            {
+                UnityEngine.Object.Destroy(_avatar);
+                _avatar = null;
+            }
             if (NetPlatforms.SteamAchievements == this)
                 NetPlatforms.SteamAchievements = null;
             SteamAPI.Shutdown();
