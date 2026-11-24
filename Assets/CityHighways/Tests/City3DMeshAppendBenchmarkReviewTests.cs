@@ -45,6 +45,33 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void MarkdownWarnsForNoisyAndUndersampledCaptures()
+        {
+            string markdown = Export(Example());
+            StringAssert.Contains("## Sampling quality (advisory only)", markdown);
+            StringAssert.Contains("Measured runs ≥ 7", markdown);
+            StringAssert.Contains("| Identity | no | 40.00% | 44.44% | yes | yes |", markdown);
+            StringAssert.Contains("non-overlapping ranges do not establish significance", markdown);
+        }
+
+        [Test]
+        public void MarkdownMarksCleanRangesWithoutClaimingSignificance()
+        {
+            var report = Example();
+            report.Scenarios[0].Runs = 7;
+            report.Scenarios[0].BaselineMinMs = 9.8d;
+            report.Scenarios[0].BaselineMedianMs = 10d;
+            report.Scenarios[0].BaselineMaxMs = 10.2d;
+            report.Scenarios[0].CurrentMinMs = 8.8d;
+            report.Scenarios[0].CurrentMedianMs = 9d;
+            report.Scenarios[0].CurrentMaxMs = 9.2d;
+            string markdown = Export(report);
+            StringAssert.Contains("| Identity | yes | 4.00% | 4.44% | no | no |", markdown);
+            StringAssert.Contains("clean result", markdown);
+            StringAssert.Contains("not statistical confidence intervals", markdown);
+        }
+
+        [Test]
         public void MarkdownEscapesUserLabelsAndRemovesEmbeddedLineBreaks()
         {
             var report = Example();
