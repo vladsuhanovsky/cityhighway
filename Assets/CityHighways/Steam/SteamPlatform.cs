@@ -214,6 +214,33 @@ namespace CityHighways.Steam
             return result;
         }
 
+        /// <summary>
+        /// Rebind all asynchronous stats/upload state to the *current* local
+        /// Steam account. Any change forces a fresh RequestCurrentStats before
+        /// this instance is allowed to publish more achievements.
+        /// </summary>
+        bool EnsureAchievementAccount()
+        {
+            if (!_initialized) return false;
+            ulong activeId = SteamUser.GetSteamID().m_SteamID;
+            if (_achievementQueue.ObserveAccount(activeId))
+            {
+                _statsReady = false;
+                _storePending = false;
+                _pendingStoreAccount = 0UL;
+                _nextStatsRequest = 0f;
+                _nextStoreAttempt = 0f;
+                // Steam avatars are also account-owned. Do not show the
+                // previous user's cached texture after an identity change.
+                if (_avatar != null)
+                {
+                    UnityEngine.Object.Destroy(_avatar);
+                    _avatar = null;
+                }
+            }
+            return _achievementQueue.BelongsTo(activeId);
+        }
+
         // Steamworks stats arrive asynchronously. Do not call SetAchievement
         // until UserStatsReceived confirms the current local Steam account.
         void RequestAchievementStats()
