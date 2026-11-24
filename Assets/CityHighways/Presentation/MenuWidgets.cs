@@ -421,6 +421,7 @@ namespace CityHighways.Presentation
         public static Action Hovered;
 
         readonly bool _primary;
+        readonly Action _onClick;
         readonly ColorMesh _mesh = new ColorMesh();
         readonly MenuIcon _icon;
         readonly Label _title;
@@ -432,8 +433,12 @@ namespace CityHighways.Presentation
         public MenuButton(MenuIcon.Glyph glyph, string title, Action onClick, bool primary)
         {
             _primary = primary;
+            _onClick = onClick;
             _phase = UnityEngine.Random.value * 10f;
             pickingMode = PickingMode.Position;
+            // Custom tiles are not Buttons: explicitly participate in
+            // UI Toolkit gamepad/keyboard focus navigation.
+            focusable = true;
             style.flexDirection = FlexDirection.Row;
             style.alignItems = Align.Center;
             style.height = 58f;
@@ -453,24 +458,39 @@ namespace CityHighways.Presentation
             Badge.pickingMode = PickingMode.Ignore;
             Add(Badge);
 
-            RegisterCallback<PointerEnterEvent>(_ =>
-            {
-                _hoverTarget = 1f;
-                style.translate = new Translate(new Length(0f), new Length(-2f));
-                Hovered?.Invoke();
-            });
+            RegisterCallback<PointerEnterEvent>(_ => Highlight(true));
             RegisterCallback<PointerLeaveEvent>(_ =>
             {
-                _hoverTarget = 0f;
-                style.translate = new Translate(new Length(0f), new Length(0f));
+                if (panel?.focusController.focusedElement != this) Highlight(false);
             });
+            RegisterCallback<FocusInEvent>(_ => Highlight(true));
+            RegisterCallback<FocusOutEvent>(_ => Highlight(false));
             RegisterCallback<ClickEvent>(e =>
             {
                 // Клик по маленькой кнопке справа — её дело, а не всей строки.
                 if (e.target is VisualElement target && target != this && Badge.Contains(target)) return;
-                Ui.ButtonClicked?.Invoke();
-                onClick?.Invoke();
+                Activate();
             });
+            RegisterCallback<NavigationSubmitEvent>(evt =>
+            {
+                Activate();
+                evt.StopPropagation();
+            });
+        }
+
+        void Activate()
+        {
+            Ui.ButtonClicked?.Invoke();
+            _onClick?.Invoke();
+        }
+
+        void Highlight(bool on)
+        {
+            if (_hoverTarget == (on ? 1f : 0f)) return;
+            _hoverTarget = on ? 1f : 0f;
+            style.translate = new Translate(new Length(0f),
+                new Length(on ? -2f : 0f));
+            if (on) Hovered?.Invoke();
         }
 
         public string Title
