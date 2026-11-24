@@ -204,5 +204,55 @@ namespace CityHighways.Tests
             Assert.IsFalse(outbox.Complete(new SocialReportOutbox.Entry { key = "other" }));
             Assert.AreEqual(1, outbox.Count);
         }
+        [Test]
+        public void FailedInitialDiskWriteDoesNotLeavePhantomQueuedReport()
+        {
+            Directory.CreateDirectory(_folder);
+            File.WriteAllText(Path.Combine(_folder, "social"), "not a directory");
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsFalse(outbox.Enqueue(SteamA, "lost", "{}", Now));
+            Assert.AreEqual(0, outbox.Count);
+            Assert.IsNull(outbox.Next(SteamA, Now));
+        }
+
+        [Test]
+        public void FailedDiskWritesRollBackRemovalAndRetrySchedule()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "durable", "{}", Now));
+            var entry = outbox.Next(SteamA, Now);
+            Assert.IsNotNull(entry);
+
+            // A directory occupying the temporary-file name reliably blocks
+            // the atomic write on Windows, macOS and Linux.
+            Directory.CreateDirectory(_path + ".tmp");
+            Assert.IsFalse(outbox.Reschedule(entry, Now, 503));
+            Assert.AreEqual(0, entry.attempts);
+            Assert.AreEqual(Now, entry.nextAttemptUtcTicks);
+            Assert.AreEqual(entry, outbox.Next(SteamA, Now));
+
+            Assert.IsFalse(outbox.Complete(entry));
+            Assert.AreEqual(1, outbox.Count);
+            Assert.AreEqual(entry, outbox.Next(SteamA, Now));
+
+            Directory.Delete(_path + ".tmp");
+            Assert.IsTrue(outbox.Reschedule(entry, Now, 503));
+            Assert.IsNull(outbox.Next(SteamA, Now));
+            Assert.IsTrue(outbox.Complete(entry));
+            Assert.AreEqual(0, new SocialReportOutbox(_path).Count);
+        }
+
+        [Test]
+        public void InvalidRetryClockDoesNotMutatePendingReport()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "clock", "{}", Now));
+            var entry = outbox.Next(SteamA, Now);
+            Assert.IsFalse(outbox.Reschedule(entry, -1, 503));
+            Assert.IsFalse(outbox.Reschedule(entry, DateTime.MaxValue.Ticks + 1, 503));
+            Assert.AreEqual(0, entry.attempts);
+            Assert.AreEqual(Now, entry.nextAttemptUtcTicks);
+        }
+
     }
 }
