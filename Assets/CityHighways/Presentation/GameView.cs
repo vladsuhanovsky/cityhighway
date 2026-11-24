@@ -457,6 +457,14 @@ namespace CityHighways.Presentation
             Root.style.flexGrow = 1f;
             Root.style.backgroundColor = Theme.Background;
             Root.RegisterCallback<PointerDownEvent>(_ => _gamepadFocusActive = false);
+            // Capture UI Submit before it can activate a focused HUD control
+            // while the player is intentionally choosing a map target.
+            Root.RegisterCallback<NavigationSubmitEvent>(evt =>
+            {
+                if (_map == null || !_map.IsGamepadTargeting || evt.target == _map) return;
+                evt.PreventDefault();
+                evt.StopPropagation();
+            }, TrickleDown.TrickleDown);
 
             // Макет: карта на весь экран; сверху — ход, событие, журнал и меню, снизу — вкладки, игроки и ресурсы.
             // Всё остальное — выезжающие панели (действия, контракты, журнал), боковое меню и окна.
