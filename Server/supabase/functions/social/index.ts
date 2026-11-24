@@ -20,6 +20,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { validateReplayReport } from "./report-validator.mjs";
 import { replayFingerprint } from "./report-fingerprint.mjs";
+import { magnateReportFingerprint } from "./magnate-report.mjs";
 import { upsertPersonalBest, creditClubGameOnce } from "./report-persistence.mjs";
 import { readBoundedBody, RequestTooLargeError } from "./body-limit.mjs";
 
