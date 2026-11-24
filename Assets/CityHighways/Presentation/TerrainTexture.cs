@@ -78,7 +78,8 @@ namespace CityHighways.Presentation
         /// крыш и крон — их заменяют 3D-здания и деревья. Под каждым основанием здания — мягкое затемнение
         /// (вместо ambient occlusion). footprints — прямоугольники оснований в координатах карты: центр и полуразмеры.
         /// </summary>
-        public static Texture2D ForCity3D(CityMap map, IReadOnlyList<Vector4> footprints)
+        public static Texture2D ForCity3D(CityMap map, IReadOnlyList<Vector4> footprints,
+            City3DHotspotTiming timing = null)
         {
             if (_cached3D != null && _cached3DMap == map) return _cached3D;
             if (_cached3D != null)
@@ -90,7 +91,7 @@ namespace CityHighways.Presentation
             int w = Mathf.Min(MaxWidth, Mathf.RoundToInt(1400f * span));
             float k = w / (1400f * span);
             int h = Mathf.RoundToInt(780f * span * k);
-            _cached3D = Bake(map, w, h, k, 900f * k, footprints);
+            _cached3D = Bake(map, w, h, k, 900f * k, footprints, timing);
             _cached3D.name = "CityHighways_Terrain3D";
             _cached3DMap = map;
             return _cached3D;
@@ -178,7 +179,8 @@ namespace CityHighways.Presentation
             return best;
         }
 
-        static Texture2D Bake(CityMap map, int w, int h, float k, float fullHeight, IReadOnlyList<Vector4> footprints = null)
+        static Texture2D Bake(CityMap map, int w, int h, float k, float fullHeight,
+            IReadOnlyList<Vector4> footprints = null, City3DHotspotTiming timing = null)
         {
             bool city3D = footprints != null;
             float span = 1f + 2f * Margin;
@@ -199,6 +201,8 @@ namespace CityHighways.Presentation
 
             // ---- Земля: трава пятнами, поля за городом, к центру земля сереет.
             using (City3DHotspotMarkers.TerrainPixels.Auto())
+            using (timing == null ? default(City3DHotspotTiming.Scope) :
+                timing.Track("Terrain base pixel fill"))
             {
                 for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
@@ -279,6 +283,8 @@ namespace CityHighways.Presentation
             {
                 // Мягкое затемнение вокруг оснований: два ореола и сама площадка (её закроет здание).
                 using (City3DHotspotMarkers.TerrainFootprints.Auto())
+                using (timing == null ? default(City3DHotspotTiming.Scope) :
+                    timing.Track("Terrain building footprints"))
                 {
                     foreach (var f in footprints)
                     {
@@ -364,6 +370,8 @@ namespace CityHighways.Presentation
 
             Texture2D texture;
             using (City3DHotspotMarkers.TerrainUpload.Auto())
+            using (timing == null ? default(City3DHotspotTiming.Scope) :
+                timing.Track("Terrain texture upload"))
             {
                 texture = new Texture2D(w, h, TextureFormat.RGBA32, false)
                 {
