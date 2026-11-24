@@ -89,6 +89,25 @@ def validate(root, release=False, app_id=None):
         except (OSError, ValueError, KeyError, TypeError) as exc:
             errors.append("Cannot validate Unity packages-lock.json: " + str(exc))
 
+        try:
+            assembly = json.loads((root / STEAM_ASMDEF).read_text(encoding="utf-8"))
+            references = assembly["references"]
+            constraints = assembly["defineConstraints"]
+            versions = assembly["versionDefines"]
+            if (not isinstance(references, list) or
+                    STEAM_PACKAGE not in references or
+                    "CityHighways.Net" not in references or
+                    not isinstance(constraints, list) or
+                    "STEAMWORKS_NET" not in constraints or
+                    not isinstance(versions, list) or
+                    not any(isinstance(item, dict) and
+                            item.get("name") == STEAM_PACKAGE and
+                            item.get("define") == "STEAMWORKS_NET"
+                            for item in versions)):
+                errors.append("Steam assembly definition must reference Steamworks.NET and use its STEAMWORKS_NET version define")
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            errors.append("Cannot validate optional Steam assembly definition: " + str(exc))
+
         if (root / APPID_FILE).exists():
             value = (root / APPID_FILE).read_text(encoding="utf-8").strip()
             if not app_id or value != app_id:
