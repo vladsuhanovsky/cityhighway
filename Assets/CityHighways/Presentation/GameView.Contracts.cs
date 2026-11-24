@@ -196,6 +196,9 @@ namespace CityHighways.Presentation
             bool pinned = !selection && IsPinned(playerIndex, contract);
 
             var card = Ui.Column();
+            // Keep the focused contract after Refresh() rebuilds carousel cards.
+            card.name = "gamepad-contract-" + (selection ? "choice-" : "owned-") +
+                playerIndex + "-" + contract.Id;
             card.pickingMode = PickingMode.Position;
             card.style.width = ContractCardWidth;
             // Use minimum height rather than fixed height: English names and
