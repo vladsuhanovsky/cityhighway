@@ -22,6 +22,7 @@ namespace CityHighways.Presentation
         readonly CityHighwaysApp _app;
         readonly VisualElement _body;
         readonly Label _status;
+        readonly Label _pendingReports;
         Tab _tab = Tab.Club;
         bool _searching;
         string _query = "";
@@ -67,6 +68,11 @@ namespace CityHighways.Presentation
             _status.style.marginBottom = 8f;
             _status.style.whiteSpace = WhiteSpace.Normal;
             Root.Add(_status);
+
+            _pendingReports = Ui.Text("", 13f, Theme.Gold);
+            _pendingReports.style.marginBottom = 8f;
+            _pendingReports.style.whiteSpace = WhiteSpace.Normal;
+            Root.Add(_pendingReports);
 
             var scroll = new ScrollView(ScrollViewMode.Vertical);
             scroll.style.maxHeight = 760f;
@@ -118,6 +124,12 @@ namespace CityHighways.Presentation
 
         public void Rebuild()
         {
+            int pending = SocialCloud.PendingReportsForCurrentAccount;
+            _pendingReports.text = pending > 0
+                ? (En ? $"Pending game reports: {pending}. They will retry when Steam is connected."
+                      : $"Ожидают отправки отчёты партий: {pending}. Повторная отправка — при подключении к Steam.")
+                : "";
+            Ui.Show(_pendingReports, pending > 0);
             foreach (var button in _tabButtons)
             {
                 bool active = (Tab)button.userData == _tab;
