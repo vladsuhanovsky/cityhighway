@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: "22"
       - name: Validate replay consistency and decompression bounds
-        run: node --test Server/supabase/functions/social/report-validator.test.mjs
+        run: node --test Server/supabase/functions/social/*.test.mjs
       - name: Confirm all social report handlers use validation
         shell: bash
         run: |
