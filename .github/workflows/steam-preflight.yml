@@ -39,3 +39,11 @@ jobs:
         run: python3 scripts/steam_release_preflight.py
       - name: Run preflight regression tests
         run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Assert test AppID cannot pass the release gate
+        shell: bash
+        run: |
+          if python3 scripts/steam_release_preflight.py --release --app-id 480 > "$RUNNER_TEMP/steam-preflight-negative.txt" 2>&1; then
+            echo "::error title=Steam preflight failed open::Shared Steam AppID 480 must never pass the release gate"
+            exit 1
+          fi
+          grep -q "real, non-480 Steam AppID" "$RUNNER_TEMP/steam-preflight-negative.txt"
