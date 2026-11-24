@@ -19,6 +19,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { validateReplayReport } from "./report-validator.mjs";
+import { readBoundedBody, RequestTooLargeError } from "./body-limit.mjs";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -137,8 +138,14 @@ function inviteCode(): string {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
-  const raw = await req.text();
-  if (raw.length > 768 * 1024) return json({ error: "too large" }, 413);
+  let raw: string;
+  try {
+    raw = await readBoundedBody(req);
+  } catch (error) {
+    if (error instanceof RequestTooLargeError)
+      return json({ error: "too large" }, 413);
+    return json({ error: "invalid request encoding" }, 400);
+  }
   let body: any;
   try {
     body = JSON.parse(raw);
