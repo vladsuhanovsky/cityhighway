@@ -127,5 +127,28 @@ namespace CityHighways.Tests
             Assert.AreEqual("Ctrl+Y / Ctrl+Shift+Z",
                 UndoPresentation.RedoShortcutLabel(false));
         }
+
+        [Test]
+        public void PendingUndoConfirmationIsBoundToExactCommandIdentity()
+        {
+            var armed = GameCommand.DrawCardFromDeck(0);
+            var other = GameCommand.DrawCardFromDeck(0);
+            Assert.IsTrue(UndoPresentation.ConfirmationValid(
+                5, 5, 0, 0, 10f, 15f, armed, armed));
+            Assert.IsFalse(UndoPresentation.ConfirmationValid(
+                5, 5, 0, 0, 10f, 15f, armed, other),
+                "A new timeline must not inherit a prior approval.");
+            Assert.IsFalse(UndoPresentation.ConfirmationValid(
+                5, 5, 0, 0, 10f, 15f, null, armed));
+            Assert.IsFalse(UndoPresentation.ConfirmationValid(
+                5, 5, 0, 0, 16f, 15f, armed, armed));
+        }
+
+        [Test]
+        public void UndoShortcutHintMatchesOperatingSystem()
+        {
+            Assert.AreEqual("Cmd+Z", UndoPresentation.UndoShortcutLabel(true));
+            Assert.AreEqual("Ctrl+Z", UndoPresentation.UndoShortcutLabel(false));
+        }
     }
 }

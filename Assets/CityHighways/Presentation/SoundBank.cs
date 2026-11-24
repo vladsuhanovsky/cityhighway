@@ -35,7 +35,9 @@ namespace CityHighways.Presentation
         /// <summary>Мостовик: гулкий звон стальной балки.</summary>
         CharBridger,
         /// <summary>Brief descending, quiet two-tone confirmation for undo.</summary>
-        Undo
+        Undo,
+        /// <summary>Soft ascending confirmation for a completed redo.</summary>
+        Redo
     }
 
     /// <summary>
@@ -119,6 +121,17 @@ namespace CityHighways.Presentation
                 return (Mathf.Sin(2f * Mathf.PI * pitch * t) +
                         0.3f * Mathf.Sin(2f * Mathf.PI * pitch * 1.5f * t))
                        * Mathf.Exp(-t * 9f) * fade * 0.13f;
+            });
+
+            // Redo: short rising confirmation, distinct from the descending
+            // Undo cue. Still generated locally; no extra audio asset/package.
+            _clips[Sfx.Redo] = Make("redo", 0.22f, t =>
+            {
+                float fade = Mathf.Clamp01((0.22f - t) / 0.08f);
+                float pitch = 380f + 1400f * t;
+                return (Mathf.Sin(2f * Mathf.PI * pitch * t) +
+                        0.25f * Mathf.Sin(2f * Mathf.PI * pitch * 1.5f * t))
+                       * Mathf.Exp(-t * 8f) * fade * 0.12f;
             });
 
             // Везунчик: щелчок большого пальца, звон вращающейся монетки и три затухающих «динь» при падении.

@@ -1,3 +1,4 @@
+using System;
 using CityHighways.Core;
 
 namespace CityHighways.Presentation
@@ -40,9 +41,25 @@ namespace CityHighways.Presentation
             historyLength > 0 && historyLength == armedHistoryLength &&
             lastPlayer == armedPlayer && now <= expiresAt;
 
+        /// <summary>
+        /// A confirmation is valid only for the exact command object that was
+        /// displayed when the player was asked; matching length and owner
+        /// alone could accept a different move after timeline replacement.
+        /// </summary>
+        public static bool ConfirmationValid(int historyLength, int armedHistoryLength,
+            int lastPlayer, int armedPlayer, float now, float expiresAt,
+            GameCommand armedCommand, GameCommand currentCommand) =>
+            ConfirmationValid(historyLength, armedHistoryLength,
+                lastPlayer, armedPlayer, now, expiresAt) &&
+            armedCommand != null && ReferenceEquals(armedCommand, currentCommand);
+
         /// <summary>Windows/Steam Deck must not treat the system Win key as Cmd.</summary>
         public static bool UndoModifier(bool ctrlPressed, bool metaPressed, bool onMac) =>
             ctrlPressed || (onMac && metaPressed);
+
+        /// <summary>Platform-specific Undo shortcut hint for HUD tooltips.</summary>
+        public static string UndoShortcutLabel(bool onMac) =>
+            onMac ? "Cmd+Z" : "Ctrl+Z";
 
         /// <summary>Ctrl/Cmd+Z is reserved for undo outside text fields.</summary>
         public static bool WantsShortcut(bool modifier, bool shift, bool zPressed,

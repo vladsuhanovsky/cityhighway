@@ -179,3 +179,45 @@ New Edit Mode tests validate the deterministic timeline, safe refusal
 of diverged/tampered histories, deep command payload comparison,
 cross-session denial, repeated undo/redo and keyboard gates.
 Manual Unity visual/gamepad testing remains required.
+
+## Undo/Redo timeline and HUD robustness (follow-up)
+
+- The redo stack is now a single `RedoHistory` instance with an
+  explicit capacity of **8**, LIFO consumption, and exact reference
+  checking when removing a completed redo target. Oldest redo entries
+  are discarded if the capacity is exceeded.
+- Rebuilding the current game after an *internal* Undo or Redo preserves
+  this stack. Starting/loading a **different session** still clears it,
+  as does any new recorded gameplay action. No stale timeline is
+  serialized with save data.
+- A previous-player Undo confirmation is now associated with the **exact
+  previously displayed `GameCommand` instance**, not just history
+  length and player index. Swapping a command at the same history
+  position requires the player to confirm again.
+- The Undo tooltip now shows the correct `Ctrl+Z` or `Cmd+Z` shortcut
+  for the active operating system. Redo shows the available action
+  count plus the appropriate desktop shortcut, in both RU and EN.
+- Undo plays its short descending tone; successful Redo uses a
+  **distinct ascending synthesized cue**. Both use existing audio
+  volume/mute settings and release their generated clips on shutdown.
+
+### Additional manual QA
+
+1. Draw multiple times, Undo twice and Redo twice: verify both actions
+   return in order and the Redo tooltip count changes correctly.
+2. Undo nine actions in a sufficiently long all-human local match:
+   only the eight most recent undone actions should remain available
+   to Redo; new valid moves clear the stack immediately.
+3. Start a new game or resume a saved game after Undo. Redo must be
+   disabled, even if the prior session had a pending redo target.
+4. In hot-seat play, undo an action made by the previous player.
+   Confirm only after the owner warning; a stale confirmation must
+   not be transferable to another history command.
+5. Switch to Russian and English, check shortcut hints and step-count
+   formatting on Windows/Linux and macOS, with no untranslated tokens.
+6. Verify two distinct, low-volume undo/redo cues and ensure muting
+   sound effects mutes both. Test controller focus and a 1280x800
+   Steam Deck view for accessible top-bar controls.
+
+The new NUnit tests exercise the bounded stack and stale confirmation
+guard. Unity CI does **not** replace hands-on gamepad or display QA.

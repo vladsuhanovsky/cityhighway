@@ -6258,7 +6258,7 @@
     },
     {
       "key": "game.undo.tooltip",
-      "value": "Undo: {0} · Ctrl/Cmd+Z"
+      "value": "Undo: {0} · {1}"
     },
     {
       "key": "game.undo.disabled_hint",
@@ -6282,7 +6282,7 @@
     },
     {
       "key": "game.redo.tooltip",
-      "value": "Redo: {0} · {1}"
+      "value": "Redo: {0} · {1} · available: {2}"
     },
     {
       "key": "game.redo.disabled_hint",
