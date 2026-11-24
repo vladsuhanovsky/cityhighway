@@ -37,6 +37,9 @@ namespace CityHighways.Presentation
 
         readonly string _path;
         readonly List<Entry> _entries = new List<Entry>();
+        // After loading the backup, the primary may be corrupt. The first
+        // repair write must not replace the only known-good backup with it.
+        bool _recoveredFromBackup;
 
         public int Count => _entries.Count;
         public IReadOnlyList<Entry> Entries => _entries;
@@ -60,7 +63,8 @@ namespace CityHighways.Presentation
         {
             if (!ValidOwner(owner) || string.IsNullOrEmpty(key) || key.Length > 200 ||
                 string.IsNullOrEmpty(requestJson) ||
-                Encoding.UTF8.GetByteCount(requestJson) > MaxPayloadBytes || nowTicks < 0)
+                Encoding.UTF8.GetByteCount(requestJson) > MaxPayloadBytes ||
+                nowTicks < DateTime.MinValue.Ticks || nowTicks > DateTime.MaxValue.Ticks)
                 return false;
 
             if (_entries.Any(e => e.ownerSteamId == owner && e.key == key))
@@ -85,7 +89,8 @@ namespace CityHighways.Presentation
         /// <summary>Only sends a due report owned by the currently signed-in Steam account.</summary>
         public Entry Next(string owner, long nowTicks)
         {
-            if (!ValidOwner(owner)) return null;
+            if (!ValidOwner(owner) || nowTicks < DateTime.MinValue.Ticks ||
+                nowTicks > DateTime.MaxValue.Ticks) return null;
             return _entries.Where(e => e.ownerSteamId == owner && e.nextAttemptUtcTicks <= nowTicks)
                 .OrderBy(e => e.createdUtcTicks).FirstOrDefault();
         }
@@ -173,10 +178,16 @@ namespace CityHighways.Presentation
                             !string.IsNullOrEmpty(entry.key) && entry.key.Length <= 200 &&
                             !string.IsNullOrEmpty(entry.requestJson) &&
                             Encoding.UTF8.GetByteCount(entry.requestJson) <= MaxPayloadBytes &&
+                            entry.createdUtcTicks >= DateTime.MinValue.Ticks &&
+                            entry.createdUtcTicks <= DateTime.MaxValue.Ticks &&
+                            entry.nextAttemptUtcTicks >= DateTime.MinValue.Ticks &&
+                            entry.nextAttemptUtcTicks <= DateTime.MaxValue.Ticks &&
+                            entry.attempts >= 0 && entry.attempts <= 1000 &&
                             !_entries.Any(e => e.key == entry.key && e.ownerSteamId == entry.ownerSteamId))
                             _entries.Add(entry);
                         if (_entries.Count >= MaxEntries) break;
                     }
+                    _recoveredFromBackup = candidate != _path;
                     return;
                 }
                 catch (Exception ex)
@@ -193,11 +204,25 @@ namespace CityHighways.Presentation
             {
                 string folder = Path.GetDirectoryName(_path);
                 if (!string.IsNullOrEmpty(folder)) Directory.CreateDirectory(folder);
-                File.WriteAllText(temp, JsonUtility.ToJson(new State { entries = _entries }));
-                if (File.Exists(_path))
+                string json = JsonUtility.ToJson(new State { entries = _entries });
+                if (Encoding.UTF8.GetByteCount(json) > MaxFileBytes)
+                {
+                    Debug.LogWarning("Social report queue exceeds its serialized disk limit.");
+                    return false;
+                }
+                File.WriteAllText(temp, json);
+                if (_recoveredFromBackup)
+                {
+                    // Preserve the known-good .bak while replacing a corrupt
+                    // primary. If anything fails, .bak still contains data.
+                    if (File.Exists(_path)) File.Delete(_path);
+                    File.Move(temp, _path);
+                }
+                else if (File.Exists(_path))
                     File.Replace(temp, _path, _path + ".bak");
                 else
                     File.Move(temp, _path);
+                _recoveredFromBackup = false;
                 return true;
             }
             catch (Exception ex)
