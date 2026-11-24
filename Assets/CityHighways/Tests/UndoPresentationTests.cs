@@ -81,5 +81,43 @@ namespace CityHighways.Tests
             Assert.IsFalse(UndoPresentation.UndoModifier(false, true, false));
             Assert.IsFalse(UndoPresentation.UndoModifier(false, false, true));
         }
+
+        [Test]
+        public void RedoShortcutAcceptsCtrlYOrShiftZOnDesktop()
+        {
+            Assert.IsTrue(UndoPresentation.WantsRedoShortcut(true, false, true,
+                false, false, true, false));
+            Assert.IsTrue(UndoPresentation.WantsRedoShortcut(true, true, false,
+                true, false, true, false));
+            Assert.IsFalse(UndoPresentation.WantsRedoShortcut(false, false, true,
+                false, false, true, false));
+            Assert.IsFalse(UndoPresentation.WantsRedoShortcut(true, false, false,
+                false, false, true, false));
+        }
+
+        [Test]
+        public void RedoShortcutOnMacNeedsCommandShiftZ()
+        {
+            Assert.IsTrue(UndoPresentation.WantsRedoShortcut(true, true, false,
+                true, false, true, true));
+            Assert.IsFalse(UndoPresentation.WantsRedoShortcut(true, false, true,
+                false, false, true, true));
+            Assert.IsFalse(UndoPresentation.WantsRedoShortcut(true, false, false,
+                true, false, true, true));
+        }
+
+        [Test]
+        public void TextFieldAndUnavailableRedoNeverUseKeyboardShortcut()
+        {
+            foreach (bool onMac in new[] { false, true })
+            {
+                Assert.IsFalse(UndoPresentation.WantsRedoShortcut(true, true,
+                    false, true, true, true, onMac));
+                Assert.IsFalse(UndoPresentation.WantsRedoShortcut(true, true,
+                    false, true, false, false, onMac));
+                Assert.IsFalse(UndoPresentation.WantsRedoShortcut(true, false,
+                    true, false, true, true, onMac));
+            }
+        }
     }
 }
