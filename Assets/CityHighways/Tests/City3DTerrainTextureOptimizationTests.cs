@@ -58,7 +58,7 @@ namespace CityHighways.Tests
         }
 
         [Test]
-        public void SevenDetailedHotspotMarkersCanBeOpenedInEditMode()
+        public void TenDetailedHotspotMarkersCanBeOpenedInEditMode()
         {
             var type = typeof(City3DScene).Assembly.GetType(
                 "CityHighways.Presentation.City3DHotspotMarkers");
@@ -66,7 +66,7 @@ namespace CityHighways.Tests
             var markers = type.GetFields(BindingFlags.Static |
                 BindingFlags.NonPublic | BindingFlags.Public)
                 .Where(f => f.FieldType == typeof(ProfilerMarker)).ToArray();
-            Assert.AreEqual(7, markers.Length);
+            Assert.AreEqual(10, markers.Length);
             foreach (var field in markers)
             {
                 var marker = (ProfilerMarker)field.GetValue(null);
