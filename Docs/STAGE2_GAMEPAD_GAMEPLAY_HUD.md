@@ -40,3 +40,56 @@ These are **unit tests of controller intentions and menu helper behavior**. They
 ## Follow-up
 
 Controller selection of road segments and stations, contextual button prompts, game card browsing, consistent focus scrolling in long panels, and text entry/on-screen keyboard remain outstanding before complete gamepad/Steam Deck support.
+
+## Controller focus recovery after UI rebuilding (follow-up)
+
+This slice hardens the **existing** gamepad UI-navigation path in both
+Classic/cooperative and Logistics Magnate; it does not invent new
+gamepad buttons, change game rules or emulate Steam Input.
+
+- Rebuilt card, layer and HUD controls may advertise stable
+  `gamepad-*` identities. Controller navigation restores the newly
+  eligible element after a refresh rather than leaving focus on a
+  detached UI Toolkit object.
+- Focus restoration searches **only within the currently active
+  modal, handoff, results or overlay scope**. A matching HUD control
+  behind a blocking screen cannot steal focus.
+- Only a currently visible **and enabled** control can be restored.
+  Anonymous elements and the pointer-transparent controller hint
+  label are not restoration targets.
+- The gamepad focus-return memory is cleared at the beginning of a
+  different or resumed game in both modes. Internal Classic Undo/Redo
+  state reconstruction keeps the current session's focus memory.
+- Classic Undo/Redo, log, menu and settings top-bar actions now have
+  stable names for controller navigation. If the player currently
+  focuses Undo or Redo and that button disables after a state change,
+  focus transfers to the enabled neighbor or to the log action.
+  Controller focus is not moved while a blocking modal or the
+  virtual map cursor is active.
+- Both Undo and Redo availability now refresh immediately after a
+  successful action, so a gamepad user does not have to wait for an
+  additional frame before selecting the next valid control.
+
+### Focus QA on real hardware
+
+1. Start a local all-human Classic match. With gamepad navigation,
+   focus Undo, undo the last reversible action and confirm that focus
+   moves to the Redo button if Undo is disabled.
+2. Redo the last undone action. If Redo is now disabled, verify focus
+   moves to Undo (or the journal if both are unavailable).
+3. Open a modal or drawer, change an action's availability, and
+   confirm that focus never transfers to a button behind the modal.
+4. Open card selection, change the data to rebuild the card list, and
+   confirm the selected named card stays focused if still eligible.
+5. Repeat in Magnate for rebuilding layers, changing view and
+   opening/closing a popup or handoff.
+6. Target the map with R3; Undo/Redo focus repair must not interrupt
+   the map cursor or consume its inputs.
+7. Leave a game, start a different game, and reconnect the controller:
+   the old game's focused button must not be resurrected.
+8. Repeat with RU/EN, 1280x800 Steam Deck layout and the Deck
+   trackpad switching to pointer input.
+
+Editor tests verify stable focus-name rules, blocking-scope selection,
+fallback decisions, disabled/hidden controls, and safety with detached
+trees. Hardware/controller UI interaction remains a manual gate.

@@ -805,17 +805,20 @@ namespace CityHighways.Presentation
             // uses the standard UI Toolkit button path.
             _undoButton = Ui.Button(LocalizationService.Get("game.undo.action"),
                 UndoLastAction, ButtonKind.Ghost, 13f);
+            _undoButton.name = "gamepad-hud-undo";
             _undoButton.style.marginRight = 6f;
             _undoButton.style.minHeight = 40f;
             _topBar.Add(_undoButton);
             _redoButton = Ui.Button(LocalizationService.Get("game.redo.action"),
                 RedoLastAction, ButtonKind.Ghost, 13f);
+            _redoButton.name = "gamepad-hud-redo";
             _redoButton.style.marginRight = 6f;
             _redoButton.style.minHeight = 40f;
             _topBar.Add(_redoButton);
 
             // Журнал — наверху, рядом с меню; панель журнала выезжает сверху справа.
             _logTab = Ui.Button(LocalizationService.Get("game.ui.021"), () => ToggleSheet(SheetKind.Log), ButtonKind.Ghost, 14f);
+            _logTab.name = "gamepad-hud-log";
             _logTab.style.marginRight = 8f;
             _logTab.style.minHeight = 40f;
             Ui.Border(_logTab, 0f, Color.clear);
@@ -824,6 +827,7 @@ namespace CityHighways.Presentation
             _topBar.Add(_logTab);
 
             _menuButton = new IconButton(IconButton.Glyph.Menu, LocalizationService.Get("game.hud.menu"), ToggleDrawer);
+            _menuButton.name = "gamepad-hud-menu";
             _menuButton.style.marginRight = 8f;
             _menuDot = Ui.Box();
             _menuDot.style.position = Position.Absolute;
@@ -836,7 +840,11 @@ namespace CityHighways.Presentation
             Ui.Show(_menuDot, false);
             _menuButton.Add(_menuDot);
             _topBar.Add(_menuButton);
-            _topBar.Add(new IconButton(IconButton.Glyph.Gear, LocalizationService.Get("game.hud.settings"), () => ToggleModal(Modal.Settings)));
+            var settingsAction = new IconButton(IconButton.Glyph.Gear,
+                LocalizationService.Get("game.hud.settings"),
+                () => ToggleModal(Modal.Settings));
+            settingsAction.name = "gamepad-hud-settings";
+            _topBar.Add(settingsAction);
 
             // ---------- Нижняя полоса: вкладки
             var bottomBar = Ui.Row();
@@ -1206,7 +1214,11 @@ namespace CityHighways.Presentation
             bool skipTutorialPrompt = false, bool preserveRedoHistory = false)
         {
             ClearUndoConfirmation();
-            if (!preserveRedoHistory) ClearRedoHistory();
+            if (!preserveRedoHistory)
+            {
+                ClearRedoHistory();
+                _gamepadFocusReturn.Reset();
+            }
             _game = game;
             _playSeconds = playSeconds;
             _game.Log += AddLog;
@@ -1331,16 +1343,14 @@ namespace CityHighways.Presentation
                 _dirty = true;
             }
 
+            string selectedControllerControl = null;
             if (_dirty)
             {
-                string selectedCard = _gamepadFocusActive && Root.panel != null
+                selectedControllerControl = _gamepadFocusActive && Root.panel != null
                     ? (Root.panel.focusController.focusedElement as VisualElement)?.name
                     : null;
                 _dirty = false;
                 Refresh();
-                if (selectedCard != null &&
-                    selectedCard.StartsWith("gamepad-contract-", StringComparison.Ordinal))
-                    UiGamepadFocus.RestoreNamedFocus(Root, selectedCard);
             }
 
             // A controller can navigate the existing HUD and dialog buttons
@@ -1350,6 +1360,12 @@ namespace CityHighways.Presentation
                 _modal != Modal.None ? _modalLayer :
                 _drawerOpen ? _drawer :
                 _playersOpen ? _playersPanel : Root;
+            // A rebuilt card, layer row or HUD action may have a new
+            // VisualElement instance. Restore only within the active modal
+            // scope; never jump back to a blocked underlying HUD control.
+            if (UiGamepadFocus.IsStableControllerName(selectedControllerControl))
+                UiGamepadFocus.RestoreNamedFocus(
+                    Root, controllerScope, selectedControllerControl);
             _gamepadFocusReturn.Update(Root, controllerScope, _gamepadFocusActive);
             UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
                 _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,

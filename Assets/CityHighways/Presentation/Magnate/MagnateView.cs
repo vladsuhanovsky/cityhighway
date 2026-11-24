@@ -258,6 +258,9 @@ namespace CityHighways.Presentation
 
         public void Begin()
         {
+            // A fresh Magnate run cannot inherit controller focus from the
+            // previous game's modals, popups or game HUD.
+            _gamepadFocusReturn.Reset();
             _map.TiltEnabled = _app.Display == null || _app.Display.tiltedBoard;
             // Спокойная карта магната: одно покрытие дорог, крупные фишки, значки хабов, фокус под курсором.
             _map.CalmRoads = true;
@@ -312,22 +315,26 @@ namespace CityHighways.Presentation
                 if (_botTimer < 0f) BotStep();
             }
 
+            string selectedControllerControl = null;
             if (_dirty)
             {
-                string selectedControl = _gamepadFocusActive && Root.panel != null
+                selectedControllerControl = _gamepadFocusActive && Root.panel != null
                     ? (Root.panel.focusController.focusedElement as VisualElement)?.name
                     : null;
                 _dirty = false;
                 Refresh();
-                if (!string.IsNullOrEmpty(selectedControl) &&
-                    selectedControl.StartsWith("gamepad-magnate-", StringComparison.Ordinal))
-                    UiGamepadFocus.RestoreNamedFocus(Root, selectedControl);
             }
             if (_map.GamepadExitedTargetingThisFrame) _gamepadFocusActive = true;
             VisualElement controllerScope = _modal != null ? _modalLayer :
                 _awaitingHandoff ? _handoff :
                 _resultsShown ? _results :
                 _popupKind != null ? _popup : Root;
+            // Match the Classic view: restore rebuilt controller targets
+            // within the active modal/handoff/results screen, never the
+            // underlying HUD while a blocking decision is visible.
+            if (UiGamepadFocus.IsStableControllerName(selectedControllerControl))
+                UiGamepadFocus.RestoreNamedFocus(
+                    Root, controllerScope, selectedControllerControl);
             _gamepadFocusReturn.Update(Root, controllerScope, _gamepadFocusActive);
             UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
                 _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,

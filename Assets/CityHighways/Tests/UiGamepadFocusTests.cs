@@ -254,5 +254,133 @@ namespace CityHighways.Tests
             newCard.SetEnabled(false);
             Assert.IsNull(UiGamepadFocus.FindEligibleNamed(root, "gamepad-card"));
         }
+
+        [Test]
+        public void NamedFocusNeverEscapesActiveBlockingModal()
+        {
+            var root = new VisualElement();
+            var hud = new Button { name = "gamepad-contract-action" };
+            var modal = new VisualElement();
+            var inside = new Button { name = "gamepad-contract-action" };
+            root.Add(hud);
+            modal.Add(inside);
+            root.Add(modal);
+
+            Assert.AreSame(inside, UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-contract-action"));
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-only-on-hud"));
+            Assert.AreSame(hud, UiGamepadFocus.FindEligibleNamedInScope(
+                root, root, "gamepad-contract-action"));
+        }
+
+        [Test]
+        public void HiddenOrDetachedScopeCannotCaptureFocus()
+        {
+            var root = new VisualElement();
+            var hud = new Button { name = "gamepad-control" };
+            var hidden = new VisualElement();
+            hidden.style.display = DisplayStyle.None;
+            hidden.Add(new Button { name = "gamepad-control" });
+            root.Add(hud);
+            root.Add(hidden);
+
+            Assert.AreSame(hud, UiGamepadFocus.FindEligibleNamedInScope(
+                root, hidden, "gamepad-control"));
+            Assert.AreSame(hud, UiGamepadFocus.FindEligibleNamedInScope(
+                root, new VisualElement(), "gamepad-control"));
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
+                root, hidden, "missing"));
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
+                null, hidden, "gamepad-control"));
+            Assert.IsFalse(UiGamepadFocus.RestoreNamedFocus(
+                root, hidden, "gamepad-control"), "Detached tree has no panel.");
+        }
+
+        [Test]
+        public void DisabledButtonsInModalCannotBeRecoveredByName()
+        {
+            var root = new VisualElement();
+            var modal = new VisualElement();
+            var disabled = new Button { name = "gamepad-confirm" };
+            disabled.SetEnabled(false);
+            modal.Add(disabled);
+            root.Add(modal);
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-confirm"));
+        }
+
+        [Test]
+        public void StableControllerNamesIncludeBothGameplayHudAndLayerRows()
+        {
+            foreach (var name in new[]
+            {
+                "gamepad-contract-choice",
+                "gamepad-card-resource-2",
+                "gamepad-layer-classic-4",
+                "gamepad-layer-magnate-16",
+                "gamepad-magnate-hub-1",
+                "gamepad-hud-undo",
+                "gamepad-hud-redo"
+            })
+                Assert.IsTrue(UiGamepadFocus.IsStableControllerName(name), name);
+
+            foreach (var name in new[] { "", "Gamepad-hud-undo", "label", "gamepad-controller-help" })
+                Assert.IsFalse(UiGamepadFocus.IsStableControllerName(name), name);
+            Assert.IsFalse(UiGamepadFocus.IsStableControllerName(null));
+        }
+
+        [Test]
+        public void RebuiltStableActionCannotRestoreBehindModal()
+        {
+            var root = new VisualElement();
+            var hud = new Button { name = "gamepad-hud-undo" };
+            var modal = new VisualElement();
+            var confirm = new Button { name = "gamepad-dialog-confirm" };
+            root.Add(hud);
+            modal.Add(confirm);
+            root.Add(modal);
+
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-hud-undo"));
+            Assert.AreSame(confirm, UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-dialog-confirm"));
+            modal.style.display = DisplayStyle.None;
+            Assert.AreSame(hud, UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-hud-undo"));
+        }
+
+        [Test]
+        public void ModalReturnCanFindRebuiltNamedHudAction()
+        {
+            var root = new VisualElement();
+            var oldButton = new Button { name = "gamepad-hud-menu" };
+            root.Add(oldButton);
+            Assert.AreSame(oldButton, GamepadFocusReturn.RestoreCandidate(root, oldButton));
+
+            root.Remove(oldButton);
+            var replacement = new Button { name = "gamepad-hud-menu" };
+            root.Add(replacement);
+            Assert.AreSame(replacement, GamepadFocusReturn.RestoreCandidate(root, oldButton));
+
+            replacement.SetEnabled(false);
+            Assert.IsNull(GamepadFocusReturn.RestoreCandidate(root, oldButton));
+        }
+
+        [Test]
+        public void ModalReturnNeverResurrectsAnonymousOrMapFocus()
+        {
+            var root = new VisualElement();
+            var old = new Button();
+            root.Add(old);
+            root.Remove(old);
+            Assert.IsNull(GamepadFocusReturn.RestoreCandidate(root, old));
+
+            var map = new MapView { focusable = true, name = "gamepad-map" };
+            root.Add(map);
+            Assert.IsNull(GamepadFocusReturn.RestoreCandidate(root, map));
+            Assert.IsNull(GamepadFocusReturn.RestoreCandidate(root, null));
+            Assert.IsNull(GamepadFocusReturn.RestoreCandidate(null, old));
+        }
     }
 }

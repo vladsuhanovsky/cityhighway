@@ -12,6 +12,16 @@ namespace CityHighways.Presentation
         VisualElement _previousScope;
         VisualElement _lastHudControl;
 
+        /// <summary>
+        /// A newly started or loaded session must not restore a button
+        /// remembered from the previous game's visual tree.
+        /// </summary>
+        public void Reset()
+        {
+            _previousScope = null;
+            _lastHudControl = null;
+        }
+
         public static VisualElement RestorableControl(
             VisualElement root, VisualElement previouslyFocused)
         {
@@ -19,6 +29,25 @@ namespace CityHighways.Presentation
                 !(previouslyFocused is MapView) &&
                 UiGamepadFocus.IsEligible(previouslyFocused, root)
                     ? previouslyFocused : null;
+        }
+
+        /// <summary>
+        /// A HUD item may be rebuilt while a modal owns the controller. If
+        /// its former element is detached, recover only an eligible control
+        /// with the same stable gamepad name from this session's root.
+        /// </summary>
+        public static VisualElement RestoreCandidate(
+            VisualElement root, VisualElement previouslyFocused)
+        {
+            if (root == null || previouslyFocused == null ||
+                previouslyFocused is MapView) return null;
+
+            var existing = RestorableControl(root, previouslyFocused);
+            if (existing != null) return existing;
+
+            return UiGamepadFocus.IsStableControllerName(previouslyFocused.name)
+                ? UiGamepadFocus.FindEligibleNamed(root, previouslyFocused.name)
+                : null;
         }
 
         public void Update(VisualElement root, VisualElement preferredScope,
@@ -38,7 +67,7 @@ namespace CityHighways.Presentation
             {
                 if (_previousScope != null && _previousScope != root)
                 {
-                    var restore = RestorableControl(root, _lastHudControl);
+                    var restore = RestoreCandidate(root, _lastHudControl);
                     if (restore != null)
                     {
                         restore.Focus();

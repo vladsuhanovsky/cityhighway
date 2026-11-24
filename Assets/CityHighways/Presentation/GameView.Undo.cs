@@ -68,6 +68,9 @@ namespace CityHighways.Presentation
         void RefreshUndoButton()
         {
             if (_undoButton == null) return;
+            VisualElement focusedBefore = _gamepadFocusActive && Root.panel != null
+                ? Root.panel.focusController?.focusedElement as VisualElement
+                : null;
             bool available = CanUndoAction;
             if (!available && _undoArmedHistory >= 0) ClearUndoConfirmation();
             bool confirm = available && UndoConfirmationActive;
@@ -88,6 +91,20 @@ namespace CityHighways.Presentation
                 _undoButton.tooltip = LocalizationService.Get("game.undo.disabled_hint");
             Ui.SetEnabled(_undoButton, available);
             RefreshRedoButton();
+
+            // When the last Undo or Redo is consumed, the button under
+            // controller focus may disable itself. Move only that focus
+            // to its enabled neighbor (or log) and never behind a modal.
+            var scope = _overlayKind != OverlayKind.None ? _overlay :
+                _modal != Modal.None ? _modalLayer :
+                _drawerOpen ? _drawer :
+                _playersOpen ? _playersPanel : Root;
+            if (_map != null && !_map.IsGamepadTargeting)
+            {
+                var replacement = GamepadActionFocus.ReplacementAfterDisable(
+                    Root, scope, focusedBefore, _undoButton, _redoButton, _logTab);
+                replacement?.Focus();
+            }
         }
 
         void RefreshRedoButton()
@@ -186,7 +203,7 @@ namespace CityHighways.Presentation
             var previous = _game;
             ReplaceGameFromHistory(restored, journal, "game.undo.done", Sfx.Undo);
             _redoHistory.Push(previous);
-            RefreshRedoButton();
+            RefreshUndoButton();
         }
 
         void RedoLastAction()
@@ -206,7 +223,7 @@ namespace CityHighways.Presentation
             ReplaceGameFromHistory(restored, journal, "game.redo.done", Sfx.Redo);
             if (!_redoHistory.Consume(candidate))
                 ClearRedoHistory(); // Fail closed on an unexpected stack change.
-            RefreshRedoButton();
+            RefreshUndoButton();
         }
 
         /// <summary>
