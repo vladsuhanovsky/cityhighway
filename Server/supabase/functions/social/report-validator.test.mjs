@@ -74,6 +74,9 @@ test("rejects client score not matching replay author score", async () => {
 test("rejects client outcome not matching replay", async () => {
   const incoming = request();
   incoming.won = false;
+  // The club report agrees with the claimed outcome, so this test
+  // reaches the separate replay-vs-request consistency guard.
+  incoming.stats.won = false;
   await reject(incoming, "replay score/outcome");
 });
 
