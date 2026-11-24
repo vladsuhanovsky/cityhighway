@@ -183,6 +183,7 @@ namespace CityHighways.Presentation
         public VisualElement Root { get; }
         bool _gamepadFocusActive;
         readonly GamepadFocusReturn _gamepadFocusReturn = new GamepadFocusReturn();
+        readonly Label _gamepadGuide;
 
         Game _game;
         IBot[] _bots;
@@ -1094,6 +1095,10 @@ namespace CityHighways.Presentation
             Ui.Show(_toastHolder, false);
             _fx.Add(_toastHolder);
 
+            _gamepadGuide = GamepadControlGuide.Create();
+            // Bottom-right help is purely informative and cannot intercept
+            // UI clicks. Hide it while the map cursor or a modal is active.
+            Root.Add(_gamepadGuide);
             Root.RegisterCallback<GeometryChangedEvent>(_ => AdaptLayout());
         }
 
@@ -1326,6 +1331,12 @@ namespace CityHighways.Presentation
             UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
                 _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,
                 controllerScope);
+            GamepadControlGuide.Update(_gamepadGuide,
+                GamepadControlGuide.Context.Game,
+                UnityEngine.InputSystem.Gamepad.current != null, _gamepadFocusActive,
+                _map.IsGamepadTargeting || controllerScope != Root,
+                LocalizationService.Language == "en",
+                GamepadControlGuide.TextEntryFocused(Root));
             TickTurnTimer(deltaTime);
             TickBots(deltaTime);
         }
