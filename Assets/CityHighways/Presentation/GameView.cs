@@ -1206,7 +1206,11 @@ namespace CityHighways.Presentation
             bool skipTutorialPrompt = false, bool preserveRedoHistory = false)
         {
             ClearUndoConfirmation();
-            if (!preserveRedoHistory) ClearRedoHistory();
+            if (!preserveRedoHistory)
+            {
+                ClearRedoHistory();
+                _gamepadFocusReturn.Reset();
+            }
             _game = game;
             _playSeconds = playSeconds;
             _game.Log += AddLog;
