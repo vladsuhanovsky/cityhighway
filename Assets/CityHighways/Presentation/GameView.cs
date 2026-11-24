@@ -234,8 +234,11 @@ namespace CityHighways.Presentation
                 row.Add(box);
                 row.Add(Ui.Text(item.title, 13f, on ? Theme.Text : Theme.TextDim));
                 var layer = item.layer;
+                row.name = "gamepad-layer-classic-" + (int)layer;
                 void ToggleLayer()
                 {
+                    bool restore = _gamepadFocusActive && row.panel != null &&
+                        row.panel.focusController.focusedElement == row;
                     _layers ^= (int)layer;
                     // Слои — личная настройка игрока: в сохранённые настройки, даже в тренировке и сетевой партии.
                     _setup.classicLayers = _layers;
@@ -244,6 +247,7 @@ namespace CityHighways.Presentation
                     stored.Save();
                     ApplyLayers();
                     BuildLayersList();
+                    if (restore) UiGamepadFocus.RestoreNamedFocus(_layersList, row.name);
                 }
                 row.RegisterCallback<ClickEvent>(_ => ToggleLayer());
                 GamepadSelectable.Attach(row, ToggleLayer);
