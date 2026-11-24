@@ -1200,6 +1200,7 @@ namespace CityHighways.Presentation
         void Begin(Game game, float playSeconds, string firstLogLine,
             bool skipTutorialPrompt = false)
         {
+            ClearUndoConfirmation();
             _game = game;
             _playSeconds = playSeconds;
             _game.Log += AddLog;
@@ -1310,6 +1311,9 @@ namespace CityHighways.Presentation
             }
 
             _map.Tick(deltaTime);
+            TickUndoShortcut();
+            if (_undoButton != null && _undoButton.enabledSelf != CanUndoAction)
+                RefreshUndoButton();
             Sync3D(deltaTime);
             if (_game.Phase != GamePhase.GameOver) _playSeconds += deltaTime;
 
