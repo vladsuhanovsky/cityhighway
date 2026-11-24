@@ -76,7 +76,10 @@ namespace CityHighways.Presentation
                 nextAttemptUtcTicks = nowTicks
             };
             _entries.Add(entry);
-            return Save();
+            if (Save()) return true;
+            // Never pretend a report was queued when the disk write failed.
+            _entries.Remove(entry);
+            return false;
         }
 
         /// <summary>Only sends a due report owned by the currently signed-in Steam account.</summary>
@@ -89,19 +92,33 @@ namespace CityHighways.Presentation
 
         public bool Complete(Entry entry)
         {
-            if (entry == null || !_entries.Remove(entry)) return false;
-            return Save();
+            if (entry == null) return false;
+            int index = _entries.IndexOf(entry);
+            if (index < 0) return false;
+            _entries.RemoveAt(index);
+            if (Save()) return true;
+            // Restore the pending report: an acknowledged response must not
+            // silently drop the only in-memory copy after a failed write.
+            _entries.Insert(index, entry);
+            return false;
         }
 
         public bool Reschedule(Entry entry, long nowTicks, long httpStatus)
         {
             if (entry == null || !_entries.Contains(entry)) return false;
-            entry.attempts = Math.Min(1000, entry.attempts + 1);
+            if (nowTicks < DateTime.MinValue.Ticks || nowTicks > DateTime.MaxValue.Ticks)
+                return false;
+            int previousAttempts = entry.attempts;
+            long previousNextAttempt = entry.nextAttemptUtcTicks;
+            entry.attempts = Math.Min(1000, Math.Max(0, entry.attempts) + 1);
             long delay = RetryDelaySeconds(entry.attempts, httpStatus);
             entry.nextAttemptUtcTicks = nowTicks >= DateTime.MaxValue.Ticks - delay * TimeSpan.TicksPerSecond
                 ? DateTime.MaxValue.Ticks
                 : nowTicks + delay * TimeSpan.TicksPerSecond;
-            return Save();
+            if (Save()) return true;
+            entry.attempts = previousAttempts;
+            entry.nextAttemptUtcTicks = previousNextAttempt;
+            return false;
         }
 
         /// <summary>Malformed requests need human/patch intervention, not a retry every frame.</summary>
