@@ -248,10 +248,25 @@ async function report(db: Db, me: string, body: any) {
       target = goal.target;
     }
     const amount = contribution(kind!, stats);
-    const { data: closed, error } = await db.rpc("club_contribute", {
-      p_club: member.club_id, p_week: week.id, p_player: me, p_kind: kind, p_target: target, p_amount: amount,
-    });
-    if (error) throw new Error(error.message);
+    let accepted = true;
+    let closed = false;
+    if (gameFingerprint) {
+      // Receipt and progress increment are committed in one SQL transaction.
+      // Retries of the same deterministic game do not increase progress.
+      ({ accepted, closed } = await creditClubGameOnce(db, {
+        clubId: member.club_id, week: week.id, playerId: me,
+        kind, target, amount, fingerprint: gameFingerprint,
+      }));
+    } else {
+      // Magnate currently has no replay or stable match identifier.
+      // Preserve its existing behavior until dedicated run IDs are added.
+      const result = await db.rpc("club_contribute", {
+        p_club: member.club_id, p_week: week.id, p_player: me,
+        p_kind: kind, p_target: target, p_amount: amount,
+      });
+      if (result.error) throw new Error(result.error.message);
+      closed = !!result.data;
+    }
     let logo: string | null = null;
     if (closed) {
       // Цель закрыта — клубу новый уникальный логотип.
@@ -261,7 +276,9 @@ async function report(db: Db, me: string, body: any) {
       logo = earnedLogo(member.club_id, week.id, done ?? 1, new Set((logos ?? []).map((l: any) => l.logo)));
       await db.from("club_logos").insert({ club_id: member.club_id, logo, week: week.id });
     }
-    club = { kind, amount, closed: !!closed, logo };
+    // A replayed request gets the old record response but no new
+    // weekly progress or "contribution" notification in the client.
+    club = { kind, amount: accepted ? amount : 0, closed, logo };
   }
   return { improved, best, club };
 }
