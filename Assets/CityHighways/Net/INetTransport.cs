@@ -127,6 +127,24 @@ namespace CityHighways.Net
         void QueueUnlockedAchievements(IReadOnlyCollection<string> achievementIds);
     }
 
+    /// <summary>
+    /// Optional, stronger publishing contract: the caller supplies the
+    /// SteamID that owns the source profile. The native Steam platform must
+    /// reject IDs if the signed-in Steam user changes between reading that
+    /// profile and queuing the upload. Legacy fakes can still implement
+    /// ISteamAchievements alone.
+    /// </summary>
+    public interface IAccountBoundSteamAchievements : ISteamAchievements
+    {
+        /// <summary>
+        /// True only when the source account is still the currently signed-in
+        /// Steam user and the queue accepted the request. False means the
+        /// caller must not memoize this as a successful dispatch.
+        /// </summary>
+        bool TryQueueUnlockedAchievementsForAccount(string sourceSteamId,
+            IReadOnlyCollection<string> achievementIds);
+    }
+
     public static class NetPlatforms
     {
         public static ISteamPlatform Steam;

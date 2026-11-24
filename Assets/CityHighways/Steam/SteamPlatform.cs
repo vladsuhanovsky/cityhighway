@@ -14,7 +14,7 @@ namespace CityHighways.Steam
     /// Сборка компилируется только при установленном Steamworks.NET и сама регистрируется в NetPlatforms.
     /// Для разработки используется тестовый AppID 480 (файл steam_appid.txt в корне проекта).
     /// </summary>
-    public sealed class SteamPlatform : ISteamPlatform, ISteamAchievements
+    public sealed class SteamPlatform : ISteamPlatform, IAccountBoundSteamAchievements
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Register()
@@ -31,11 +31,13 @@ namespace CityHighways.Steam
         Callback<GameLobbyJoinRequested_t> _joinRequested;
         Callback<UserStatsReceived_t> _statsReceived;
         Callback<UserStatsStored_t> _statsStored;
-        readonly HashSet<string> _queuedAchievements = new HashSet<string>(StringComparer.Ordinal);
-        readonly HashSet<string> _stagedAchievements = new HashSet<string>(StringComparer.Ordinal);
-        readonly HashSet<string> _reportedUnknownIds = new HashSet<string>(StringComparer.Ordinal);
+        // This queue is bound to a single authenticated SteamID. All
+        // pending/staged IDs are discarded on account switch or logout.
+        readonly SteamAchievementAccountQueue _achievementQueue =
+            new SteamAchievementAccountQueue();
         bool _statsReady;
         bool _storePending;
+        ulong _pendingStoreAccount;
         float _nextStatsRequest;
         float _nextStoreAttempt;
 
@@ -212,49 +214,102 @@ namespace CityHighways.Steam
             return result;
         }
 
+        /// <summary>
+        /// Rebind all asynchronous stats/upload state to the *current* local
+        /// Steam account. Any change forces a fresh RequestCurrentStats before
+        /// this instance is allowed to publish more achievements.
+        /// </summary>
+        bool EnsureAchievementAccount()
+        {
+            if (!_initialized) return false;
+            ulong activeId = SteamUser.GetSteamID().m_SteamID;
+            if (_achievementQueue.ObserveAccount(activeId))
+            {
+                _statsReady = false;
+                _storePending = false;
+                _pendingStoreAccount = 0UL;
+                _nextStatsRequest = 0f;
+                _nextStoreAttempt = 0f;
+                // Steam avatars are also account-owned. Do not show the
+                // previous user's cached texture after an identity change.
+                if (_avatar != null)
+                {
+                    UnityEngine.Object.Destroy(_avatar);
+                    _avatar = null;
+                }
+            }
+            return _achievementQueue.BelongsTo(activeId);
+        }
+
         // Steamworks stats arrive asynchronously. Do not call SetAchievement
         // until UserStatsReceived confirms the current local Steam account.
         void RequestAchievementStats()
         {
+            if (!EnsureAchievementAccount()) return;
             _nextStatsRequest = Time.unscaledTime + 15f;
-            if (!_initialized || _statsReady) return;
+            if (_statsReady) return;
             if (!SteamUserStats.RequestCurrentStats())
                 Debug.LogWarning("City Highways: Steam stats not ready; will retry.");
         }
 
         void OnStatsReceived(UserStatsReceived_t result)
         {
-            if (!_initialized ||
-                result.m_steamIDUser.m_SteamID != SteamUser.GetSteamID().m_SteamID)
+            if (!EnsureAchievementAccount() ||
+                result.m_steamIDUser.m_SteamID != _achievementQueue.AccountId)
                 return;
             _statsReady = result.m_eResult == EResult.k_EResultOK;
             if (!_statsReady)
                 _nextStatsRequest = Time.unscaledTime + 15f;
         }
 
-        /// <summary>Queue already-earned local achievement API IDs.</summary>
+        /// <summary>
+        /// Backward-compatible publisher API for legacy callers. The normal
+        /// profile bridge uses the account-bound overload below.
+        /// </summary>
         public void QueueUnlockedAchievements(IReadOnlyCollection<string> achievementIds)
         {
-            if (achievementIds == null || !Available) return;
-            foreach (string id in achievementIds)
-                if (!string.IsNullOrEmpty(id))
-                    _queuedAchievements.Add(id);
+            if (achievementIds == null || !Available ||
+                !EnsureAchievementAccount()) return;
+            TryQueueUnlockedAchievementsForAccount(
+                _achievementQueue.AccountId.ToString(), achievementIds);
+        }
+
+        /// <summary>
+        /// Publish only achievements from the profile for the exact currently
+        /// authenticated SteamID. No amount of local dispatch caching can
+        /// authorize a prior account after Steam changed mid-frame.
+        /// </summary>
+        public bool TryQueueUnlockedAchievementsForAccount(string sourceSteamId,
+            IReadOnlyCollection<string> achievementIds)
+        {
+            if (achievementIds == null || !Available ||
+                !EnsureAchievementAccount()) return false;
+            if (!string.Equals(sourceSteamId,
+                    _achievementQueue.AccountId.ToString(), StringComparison.Ordinal))
+                return false;
+
+            _achievementQueue.QueueForAccount(
+                _achievementQueue.AccountId, achievementIds);
             if (_statsReady) FlushQueuedAchievements();
+            else if (Time.unscaledTime >= _nextStatsRequest)
+                RequestAchievementStats();
+            return true;
         }
 
         void FlushQueuedAchievements()
         {
-            if (!_statsReady || _storePending ||
-                Time.unscaledTime < _nextStoreAttempt || _queuedAchievements.Count == 0)
+            if (!EnsureAchievementAccount() || !_statsReady || _storePending ||
+                Time.unscaledTime < _nextStoreAttempt ||
+                _achievementQueue.PendingCount == 0)
                 return;
 
             // Take a snapshot so already-unlocked remote IDs can leave the
             // queue safely without mutating an enumerated HashSet.
-            foreach (string id in new List<string>(_queuedAchievements))
+            foreach (string id in _achievementQueue.PendingSnapshot())
             {
                 if (!SteamUserStats.GetAchievement(id, out bool achieved))
                 {
-                    if (_reportedUnknownIds.Add(id))
+                    if (_achievementQueue.FirstUnknownId(id))
                         Debug.LogWarning("City Highways: Steam achievement API Name '" + id +
                             "' is unavailable. Check published Steamworks Partner achievements.");
                     continue; // Unknown or unpublished Steamworks API name.
@@ -263,40 +318,45 @@ namespace CityHighways.Steam
                 {
                     // If a previous StoreStats failed, the local Steam cache
                     // can still say achieved; retry persistence instead.
-                    if (!_stagedAchievements.Contains(id))
-                        _queuedAchievements.Remove(id);
+                    _achievementQueue.ForgetPersisted(id);
                 }
                 else if (SteamUserStats.SetAchievement(id))
-                    _stagedAchievements.Add(id);
+                    _achievementQueue.Stage(id);
             }
 
             // Invalid/unpublished Steam API IDs must not create an endless
             // StoreStats loop; retry them on a later stats synchronization.
-            if (_stagedAchievements.Count == 0)
+            if (_achievementQueue.StagedCount == 0)
             {
                 _nextStoreAttempt = Time.unscaledTime + 60f;
                 return;
             }
 
             if (SteamUserStats.StoreStats())
+            {
                 _storePending = true;
+                _pendingStoreAccount = _achievementQueue.AccountId;
+            }
             else
                 _nextStoreAttempt = Time.unscaledTime + 30f;
         }
 
         void OnStatsStored(UserStatsStored_t result)
         {
-            if (!_initialized || !_storePending) return;
+            if (!EnsureAchievementAccount() || !_storePending ||
+                !_achievementQueue.BelongsTo(_pendingStoreAccount))
+                return;
+
+            ulong storeAccount = _pendingStoreAccount;
             _storePending = false;
+            _pendingStoreAccount = 0UL;
             if (result.m_eResult == EResult.k_EResultOK)
             {
-                foreach (string id in _stagedAchievements)
-                    _queuedAchievements.Remove(id);
-                _stagedAchievements.Clear();
+                _achievementQueue.CompleteStore(storeAccount, true);
             }
             else
             {
-                // Keep staged changes for a delayed StoreStats retry.
+                // Keep all staged changes for this account's delayed retry.
                 _nextStoreAttempt = Time.unscaledTime + 30f;
             }
         }
@@ -304,7 +364,11 @@ namespace CityHighways.Steam
         public void Poll()
         {
             if (!_initialized) return;
+            // Check identity before any Steam callback is allowed to
+            // complete an upload from a previous signed-in account.
+            EnsureAchievementAccount();
             SteamAPI.RunCallbacks();
+            if (!EnsureAchievementAccount()) return;
             if (!_statsReady && Time.unscaledTime >= _nextStatsRequest)
                 RequestAchievementStats();
             if (_statsReady) FlushQueuedAchievements();
@@ -316,11 +380,15 @@ namespace CityHighways.Steam
             _initialized = false;
             _statsReady = false;
             _storePending = false;
+            _pendingStoreAccount = 0UL;
             _statsReceived?.Dispose();
             _statsStored?.Dispose();
-            _queuedAchievements.Clear();
-            _stagedAchievements.Clear();
-            _reportedUnknownIds.Clear();
+            _achievementQueue.Reset();
+            if (_avatar != null)
+            {
+                UnityEngine.Object.Destroy(_avatar);
+                _avatar = null;
+            }
             if (NetPlatforms.SteamAchievements == this)
                 NetPlatforms.SteamAchievements = null;
             SteamAPI.Shutdown();

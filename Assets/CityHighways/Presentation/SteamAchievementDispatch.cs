@@ -64,7 +64,19 @@ namespace CityHighways.Presentation
 
             // Important: a failed Queue call must not be recorded as
             // delivered; the next Tick can safely try again.
-            publisher.QueueUnlockedAchievements(ids);
+            // Native Steam implementation also validates the source
+            // profile account at queue time. This closes the identity
+            // race between reading the profile and sending achievements.
+            if (publisher is IAccountBoundSteamAchievements accountBound)
+            {
+                if (!accountBound.TryQueueUnlockedAchievementsForAccount(steamId, ids))
+                {
+                    Reset(); // A rejected account handoff was never queued.
+                    return false;
+                }
+            }
+            else
+                publisher.QueueUnlockedAchievements(ids);
             _lastPublisher = publisher;
             _lastProfile = profile;
             _lastSteamId = steamId;

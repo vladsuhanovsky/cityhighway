@@ -79,3 +79,69 @@ account filtering and retry scheduling with a fake publisher. They do
 not invoke SteamAPI, verify remote persistence, install Steamworks.NET
 or make test AppID 480 production-ready. The release preflight gate
 above remains mandatory.
+
+## Account-bound Steam achievement upload queue (Stage 2 hardening)
+
+The optional Steamworks.NET publisher now uses a Steamworks-independent
+`SteamAchievementAccountQueue` in the `CityHighways.Net` assembly.
+This explicitly binds all pending, staged and unknown/unpublished
+achievement IDs to one **currently signed-in local SteamID**.
+
+### What the Steam build does
+
+- Reads `SteamUser.GetSteamID()` when initializing, queueing,
+  flushing, receiving stats callbacks and processing the normal
+  `Poll()` loop. On an observed account change or Steam logout,
+  pending/staged achievements, cached API-name warnings, StoreStats
+  pending state, and the old user's avatar are discarded.
+- A new SteamID requires a **fresh successful RequestCurrentStats**
+  before `SetAchievement` or `StoreStats` can resume.
+  Failed stats requests still observe the 15-second retry window.
+- The profile bridge now prefers the optional
+  `IAccountBoundSteamAchievements.TryQueueUnlockedAchievementsForAccount`
+  contract. It passes the exact owner SteamID alongside the canonical,
+  already-unlocked achievement IDs. The native publisher checks that
+  the source SteamID **still matches** the local Steam account before
+  accepting any IDs. This closes the profile-read-to-queue identity
+  race in the original generic publisher.
+- Account rejection returns **false** and does not update dispatch
+  deduplication state. Future reconciliation can retry safely.
+  Legacy `ISteamAchievements` publishers remain compatible with
+  the bridge, but the native Steam implementation uses the stronger
+  interface automatically.
+- Existing idempotent `GetAchievement`/`SetAchievement` checks
+  remain in place. Pending IDs are removed on remote-achieved lookup
+  or after a matching account's successful StoreStats confirmation.
+  Failed StoreStats keeps staged work for a 30-second retry, while
+  unknown API names use the previous 60-second backoff.
+- A StoreStats callback must find an active outstanding store and
+  the current bound account still matching that store's account.
+  **Steam's UserStatsStored callback does not contain a distinct
+  per-request correlation token**; rapid account switches with
+  overlapping outstanding native callbacks require real Steam QA.
+  Editor tests can verify our account guards and queue state model,
+  not the order in which Steam delivers asynchronous callbacks.
+
+### Additional manual Steamworks QA
+
+1. On a real registered AppID, unlock an achievement for account A.
+   Ensure the Steam overlay reports it and it persists after restart.
+2. Disconnect and reconnect Steam while a store is pending. Ensure
+   local achievements survive and the account's retries eventually
+   persist without duplicate UI rewards.
+3. While IDs from A are pending/staged, switch to account B before
+   callbacks are delivered. Ensure no A IDs are sent as B, no cached
+   A avatar appears, and a fresh B stats request is required.
+4. Switch A→B→A quickly with delayed StoreStats responses. Inspect
+   the actual Steam overlay and remote achievements; asynchronous
+   native callback ordering is outside Unity Edit Mode coverage.
+5. With the wrong/offline profile active, verify that the native
+   publisher rejects an account-mismatched source ID even if the
+   account changes after the bridge has read the profile.
+6. Repeat the check with non-Steam builds. The optional Steam
+   assembly must remain absent and local achievements unaffected.
+
+**Release status is unchanged:** neither a real AppID nor the
+Steamworks.NET package is installed in the default project setup.
+The `--release` preflight gate must continue to fail until actual
+Steam build dependencies and partner achievement registration exist.
