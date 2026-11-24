@@ -16,6 +16,10 @@ namespace CityHighways.Presentation
         public int width;
         public int height;
         public float volume = 0.8f;
+        /// <summary>Original procedural background music, opt-in for existing players.</summary>
+        public bool musicEnabled;
+        /// <summary>Music level independent of SFX; master volume still applies.</summary>
+        public float musicVolume = MusicSoundscape.DefaultVolume;
         /// <summary>Игровое поле с лёгким наклоном (2.5D); выключено — плоская карта сверху.</summary>
         public bool tiltedBoard = true;
         /// <summary>Мини-карта в углу игрового поля.</summary>
@@ -141,7 +145,7 @@ namespace CityHighways.Presentation
                 var json = PlayerPrefs.GetString(PrefsKey, "");
                 if (!string.IsNullOrEmpty(json))
                 {
-                    var settings = JsonUtility.FromJson<DisplaySettings>(json);
+                    var settings = FromJson(json);
                     if (settings != null) return settings;
                 }
             }
@@ -156,6 +160,23 @@ namespace CityHighways.Presentation
                 width = Screen.currentResolution.width,
                 height = Screen.currentResolution.height
             };
+        }
+
+        /// <summary>
+        /// Backwards-compatible audio migration for Display.v1 saves:
+        /// absent music fields must not turn background music on, and
+        /// absent volume must not accidentally initialize at zero.
+        /// An explicitly saved zero remains a valid mute setting.
+        /// </summary>
+        public static DisplaySettings FromJson(string json)
+        {
+            if (string.IsNullOrEmpty(json)) return null;
+            var settings = JsonUtility.FromJson<DisplaySettings>(json);
+            if (settings == null) return null;
+            if (!json.Contains("\"musicVolume\""))
+                settings.musicVolume = MusicSoundscape.DefaultVolume;
+            settings.musicVolume = MusicSoundscape.SafeVolume(settings.musicVolume);
+            return settings;
         }
 
         /// <summary>Переписать все поля из other (объект настроек общий у приложения, заменять его нельзя).</summary>
