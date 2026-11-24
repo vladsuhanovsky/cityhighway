@@ -98,6 +98,27 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void NamedCardCanBeRecoveredOnlyWhenItIsVisibleAndEnabled()
+        {
+            var root = new VisualElement();
+            var card = new VisualElement
+            {
+                name = "gamepad-contract-choice-0-abc",
+                focusable = true
+            };
+            root.Add(card);
+            Assert.AreSame(card, UiGamepadFocus.FindEligibleNamed(root, card.name));
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamed(root, "absent"));
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamed(root, null));
+
+            card.style.display = DisplayStyle.None;
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamed(root, card.name));
+            card.style.display = DisplayStyle.Flex;
+            card.SetEnabled(false);
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamed(root, card.name));
+        }
+
+        [Test]
         public void EmptyOrDetachedUiDoesNotStealFocus()
         {
             Assert.IsNull(UiGamepadFocus.FirstEligible(null));
