@@ -112,6 +112,15 @@ namespace CityHighways.Presentation
         public readonly HashSet<string> UpgradeSweeps = new HashSet<string>();
         public float PulseTime;
         public bool Interactive = true;
+        // The map is not a normal HUD focus target. R3 explicitly activates
+        // focus and a virtual cursor; deactivation returns focus to the HUD.
+        GamepadMapCursorState _gamepadCursor;
+        readonly VisualElement _gamepadCursorMarker;
+        readonly Label _gamepadCursorHint;
+        bool _gamepadExitedThisFrame;
+        public bool IsGamepadTargeting => _gamepadCursor.Active;
+        public bool GamepadExitedTargetingThisFrame => _gamepadExitedThisFrame;
+        public Func<bool> CanGamepadTarget;
         /// <summary>Наклонять поле (2.5D). Берётся из настроек экрана при старте партии.</summary>
         public bool TiltEnabled = true;
 
@@ -359,6 +368,43 @@ namespace CityHighways.Presentation
             _labels = Ui.Box();
             Ui.Fill(_labels);
             Add(_labels);
+
+            // Pure UI Toolkit overlay, not a synthetic mouse device. The
+            // reticle cannot intercept map clicks, drag gestures or hover.
+            _gamepadCursorMarker = new VisualElement();
+            _gamepadCursorMarker.name = "gamepad-map-cursor";
+            _gamepadCursorMarker.pickingMode = PickingMode.Ignore;
+            _gamepadCursorMarker.focusable = false;
+            _gamepadCursorMarker.style.position = Position.Absolute;
+            _gamepadCursorMarker.style.width = 28f;
+            _gamepadCursorMarker.style.height = 28f;
+            _gamepadCursorMarker.style.backgroundColor = new Color(0.03f, 0.05f, 0.08f, 0.25f);
+            Ui.Radius(_gamepadCursorMarker, 14f);
+            Ui.Border(_gamepadCursorMarker, 3f, Theme.Gold);
+            Add(_gamepadCursorMarker);
+            Ui.Show(_gamepadCursorMarker, false);
+
+            _gamepadCursorHint = Ui.Text("", 12f, Theme.Text, true);
+            _gamepadCursorHint.name = "gamepad-map-hint";
+            _gamepadCursorHint.pickingMode = PickingMode.Ignore;
+            _gamepadCursorHint.style.position = Position.Absolute;
+            _gamepadCursorHint.style.left = 12f;
+            _gamepadCursorHint.style.top = 12f;
+            _gamepadCursorHint.style.backgroundColor = Theme.PanelGlass;
+            _gamepadCursorHint.style.maxWidth = 320f;
+            Ui.Radius(_gamepadCursorHint, 7f);
+            Ui.Padding(_gamepadCursorHint, 6f, 10f);
+            Add(_gamepadCursorHint);
+            Ui.Show(_gamepadCursorHint, false);
+
+            RegisterCallback<NavigationSubmitEvent>(evt =>
+            {
+                if (_gamepadCursor.Active) evt.StopPropagation();
+            });
+            RegisterCallback<NavigationCancelEvent>(evt =>
+            {
+                if (_gamepadCursor.Active) evt.StopPropagation();
+            });
 
             RegisterCallback<GeometryChangedEvent>(_ => Relayout());
             RegisterCallback<PointerMoveEvent>(e =>
