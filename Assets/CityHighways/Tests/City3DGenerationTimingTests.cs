@@ -1,6 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
+using System.Reflection;
+using Unity.Profiling;
 using CityHighways.Presentation;
 using NUnit.Framework;
 
@@ -8,6 +11,51 @@ namespace CityHighways.Tests
 {
     public sealed class City3DGenerationTimingTests
     {
+        [Test]
+        public void AllGenerationStageLabelsHaveMatchingProfilerMarkers()
+        {
+            var type = typeof(City3DScene).Assembly.GetType(
+                "CityHighways.Presentation.City3DGenerationMarkers");
+            Assert.IsNotNull(type);
+            var fields = type.GetFields(BindingFlags.Static |
+                BindingFlags.Public | BindingFlags.NonPublic);
+            var names = fields.Where(x => x.IsLiteral &&
+                x.FieldType == typeof(string)).ToArray();
+            var markers = fields.Where(x => x.FieldType ==
+                typeof(ProfilerMarker)).ToArray();
+            Assert.AreEqual(16, names.Length);
+            Assert.AreEqual(16, markers.Length);
+
+            var labels = names.Select(x => (string)x.GetRawConstantValue()).ToArray();
+            Assert.AreEqual(16, labels.Distinct().Count());
+            foreach (var name in names)
+            {
+                Assert.IsTrue(name.Name.EndsWith("Name", StringComparison.Ordinal));
+                string markerField = name.Name.Substring(0, name.Name.Length - 4);
+                Assert.IsTrue(markers.Any(x => x.Name == markerField),
+                    "Missing profiler marker for " + name.Name);
+            }
+        }
+
+        [Test]
+        public void GenerationProfilerMarkersCanOpenAndCloseInEditMode()
+        {
+            var type = typeof(City3DScene).Assembly.GetType(
+                "CityHighways.Presentation.City3DGenerationMarkers");
+            Assert.IsNotNull(type);
+            var fields = type.GetFields(BindingFlags.Static |
+                BindingFlags.Public | BindingFlags.NonPublic);
+            foreach (var field in fields.Where(x => x.FieldType ==
+                typeof(ProfilerMarker)))
+            {
+                var marker = (ProfilerMarker)field.GetValue(null);
+                using (marker.Auto())
+                {
+                    Assert.IsNotNull(field.Name);
+                }
+            }
+        }
+
         [Test]
         public void CheckpointsMeasureConsecutiveStagesAndWholeBuild()
         {
