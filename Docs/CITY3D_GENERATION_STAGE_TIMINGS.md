@@ -36,3 +36,16 @@ Marker scopes are exception-safe (`ProfilerMarker.Auto()`) and close even if sce
 **Scope note:** The timeline marker surrounds the main work of each phase. A few lightweight setup operations (notably tuning/exclusion lookup before the planner call) remain outside that marker but inside the corresponding CSV wall-clock interval; total timings may differ. Timeline recording itself also introduces overhead. The wall-clock CSV and the Profiler are **complementary diagnostics**, not interchangeable CPU/GPU/FPS measurements.
 
 Do not use synthetic append timings as proof of whole-city improvement. Use these stage markers to investigate the actual longest generation phase, then repeat captures under controlled conditions.
+
+
+## Direct CSV capture of startup substage timings
+
+The **Generation Stage Timings** window now also shows **Hotspot details (wall-clock)** and a **Save detailed hotspot timings CSV** button. These values are collected directly while creating the city, so you no longer need to find a startup frame in the CPU Timeline to get a first breakdown.
+
+Tracked operations include rendering setup, city atlas creation, terrain albedo bake, terrain ground-normal bake, ground grid generation, ground mesh upload/normal/tangent recalculation, outskirts ground, and three nested terrain texture steps: base pixel fill, building footprint overlays, and texture upload. Captures are in milliseconds; CSV includes UTC start time, Unity version, city, quality, hotspot and duration.
+
+**Do not sum the hotspot rows.** Some are nested (e.g. base-pixel generation and texture upload are subsets of the parent terrain-albedo bake). These timings are measured wall-clock durations and can also include editor activity, GC and scheduling delays. They are not GPU time, nor proof of gameplay FPS improvement.
+
+For a useful comparison: keep the map and quality unchanged, launch the city three times, save the **existing stage CSV** and the **new hotspot CSV** from each run, then compare the same substage names across captures. Some texture samples may be absent when cached textures are reused; do not treat a missing row as a measured zero. Record whether starts were cold or warm.
+
+The original 16-stage CSV format remains **unchanged**, so existing historical baseline files can still be compared. Full Unity CPU Profiler Timeline capture remains useful when a costly hotspot needs to be broken down into actual native/managed calls.

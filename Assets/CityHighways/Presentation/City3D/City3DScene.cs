@@ -115,6 +115,7 @@ namespace CityHighways.Presentation
         public int GraphicsQuality => _quality;
         public City3DFrameMonitor FrameMonitor { get; private set; }
         public City3DGenerationTiming GenerationTiming { get; private set; }
+        public City3DHotspotTiming HotspotTiming { get; private set; }
 
         City3DScene(CityMap map)
         {
@@ -162,6 +163,7 @@ namespace CityHighways.Presentation
                 ? "(unnamed city)" : _map.Name;
             var generation = new City3DGenerationTiming(timingCity, quality,
                 System.Diagnostics.Stopwatch.GetTimestamp());
+            HotspotTiming = new City3DHotspotTiming(timingCity, quality);
             float density = quality == 0 ? 0.55f : quality == 1 ? 0.8f : 1f;
             // Рельеф — до планировки: сначала сглаженные русла (по ним долины), затем поле высот. Планировщик
             // смотрит на высоты (ельники на холмах), а всё дальнейшее встаёт на холмы.
@@ -212,6 +214,7 @@ namespace CityHighways.Presentation
             using (City3DGenerationMarkers.Materials.Auto())
             {
                 using (City3DHotspotMarkers.SetupRendering.Auto())
+                using (HotspotTiming.Track("Setup rendering"))
                     SetupRendering(quality);
                 CreateMaterials(plan);
             }
@@ -412,6 +415,7 @@ namespace CityHighways.Presentation
         {
             _buildings = LoadMaterial("CityBuildings", Color.white);
             using (City3DHotspotMarkers.CityAtlas.Auto())
+            using (HotspotTiming.Track("City atlas"))
                 _buildings.SetTexture("_BaseMap", CityAtlas.Albedo);
             _buildings.SetTexture("_EmissionMap", CityAtlas.Emission);
             _buildings.SetFloat("_Smoothness", 0.18f);
@@ -422,12 +426,15 @@ namespace CityHighways.Presentation
 
             _ground = LoadMaterial("CityGround", Color.white);
             using (City3DHotspotMarkers.TerrainAlbedo.Auto())
-                _ground.SetTexture("_BaseMap", TerrainTexture.ForCity3D(_map, plan.Footprints));
+            using (HotspotTiming.Track("Terrain albedo bake"))
+                _ground.SetTexture("_BaseMap", TerrainTexture.ForCity3D(
+                    _map, plan.Footprints, HotspotTiming));
             _ground.SetFloat("_Smoothness", 0.04f);
             NoSpecular(_ground);
             // Неровности земли: крупные (холмы, пригорки парков) на всю доску и мелкая деталь,
             // повторяющаяся по полю, — шероховатость и пятна (множитель ×2: серый 0,5 цвет не меняет).
             using (City3DHotspotMarkers.GroundNormal.Auto())
+            using (HotspotTiming.Track("Ground normal bake"))
                 _ground.SetTexture("_BumpMap", CityTextures.GroundNormal(_map));
             _ground.SetFloat("_BumpScale", 0.8f);
             _ground.EnableKeyword("_NORMALMAP");
@@ -538,6 +545,7 @@ namespace CityHighways.Presentation
             var top = new MeshBuilder(cellsX * cellsY);
             // Сетка по рельефу: клетка ~7 см — вдвое мельче полосы вдоль дорог, холмы и подрезки под дорогами видны.
             using (City3DHotspotMarkers.GroundGeometry.Auto())
+            using (HotspotTiming.Track("Ground grid geometry"))
             {
                 for (int iy = 0; iy < cellsY; iy++)
                 for (int ix = 0; ix < cellsX; ix++)
@@ -551,6 +559,7 @@ namespace CityHighways.Presentation
                 }
             }
             using (City3DHotspotMarkers.GroundMeshUpload.Auto())
+            using (HotspotTiming.Track("Ground mesh upload and tangents"))
             {
                 var groundMesh = top.ToMesh("City3D Ground");
                 groundMesh.RecalculateNormals();   // склоны освещаются по-настоящему
@@ -559,6 +568,7 @@ namespace CityHighways.Presentation
             }
 
             using (City3DHotspotMarkers.Outskirts.Auto())
+            using (HotspotTiming.Track("Outskirts ground"))
                 BuildOutskirtsGround();
         }
 

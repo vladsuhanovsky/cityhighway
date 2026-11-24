@@ -45,3 +45,22 @@ To inspect them, enter Play Mode with the Unity Profiler **recording before the 
 4. A Profiler frame showing ~66 ms/15 FPS by itself does not prove that startup time caused low gameplay FPS. Analyze normal gameplay frame time separately.
 
 The CI tests cover 3D texture generation, cache behavior, independent 2D terrain generation and ProfilerMarker availability. They are correctness smoke tests, **not** frame-time benchmarks. Uploaded raw CSVs are not added to the repository by this PR.
+
+
+## Follow-up measurements after PR #72 (2026-11-24)
+
+Three captures were supplied for **Москва**, quality **1**, Unity **6000.6.8f1**, after merging PR #72.
+
+| Stage | Capture 1 (ms) | Capture 2 (ms) | Capture 3 (ms) | New mean (ms) |
+| --- | ---: | ---: | ---: | ---: |
+| Rendering and materials | 1364.39 | 1412.64 | 1395.88 | 1390.97 |
+| Ground | 1060.60 | 1023.58 | 1048.82 | 1044.34 |
+| Rivers and relief | 690.90 | 700.02 | 676.58 | 689.17 |
+| Trees | 79.40 | 87.58 | 77.02 | 81.33 |
+| **Whole measured build** | **3501.16** | **3555.89** | **3519.19** | **3525.41** |
+
+The prior two-capture mean was **3929.81 ms**, giving an observed change of **−404.40 ms (−10.3%)**. This is an *observational comparison*, not a causal estimate: small and unmatched sample sizes, warm/cold caches, Editor workload and timing jitter are uncontrolled.
+
+The latest screen recording did not expose an expanded CPU Timeline with `City3D.Hotspot/` child durations. PR #73 adds separate direct wall-clock hotspot CSV capture from the scene itself to make it easier to identify the dominant texture-baking versus geometry-upload operation.
+
+Three earlier post-PR #72 captures were at **quality 2** and are **not directly comparable** to the original quality-1 baseline. Do not pool them with this table.
