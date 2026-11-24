@@ -254,5 +254,60 @@ namespace CityHighways.Tests
             newCard.SetEnabled(false);
             Assert.IsNull(UiGamepadFocus.FindEligibleNamed(root, "gamepad-card"));
         }
+
+        [Test]
+        public void NamedFocusNeverEscapesActiveBlockingModal()
+        {
+            var root = new VisualElement();
+            var hud = new Button { name = "gamepad-contract-action" };
+            var modal = new VisualElement();
+            var inside = new Button { name = "gamepad-contract-action" };
+            root.Add(hud);
+            modal.Add(inside);
+            root.Add(modal);
+
+            Assert.AreSame(inside, UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-contract-action"));
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-only-on-hud"));
+            Assert.AreSame(hud, UiGamepadFocus.FindEligibleNamedInScope(
+                root, root, "gamepad-contract-action"));
+        }
+
+        [Test]
+        public void HiddenOrDetachedScopeCannotCaptureFocus()
+        {
+            var root = new VisualElement();
+            var hud = new Button { name = "gamepad-control" };
+            var hidden = new VisualElement();
+            hidden.style.display = DisplayStyle.None;
+            hidden.Add(new Button { name = "gamepad-control" });
+            root.Add(hud);
+            root.Add(hidden);
+
+            Assert.AreSame(hud, UiGamepadFocus.FindEligibleNamedInScope(
+                root, hidden, "gamepad-control"));
+            Assert.AreSame(hud, UiGamepadFocus.FindEligibleNamedInScope(
+                root, new VisualElement(), "gamepad-control"));
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
+                root, hidden, "missing"));
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
+                null, hidden, "gamepad-control"));
+            Assert.IsFalse(UiGamepadFocus.RestoreNamedFocus(
+                root, hidden, "gamepad-control"), "Detached tree has no panel.");
+        }
+
+        [Test]
+        public void DisabledButtonsInModalCannotBeRecoveredByName()
+        {
+            var root = new VisualElement();
+            var modal = new VisualElement();
+            var disabled = new Button { name = "gamepad-confirm" };
+            disabled.SetEnabled(false);
+            modal.Add(disabled);
+            root.Add(modal);
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-confirm"));
+        }
     }
 }
