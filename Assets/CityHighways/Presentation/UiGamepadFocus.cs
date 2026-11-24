@@ -141,6 +141,29 @@ namespace CityHighways.Presentation
             return null;
         }
 
+        /// <summary>
+        /// Keep focus within the active overlay/modal, even when a rebuilt
+        /// HUD control happens to share the same stable name. Never focus a
+        /// button behind a blocking dialog.
+        /// </summary>
+        public static VisualElement FindEligibleNamedInScope(
+            VisualElement root, VisualElement preferredScope, string name)
+        {
+            if (root == null || string.IsNullOrEmpty(name)) return null;
+            var scope = ResolveScope(root, preferredScope);
+            return FindEligibleNamed(scope, name);
+        }
+
+        public static bool RestoreNamedFocus(VisualElement root,
+            VisualElement preferredScope, string name)
+        {
+            if (root == null || root.panel == null) return false;
+            var candidate = FindEligibleNamedInScope(root, preferredScope, name);
+            if (candidate == null) return false;
+            candidate.Focus();
+            return true;
+        }
+
         public static bool RestoreNamedFocus(VisualElement root, string name)
         {
             if (root == null || root.panel == null) return false;
