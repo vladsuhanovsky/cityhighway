@@ -57,6 +57,10 @@ namespace CityHighways.Presentation
         public static bool UndoModifier(bool ctrlPressed, bool metaPressed, bool onMac) =>
             ctrlPressed || (onMac && metaPressed);
 
+        /// <summary>Platform-specific Undo shortcut hint for HUD tooltips.</summary>
+        public static string UndoShortcutLabel(bool onMac) =>
+            onMac ? "Cmd+Z" : "Ctrl+Z";
+
         /// <summary>Ctrl/Cmd+Z is reserved for undo outside text fields.</summary>
         public static bool WantsShortcut(bool modifier, bool shift, bool zPressed,
             bool textEntryFocused, bool canUndo) =>
