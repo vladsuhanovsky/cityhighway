@@ -234,7 +234,7 @@ namespace CityHighways.Presentation
                 row.Add(box);
                 row.Add(Ui.Text(item.title, 13f, on ? Theme.Text : Theme.TextDim));
                 var layer = item.layer;
-                row.RegisterCallback<ClickEvent>(_ =>
+                void ToggleLayer()
                 {
                     _layers ^= (int)layer;
                     // Слои — личная настройка игрока: в сохранённые настройки, даже в тренировке и сетевой партии.
@@ -244,7 +244,9 @@ namespace CityHighways.Presentation
                     stored.Save();
                     ApplyLayers();
                     BuildLayersList();
-                });
+                }
+                row.RegisterCallback<ClickEvent>(_ => ToggleLayer());
+                GamepadSelectable.Attach(row, ToggleLayer);
                 _layersList.Add(row);
             }
 
