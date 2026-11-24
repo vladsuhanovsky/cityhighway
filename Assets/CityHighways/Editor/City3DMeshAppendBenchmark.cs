@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 using CityHighways.Presentation;
 using UnityEditor;
 using UnityEngine;
@@ -33,18 +35,36 @@ public static class City3DMeshAppendBenchmark
         var rotationScale = Matrix4x4.TRS(new Vector3(3f, -1f, 2f),
             Quaternion.Euler(10f, 25f, 5f), new Vector3(1.5f, 0.8f, 1.2f));
 
+        var labels = new[] { "Identity", "Translation", "Rotation + scale" };
+        var runs = new double[3][];
+        string identityReport = Format(labels[0], source, identity, out runs[0]);
+        string translationReport = Format(labels[1], source, translation, out runs[1]);
+        string rotationReport = Format(labels[2], source, rotationScale, out runs[2]);
+
         UnityEngine.Debug.Log(
             "MeshBuilder.Append synthetic CPU benchmark — " +
             "same source mesh, " + AppendsPerRun + " appends/run, " +
             WarmupRuns + " warmups + " + MeasuredRuns + " measured runs.\n" +
-            Format("Identity", source, identity) + "\n" +
-            Format("Translation", source, translation) + "\n" +
-            Format("Rotation + scale", source, rotationScale) + "\n" +
+            identityReport + "\n" +
+            translationReport + "\n" +
+            rotationReport + "\n" +
             "Editor timings include managed/runtime overhead; compare identical " +
             "Unity versions, hardware and configurations. This is not FPS or GPU time.");
+
+        string destinationPath = EditorUtility.SaveFilePanel(
+            "Save mesh append benchmark CSV (Cancel to skip)",
+            "", "city3d-mesh-append-benchmark.csv", "csv");
+        if (!string.IsNullOrEmpty(destinationPath))
+        {
+            var csv = City3DMeshAppendBenchmarkCsv.Export(DateTime.UtcNow,
+                Application.unityVersion, SourceQuads, AppendsPerRun, labels, runs);
+            File.WriteAllText(destinationPath, csv, new UTF8Encoding(false));
+            UnityEngine.Debug.Log("MeshBuilder.Append benchmark CSV saved: " + destinationPath);
+        }
     }
 
-    static string Format(string label, MeshBuilder source, Matrix4x4 transform)
+    static string Format(string label, MeshBuilder source, Matrix4x4 transform,
+        out double[] samples)
     {
         var elapsed = new double[MeasuredRuns];
         for (int run = -WarmupRuns; run < MeasuredRuns; run++)
@@ -63,6 +83,7 @@ public static class City3DMeshAppendBenchmark
             if (run >= 0) elapsed[run] = timer.Elapsed.TotalMilliseconds;
         }
 
+        samples = (double[])elapsed.Clone();
         Array.Sort(elapsed);
         double median = elapsed[MeasuredRuns / 2];
         return label + ": median " + median.ToString("F3") +
