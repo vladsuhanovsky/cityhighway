@@ -30,7 +30,8 @@ test("fresh web API ticket is fetched only by send transport, never persisted", 
 });
 
 test("outbox uploads the stored report only when its current owner is online", () => {
-  assert.match(delivery, /ReportOutbox\.Next\(steam\.SteamId, DateTime\.UtcNow\.Ticks\)/);
+  assert.match(delivery, /long nowTicks = DateTime\.UtcNow\.Ticks;/);
+  assert.match(delivery, /ReportOutbox\.Next\(steam\.SteamId, nowTicks\)/);
   assert.match(delivery, /expectedSteamId: entry\.ownerSteamId/);
   assert.match(outbox, /e\.ownerSteamId == owner && e\.nextAttemptUtcTicks <= nowTicks/);
 });
