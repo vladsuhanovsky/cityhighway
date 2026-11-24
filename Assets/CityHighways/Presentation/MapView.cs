@@ -397,13 +397,25 @@ namespace CityHighways.Presentation
             Add(_gamepadCursorHint);
             Ui.Show(_gamepadCursorHint, false);
 
+            RegisterCallback<NavigationMoveEvent>(evt =>
+            {
+                if (!_gamepadCursor.Active) return;
+                // UI D-pad navigation must not move the focused element out
+                // of the virtual-cursor surface while map targeting is active.
+                evt.PreventDefault();
+                evt.StopPropagation();
+            });
             RegisterCallback<NavigationSubmitEvent>(evt =>
             {
-                if (_gamepadCursor.Active) evt.StopPropagation();
+                if (!_gamepadCursor.Active) return;
+                evt.PreventDefault();
+                evt.StopPropagation();
             });
             RegisterCallback<NavigationCancelEvent>(evt =>
             {
-                if (_gamepadCursor.Active) evt.StopPropagation();
+                if (!_gamepadCursor.Active) return;
+                evt.PreventDefault();
+                evt.StopPropagation();
             });
 
             RegisterCallback<GeometryChangedEvent>(_ => Relayout());
@@ -452,6 +464,8 @@ namespace CityHighways.Presentation
             });
             RegisterCallback<PointerDownEvent>(e =>
             {
+                // Physical pointer interaction always takes ownership back.
+                if (_gamepadCursor.Active) StopGamepadTargeting();
                 if (_game == null) return;
                 Vector2 position = e.localPosition;
                 bool leftRotates = LeftRotates && CanRotate;
@@ -850,6 +864,7 @@ namespace CityHighways.Presentation
 
         public void SetGame(Game game)
         {
+            StopGamepadTargeting();
             _game = game;
             _layout = new BoardLayout(game.Map) { GroundQuads = _groundRoads };
             Affordable.Clear();
