@@ -362,15 +362,19 @@ namespace CityHighways.Presentation
                 foreach (var t in trees) Tree(canvas, t.x, t.y, t.z);
             }
 
-            var texture = new Texture2D(w, h, TextureFormat.RGBA32, false)
+            Texture2D texture;
+            using (City3DHotspotMarkers.TerrainUpload.Auto())
             {
-                name = "CityHighways_Terrain",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear,
-                hideFlags = HideFlags.DontSave
-            };
-            texture.SetPixels(canvas.Pixels);
-            texture.Apply(false, true);
+                texture = new Texture2D(w, h, TextureFormat.RGBA32, false)
+                {
+                    name = "CityHighways_Terrain",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear,
+                    hideFlags = HideFlags.DontSave
+                };
+                texture.SetPixels(canvas.Pixels);
+                texture.Apply(false, true);
+            }
             return texture;
         }
 
