@@ -130,6 +130,16 @@ namespace CityHighways.Presentation
             return false;
         }
 
+        /// <summary>
+        /// Only named controller interaction targets may be restored across
+        /// UI rebuilds. Anonymous labels and decorative controller guides
+        /// must not claim focus from the player.
+        /// </summary>
+        public static bool IsStableControllerName(string name) =>
+            !string.IsNullOrEmpty(name) &&
+            name.StartsWith("gamepad-", System.StringComparison.Ordinal) &&
+            name != "gamepad-controller-help";
+
         /// <summary>Find a newly rebuilt card with a stable controller-focus name.</summary>
         public static VisualElement FindEligibleNamed(VisualElement root, string name)
         {
