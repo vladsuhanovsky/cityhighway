@@ -335,6 +335,7 @@ namespace CityHighways.Presentation
         // Верхняя панель: логотип, ход, событие, ресурсы, меню и настройки
         readonly VisualElement _topBar;
         readonly Label _logo;
+        readonly VisualElement _logoDivider;
         readonly Label _turnLabel;
         readonly VisualElement _eventPill;
         readonly VisualElement _eventPillDot;
@@ -760,14 +761,18 @@ namespace CityHighways.Presentation
             _logo.style.whiteSpace = WhiteSpace.NoWrap;
             _logo.style.marginRight = 14f;
             _topBar.Add(_logo);
-            var divider = Ui.Box();
-            divider.style.width = 1f;
-            divider.style.height = 26f;
-            divider.style.backgroundColor = Theme.Line;
-            divider.style.marginRight = 12f;
-            _topBar.Add(divider);
+            _logoDivider = Ui.Box();
+            _logoDivider.style.width = 1f;
+            _logoDivider.style.height = 26f;
+            _logoDivider.style.backgroundColor = Theme.Line;
+            _logoDivider.style.marginRight = 12f;
+            _topBar.Add(_logoDivider);
             _turnLabel = Ui.Text("", 16f, null, true);
             _turnLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            _turnLabel.style.overflow = Overflow.Hidden;
+            _turnLabel.style.textOverflow = TextOverflow.Ellipsis;
+            _turnLabel.tooltip = _turnLabel.text;
+            _turnLabel.style.flexShrink = 1f;
             _turnLabel.style.marginRight = 12f;
             _topBar.Add(_turnLabel);
 
@@ -787,8 +792,12 @@ namespace CityHighways.Presentation
             _eventPill.Add(_eventPillDot);
             _eventPillText = Ui.Text("", 13f, null, true);
             _eventPillText.style.whiteSpace = WhiteSpace.NoWrap;
+            _eventPillText.style.overflow = Overflow.Hidden;
+            _eventPillText.style.textOverflow = TextOverflow.Ellipsis;
             _eventPill.Add(_eventPillText);
+            _eventPill.name = "gamepad-hud-event";
             _eventPill.RegisterCallback<ClickEvent>(_ => ToggleDrawer());
+            GamepadSelectable.Attach(_eventPill, ToggleDrawer);
             AttachTooltip(_eventPill, () => _game == null ? "" : _eventText.text);
             _topBar.Add(_eventPill);
 
@@ -2561,6 +2570,8 @@ namespace CityHighways.Presentation
             _turnLabel.text = (_game.Phase == GamePhase.SetupContracts ? LocalizationService.Get("game.ui.054") : LocalizationService.Get("game.ui.055") + _game.TurnNumber)
                               + (_game.Scenario != ScenarioKind.Standard ? " · " + Scenarios.Title(_game.Scenario) : "")
                               + (_game.IsCooperative ? LocalizationService.Get("game.ui.056") : "");
+            // Full localized title remains inspectable when the header truncates.
+            _turnLabel.tooltip = _turnLabel.text;
             RefreshEvent();
             RefreshGoals();
             RefreshGhost();
@@ -4220,7 +4231,23 @@ namespace CityHighways.Presentation
         {
             float width = Root.layout.width;
             if (float.IsNaN(width) || width < 100f) return;
-            Ui.Show(_logo, width >= 1280f);
+            var tier = GameHudLayout.ForWidth(width);
+            bool showLogo = GameHudLayout.ShowClassicLogo(tier);
+            Ui.Show(_logo, showLogo);
+            Ui.Show(_logoDivider, showLogo);
+            // On Deck the chip remains focusable and its full event text
+            // remains accessible through tooltip/drawer; only its long
+            // caption is hidden to preserve actionable HUD buttons.
+            Ui.Show(_eventPillText, GameHudLayout.ShowClassicEventText(tier));
+            _eventPillText.style.maxWidth = GameHudLayout.ClassicEventMaxWidth(tier);
+            Ui.Padding(_topBar, 0f, GameHudLayout.HorizontalPadding(tier));
+            _gamepadGuide.style.maxWidth = GameHudLayout.GuideMaxWidth(width);
+            _turnLabel.style.maxWidth = GameHudLayout.ClassicTurnMaxWidth(tier);
+            float gap = GameHudLayout.ActionGap(tier);
+            _undoButton.style.marginRight = gap;
+            _redoButton.style.marginRight = gap;
+            _logTab.style.marginRight = gap;
+            _menuButton.style.marginRight = gap;
             Ui.Show(_resourcesCaption, width >= 1500f);
             Ui.Show(_handTitle, width >= 1700f);
             Ui.Show(_viewHint, width >= 1800f);

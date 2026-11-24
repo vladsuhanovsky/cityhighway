@@ -139,6 +139,8 @@ namespace CityHighways.Presentation
         void Refresh()
         {
             _roundLabel.text = En ? $"{Place(_game.Map.Name)} · round {_game.Round}/{_game.TotalRounds}{(_game.IsOpeningRound ? " · construction" : "")} · {DifficultyName(_game.Config.Difficulty)}" : $"{_game.Map.Name} · раунд {_game.Round}/{_game.TotalRounds}{(_game.IsOpeningRound ? " · стройка" : "")} · {MagnateConfig.Title(_game.Config.Difficulty)}";
+            // Deck may ellipsize the long city/round/difficulty string.
+            _roundLabel.tooltip = _roundLabel.text;
             RefreshEventChip();
             RefreshPlayers();
             if (_popupKind == "truck" && (!HumanTurn || _game.Phase != MagnatePhase.Plan || _selectedTruck < 0)) ClosePopup(false);

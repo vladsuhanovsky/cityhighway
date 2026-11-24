@@ -131,3 +131,63 @@ Steam-specific platform support and hardware checks.
    available. Inspect fallback labels if Steam Input presents an Xbox pad.
 7. Run on real Steam Deck/Steam Input and check hardware-specific
    remappings manually; Unity Edit Mode cannot validate the physical labels.
+
+## Responsive HUD at Steam Deck panel widths (Stage 2 follow-up)
+
+Classic/co-op and Logistics Magnate top bars now share a pure
+`GameHudLayout` policy based on **actual UI Toolkit panel width**, not
+physical screen resolution. This matters when players raise the
+accessibility UI scale: 1280 physical pixels at 130% UI scale leaves
+roughly 985 panel-width units.
+
+| UI width (panel units) | Tier | Classic HUD | Magnate HUD |
+| --- | --- | --- | --- |
+| 1540+ | Wide | Logo, event title, full action toolbar | Mode title, wider round/event |
+| 1120–1539 | Compact | Hide logo and its divider; keep event text | Keep title, narrow event/round |
+| 760–1119 | Deck | Hide logo; keep the actionable event chip but hide its long text | Hide mode title; truncate round and event |
+| Below 760 | Narrow | Keep main actions and the small event chip | Tighten padding, truncate round and event |
+
+Both modes now:
+- Cap top-bar horizontal padding and button gaps for narrower layouts,
+  preserving Undo/Redo/journal/menu/settings in Classic and
+  journal/menu/settings in Magnate.
+- Apply ellipsis to long, localized turn/event headings, while keeping
+  the **full text in tooltips**. Magnate still exposes its existing
+  event description tooltip.
+- Cap the non-interactive gamepad-help overlay to the current viewport
+  width, with normal wrapping; it stays above the bottom action bar.
+- Preserve the gamepad/mouse focus policy, Steam Deck STEAM+X guidance,
+  and actual gameplay controls without a new platform dependency.
+- Classic's event chip is now a named focusable control
+  (`gamepad-hud-event`) that responds to standard controller Submit
+  as well as the existing mouse click. The chip remains usable when its
+  long event title is hidden on Deck.
+
+The policy is covered by Unity Edit Mode tests for breakpoints,
+130%-scaled 1280px geometry, ordering of maximum widths/padding,
+invalid initial geometry, tooltip-space constraints and an event chip
+whose caption is hidden. These do not prove a hardware layout fits.
+
+### Manual visual & input checks
+
+1. At native **1280×800**, in RU and EN, open Classic and Magnate.
+   No Undo/Redo, journal, menu or settings button should be clipped.
+2. Repeat at UI scales **0.9, 1.0, 1.2, and 1.3**. On the largest
+   setting, verify a long game title and event do not displace buttons.
+3. In Classic, select the event chip using a controller and press A.
+   Its drawer should open even though its full caption is hidden.
+4. In Magnate, use a very long city/round/event description. The
+   visible title should truncate and the tooltip should retain the
+   localized full text.
+5. Resize an Editor Game View across **760, 1120 and 1540** panel
+   units. Focus and buttons must remain accessible; no flicker or
+   unwanted layout loop should occur.
+6. With mouse, Deck trackpad and gamepad, verify moving the pointer
+   still releases controller ownership as before; R3 map targeting
+   should continue to suppress the HUD guide.
+7. Verify the controller guide wraps within the viewport instead of
+   covering action buttons. Also check overlays, handoff and settings
+   for no unexpected focus steals.
+
+**Steam Deck certification and physical input tests remain manual.**
+This slice improves responsive presentation, not SteamOS integration.

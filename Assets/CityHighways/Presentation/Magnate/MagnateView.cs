@@ -34,6 +34,8 @@ namespace CityHighways.Presentation
         readonly GamepadFocusReturn _gamepadFocusReturn = new GamepadFocusReturn();
         readonly Label _gamepadGuide;
         readonly VisualElement _mapArea, _players, _handoff, _results;
+        readonly VisualElement _magnateTopBar;
+        readonly Label _magnateModeTitle;
         readonly Label _roundLabel, _eventChip, _tooltip, _banner;
         readonly VisualElement _eventIcon;
         readonly MapView _map;
@@ -176,24 +178,32 @@ namespace CityHighways.Presentation
             _mapArea.Add(_tooltip);
 
             // Верхняя панель: город, раунд, сложность, компании, меню.
-            var top = Ui.Row();
-            top.style.position = Position.Absolute;
-            top.style.left = 0f;
-            top.style.right = 0f;
-            top.style.top = 0f;
-            top.style.height = TopBarHeight;
-            top.style.backgroundColor = Theme.Panel;
-            top.style.alignItems = Align.Center;
-            Ui.Padding(top, 0f, 16f);
-            Root.Add(top);
-            var title = Ui.Text(LocalizationService.Get("magnate.ui.002"), 17f, Theme.Text, true);
-            title.style.marginRight = 14f;
-            top.Add(title);
+            _magnateTopBar = Ui.Row();
+            _magnateTopBar.style.position = Position.Absolute;
+            _magnateTopBar.style.left = 0f;
+            _magnateTopBar.style.right = 0f;
+            _magnateTopBar.style.top = 0f;
+            _magnateTopBar.style.height = TopBarHeight;
+            _magnateTopBar.style.backgroundColor = Theme.Panel;
+            _magnateTopBar.style.alignItems = Align.Center;
+            Ui.Padding(_magnateTopBar, 0f, 16f);
+            Root.Add(_magnateTopBar);
+            _magnateModeTitle = Ui.Text(LocalizationService.Get("magnate.ui.002"), 17f, Theme.Text, true);
+            _magnateModeTitle.style.marginRight = 14f;
+            _magnateTopBar.Add(_magnateModeTitle);
             _roundLabel = Ui.Text("", 14f, Theme.TextDim);
+            _roundLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            _roundLabel.style.overflow = Overflow.Hidden;
+            _roundLabel.style.textOverflow = TextOverflow.Ellipsis;
+            _roundLabel.style.flexShrink = 1f;
             _roundLabel.style.marginRight = 12f;
-            top.Add(_roundLabel);
+            _magnateTopBar.Add(_roundLabel);
             // Событие раунда — плашка в верхней строке (подробности во всплывающей подсказке).
             _eventChip = Ui.Text("", 12f, Theme.Gold, true);
+            _eventChip.style.whiteSpace = WhiteSpace.NoWrap;
+            _eventChip.style.overflow = Overflow.Hidden;
+            _eventChip.style.textOverflow = TextOverflow.Ellipsis;
+            _eventChip.style.flexShrink = 1f;
             _eventChip.style.backgroundColor = new Color(0.30f, 0.20f, 0.12f);
             Ui.Padding(_eventChip, 3f, 8f);
             Ui.Radius(_eventChip, 6f);
@@ -203,12 +213,12 @@ namespace CityHighways.Presentation
             Ui.Show(_eventChip, false);
             _eventIcon = new VisualElement();
             _eventIcon.style.marginRight = 6f;
-            top.Add(_eventIcon);
-            top.Add(_eventChip);
+            _magnateTopBar.Add(_eventIcon);
+            _magnateTopBar.Add(_eventChip);
             _players = Ui.Row();
             _players.style.flexGrow = 1f;
             _players.style.overflow = Overflow.Hidden;
-            top.Add(_players);
+            _magnateTopBar.Add(_players);
             // Справа, как в соревновании: «Журнал» (с точкой, когда есть новые записи), «Меню» (обучение, правила,
             // выход), «Настройки» — в самом углу. Окна журнала и меню открываются под строкой у правого края.
             _topActions = Ui.Row();
@@ -226,7 +236,7 @@ namespace CityHighways.Presentation
             menu.style.marginRight = 8f;
             _topActions.Add(menu);
             _topActions.Add(new IconButton(IconButton.Glyph.Gear, LocalizationService.Get("magnate.ui.005"), () => ToggleModal("settings")));
-            top.Add(_topActions);
+            _magnateTopBar.Add(_topActions);
 
             BuildBottomBar();
             BuildCoach();
@@ -240,6 +250,8 @@ namespace CityHighways.Presentation
             _gamepadGuide = GamepadControlGuide.Create();
             _gamepadGuide.style.bottom = BottomHeight + 8f;
             Root.Add(_gamepadGuide);
+            Root.RegisterCallback<GeometryChangedEvent>(evt =>
+                AdaptMagnateHeader(evt.newRect.width));
         }
 
         static VisualElement Overlay()
