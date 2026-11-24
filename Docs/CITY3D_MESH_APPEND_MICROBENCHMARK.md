@@ -33,3 +33,14 @@ The comparator refuses files with different **Unity versions**, source-quad coun
 For a meaningful experiment, record the Git commit hashes and hardware alongside the CSV filenames, repeat both measurements under controlled conditions, and review the range/variation of raw runs. A single median difference is not a confidence interval and does not establish a real-game FPS or GPU performance change.
 
 This comparison is advisory: it is deliberately **not** an automated CI performance gate.
+
+
+## Save a review for pull requests
+
+The CSV comparison window also shows the minimum–maximum observed duration of each scenario in both captures. This gives context for differences in the median; a narrow median change with wide ranges should not be treated as reliable evidence of improvement.
+
+After loading and comparing compatible captures, enter the **baseline Git revision**, **current Git revision**, and **machine / Editor settings**. These labels are **manually provided**, not derived or verified from CSV metadata. Click **Save comparison review (.md)** to export a shareable Markdown file listing source CSV filenames, experiment labels, workload parameters, per-scenario sample counts, median durations, ranges and elapsed-time changes.
+
+The save button requires all three manual provenance fields. You can attach the resulting Markdown report to an optimization pull request, together with both raw CSV exports; preserve the original captures to allow independent review. File export does not run additional benchmarks and never rewrites the game's save schema.
+
+**Important:** benchmark revisions and environment fields are self-reported, and the CSV comparator checks only compatible recorded workload metadata. Neither saved reviews nor synthetic results establish frame-rate improvements in the game. Confirm in representative seeded 3D scenes with Unity Profiler and repeated captures.

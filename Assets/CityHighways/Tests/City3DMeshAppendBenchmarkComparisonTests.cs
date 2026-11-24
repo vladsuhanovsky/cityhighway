@@ -44,6 +44,10 @@ namespace CityHighways.Tests
             Assert.AreEqual(3, report.Scenarios[0].Runs);
             Assert.AreEqual(10d, report.Scenarios[0].BaselineMedianMs, 1e-9d);
             Assert.AreEqual(8d, report.Scenarios[0].CurrentMedianMs, 1e-9d);
+            Assert.AreEqual(9d, report.Scenarios[0].BaselineMinMs, 1e-9d);
+            Assert.AreEqual(11d, report.Scenarios[0].BaselineMaxMs, 1e-9d);
+            Assert.AreEqual(7d, report.Scenarios[0].CurrentMinMs, 1e-9d);
+            Assert.AreEqual(9d, report.Scenarios[0].CurrentMaxMs, 1e-9d);
             Assert.AreEqual(-20d, report.Scenarios[0].ChangePercent, 1e-9d);
             Assert.AreEqual(5d, report.Scenarios[1].ChangePercent, 1e-9d);
             Assert.AreEqual(0d, report.Scenarios[2].ChangePercent, 1e-9d);
