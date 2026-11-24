@@ -92,13 +92,19 @@ namespace CityHighways.Presentation
                     reason = "Cannot calculate a percentage from a zero baseline median: " + name;
                     return false;
                 }
+                double change = 100d * (after / before - 1d);
+                if (double.IsNaN(change) || double.IsInfinity(change))
+                {
+                    reason = "Percentage change is not representable for scenario: " + name;
+                    return false;
+                }
                 results[i] = new ScenarioResult
                 {
                     Name = name,
                     Runs = oldSamples.Count,
                     BaselineMedianMs = before,
                     CurrentMedianMs = after,
-                    ChangePercent = 100d * (after - before) / before
+                    ChangePercent = change
                 };
             }
 
