@@ -554,11 +554,14 @@ namespace CityHighways.Presentation
                 chip.style.marginBottom = 4f;
                 chip.tooltip = QuickCargoTitle(kind) + (hidden ? LocalizationService.Get("magnate.panel.023") : LocalizationService.Get("magnate.panel.024"));
                 chip.pickingMode = PickingMode.Position;
-                chip.RegisterCallback<ClickEvent>(_ =>
+                chip.name = "gamepad-magnate-cargo-filter-" + kind;
+                void ToggleCargoFilter()
                 {
                     if (!_hiddenKinds.Remove(kind)) _hiddenKinds.Add(kind);
                     _dirty = true;
-                });
+                }
+                chip.RegisterCallback<ClickEvent>(_ => ToggleCargoFilter());
+                GamepadSelectable.Attach(chip, ToggleCargoFilter);
                 filters.Add(chip);
             }
             _popupBody.Add(Pad(filters));
