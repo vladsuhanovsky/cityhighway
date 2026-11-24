@@ -4,12 +4,16 @@ on:
   pull_request:
     paths:
       - "Server/supabase/functions/social/**"
+      - "Assets/CityHighways/Presentation/SocialCloud*.cs"
+      - "Assets/CityHighways/Presentation/SocialReportOutbox.cs"
       - "Server/supabase/migrations/20261125_idempotent_social_records.sql"
       - ".github/workflows/social-replay-validation.yml"
   push:
     branches: [main]
     paths:
       - "Server/supabase/functions/social/**"
+      - "Assets/CityHighways/Presentation/SocialCloud*.cs"
+      - "Assets/CityHighways/Presentation/SocialReportOutbox.cs"
       - "Server/supabase/migrations/20261125_idempotent_social_records.sql"
       - ".github/workflows/social-replay-validation.yml"
   workflow_dispatch:

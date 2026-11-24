@@ -14,7 +14,7 @@ namespace CityHighways.Presentation
     /// SteamID, подставить чужой нельзя. Без Steam облако молчит, а призраки берутся из других профилей на этом
     /// компьютере (Ghosts).
     /// </summary>
-    public static class SocialCloud
+    public static partial class SocialCloud
     {
         const string Function = "/functions/v1/social";
         const string TicketIdentity = "cityhighways";
@@ -171,6 +171,8 @@ namespace CityHighways.Presentation
             public string replay;
             /// <summary>One Magnate match, reused for any HTTP retry.</summary>
             public string runId;
+            /// <summary>Exclude delayed reports from a different ISO week from club progress.</summary>
+            public bool skipClub;
             public ReportStats stats;
             // friends
             public string[] ids;
@@ -233,22 +235,32 @@ namespace CityHighways.Presentation
             float now = Time.realtimeSinceStartup;
             if (!_friendsBusy && now - _friendsAt > FriendsPeriod) RefreshFriends();
             if (!_clubBusy && now - _clubAt > ClubPeriod) RefreshClub();
+            TrySendQueuedReport();
         }
 
         // ---------------------------------------------------------------- Транспорт
 
-        static void Send<T>(Request request, Action<T> done, Action<string> failed = null) where T : class
+        static void Send<T>(Request request, Action<T> done, Action<string> failed = null,
+            Action<string, long> reportFailure = null, string expectedSteamId = null) where T : class
         {
             var steam = NetPlatforms.Steam;
             if (!Available || steam == null)
             {
                 failed?.Invoke(Unavailable);
+                reportFailure?.Invoke(Unavailable, 0);
                 return;
             }
             steam.RequestWebApiTicket(TicketIdentity, ticket =>
             {
                 try
                 {
+                    // If Steam account changes during async ticket acquisition,
+                    // do NOT publish a queued report as the newly signed-in user.
+                    if (expectedSteamId != null && steam.SteamId != expectedSteamId)
+                    {
+                        reportFailure?.Invoke("Steam account changed", 0);
+                        return;
+                    }
                     request.ticket = ticket ?? "";
                     request.claimedId = steam.SteamId;
                     request.version = Application.version;
@@ -271,6 +283,7 @@ namespace CityHighways.Presentation
                             {
                                 Problem = Russian(error ?? web.error ?? "нет ответа");
                                 failed?.Invoke(Problem);
+                                reportFailure?.Invoke(Problem, web.responseCode);
                                 return;
                             }
                             Problem = "";
@@ -280,6 +293,7 @@ namespace CityHighways.Presentation
                         {
                             Problem = e.Message;
                             failed?.Invoke(e.Message);
+                            reportFailure?.Invoke(e.Message, 0);
                         }
                         finally
                         {
@@ -291,6 +305,7 @@ namespace CityHighways.Presentation
                 {
                     Problem = e.Message;
                     failed?.Invoke(e.Message);
+                    reportFailure?.Invoke(e.Message, 0);
                 }
             });
         }
@@ -402,7 +417,8 @@ namespace CityHighways.Presentation
         /// </summary>
         public static void ReportGame(Game game, GameSetup setup, ReplayFile replay, Ghost ghost)
         {
-            if (!Available || game?.Result == null || setup == null || setup.tutorial || setup.practice || replay == null) return;
+            if (game?.Result == null || setup == null || setup.tutorial || setup.practice ||
+                replay == null || string.IsNullOrEmpty(replay.id)) return;
             int seat = replay.authorSeat;
             if (seat < 0 || seat >= game.Players.Count || replay.humans == null || !replay.humans[seat]) return;
             var player = game.Players[seat];
@@ -427,7 +443,7 @@ namespace CityHighways.Presentation
                 replay = Replays.Pack(replay),
                 stats = stats
             };
-            Send<ReportResponse>(request, AfterReport);
+            QueueReport(request, replay.mode + ":" + replay.id);
         }
 
         /// <summary>Магнат: рекордов и повторов нет, но доставки и победы идут в цель клуба.</summary>
@@ -436,13 +452,13 @@ namespace CityHighways.Presentation
             // Never send a provisional score or a bot-owned result.
             // The run ID belongs to the finished game object and survives
             // retransmission of the same report within this session.
-            if (!Available || game == null || game.Phase != MagnatePhase.GameOver ||
+            if (game == null || game.Phase != MagnatePhase.GameOver ||
                 humanIndex < 0 || humanIndex >= game.Players.Count ||
                 game.Players[humanIndex].IsBot ||
                 !MagnateRunIdentity.IsValid(game.ReportRunId)) return;
             var player = game.Players[humanIndex];
             int best = game.Players.Max(p => p.Score);
-            Send<ReportResponse>(new Request
+            QueueReport(new Request
             {
                 action = "report",
                 mode = "magnate",
@@ -451,7 +467,7 @@ namespace CityHighways.Presentation
                 score = player.Score,
                 won = player.Score == best,
                 stats = new ReportStats { delivered = player.Delivered, won = player.Score == best }
-            }, AfterReport);
+            }, "magnate:" + game.ReportRunId);
         }
 
         static void AfterReport(ReportResponse response)

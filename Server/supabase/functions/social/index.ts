@@ -241,7 +241,10 @@ async function report(db: Db, me: string, body: any) {
   // Вклад в недельную цель клуба.
   let club: unknown = null;
   const { data: member } = await db.from("club_members").select("club_id").eq("player_id", me).maybeSingle();
-  if (member) {
+  // Delayed offline uploads must not inflate a *later* weekly goal.
+  // skipClub is an opt-out: clients cannot use it to increase their score.
+  // Classic/Coop personal-best storage above still happens normally.
+  if (member && body.skipClub !== true) {
     const week = isoWeek();
     const { data: existing } = await db.from("club_weeks").select("goal_kind, goal_target").eq("club_id", member.club_id)
       .eq("week", week.id).maybeSingle();
