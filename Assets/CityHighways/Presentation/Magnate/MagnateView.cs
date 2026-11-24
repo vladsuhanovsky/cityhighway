@@ -79,6 +79,14 @@ namespace CityHighways.Presentation
             Root.style.flexGrow = 1f;
             Root.style.backgroundColor = Theme.Background;
             Root.RegisterCallback<PointerDownEvent>(_ => _gamepadFocusActive = false);
+            // Capture UI Submit before it can activate a focused HUD control
+            // while the player is intentionally choosing a map target.
+            Root.RegisterCallback<NavigationSubmitEvent>(evt =>
+            {
+                if (_map == null || !_map.IsGamepadTargeting || evt.target == _map) return;
+                evt.PreventDefault();
+                evt.StopPropagation();
+            }, TrickleDown.TrickleDown);
 
             _mapArea = Ui.Box();
             _mapArea.style.position = Position.Absolute;
