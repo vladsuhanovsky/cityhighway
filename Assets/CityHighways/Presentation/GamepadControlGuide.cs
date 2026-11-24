@@ -56,6 +56,18 @@ namespace CityHighways.Presentation
             return layout == ControllerLayout.Nintendo ? "A" : "B";
         }
 
+        public static string ShoulderLabel(ControllerLayout layout)
+        {
+            if (layout == ControllerLayout.PlayStation) return "L1/R1";
+            return layout == ControllerLayout.Nintendo ? "L/R" : "LB/RB";
+        }
+
+        public static string TriggerLabel(ControllerLayout layout)
+        {
+            if (layout == ControllerLayout.PlayStation) return "L2/R2";
+            return layout == ControllerLayout.Nintendo ? "ZL/ZR" : "LT/RT";
+        }
+
         public static bool IsTextEntryElement(VisualElement element)
         {
             for (var node = element; node != null; node = node.parent)
@@ -84,6 +96,8 @@ namespace CityHighways.Presentation
 
             string submit = SubmitLabel(layout, english);
             string back = BackLabel(layout, english);
+            string shoulders = ShoulderLabel(layout);
+            string triggers = TriggerLabel(layout);
 
             if (context == Context.Menu)
                 return english
@@ -92,11 +106,11 @@ namespace CityHighways.Presentation
 
             return context == Context.Magnate
                 ? english
-                    ? $"D-pad: HUD   {submit}: select   {back}: back   R3: map cursor   LT/RT: zoom"
-                    : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   LT/RT: масштаб"
+                    ? $"D-pad: HUD   {submit}: select   {back}: back   R3: map cursor   ${triggers}: zoom"
+                    : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   ${triggers}: масштаб"
                 : english
-                    ? $"D-pad: HUD   {submit}: select   {back}: back   R3: map cursor   LB/RB: rotate"
-                    : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   LB/RB: поворот";
+                    ? $"D-pad: HUD   {submit}: select   {back}: back   R3: map cursor   ${shoulders}: rotate"
+                    : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   ${shoulders}: поворот";
         }
 
         public static bool ShouldDisplay(bool gamepadConnected, bool controllerActive,
