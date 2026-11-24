@@ -168,5 +168,36 @@ namespace CityHighways.Tests
             Assert.AreEqual(setupActions, twoSteps.History.Count);
             Assert.IsFalse(GameUndo.CanUndo(twoSteps, false, false, false, false, false));
         }
+
+        [Test]
+        public void TruncatedReplayHistoryCanNeverReplaceSnapshotFallback()
+        {
+            var game = Started();
+            Assert.IsTrue(game.DrawCardFromDeck().Success);
+            Assert.IsTrue(game.DrawCardFromDeck().Success);
+            var save = game.CreateSave();
+            save.history = save.history.Take(save.history.Length - 1).ToArray();
+            var snapshot = Game.Load(game.Map, save);
+            string before = State(snapshot);
+
+            Assert.IsFalse(snapshot.HasVerifiedUndoHistory(),
+                "A snapshot recovered from incomplete history must fail closed");
+            Assert.IsFalse(GameUndo.TryUndo(snapshot, false, false, false, false, false,
+                out var restored, out var journal));
+            Assert.IsNull(restored);
+            Assert.IsEmpty(journal);
+            Assert.AreEqual(before, State(snapshot));
+        }
+
+        [Test]
+        public void CompleteCommandHistoryIsVerifiedBeforeUndo()
+        {
+            var game = Started();
+            Assert.IsTrue(game.DrawCardFromDeck().Success);
+            Assert.IsTrue(game.HasVerifiedUndoHistory());
+            Assert.IsTrue(GameUndo.TryUndo(game, false, false, false, false, false,
+                out var restored, out _));
+            Assert.IsTrue(restored.HasVerifiedUndoHistory());
+        }
     }
 }
