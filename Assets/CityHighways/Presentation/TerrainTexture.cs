@@ -278,13 +278,16 @@ namespace CityHighways.Presentation
             if (city3D)
             {
                 // Мягкое затемнение вокруг оснований: два ореола и сама площадка (её закроет здание).
-                foreach (var f in footprints)
+                using (City3DHotspotMarkers.TerrainFootprints.Auto())
                 {
-                    var c = ToPixel(f.x, f.y);
-                    float hw = f.z / span * w, hh = f.w / span * h;
-                    canvas.Rect(c.x - hw - 3f * k, c.y - hh - 3f * k, c.x + hw + 3f * k, c.y + hh + 3f * k, shadow, 0.10f);
-                    canvas.Rect(c.x - hw - 1.5f * k, c.y - hh - 1.5f * k, c.x + hw + 1.5f * k, c.y + hh + 1.5f * k, shadow, 0.16f);
-                    canvas.Rect(c.x - hw, c.y - hh, c.x + hw, c.y + hh, Pavement * 0.55f, 0.6f);
+                    foreach (var f in footprints)
+                    {
+                        var c = ToPixel(f.x, f.y);
+                        float hw = f.z / span * w, hh = f.w / span * h;
+                        canvas.Rect(c.x - hw - 3f * k, c.y - hh - 3f * k, c.x + hw + 3f * k, c.y + hh + 3f * k, shadow, 0.10f);
+                        canvas.Rect(c.x - hw - 1.5f * k, c.y - hh - 1.5f * k, c.x + hw + 1.5f * k, c.y + hh + 1.5f * k, shadow, 0.16f);
+                        canvas.Rect(c.x - hw, c.y - hh, c.x + hw, c.y + hh, Pavement * 0.55f, 0.6f);
+                    }
                 }
                 rows = -1; // кварталы не рисуем
             }
