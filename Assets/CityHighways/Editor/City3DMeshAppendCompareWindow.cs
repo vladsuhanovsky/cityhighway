@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using CityHighways.Presentation;
 using UnityEditor;
 using UnityEngine;
@@ -12,6 +13,9 @@ public sealed class City3DMeshAppendCompareWindow : EditorWindow
     string currentPath;
     string baselineCsv;
     string currentCsv;
+    string baselineRevision = "";
+    string currentRevision = "";
+    string environmentNotes = "";
     string error;
     City3DMeshAppendBenchmarkComparison.Report report;
 
@@ -37,6 +41,16 @@ public sealed class City3DMeshAppendCompareWindow : EditorWindow
             LoadFile(false);
         EditorGUILayout.LabelField("Current", string.IsNullOrEmpty(currentPath)
             ? "(not selected)" : Path.GetFileName(currentPath));
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Manual experiment provenance (for saved review)", EditorStyles.boldLabel);
+        baselineRevision = EditorGUILayout.TextField("Baseline Git revision", baselineRevision);
+        currentRevision = EditorGUILayout.TextField("Current Git revision", currentRevision);
+        environmentNotes = EditorGUILayout.TextField("Machine / Editor settings", environmentNotes);
+        EditorGUILayout.HelpBox(
+            "These labels are manually entered and not verified against the CSV files. " +
+            "Use the actual checked-out Git commit IDs and record the common test environment.",
+            MessageType.Info);
 
         using (new EditorGUI.DisabledScope(
             baselineCsv == null || currentCsv == null))
@@ -69,7 +83,11 @@ public sealed class City3DMeshAppendCompareWindow : EditorWindow
                 item.CurrentMedianMs.ToString("F3", CultureInfo.InvariantCulture) +
                 " ms (elapsed time " + delta + "%, " +
                 item.Runs + " runs in each capture). " +
-                "Negative change means shorter measured time.",
+                "Baseline range " + item.BaselineMinMs.ToString("F3", CultureInfo.InvariantCulture) +
+                "–" + item.BaselineMaxMs.ToString("F3", CultureInfo.InvariantCulture) +
+                " ms; current range " + item.CurrentMinMs.ToString("F3", CultureInfo.InvariantCulture) +
+                "–" + item.CurrentMaxMs.ToString("F3", CultureInfo.InvariantCulture) +
+                " ms. Negative change means shorter measured time.",
                 MessageType.None);
         }
         EditorGUILayout.HelpBox(
@@ -77,6 +95,36 @@ public sealed class City3DMeshAppendCompareWindow : EditorWindow
             "They are not confidence intervals or evidence of an end-to-end FPS change. " +
             "Confirm with repeated runs and the Unity Profiler in real scenes.",
             MessageType.Info);
+
+        using (new EditorGUI.DisabledScope(
+            string.IsNullOrWhiteSpace(baselineRevision) ||
+            string.IsNullOrWhiteSpace(currentRevision) ||
+            string.IsNullOrWhiteSpace(environmentNotes)))
+        {
+            if (GUILayout.Button("Save comparison review (.md)"))
+                SaveReview();
+        }
+    }
+
+    void SaveReview()
+    {
+        string path = EditorUtility.SaveFilePanel(
+            "Save MeshBuilder append comparison review",
+            "", "mesh-append-comparison.md", "md");
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            string contents = City3DMeshAppendBenchmarkReview.ToMarkdown(report,
+                baselineRevision, currentRevision, environmentNotes,
+                Path.GetFileName(baselinePath), Path.GetFileName(currentPath));
+            File.WriteAllText(path, contents, new UTF8Encoding(false));
+            error = null;
+            Debug.Log("MeshBuilder.Append comparison review saved: " + path);
+        }
+        catch (Exception ex)
+        {
+            error = "Cannot save comparison review: " + ex.Message;
+        }
     }
 
     void LoadFile(bool baseline)
