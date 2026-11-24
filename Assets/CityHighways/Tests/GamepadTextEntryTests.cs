@@ -79,5 +79,47 @@ namespace CityHighways.Tests
             Assert.IsFalse(GamepadTextEntry.TryExit(root));
             Assert.IsFalse(GamepadTextEntry.TryExit(null));
         }
+
+        [Test]
+        public void ExitFocusFindsEnabledButtonInsideSiblingWrapper()
+        {
+            var root = new VisualElement();
+            var row = new VisualElement();
+            var inputWrapper = new VisualElement();
+            var actionWrapper = new VisualElement();
+            var field = new TextField();
+            var action = new Button();
+            root.Add(row);
+            row.Add(inputWrapper);
+            row.Add(actionWrapper);
+            inputWrapper.Add(field);
+            actionWrapper.Add(action);
+
+            Assert.AreSame(action, GamepadTextEntry.ExitTarget(root, field));
+            action.SetEnabled(false);
+            Assert.IsNull(GamepadTextEntry.ExitTarget(root, field));
+        }
+
+        [Test]
+        public void ExitFocusNeverTargetsButtonsInsideTheTextFieldBranch()
+        {
+            var root = new VisualElement();
+            var row = new VisualElement();
+            var wrapper = new VisualElement();
+            var field = new TextField();
+            var inner = new Button();
+            var outside = new Button();
+            root.Add(row);
+            row.Add(wrapper);
+            wrapper.Add(field);
+            field.Add(inner);
+            row.Add(outside);
+
+            // An internal focusable control must never keep the user inside
+            // the field when B/Escape explicitly ends editing.
+            Assert.AreSame(outside, GamepadTextEntry.ExitTarget(root, field));
+            outside.SetEnabled(false);
+            Assert.IsNull(GamepadTextEntry.ExitTarget(root, field));
+        }
     }
 }

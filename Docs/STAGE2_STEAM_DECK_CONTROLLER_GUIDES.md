@@ -51,3 +51,41 @@ Test RU and EN, **1280×800** and desktop resolution, with both controller and m
 This PR does not cover: automatic SteamOS keyboard invocation through Steam Input, dynamic controller-brand glyphs, native Steam achievements bridge, full Steam Deck build packaging/testing, controller-specific UI navigation in every custom input field, undo history or music. These remain separate testable iterations.
 
 No CI monitoring or automated merging is enabled. The user reports results manually.
+
+## Follow-up: real pointer handoff and focused controls
+
+The Steam Deck controller refinement adds a pointer-driven handoff and more
+resilient focus recovery without simulating mouse clicks or invoking SteamOS APIs.
+
+- A mouse or Deck trackpad movement of at least 3 UI input units in a frame
+  releases controller focus in the main menu and both gameplay modes. Smaller
+  jitter is ignored; a fresh D-pad, left-stick or A input reclaims controller
+  focus. Disconnecting the controller also clears menu focus-ownership state.
+- If a focusable scroll container has an eligible action inside it, initial
+  controller focus selects that action before the scroll container itself.
+- When dynamic cards temporarily have duplicate focus names, restoration
+  ignores hidden/disabled stale cards and can find the visible replacement.
+- Leaving a text field with B/Escape can now select a visible enabled button
+  inside an adjacent row wrapper. It never selects controls nested *inside*
+  the field that is being exited.
+- Unity Edit Mode regression tests cover mouse jitter threshold, nested
+  scroll focus, duplicate card names, nested row action targets and
+  protection from re-entering a field's own internal controls.
+
+Manual Steam Deck acceptance extension:
+
+1. Navigate New Game by D-pad, move the trackpad **without clicking** and
+   verify the help strip disappears; use A/D-pad again to reclaim it.
+2. Repeat in classic/co-op and Logistics Magnate. Confirm a moving mouse
+   never activates a gameplay action.
+3. Open a long scrollable Rules/Contracts/Orders list with the controller.
+   The initial focus should land on a real visible control, not just the
+   scroll viewport, and ScrollTo should still reveal it.
+4. Open a dialog with hidden old/rebuilt cards and verify navigation
+   recovers to the visible current card.
+5. Focus a text input next to a styled button wrapper, press B/Escape and
+   verify only editing ends; a second B performs the usual Back.
+6. Check hot-seat, keyboard/mouse and 1280x800 RU/EN layouts for regressions.
+
+**Limit:** Physical Steam Deck/Steam Input emulation has not been exercised by
+Edit Mode CI. This is a controller usability improvement, not certification.

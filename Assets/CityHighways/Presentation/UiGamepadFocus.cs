@@ -22,6 +22,12 @@ namespace CityHighways.Presentation
             buttonPressed && !mapTargetingOrExiting;
 
         /// <summary>
+        /// A moving mouse/Steam Deck trackpad hands focus back to the pointer
+        /// without requiring a click. Ignore subpixel noise and tiny drift.
+        /// </summary>
+        public static bool HasMouseIntent(Vector2 delta) => delta.sqrMagnitude >= 9f;
+
+        /// <summary>
         /// Keep a valid UI focus in both gameplay HUDs, without claiming it
         /// from mouse-only players or intercepting game-rule actions.
         /// Button B uses only a registered visible Back action; mandatory
@@ -37,6 +43,9 @@ namespace CityHighways.Presentation
                 active = false;
                 return;
             }
+            var mouse = Mouse.current;
+            if (mouse != null && HasMouseIntent(mouse.delta.ReadValue()))
+                active = false;
             if (HasNavigationIntent(pad.dpad.ReadValue(),
                     pad.leftStick.ReadValue(), pad.buttonSouth.wasPressedThisFrame))
                 active = true;
@@ -80,13 +89,19 @@ namespace CityHighways.Presentation
         static VisualElement FindIn(VisualElement element, VisualElement root)
         {
             if (!IsVisible(element, root)) return null;
-            if (element.focusable && element.enabledInHierarchy) return element;
+
+            // ScrollView itself may be focusable but has no primary action;
+            // prefer its visible controls so A selects an item instead of
+            // parking controller focus on the scroll container.
+            if (!(element is ScrollView) && element.focusable &&
+                element.enabledInHierarchy)
+                return element;
             foreach (var child in element.Children())
             {
                 var found = FindIn(child, root);
                 if (found != null) return found;
             }
-            return null;
+            return element.focusable && element.enabledInHierarchy ? element : null;
         }
 
         /// <summary>
@@ -119,8 +134,11 @@ namespace CityHighways.Presentation
         public static VisualElement FindEligibleNamed(VisualElement root, string name)
         {
             if (root == null || string.IsNullOrEmpty(name)) return null;
-            var candidate = root.Q<VisualElement>(name);
-            return IsEligible(candidate, root) ? candidate : null;
+            // A hidden old card and a rebuilt visible card can briefly
+            // coexist with the same focus name. Find the visible one.
+            foreach (var candidate in root.Query<VisualElement>(name).ToList())
+                if (IsEligible(candidate, root)) return candidate;
+            return null;
         }
 
         public static bool RestoreNamedFocus(VisualElement root, string name)

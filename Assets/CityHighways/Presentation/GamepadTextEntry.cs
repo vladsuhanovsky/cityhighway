@@ -40,9 +40,18 @@ namespace CityHighways.Presentation
             for (var ancestor = field.parent; ancestor != null; ancestor = ancestor.parent)
             {
                 foreach (var sibling in ancestor.Children())
+                {
+                    // Never jump into the field's own nested input controls.
+                    if (sibling == field || sibling.Contains(field)) continue;
                     if (sibling is Button button &&
                         UiGamepadFocus.IsEligible(button, scope))
                         return button;
+                    // Player/profile rows also wrap buttons in styling
+                    // containers, not just direct siblings of the TextField.
+                    foreach (var nested in sibling.Query<Button>().ToList())
+                        if (UiGamepadFocus.IsEligible(nested, scope))
+                            return nested;
+                }
                 if (ancestor == scope) break;
             }
             return null;

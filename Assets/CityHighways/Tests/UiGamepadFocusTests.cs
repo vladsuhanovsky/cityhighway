@@ -216,5 +216,43 @@ namespace CityHighways.Tests
             Assert.IsFalse(UiGamepadFocus.EnsureFocus(new VisualElement()));
             Assert.IsFalse(UiGamepadFocus.FocusFirst(new VisualElement()));
         }
+
+        [Test]
+        public void MouseHandoffIgnoresSmallJitterButDetectsTrackpadMovement()
+        {
+            Assert.IsFalse(UiGamepadFocus.HasMouseIntent(Vector2.zero));
+            Assert.IsFalse(UiGamepadFocus.HasMouseIntent(new Vector2(1f, 1f)));
+            Assert.IsTrue(UiGamepadFocus.HasMouseIntent(new Vector2(3f, 0f)));
+            Assert.IsTrue(UiGamepadFocus.HasMouseIntent(new Vector2(-4f, 5f)));
+        }
+
+        [Test]
+        public void ScrollContainerDoesNotTakeInitialFocusFromItsVisibleAction()
+        {
+            var root = new VisualElement();
+            var scroll = new ScrollView { focusable = true };
+            var action = new Button();
+            scroll.Add(action);
+            root.Add(scroll);
+            Assert.AreSame(action, UiGamepadFocus.FirstEligible(root));
+
+            action.SetEnabled(false);
+            Assert.AreSame(scroll, UiGamepadFocus.FirstEligible(root));
+        }
+
+        [Test]
+        public void DuplicateNamedFocusPrefersVisibleRebuiltCard()
+        {
+            var root = new VisualElement();
+            var oldCard = new Button { name = "gamepad-card" };
+            var newCard = new Button { name = "gamepad-card" };
+            oldCard.style.display = DisplayStyle.None;
+            root.Add(oldCard);
+            root.Add(newCard);
+            Assert.AreSame(newCard, UiGamepadFocus.FindEligibleNamed(root, "gamepad-card"));
+
+            newCard.SetEnabled(false);
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamed(root, "gamepad-card"));
+        }
     }
 }
