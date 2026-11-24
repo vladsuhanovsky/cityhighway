@@ -456,6 +456,19 @@ namespace CityHighways.Presentation
             {
                 float x = ((px + 0.5f) / size * 2f - 1f) * OutskirtsExtent;
                 float z = ((py + 0.5f) / size * 2f - 1f) * OutskirtsExtent;
+                float dx = Mathf.Abs(x) - boardX, dz = Mathf.Abs(z) - boardZ;
+                float outside = Mathf.Max(dx, dz);
+                // Entirely inside the board: the later seam blend has zero
+                // weight, so all six noise samples would be discarded.
+                // Preserve the grain exactly as in the original pixel formula.
+                if (outside <= -0.05f)
+                {
+                    float hiddenGrain = (Hash(px, py, 403) - 0.5f) * 0.03f;
+                    pixels[py * size + px] = ToColor32(new Color(
+                        seam.r + hiddenGrain, seam.g + hiddenGrain,
+                        seam.b + hiddenGrain, 1f));
+                    continue;
+                }
                 // Пиксели поля (как у CityPlanner): x вправо, y вниз (на юг).
                 float fx = (x + BoardLayout.WorldWidth / 2f) * CityPlanner.PixelsPerUnit;
                 float fy = (BoardLayout.WorldDepth / 2f - z) * CityPlanner.PixelsPerUnit;
@@ -467,8 +480,6 @@ namespace CityHighways.Presentation
                 float village = Mathf.Clamp01((CityPlanner.VillageNoise(fx, fy) - (CityPlanner.VillageLevel - 0.03f)) / 0.06f);
                 c = Color.Lerp(c, villageGround, village * 0.5f * (1f - forest));
                 // Шов с доской: в пределах ~0,7 м от края доски — цвет шва.
-                float dx = Mathf.Abs(x) - boardX, dz = Mathf.Abs(z) - boardZ;
-                float outside = Mathf.Max(dx, dz);
                 c = Color.Lerp(seam, c, Mathf.Clamp01((outside + 0.05f) / 0.7f));
                 // Вдали — ровнее (дымка тумана всё равно скрывает детали).
                 float far = Mathf.Clamp01((Mathf.Max(Mathf.Abs(x), Mathf.Abs(z)) - 18f) / 12f);
