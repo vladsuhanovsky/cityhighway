@@ -2549,9 +2549,12 @@ namespace CityHighways.Presentation
                 var card = _game.FaceUpCards[i];
                 bool forbidden = _game.Phase == GamePhase.DrawingSecondCard && card == Resource.Machinery;
                 _faceUp[i].Set(card, null, card.HasValue && forbidden);
-                // A card must not remain raised if the current action made it unavailable.
-                if (!GameFxTuning.CanHighlightFaceUp(HumanToAct, canDraw, card.HasValue, forbidden))
-                    _faceUp[i].style.top = 0f;
+                bool available = GameFxTuning.CanHighlightFaceUp(
+                    HumanToAct, canDraw, card.HasValue, forbidden);
+                // Keep mouse click validation in Act(), but exclude unavailable
+                // cards from controller/tab focus navigation.
+                _faceUp[i].focusable = available;
+                if (!available) _faceUp[i].style.top = 0f;
             }
             _faceUpRow.style.opacity = canDraw ? 1f : 0.7f;
 
