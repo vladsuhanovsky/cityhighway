@@ -385,6 +385,15 @@ namespace CityHighways.Core
             return FromSave(map, data);
         }
 
+        /// <summary>
+        /// Compare two replayed live states by their complete snapshot fields
+        /// already validated by Game.Load; requires the same map instance.
+        /// Does not mutate either Game.
+        /// </summary>
+        public bool SameGameState(Game other) =>
+            other != null && ReferenceEquals(Map, other.Map) &&
+            SameStateAs(other.CreateSave());
+
         /// <summary>Совпадает ли состояние с сохранённым снимком (сравниваются ключевые части).</summary>
         bool SameStateAs(GameSaveData data)
         {

@@ -10,6 +10,21 @@ namespace CityHighways.Presentation
     public sealed partial class GameView
     {
         UnityEngine.UIElements.Button _undoButton;
+        UnityEngine.UIElements.Button _redoButton;
+        const int MaxRedoSteps = 8;
+        readonly List<Game> _redoTargets = new List<Game>();
+
+        void ClearRedoHistory() => _redoTargets.Clear();
+
+        bool CanRedoAction =>
+            _game != null && _redoTargets.Count > 0 &&
+            GameRedo.CanRedo(_game, _redoTargets[_redoTargets.Count - 1],
+                Online, _setup.players != null && _setup.players.Any(p => p.isBot),
+                _setup.tutorial, _setup.turnSeconds > 0, _setup.hideCardsBetweenTurns) &&
+            _overlayKind == OverlayKind.None && _modal == Modal.None &&
+            !_drawerOpen && !_playersOpen &&
+            _app.Tweener.BlockingCount == 0 &&
+            !_map.IsGamepadTargeting;
         int _undoArmedHistory = -1;
         int _undoArmedPlayer = -1;
         float _undoArmedUntil;
@@ -67,6 +82,29 @@ namespace CityHighways.Presentation
             else
                 _undoButton.tooltip = LocalizationService.Get("game.undo.disabled_hint");
             Ui.SetEnabled(_undoButton, available);
+            RefreshRedoButton();
+        }
+
+        void RefreshRedoButton()
+        {
+            if (_redoButton == null) return;
+            bool available = CanRedoAction;
+            _redoButton.text = LocalizationService.Get("game.redo.action");
+            if (available)
+            {
+                var next = _redoTargets[_redoTargets.Count - 1];
+                var command = next.History[next.History.Count - 1];
+                string action = UndoPresentation.ActionLabel(command,
+                    LocalizationService.Language == "en");
+                bool onMac = Application.platform == RuntimePlatform.OSXEditor ||
+                    Application.platform == RuntimePlatform.OSXPlayer;
+                _redoButton.tooltip = string.Format(
+                    LocalizationService.Get("game.redo.tooltip"), action,
+                    UndoPresentation.RedoShortcutLabel(onMac));
+            }
+            else
+                _redoButton.tooltip = LocalizationService.Get("game.redo.disabled_hint");
+            Ui.SetEnabled(_redoButton, available);
         }
 
         /// <summary>
@@ -89,11 +127,21 @@ namespace CityHighways.Presentation
                 keyboard[UnityEngine.InputSystem.Key.RightMeta].isPressed);
             bool modifier = UndoPresentation.UndoModifier(
                 keyboard.ctrlKey.isPressed, meta, onMac);
+            bool isTextEntry = GamepadControlGuide.TextEntryFocused(Root);
             if (UndoPresentation.WantsShortcut(
                     modifier, keyboard.shiftKey.isPressed,
                     keyboard.zKey.wasPressedThisFrame,
-                    GamepadControlGuide.TextEntryFocused(Root), CanUndoAction))
+                    isTextEntry, CanUndoAction))
+            {
                 UndoLastAction();
+                return;
+            }
+            if (UndoPresentation.WantsRedoShortcut(
+                    modifier, keyboard.shiftKey.isPressed,
+                    keyboard.yKey.wasPressedThisFrame,
+                    keyboard.zKey.wasPressedThisFrame,
+                    isTextEntry, CanRedoAction, onMac))
+                RedoLastAction();
         }
 
         void UndoLastAction()
@@ -128,18 +176,52 @@ namespace CityHighways.Presentation
                 return;
             }
 
-            // Rewind never fires the old game's end-of-game listeners. Swap
-            // it only after replay succeeded, then let Begin rebuild all
-            // card, road, HUD and 3D projections and the new autosave.
+            var previous = _game;
+            var future = _redoTargets.ToArray();
+            ReplaceGameFromHistory(restored, journal, "game.undo.done");
+            _redoTargets.AddRange(future);
+            _redoTargets.Add(previous);
+            if (_redoTargets.Count > MaxRedoSteps) _redoTargets.RemoveAt(0);
+            RefreshRedoButton();
+        }
+
+        void RedoLastAction()
+        {
+            if (!CanRedoAction) return;
+            var candidate = _redoTargets[_redoTargets.Count - 1];
+            if (!GameRedo.TryRedo(_game, candidate, Online,
+                    _setup.players != null && _setup.players.Any(p => p.isBot),
+                    _setup.tutorial, _setup.turnSeconds > 0, _setup.hideCardsBetweenTurns,
+                    out var restored, out List<string> journal))
+            {
+                ClearRedoHistory();
+                Flash(LocalizationService.Get("game.redo.unavailable"));
+                return;
+            }
+
+            var future = _redoTargets.Take(_redoTargets.Count - 1).ToArray();
+            ReplaceGameFromHistory(restored, journal, "game.redo.done");
+            _redoTargets.AddRange(future);
+            RefreshRedoButton();
+        }
+
+        /// <summary>
+        /// Shared UI, autosave and journal restoration for Undo/Redo.
+        /// The old game cannot deliver any late events after the swap.
+        /// Begin deliberately drops the prior redo timeline; callers
+        /// preserve only valid remaining candidates after reconstruction.
+        /// </summary>
+        void ReplaceGameFromHistory(Game restored, List<string> journal, string noticeKey)
+        {
             _app.Tweener.Clear();
             _map.StopGamepadTargeting(false);
             _game.Log -= AddLog;
             _game.StateChanged -= OnStateChanged;
-            Begin(restored, _playSeconds, LocalizationService.Get("game.undo.done"),
+            Begin(restored, _playSeconds, LocalizationService.Get(noticeKey),
                 skipTutorialPrompt: true);
 
-            // Reconstruct the displayed journal from the *remaining*
-            // commands. Never keep a line from the undone action.
+            // Rebuild only the gameplay journal, not stale messages from
+            // actions that are no longer present in the timeline.
             _log.Clear();
             _logTotal = 0;
             _logSeenTotal = 0;
@@ -147,7 +229,7 @@ namespace CityHighways.Presentation
             _logShownTotal = -1;
             foreach (string entry in journal.Skip(Math.Max(0, journal.Count - (LogHistory - 1))))
                 AddLog(entry);
-            AddLog(LocalizationService.Get("game.undo.done"));
+            AddLog(LocalizationService.Get(noticeKey));
             _app.Sound.Play(Sfx.Undo, 0.55f);
             _dirty = true;
         }
