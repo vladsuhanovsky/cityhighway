@@ -157,8 +157,21 @@ namespace CityHighways.Presentation
             });
             RegisterCallback<PointerLeaveEvent>(_ =>
             {
-                style.backgroundColor = new Color(1f, 1f, 1f, 0.06f);
+                if (panel?.focusController.focusedElement != this)
+                    style.backgroundColor = new Color(1f, 1f, 1f, 0.06f);
                 style.translate = new Translate(new Length(0f), new Length(0f));
+            });
+            // Icons in the HUD, minimap and carousel are native Buttons but
+            // were missing the keyboard/controller focus treatment of Ui.Button.
+            RegisterCallback<FocusInEvent>(_ =>
+            {
+                Ui.Border(this, 2f, Theme.Gold);
+                style.backgroundColor = Theme.PanelHover;
+            });
+            RegisterCallback<FocusOutEvent>(_ =>
+            {
+                Ui.Border(this, 0f, Color.clear);
+                style.backgroundColor = new Color(1f, 1f, 1f, 0.06f);
             });
         }
 
