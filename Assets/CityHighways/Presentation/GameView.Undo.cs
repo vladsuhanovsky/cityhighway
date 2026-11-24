@@ -11,14 +11,13 @@ namespace CityHighways.Presentation
     {
         UnityEngine.UIElements.Button _undoButton;
         UnityEngine.UIElements.Button _redoButton;
-        const int MaxRedoSteps = 8;
-        readonly List<Game> _redoTargets = new List<Game>();
+        readonly RedoHistory _redoHistory = new RedoHistory();
 
-        void ClearRedoHistory() => _redoTargets.Clear();
+        void ClearRedoHistory() => _redoHistory.Clear();
 
         bool CanRedoAction =>
-            _game != null && _redoTargets.Count > 0 &&
-            GameRedo.CanRedo(_game, _redoTargets[_redoTargets.Count - 1],
+            _game != null && _redoHistory.Count > 0 &&
+            GameRedo.CanRedo(_game, _redoHistory.Next,
                 Online, _setup.players != null && _setup.players.Any(p => p.isBot),
                 _setup.tutorial, _setup.turnSeconds > 0, _setup.hideCardsBetweenTurns) &&
             _overlayKind == OverlayKind.None && _modal == Modal.None &&
@@ -92,7 +91,7 @@ namespace CityHighways.Presentation
             _redoButton.text = LocalizationService.Get("game.redo.action");
             if (available)
             {
-                var next = _redoTargets[_redoTargets.Count - 1];
+                var next = _redoHistory.Next;
                 var command = next.History[next.History.Count - 1];
                 string action = UndoPresentation.ActionLabel(command,
                     LocalizationService.Language == "en");
@@ -177,18 +176,15 @@ namespace CityHighways.Presentation
             }
 
             var previous = _game;
-            var future = _redoTargets.ToArray();
             ReplaceGameFromHistory(restored, journal, "game.undo.done");
-            _redoTargets.AddRange(future);
-            _redoTargets.Add(previous);
-            if (_redoTargets.Count > MaxRedoSteps) _redoTargets.RemoveAt(0);
+            _redoHistory.Push(previous);
             RefreshRedoButton();
         }
 
         void RedoLastAction()
         {
             if (!CanRedoAction) return;
-            var candidate = _redoTargets[_redoTargets.Count - 1];
+            var candidate = _redoHistory.Next;
             if (!GameRedo.TryRedo(_game, candidate, Online,
                     _setup.players != null && _setup.players.Any(p => p.isBot),
                     _setup.tutorial, _setup.turnSeconds > 0, _setup.hideCardsBetweenTurns,
@@ -199,17 +195,17 @@ namespace CityHighways.Presentation
                 return;
             }
 
-            var future = _redoTargets.Take(_redoTargets.Count - 1).ToArray();
             ReplaceGameFromHistory(restored, journal, "game.redo.done");
-            _redoTargets.AddRange(future);
+            if (!_redoHistory.Consume(candidate))
+                ClearRedoHistory(); // Fail closed on an unexpected stack change.
             RefreshRedoButton();
         }
 
         /// <summary>
         /// Shared UI, autosave and journal restoration for Undo/Redo.
         /// The old game cannot deliver any late events after the swap.
-        /// Begin deliberately drops the prior redo timeline; callers
-        /// preserve only valid remaining candidates after reconstruction.
+        /// An internal replay keeps the redo timeline; starting or loading
+        /// another game still clears it by default.
         /// </summary>
         void ReplaceGameFromHistory(Game restored, List<string> journal, string noticeKey)
         {
@@ -218,7 +214,7 @@ namespace CityHighways.Presentation
             _game.Log -= AddLog;
             _game.StateChanged -= OnStateChanged;
             Begin(restored, _playSeconds, LocalizationService.Get(noticeKey),
-                skipTutorialPrompt: true);
+                skipTutorialPrompt: true, preserveRedoHistory: true);
 
             // Rebuild only the gameplay journal, not stale messages from
             // actions that are no longer present in the timeline.
