@@ -31,6 +31,7 @@ namespace CityHighways.Presentation
 
         public VisualElement Root { get; }
         bool _gamepadFocusActive;
+        readonly GamepadFocusReturn _gamepadFocusReturn = new GamepadFocusReturn();
         readonly VisualElement _mapArea, _players, _handoff, _results;
         readonly Label _roundLabel, _eventChip, _tooltip, _banner;
         readonly VisualElement _eventIcon;
@@ -317,6 +318,7 @@ namespace CityHighways.Presentation
                 _awaitingHandoff ? _handoff :
                 _resultsShown ? _results :
                 _popupKind != null ? _popup : Root;
+            _gamepadFocusReturn.Update(Root, controllerScope, _gamepadFocusActive);
             UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
                 _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,
                 controllerScope);
