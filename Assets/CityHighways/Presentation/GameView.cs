@@ -4238,6 +4238,7 @@ namespace CityHighways.Presentation
             // caption is hidden to preserve actionable HUD buttons.
             Ui.Show(_eventPillText, GameHudLayout.ShowClassicEventText(tier));
             Ui.Padding(_topBar, 0f, GameHudLayout.HorizontalPadding(tier));
+            _gamepadGuide.style.maxWidth = GameHudLayout.GuideMaxWidth(width);
             _turnLabel.style.maxWidth = GameHudLayout.ClassicTurnMaxWidth(tier);
             float gap = GameHudLayout.ActionGap(tier);
             _undoButton.style.marginRight = gap;
