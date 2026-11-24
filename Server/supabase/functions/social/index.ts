@@ -18,6 +18,7 @@
 // Секреты: те же, что у player-sync (STEAM_WEB_API_KEY, STEAM_APP_ID, для разработки ALLOW_UNVERIFIED=1).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { validateReplayReport } from "./report-validator.mjs";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
