@@ -6282,7 +6282,7 @@
     },
     {
       "key": "game.redo.tooltip",
-      "value": "Redo: {0} · Ctrl+Y / Ctrl+Shift+Z"
+      "value": "Redo: {0} · {1}"
     },
     {
       "key": "game.redo.disabled_hint",
