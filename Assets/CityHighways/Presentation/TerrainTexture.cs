@@ -313,16 +313,21 @@ namespace CityHighways.Presentation
                 }
             }
 
-            // ---- Парки: тёмная подложка и кроны, сверху вниз (нижние кроны перекрывают верхние).
+            // ---- Парки: dark ground floor belongs to both 2D and 3D terrain.
+            // Flat treetops are used ONLY in the 2D texture; the 3D scene
+            // creates separate meshes/cards and never consumes these candidates.
             var forestFloor = new Color(0.15f, 0.24f, 0.09f);
-            var trees = new List<Vector3>();
+            var trees = city3D ? null : new List<Vector3>();
             for (int pi = 0; pi < parks.Count; pi++)
             {
                 var blob = parks[pi];
+                foreach (var c in blob)
+                    canvas.Disc(c.x, c.y, c.z, forestFloor, 0.67f);
+                if (city3D) continue;
+
                 float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
                 foreach (var c in blob)
                 {
-                    canvas.Disc(c.x, c.y, c.z, forestFloor, 0.67f);
                     minX = Mathf.Min(minX, c.x - c.z); maxX = Mathf.Max(maxX, c.x + c.z);
                     minY = Mathf.Min(minY, c.y - c.z); maxY = Mathf.Max(maxY, c.y + c.z);
                 }
@@ -333,20 +338,23 @@ namespace CityHighways.Presentation
                     trees.Add(new Vector3(p.x, p.y, (3.2f + Hash(pi, j, 42) * 2.6f) * k));
                 }
             }
-            // Лесополосы за МКАД — там, где шум «леса» высок.
-            float treeCell = 11f * k;
-            for (int iy = 0; iy <= Mathf.CeilToInt(h / treeCell); iy++)
-            for (int ix = 0; ix <= Mathf.CeilToInt(w / treeCell); ix++)
+            if (!city3D)
             {
-                var p = new Vector2((ix + 0.5f + (Hash(ix, iy, 50) - 0.5f) * 0.8f) * treeCell,
-                                    (iy + 0.5f + (Hash(ix, iy, 51) - 0.5f) * 0.8f) * treeCell);
-                if (Ring(p.x, p.y) < 1.06f) continue;
-                if (ValueNoise(p.x, p.y, 60f * k, 52) < 0.55f || Hash(ix, iy, 53) > 0.8f) continue;
-                if (Nearest(p, roads) < 12f * k || NearestPlace(p) < 18f * k || Nearest(p, river) < 16f * k) continue;
-                trees.Add(new Vector3(p.x, p.y, (3f + Hash(ix, iy, 54) * 2.5f) * k));
+                // Flat forest strips outside the ring road; 3D draws its own trees.
+                float treeCell = 11f * k;
+                for (int iy = 0; iy <= Mathf.CeilToInt(h / treeCell); iy++)
+                for (int ix = 0; ix <= Mathf.CeilToInt(w / treeCell); ix++)
+                {
+                    var p = new Vector2((ix + 0.5f + (Hash(ix, iy, 50) - 0.5f) * 0.8f) * treeCell,
+                                        (iy + 0.5f + (Hash(ix, iy, 51) - 0.5f) * 0.8f) * treeCell);
+                    if (Ring(p.x, p.y) < 1.06f) continue;
+                    if (ValueNoise(p.x, p.y, 60f * k, 52) < 0.55f || Hash(ix, iy, 53) > 0.8f) continue;
+                    if (Nearest(p, roads) < 12f * k || NearestPlace(p) < 18f * k || Nearest(p, river) < 16f * k) continue;
+                    trees.Add(new Vector3(p.x, p.y, (3f + Hash(ix, iy, 54) * 2.5f) * k));
+                }
+                trees.Sort((a, b) => a.y.CompareTo(b.y));
+                foreach (var t in trees) Tree(canvas, t.x, t.y, t.z);
             }
-            trees.Sort((a, b) => a.y.CompareTo(b.y));
-            if (!city3D) foreach (var t in trees) Tree(canvas, t.x, t.y, t.z);
 
             var texture = new Texture2D(w, h, TextureFormat.RGBA32, false)
             {
