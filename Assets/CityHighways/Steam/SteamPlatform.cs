@@ -247,22 +247,21 @@ namespace CityHighways.Steam
                 Time.unscaledTime < _nextStoreAttempt || _queuedAchievements.Count == 0)
                 return;
 
-            foreach (string id in _queuedAchievements)
+            // Take a snapshot so already-unlocked remote IDs can leave the
+            // queue safely without mutating an enumerated HashSet.
+            foreach (string id in new List<string>(_queuedAchievements))
             {
-                // Already unlocked on Steam (e.g. another PC): no new write.
-                if (SteamUserStats.GetAchievement(id, out bool achieved))
+                if (!SteamUserStats.GetAchievement(id, out bool achieved))
+                    continue; // Unknown or unpublished Steamworks API name.
+                if (achieved)
                 {
-                    if (!achieved) 
-                    {
-                        if (SteamUserStats.SetAchievement(id))
-                            _stagedAchievements.Add(id);
-                    }
-                    else if (_stagedAchievements.Contains(id))
-                    {
-                        // StoreStats may have failed previously. Keep this
-                        // staged achievement until the store callback succeeds.
-                    }
+                    // If a previous StoreStats failed, the local Steam cache
+                    // can still say achieved; retry persistence instead.
+                    if (!_stagedAchievements.Contains(id))
+                        _queuedAchievements.Remove(id);
                 }
+                else if (SteamUserStats.SetAchievement(id))
+                    _stagedAchievements.Add(id);
             }
 
             // Invalid/unpublished Steam API IDs must not create an endless
