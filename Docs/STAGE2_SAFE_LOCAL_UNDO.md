@@ -86,3 +86,40 @@ the exact top-bar layout and save-resume UX on a real build.
 
 No CI polling or automated PR merge is enabled. The developer reports
 completion explicitly.
+
+## Undo interaction improvements
+
+- The HUD button is now compact, **Undo / Отменить**, leaving room for
+  the journal and menu buttons at 1280×800. Hovering reveals which
+  reversible action would be restored (deck or face-up card, construction,
+  free construction, road upgrade) and the shortcut.
+- **Ctrl+Z** works on Windows, Linux and Steam Deck desktop layout;
+  **Command+Z** works on macOS. Shift-modified shortcuts, such as
+  Ctrl+Shift+Z, are not intercepted. The system/Windows key is **not**
+  treated as Command outside macOS.
+- No keyboard undo when a `TextField` is focused: text entry keeps its
+  normal undo behavior. The shortcut uses the same availability guard
+  as the HUD button, including blocked dialogs, turn timers, bots,
+  network sessions and active map targeting.
+- A shared-screen last command that belongs to the **previous player**
+  must be confirmed with a second click or shortcut within **six
+  seconds**. The first press displays a localized warning naming that
+  player; it does not change the game. A new action, a new game or the
+  expiry clears pending confirmation.
+- A successful undo plays a short original descending sound effect.
+  No third-party audio clip or asset is introduced.
+
+### Focused manual checks
+
+1. With one local human action recorded, verify Undo happens in one click,
+   Ctrl+Z, or controller Submit on the enabled button.
+2. With two human seats, draw the second card so the turn advances.
+   Press Undo: the confirmation warning and button text should appear.
+   Press again within six seconds to restore the previous turn. After
+   six seconds, a new first press should ask again.
+3. Open a text-entry field and press Ctrl+Z: typing should be handled by
+   that field, not by the game.
+4. With a modal, map cursor, blocking animation or disabled session,
+   shortcuts should not rewind a command.
+5. Switch RU↔EN, inspect the button tooltip and player-owner warning, and
+   verify the new sound effect is subtle relative to the master volume.
