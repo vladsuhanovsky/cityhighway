@@ -22,6 +22,12 @@ namespace CityHighways.Presentation
 
         public void Deactivate() => Active = false;
 
+        /// <summary>Keep the cursor reachable after changing window size or UI scale.</summary>
+        public void Constrain(Rect area)
+        {
+            if (Active) Position = Clamp(Position, area);
+        }
+
         public bool Move(Vector2 stick, float deltaTime, Rect area, float speed = 620f)
         {
             if (!Active || deltaTime <= 0f || speed <= 0f || !HasMovement(stick))
