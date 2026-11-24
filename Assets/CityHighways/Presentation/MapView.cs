@@ -643,6 +643,7 @@ namespace CityHighways.Presentation
                 return;
             }
 
+            _gamepadCursor.Constrain(GamepadTargetBounds);
             Vector2 stick = pad.rightStick.ReadValue();
             bool fine = !GamepadMapCursorState.HasMovement(stick);
             Vector2 movement = fine ? pad.dpad.ReadValue() : stick;
@@ -1086,6 +1087,9 @@ namespace CityHighways.Presentation
                 float dt = Mathf.Clamp(deltaTime, 0f, 0.1f);
                 Animate(dt);
             }
+            // Rotation, zoom, resize and pan can change which road lies under
+            // a stationary UI cursor without any new stick input.
+            if (_gamepadCursor.Active) RefreshGamepadTarget();
             Repaint();
         }
 
