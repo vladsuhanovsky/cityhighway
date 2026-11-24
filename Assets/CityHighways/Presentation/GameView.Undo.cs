@@ -24,12 +24,14 @@ namespace CityHighways.Presentation
             !_drawerOpen && !_playersOpen &&
             _app.Tweener.BlockingCount == 0 &&
             !_map.IsGamepadTargeting;
+        GameCommand _undoArmedCommand;
         int _undoArmedHistory = -1;
         int _undoArmedPlayer = -1;
         float _undoArmedUntil;
 
         void ClearUndoConfirmation()
         {
+            _undoArmedCommand = null;
             _undoArmedHistory = -1;
             _undoArmedPlayer = -1;
             _undoArmedUntil = 0f;
@@ -43,7 +45,8 @@ namespace CityHighways.Presentation
                 var last = _game.History[_game.History.Count - 1];
                 return UndoPresentation.ConfirmationValid(_game.History.Count,
                     _undoArmedHistory, last.player, _undoArmedPlayer,
-                    Time.unscaledTime, _undoArmedUntil);
+                    Time.unscaledTime, _undoArmedUntil,
+                    _undoArmedCommand, last);
             }
         }
 
@@ -156,6 +159,7 @@ namespace CityHighways.Presentation
                 !UndoConfirmationActive)
             {
                 _undoArmedHistory = _game.History.Count;
+                _undoArmedCommand = last;
                 _undoArmedPlayer = last.player;
                 _undoArmedUntil = Time.unscaledTime + 6f;
                 RefreshUndoButton();
