@@ -156,6 +156,31 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void CompareAcceptsBomAndWindowsLineEndings()
+        {
+            string before = Export();
+            string windowsCsv = "\uFEFF" + before.Replace("\r\n", "\n").Replace("\n", "\r\n");
+            Assert.IsTrue(City3DMeshAppendBenchmarkComparison.TryCompare(
+                windowsCsv, before, out var report, out var reason), reason);
+            Assert.AreEqual(3, report.Scenarios.Length);
+            Assert.AreEqual(0d, report.Scenarios[0].ChangePercent, 1e-9d);
+        }
+
+        [Test]
+        public void CompareRejectsNonrepresentablePercentageChange()
+        {
+            string before = City3DMeshAppendBenchmarkCsv.Export(CaptureTime,
+                "6000.6.8f1", 12, 250,
+                new[] { "Identity" }, new[] { new[] { 1e-300d } });
+            string after = City3DMeshAppendBenchmarkCsv.Export(CaptureTime,
+                "6000.6.8f1", 12, 250,
+                new[] { "Identity" }, new[] { new[] { 1e300d } });
+            Assert.IsFalse(City3DMeshAppendBenchmarkComparison.TryCompare(
+                before, after, out _, out var reason));
+            StringAssert.Contains("not representable", reason);
+        }
+
+        [Test]
         public void CompareRejectsEmptyInputWithoutThrowing()
         {
             Assert.IsFalse(City3DMeshAppendBenchmarkComparison.TryCompare(
