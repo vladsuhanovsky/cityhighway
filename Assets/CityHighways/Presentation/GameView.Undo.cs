@@ -200,7 +200,7 @@ namespace CityHighways.Presentation
             var previous = _game;
             ReplaceGameFromHistory(restored, journal, "game.undo.done", Sfx.Undo);
             _redoHistory.Push(previous);
-            RefreshRedoButton();
+            RefreshUndoButton();
         }
 
         void RedoLastAction()
@@ -220,7 +220,7 @@ namespace CityHighways.Presentation
             ReplaceGameFromHistory(restored, journal, "game.redo.done", Sfx.Redo);
             if (!_redoHistory.Consume(candidate))
                 ClearRedoHistory(); // Fail closed on an unexpected stack change.
-            RefreshRedoButton();
+            RefreshUndoButton();
         }
 
         /// <summary>
