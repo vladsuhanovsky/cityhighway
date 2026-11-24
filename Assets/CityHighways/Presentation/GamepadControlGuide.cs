@@ -113,6 +113,16 @@ namespace CityHighways.Presentation
                     : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   ${shoulders}: поворот";
         }
 
+        /// <summary>Virtual map cursor has its own legend while HUD help is hidden.</summary>
+        public static string MapTargetHint(bool english, ControllerLayout layout)
+        {
+            string submit = SubmitLabel(layout, english);
+            string back = BackLabel(layout, english);
+            return english
+                ? $"Right stick: aim   D-pad: fine   {submit}: select   {back}/R3: HUD"
+                : $"Правый стик: цель   Крестовина: точнее   {submit}: выбрать   {back}/R3: интерфейс";
+        }
+
         public static bool ShouldDisplay(bool gamepadConnected, bool controllerActive,
             bool targetingMap) => gamepadConnected && controllerActive && !targetingMap;
 
