@@ -68,8 +68,11 @@ def validate(root, release=False, app_id=None):
             errors.append("Release requires --app-id with the real, non-480 Steam AppID")
         try:
             packages = json.loads((root / MANIFEST).read_text(encoding="utf-8"))["dependencies"]
-            if "com.rlabrecque.steamworks.net" not in packages:
-                errors.append("Steamworks.NET package is absent from Unity manifest")
+            if not isinstance(packages, dict):
+                raise ValueError("dependencies must be an object")
+            package_ref = packages.get(STEAM_PACKAGE)
+            if not isinstance(package_ref, str) or not package_ref.strip():
+                errors.append("Steamworks.NET package is absent or has no version in Unity manifest")
         except (OSError, ValueError, KeyError, TypeError) as exc:
             errors.append("Cannot validate Unity package manifest: " + str(exc))
         if (root / APPID_FILE).exists():
