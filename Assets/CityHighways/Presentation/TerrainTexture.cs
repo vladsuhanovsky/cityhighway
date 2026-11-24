@@ -198,35 +198,45 @@ namespace CityHighways.Presentation
             var canvas = new Canvas(w, h);
 
             // ---- Земля: трава пятнами, поля за городом, к центру земля сереет.
-            for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
+            using (City3DHotspotMarkers.TerrainPixels.Auto())
             {
-                float u = Urban(Ring(x, y));
-                var c = Color.Lerp(GrassDark, GrassLight, Fbm(x, y, 11));
-                float field = Mathf.Clamp01((ValueNoise(x, y, 70f, 21) - 0.62f) / 0.08f) * (1f - u);
-                c = Color.Lerp(c, Field, field * 0.8f);
-                float grey = Mathf.Clamp01(u * 0.85f + (ValueNoise(x, y, 40f, 31) - 0.5f) * 0.5f) * 0.75f;
-                c = Color.Lerp(c, Pavement, grey);
-                float grain = (Hash(x, y, 5) - 0.5f) * 0.04f;
-                if (city3D)
+                for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
                 {
-                    // У края 3D-доски земля сходит в цвет шва — дальше её продолжают окрестности.
-                    float edge = Mathf.Min(Mathf.Min(x, w - 1 - x), Mathf.Min(y, h - 1 - y)) / Mathf.Max(1f, 70f * k);
-                    c = Color.Lerp(SeamColor, c, Mathf.Clamp01(edge));
+                    float u = Urban(Ring(x, y));
+                    var c = Color.Lerp(GrassDark, GrassLight, Fbm(x, y, 11));
+                    float field = Mathf.Clamp01((ValueNoise(x, y, 70f, 21) - 0.62f) / 0.08f) * (1f - u);
+                    c = Color.Lerp(c, Field, field * 0.8f);
+                    float grey = Mathf.Clamp01(u * 0.85f + (ValueNoise(x, y, 40f, 31) - 0.5f) * 0.5f) * 0.75f;
+                    c = Color.Lerp(c, Pavement, grey);
+                    float grain = (Hash(x, y, 5) - 0.5f) * 0.04f;
+                    if (city3D)
+                    {
+                        // У края 3D-доски земля сходит в цвет шва — дальше её продолжают окрестности.
+                        float edge = Mathf.Min(Mathf.Min(x, w - 1 - x), Mathf.Min(y, h - 1 - y)) / Mathf.Max(1f, 70f * k);
+                        c = Color.Lerp(SeamColor, c, Mathf.Clamp01(edge));
+                    }
+                    canvas.Pixels[(h - 1 - y) * w + x] = new Color(c.r + grain, c.g + grain, c.b + grain, 1f);
                 }
-                canvas.Pixels[(h - 1 - y) * w + x] = new Color(c.r + grain, c.g + grain, c.b + grain, 1f);
             }
 
             // ---- Что обходить: дороги, места, река.
             var points = new Dictionary<string, Vector2>();
             foreach (var l in map.Locations) points[l.Id] = ToPixel(l.X, l.Y);
             var roads = new List<Seg>();
-            foreach (var r in map.Roads)
-                if (points.TryGetValue(r.A, out var a) && points.TryGetValue(r.B, out var b)) roads.Add(new Seg { A = a, B = b });
             var river = new List<Seg>();
-            foreach (var riverLine in map.Rivers)
-                for (int i = 0; i + 1 < riverLine.Count; i++)
-                    river.Add(new Seg { A = ToPixel(riverLine[i].X, riverLine[i].Y), B = ToPixel(riverLine[i + 1].X, riverLine[i + 1].Y) });
+            // The road/river exclusion lists are queried only by flat building
+            // and tree placement. City3D renders those objects separately.
+            if (!city3D)
+            {
+                foreach (var r in map.Roads)
+                    if (points.TryGetValue(r.A, out var a) && points.TryGetValue(r.B, out var b))
+                        roads.Add(new Seg { A = a, B = b });
+                foreach (var riverLine in map.Rivers)
+                    for (int i = 0; i + 1 < riverLine.Count; i++)
+                        river.Add(new Seg { A = ToPixel(riverLine[i].X, riverLine[i].Y),
+                            B = ToPixel(riverLine[i + 1].X, riverLine[i + 1].Y) });
+            }
             float NearestPlace(Vector2 p)
             {
                 float best = float.MaxValue;
@@ -268,13 +278,16 @@ namespace CityHighways.Presentation
             if (city3D)
             {
                 // Мягкое затемнение вокруг оснований: два ореола и сама площадка (её закроет здание).
-                foreach (var f in footprints)
+                using (City3DHotspotMarkers.TerrainFootprints.Auto())
                 {
-                    var c = ToPixel(f.x, f.y);
-                    float hw = f.z / span * w, hh = f.w / span * h;
-                    canvas.Rect(c.x - hw - 3f * k, c.y - hh - 3f * k, c.x + hw + 3f * k, c.y + hh + 3f * k, shadow, 0.10f);
-                    canvas.Rect(c.x - hw - 1.5f * k, c.y - hh - 1.5f * k, c.x + hw + 1.5f * k, c.y + hh + 1.5f * k, shadow, 0.16f);
-                    canvas.Rect(c.x - hw, c.y - hh, c.x + hw, c.y + hh, Pavement * 0.55f, 0.6f);
+                    foreach (var f in footprints)
+                    {
+                        var c = ToPixel(f.x, f.y);
+                        float hw = f.z / span * w, hh = f.w / span * h;
+                        canvas.Rect(c.x - hw - 3f * k, c.y - hh - 3f * k, c.x + hw + 3f * k, c.y + hh + 3f * k, shadow, 0.10f);
+                        canvas.Rect(c.x - hw - 1.5f * k, c.y - hh - 1.5f * k, c.x + hw + 1.5f * k, c.y + hh + 1.5f * k, shadow, 0.16f);
+                        canvas.Rect(c.x - hw, c.y - hh, c.x + hw, c.y + hh, Pavement * 0.55f, 0.6f);
+                    }
                 }
                 rows = -1; // кварталы не рисуем
             }
@@ -306,16 +319,21 @@ namespace CityHighways.Presentation
                 }
             }
 
-            // ---- Парки: тёмная подложка и кроны, сверху вниз (нижние кроны перекрывают верхние).
+            // ---- Парки: dark ground floor belongs to both 2D and 3D terrain.
+            // Flat treetops are used ONLY in the 2D texture; the 3D scene
+            // creates separate meshes/cards and never consumes these candidates.
             var forestFloor = new Color(0.15f, 0.24f, 0.09f);
-            var trees = new List<Vector3>();
+            var trees = city3D ? null : new List<Vector3>();
             for (int pi = 0; pi < parks.Count; pi++)
             {
                 var blob = parks[pi];
+                foreach (var c in blob)
+                    canvas.Disc(c.x, c.y, c.z, forestFloor, 0.67f);
+                if (city3D) continue;
+
                 float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
                 foreach (var c in blob)
                 {
-                    canvas.Disc(c.x, c.y, c.z, forestFloor, 0.67f);
                     minX = Mathf.Min(minX, c.x - c.z); maxX = Mathf.Max(maxX, c.x + c.z);
                     minY = Mathf.Min(minY, c.y - c.z); maxY = Mathf.Max(maxY, c.y + c.z);
                 }
@@ -326,30 +344,37 @@ namespace CityHighways.Presentation
                     trees.Add(new Vector3(p.x, p.y, (3.2f + Hash(pi, j, 42) * 2.6f) * k));
                 }
             }
-            // Лесополосы за МКАД — там, где шум «леса» высок.
-            float treeCell = 11f * k;
-            for (int iy = 0; iy <= Mathf.CeilToInt(h / treeCell); iy++)
-            for (int ix = 0; ix <= Mathf.CeilToInt(w / treeCell); ix++)
+            if (!city3D)
             {
-                var p = new Vector2((ix + 0.5f + (Hash(ix, iy, 50) - 0.5f) * 0.8f) * treeCell,
-                                    (iy + 0.5f + (Hash(ix, iy, 51) - 0.5f) * 0.8f) * treeCell);
-                if (Ring(p.x, p.y) < 1.06f) continue;
-                if (ValueNoise(p.x, p.y, 60f * k, 52) < 0.55f || Hash(ix, iy, 53) > 0.8f) continue;
-                if (Nearest(p, roads) < 12f * k || NearestPlace(p) < 18f * k || Nearest(p, river) < 16f * k) continue;
-                trees.Add(new Vector3(p.x, p.y, (3f + Hash(ix, iy, 54) * 2.5f) * k));
+                // Flat forest strips outside the ring road; 3D draws its own trees.
+                float treeCell = 11f * k;
+                for (int iy = 0; iy <= Mathf.CeilToInt(h / treeCell); iy++)
+                for (int ix = 0; ix <= Mathf.CeilToInt(w / treeCell); ix++)
+                {
+                    var p = new Vector2((ix + 0.5f + (Hash(ix, iy, 50) - 0.5f) * 0.8f) * treeCell,
+                                        (iy + 0.5f + (Hash(ix, iy, 51) - 0.5f) * 0.8f) * treeCell);
+                    if (Ring(p.x, p.y) < 1.06f) continue;
+                    if (ValueNoise(p.x, p.y, 60f * k, 52) < 0.55f || Hash(ix, iy, 53) > 0.8f) continue;
+                    if (Nearest(p, roads) < 12f * k || NearestPlace(p) < 18f * k || Nearest(p, river) < 16f * k) continue;
+                    trees.Add(new Vector3(p.x, p.y, (3f + Hash(ix, iy, 54) * 2.5f) * k));
+                }
+                trees.Sort((a, b) => a.y.CompareTo(b.y));
+                foreach (var t in trees) Tree(canvas, t.x, t.y, t.z);
             }
-            trees.Sort((a, b) => a.y.CompareTo(b.y));
-            if (!city3D) foreach (var t in trees) Tree(canvas, t.x, t.y, t.z);
 
-            var texture = new Texture2D(w, h, TextureFormat.RGBA32, false)
+            Texture2D texture;
+            using (City3DHotspotMarkers.TerrainUpload.Auto())
             {
-                name = "CityHighways_Terrain",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear,
-                hideFlags = HideFlags.DontSave
-            };
-            texture.SetPixels(canvas.Pixels);
-            texture.Apply(false, true);
+                texture = new Texture2D(w, h, TextureFormat.RGBA32, false)
+                {
+                    name = "CityHighways_Terrain",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear,
+                    hideFlags = HideFlags.DontSave
+                };
+                texture.SetPixels(canvas.Pixels);
+                texture.Apply(false, true);
+            }
             return texture;
         }
 
