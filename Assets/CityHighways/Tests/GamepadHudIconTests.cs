@@ -27,5 +27,28 @@ namespace CityHighways.Tests
             rotate.SetEnabled(false);
             Assert.AreSame(scroll, UiGamepadFocus.FirstEligible(root));
         }
+
+        [Test]
+        public void CompactEventChipCanUseControllerSubmitWithoutPointer()
+        {
+            var root = new VisualElement();
+            var eventChip = new VisualElement
+            {
+                name = "gamepad-hud-event",
+                pickingMode = PickingMode.Position
+            };
+            var eventLabel = new Label("Active event");
+            eventChip.Add(eventLabel);
+            GamepadSelectable.Attach(eventChip, () => { });
+            root.Add(eventChip);
+
+            Assert.IsTrue(eventChip.focusable);
+            Assert.IsTrue(UiGamepadFocus.IsEligible(eventChip, root));
+            Assert.AreSame(eventChip, UiGamepadFocus.FirstEligible(root));
+            // Hide only the long label in the Steam Deck tier; event
+            // chip remains a focusable, selectable action.
+            Ui.Show(eventLabel, false);
+            Assert.IsTrue(UiGamepadFocus.IsEligible(eventChip, root));
+        }
     }
 }
