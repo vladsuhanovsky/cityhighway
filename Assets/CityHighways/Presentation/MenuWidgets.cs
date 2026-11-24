@@ -473,6 +473,9 @@ namespace CityHighways.Presentation
             });
             RegisterCallback<NavigationSubmitEvent>(evt =>
             {
+                // A badge can contain its own focused Button. Its submit
+                // belongs to that child, not the surrounding menu tile.
+                if (evt.target != this) return;
                 Activate();
                 evt.StopPropagation();
             });
