@@ -18,6 +18,8 @@
 // Секреты: те же, что у player-sync (STEAM_WEB_API_KEY, STEAM_APP_ID, для разработки ALLOW_UNVERIFIED=1).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { validateReplayReport } from "./report-validator.mjs";
+import { readBoundedBody, RequestTooLargeError } from "./body-limit.mjs";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -136,8 +138,14 @@ function inviteCode(): string {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
-  const raw = await req.text();
-  if (raw.length > 768 * 1024) return json({ error: "too large" }, 413);
+  let raw: string;
+  try {
+    raw = await readBoundedBody(req);
+  } catch (error) {
+    if (error instanceof RequestTooLargeError)
+      return json({ error: "too large" }, 413);
+    return json({ error: "invalid request encoding" }, 400);
+  }
   let body: any;
   try {
     body = JSON.parse(raw);
@@ -187,11 +195,21 @@ type Db = ReturnType<typeof createClient>;
 async function report(db: Db, me: string, body: any) {
   const mode = str(body.mode, 16);
   const mapPath = str(body.mapPath, 200);
-  const score = clamp(int(body.score), -100, 1000);
+  // A client-provided score is not authoritative. Reject malformed
+  // or internally inconsistent compressed replays before any DB write
+  // or club contribution; do not silently clamp a forged result.
+  if (mode === "classic" || mode === "coop")
+    await validateReplayReport(body);
+  else if (mode !== "magnate")
+    throw new Error("invalid report mode");
+
+  const score = mode === "magnate"
+    ? clamp(int(body.score), -100, 1000)
+    : body.score;
   const stats = body.stats ?? {};
   let improved = false, best = score;
 
-  if ((mode === "classic" || mode === "coop") && mapPath) {
+  if (mode === "classic" || mode === "coop") {
     const { data: old } = await db.from("records").select("id, score").eq("player_id", me).eq("mode", mode)
       .eq("map_path", mapPath).maybeSingle();
     if (!old || score > old.score) {
@@ -204,7 +222,9 @@ async function report(db: Db, me: string, body: any) {
         won: !!body.won,
         seats: clamp(int(body.seats), 1, 8),
         seed: int(body.seed),
-        replay: str(body.replay, 700 * 1024),
+        // Bounded/decoded/metadata-checked by validateReplayReport.
+        // Never truncate a gzip-base64 stream into an unreadable record.
+        replay: body.replay,
         game_version: str(body.version, 32),
         created_at: new Date().toISOString(),
       };
