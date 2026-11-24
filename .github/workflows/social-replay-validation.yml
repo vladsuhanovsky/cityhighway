@@ -1,0 +1,34 @@
+name: Social replay submission guard
+
+on:
+  pull_request:
+    paths:
+      - "Server/supabase/functions/social/**"
+      - ".github/workflows/social-replay-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Server/supabase/functions/social/**"
+      - ".github/workflows/social-replay-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  replay-guard:
+    name: Node replay intake regression tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate replay consistency and decompression bounds
+        run: node --test Server/supabase/functions/social/report-validator.test.mjs
+      - name: Confirm all social report handlers use validation
+        shell: bash
+        run: |
+          grep -q 'await validateReplayReport(body)' Server/supabase/functions/social/index.ts
+          grep -q 'import { validateReplayReport }' Server/supabase/functions/social/index.ts
