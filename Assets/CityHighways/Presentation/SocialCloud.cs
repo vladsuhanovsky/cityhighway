@@ -171,6 +171,8 @@ namespace CityHighways.Presentation
             public string replay;
             /// <summary>One Magnate match, reused for any HTTP retry.</summary>
             public string runId;
+            /// <summary>Exclude delayed reports from a different ISO week from club progress.</summary>
+            public bool skipClub;
             public ReportStats stats;
             // friends
             public string[] ids;
