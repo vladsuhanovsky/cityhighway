@@ -1149,6 +1149,7 @@ namespace CityHighways.Presentation
             Ui.Radius(input, 8f);
             Ui.Border(input, 1f, Theme.Line);
             Ui.Padding(input, 6f, 10f);
+            GamepadTextEntry.InstallFocusBorder(field, input, Theme.Line);
             field.RegisterValueChangedCallback(e => slot.name = e.newValue);
             row.Add(field);
 
