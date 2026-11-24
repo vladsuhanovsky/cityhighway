@@ -32,6 +32,7 @@ namespace CityHighways.Presentation
         public VisualElement Root { get; }
         bool _gamepadFocusActive;
         readonly GamepadFocusReturn _gamepadFocusReturn = new GamepadFocusReturn();
+        readonly Label _gamepadGuide;
         readonly VisualElement _mapArea, _players, _handoff, _results;
         readonly Label _roundLabel, _eventChip, _tooltip, _banner;
         readonly VisualElement _eventIcon;
@@ -236,6 +237,8 @@ namespace CityHighways.Presentation
             Root.Add(_results);
             // Настройки и полные правила — поверх всего, даже поверх итогов партии.
             BuildModals();
+            _gamepadGuide = GamepadControlGuide.Create();
+            Root.Add(_gamepadGuide);
         }
 
         static VisualElement Overlay()
@@ -328,6 +331,12 @@ namespace CityHighways.Presentation
             UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
                 _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,
                 controllerScope);
+            GamepadControlGuide.Update(_gamepadGuide,
+                GamepadControlGuide.Context.Magnate,
+                UnityEngine.InputSystem.Gamepad.current != null, _gamepadFocusActive,
+                _map.IsGamepadTargeting || controllerScope != Root,
+                LocalizationService.Language == "en",
+                GamepadControlGuide.TextEntryFocused(Root));
             UpdateMapEmphasis();
             CoachTick();
         }
