@@ -250,6 +250,8 @@ namespace CityHighways.Presentation
             _gamepadGuide = GamepadControlGuide.Create();
             _gamepadGuide.style.bottom = BottomHeight + 8f;
             Root.Add(_gamepadGuide);
+            Root.RegisterCallback<GeometryChangedEvent>(evt =>
+                AdaptMagnateHeader(evt.newRect.width));
         }
 
         static VisualElement Overlay()
