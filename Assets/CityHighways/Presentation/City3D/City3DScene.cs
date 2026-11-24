@@ -114,6 +114,7 @@ namespace CityHighways.Presentation
         public string CityName => _map != null ? _map.Name : null;
         public int GraphicsQuality => _quality;
         public City3DFrameMonitor FrameMonitor { get; private set; }
+        public City3DGenerationTiming GenerationTiming { get; private set; }
 
         City3DScene(CityMap map)
         {
@@ -156,6 +157,8 @@ namespace CityHighways.Presentation
 
         void Build(int quality)
         {
+            var generation = new City3DGenerationTiming(_map.Name, quality,
+                System.Diagnostics.Stopwatch.GetTimestamp());
             float density = quality == 0 ? 0.55f : quality == 1 ? 0.8f : 1f;
             // Рельеф — до планировки: сначала сглаженные русла (по ним долины), затем поле высот. Планировщик
             // смотрит на высоты (ельники на холмах), а всё дальнейшее встаёт на холмы.
@@ -164,6 +167,7 @@ namespace CityHighways.Presentation
             _hubPlaces = HubPlacement.Plan(_map, _hubSites, RiverWidth / 2f + BankWidth);
             _relief = new ReliefField(_map, _riverLines, RiverWidth / 2f + BankWidth, _hubPlaces);
             Relief.Use(_relief);
+            generation.Mark("Rivers and relief", System.Diagnostics.Stopwatch.GetTimestamp());
             // Scene-authored visual overrides are optional and default to the legacy layout.
             var tuning = CityGenerationTuning.FindForMap(_map.Name);
             float buildingMultiplier = tuning != null ? tuning.BuildingDensity : 1f;
@@ -171,6 +175,7 @@ namespace CityHighways.Presentation
             var clearances = CityGenerationExclusionZone.Collect(_map.Name);
             var plan = CityPlanner.Build(_map, density, _hubSites, _hubPlaces.Values.Select(h => h.Origin),
                 buildingMultiplier, treeMultiplier, clearances);
+            generation.Mark("City planning", System.Diagnostics.Stopwatch.GetTimestamp());
             // Replace selected visual instances before district/tree meshes and counts are built.
             CityProceduralReplacementResolver.Apply(plan, _map.Name, _root.transform);
             // Optional seed-independent rules run after manual replacements so authored
@@ -188,30 +193,46 @@ namespace CityHighways.Presentation
                 _root.transform, prefabBudget);
             BuildingCount = plan.Buildings.Count;
             TreeCount = plan.Trees.Count;
+            generation.Mark("Prefab replacements", System.Diagnostics.Stopwatch.GetTimestamp());
 
             _quality = quality;
             SetupRendering(quality);
             CreateMaterials(plan);
+            generation.Mark("Rendering and materials", System.Diagnostics.Stopwatch.GetTimestamp());
             BuildGround();
+            generation.Mark("Ground", System.Diagnostics.Stopwatch.GetTimestamp());
             BuildDecals(plan);
+            generation.Mark("Decals", System.Diagnostics.Stopwatch.GetTimestamp());
             BuildRivers();
+            generation.Mark("River meshes", System.Diagnostics.Stopwatch.GetTimestamp());
             BuildDistricts(plan);
+            generation.Mark("District buildings", System.Diagnostics.Stopwatch.GetTimestamp());
             BuildTrees(plan);
+            generation.Mark("Trees", System.Diagnostics.Stopwatch.GetTimestamp());
             // Optional capped visual replacements; unselected props still use
             // the original district-batched geometry and visibility rules.
             CityProceduralPropPrefabSpawner.Apply(
                 plan, _map.Name, CityProceduralPropPrefabRules.FindForMap(_map.Name),
                 _root.transform, _districts, WaterLevel, prefabBudget);
             BuildProps(plan);
+            generation.Mark("Props and replacement models", System.Diagnostics.Stopwatch.GetTimestamp());
             SetupRoads();
+            generation.Mark("Road setup", System.Diagnostics.Stopwatch.GetTimestamp());
             BuildJunctions();
+            generation.Mark("Junctions", System.Diagnostics.Stopwatch.GetTimestamp());
             BuildStations();
+            generation.Mark("Stations", System.Diagnostics.Stopwatch.GetTimestamp());
             BuildBridges();
+            generation.Mark("Bridges", System.Diagnostics.Stopwatch.GetTimestamp());
             // Optional scene-authored visuals. Core map geometry and rules remain procedural.
             SceneDecorationSpawner.Spawn(_map.Name, _root.transform);
+            generation.Mark("Authored scene decorations", System.Diagnostics.Stopwatch.GetTimestamp());
             SetupReflections(quality);
             // Attach after construction so the first samples exclude one-time map build.
             FrameMonitor = _root.AddComponent<City3DFrameMonitor>();
+            generation.Mark("Reflections and sampling setup",
+                System.Diagnostics.Stopwatch.GetTimestamp());
+            GenerationTiming = generation;
         }
 
         void SetupRendering(int quality)
