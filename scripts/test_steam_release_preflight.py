@@ -51,6 +51,27 @@ class SteamPreflightTests(unittest.TestCase):
         doc.write_text("| `first_win` | A |\n| `first_win` | B |\n| `mg_win` | C |\n", encoding="utf-8")
         self.assertTrue(any("Duplicate" in x for x in validate(self.root)))
 
+    def test_rejects_uppercase_or_noncanonical_catalog_id(self):
+        catalog = self.root / "Assets/CityHighways/Presentation/Achievements.cs"
+        catalog.write_text(catalog.read_text(encoding="utf-8").replace(
+            'Id = "mg_win"', 'Id = "MG_WIN"'), encoding="utf-8")
+        self.assertTrue(any("Invalid achievement API IDs" in x
+                            for x in validate(self.root)))
+
+    def test_rejects_noncanonical_partner_table_id(self):
+        doc = self.root / "Docs/STEAM_ACHIEVEMENT_API_IDS.md"
+        doc.write_text(doc.read_text(encoding="utf-8").replace(
+            "`mg_win`", "`MG_WIN`"), encoding="utf-8")
+        report = "\n".join(validate(self.root))
+        self.assertIn("Invalid Steamworks API IDs", report)
+        self.assertIn("MG_WIN", report)
+
+    def test_daily_task_ids_are_not_counted_as_achievements(self):
+        catalog = self.root / "Assets/CityHighways/Presentation/Achievements.cs"
+        catalog.write_text(catalog.read_text(encoding="utf-8") +
+            ' new DailyTask { Id = "daily_task_only" };', encoding="utf-8")
+        self.assertEqual(validate(self.root), [])
+
     def test_release_rejects_test_appid(self):
         self.assertTrue(any("non-480" in x for x in validate(self.root, release=True, app_id="480")))
 
