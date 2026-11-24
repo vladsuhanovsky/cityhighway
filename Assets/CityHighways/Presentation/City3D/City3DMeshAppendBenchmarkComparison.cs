@@ -22,6 +22,10 @@ namespace CityHighways.Presentation
             public int Runs;
             public double BaselineMedianMs;
             public double CurrentMedianMs;
+            public double BaselineMinMs;
+            public double BaselineMaxMs;
+            public double CurrentMinMs;
+            public double CurrentMaxMs;
             public double ChangePercent;
         }
 
@@ -104,6 +108,10 @@ namespace CityHighways.Presentation
                     Runs = oldSamples.Count,
                     BaselineMedianMs = before,
                     CurrentMedianMs = after,
+                    BaselineMinMs = Min(oldSamples),
+                    BaselineMaxMs = Max(oldSamples),
+                    CurrentMinMs = Min(newSamples),
+                    CurrentMaxMs = Max(newSamples),
                     ChangePercent = change
                 };
             }
@@ -117,6 +125,20 @@ namespace CityHighways.Presentation
             };
             reason = null;
             return true;
+        }
+
+        static double Min(List<double> samples)
+        {
+            double min = double.PositiveInfinity;
+            foreach (double value in samples) if (value < min) min = value;
+            return min;
+        }
+
+        static double Max(List<double> samples)
+        {
+            double max = double.NegativeInfinity;
+            foreach (double value in samples) if (value > max) max = value;
+            return max;
         }
 
         static double Median(List<double> samples)
