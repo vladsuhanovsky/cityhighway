@@ -71,5 +71,15 @@ namespace CityHighways.Tests
             Assert.IsFalse(UndoPresentation.WantsShortcut(true, false, true, true, true));
             Assert.IsFalse(UndoPresentation.WantsShortcut(true, false, true, false, false));
         }
+
+        [Test]
+        public void ModifierRespectsMacCommandWithoutHijackingWindowsKey()
+        {
+            Assert.IsTrue(UndoPresentation.UndoModifier(true, false, false));
+            Assert.IsTrue(UndoPresentation.UndoModifier(true, false, true));
+            Assert.IsTrue(UndoPresentation.UndoModifier(false, true, true));
+            Assert.IsFalse(UndoPresentation.UndoModifier(false, true, false));
+            Assert.IsFalse(UndoPresentation.UndoModifier(false, false, true));
+        }
     }
 }
