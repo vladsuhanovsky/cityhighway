@@ -1203,10 +1203,10 @@ namespace CityHighways.Presentation
         }
 
         void Begin(Game game, float playSeconds, string firstLogLine,
-            bool skipTutorialPrompt = false)
+            bool skipTutorialPrompt = false, bool preserveRedoHistory = false)
         {
             ClearUndoConfirmation();
-            ClearRedoHistory();
+            if (!preserveRedoHistory) ClearRedoHistory();
             _game = game;
             _playSeconds = playSeconds;
             _game.Log += AddLog;
