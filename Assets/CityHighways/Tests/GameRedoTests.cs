@@ -237,5 +237,42 @@ namespace CityHighways.Tests
             Assert.IsFalse(GameRedo.SameCommand(original.History.Last(),
                 other.History.Last()));
         }
+
+        [Test]
+        public void JsonUtilityRoundTripPreservesSemanticCommandEquality()
+        {
+            foreach (var original in new[]
+            {
+                GameCommand.DrawCardFromDeck(0),
+                GameCommand.DrawFaceUpCard(1, 2),
+                GameCommand.BuildRoad(0, "r1", Resource.Asphalt, 1),
+                GameCommand.BuildRoadFree(1, "r2"),
+                GameCommand.UpgradeRoad(0, "r3", Resource.Concrete, 0),
+                GameCommand.KeepContracts(0, new string[0]),
+                GameCommand.KeepContracts(1, new[] { "c1", "c2" })
+            })
+            {
+                var copy = JsonUtility.FromJson<GameCommand>(JsonUtility.ToJson(original));
+                Assert.IsTrue(GameRedo.SameCommand(original, copy),
+                    "JSON round-trip should keep command semantics: " + original);
+            }
+        }
+
+        [Test]
+        public void OptionalEmptyContractListMatchesMissingButNeverNonEmptyList()
+        {
+            var missing = GameCommand.BuildRoad(0, "r1", Resource.Asphalt, 1);
+            var empty = GameCommand.BuildRoad(0, "r1", Resource.Asphalt, 1);
+            empty.contracts = new string[0];
+            Assert.IsTrue(GameRedo.SameCommand(missing, empty));
+            Assert.IsTrue(GameRedo.SameCommand(empty, missing));
+
+            empty.contracts = new[] { "c1" };
+            Assert.IsFalse(GameRedo.SameCommand(missing, empty));
+            Assert.IsFalse(GameRedo.SameCommand(empty, missing));
+            var distinct = GameCommand.BuildRoad(0, "r1", Resource.Asphalt, 1);
+            distinct.contracts = new[] { "c2" };
+            Assert.IsFalse(GameRedo.SameCommand(empty, distinct));
+        }
     }
 }
