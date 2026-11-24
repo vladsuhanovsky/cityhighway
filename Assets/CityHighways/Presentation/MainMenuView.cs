@@ -4,6 +4,7 @@ using System.Linq;
 using CityHighways.Core;
 using CityHighways.Net;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace CityHighways.Presentation
@@ -39,6 +40,7 @@ namespace CityHighways.Presentation
         readonly MenuSettingsPage _settings;
         readonly Label _hint;
         readonly VisualElement _overlay;
+        bool _gamepadActive;
 
         enum Page { Home, NewGame, Online, Profile, Rules, Stats, Settings, Tutorial, Club }
         readonly Dictionary<Page, VisualElement> _pages = new Dictionary<Page, VisualElement>();
@@ -63,6 +65,8 @@ namespace CityHighways.Presentation
             Root.style.alignItems = Align.Center;
             Root.style.justifyContent = Justify.Center;
             Root.style.backgroundColor = Theme.Background;
+            // Pointer interaction returns control to the regular mouse focus.
+            Root.RegisterCallback<PointerDownEvent>(_ => _gamepadActive = false);
 
             // Живой город на заднем плане: параллакс за мышью, день и ночь.
             _background = new MenuBackground
@@ -183,6 +187,8 @@ namespace CityHighways.Presentation
                 Ui.Show(_profileCorner, page == Page.Home);
                 if (page == Page.Home) RefreshProfileCorner();
             }
+            // Controller users must not remain focused on a hidden old page.
+            if (_gamepadActive) UiGamepadFocus.FocusFirst(Root);
         }
 
         VisualElement _profileCorner;
@@ -818,8 +824,26 @@ namespace CityHighways.Presentation
         public void Tick(float dt)
         {
             // Esc — в предыдущий раздел (самая вложенная видимая кнопка «← Назад»).
-            var keyboard = UnityEngine.InputSystem.Keyboard.current;
-            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame) Ui.GoBack(Root);
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+                Ui.GoBack(Root);
+
+            // Input System already maps UI Navigate / Submit for controllers.
+            // Wake initial focus only after a meaningful gamepad action.
+            var pad = Gamepad.current;
+            if (pad != null)
+            {
+                bool navigating = UiGamepadFocus.HasNavigationIntent(
+                    pad.dpad.ReadValue(), pad.leftStick.ReadValue(),
+                    pad.buttonSouth.wasPressedThisFrame);
+                if (navigating) _gamepadActive = true;
+                if (pad.buttonEast.wasPressedThisFrame)
+                {
+                    _gamepadActive = true;
+                    Ui.GoBack(Root);
+                }
+            }
+            if (_gamepadActive) UiGamepadFocus.EnsureFocus(Root);
             _background.Tick(dt);
             if (_page == Page.Profile) _profile.Tick(dt);
             if (_page != Page.Home) return;

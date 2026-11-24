@@ -16,6 +16,7 @@ namespace CityHighways.Presentation
         {
             _changed = changed;
             pickingMode = PickingMode.Position;
+            focusable = true;
             style.width = 52f;
             style.height = 28f;
             style.flexShrink = 0f;
@@ -32,13 +33,22 @@ namespace CityHighways.Presentation
             Ui.Transitions(_knob, 0.2f, "left");
             Add(_knob);
             Set(value, false);
-            RegisterCallback<ClickEvent>(_ =>
+            RegisterCallback<ClickEvent>(_ => Toggle());
+            RegisterCallback<NavigationSubmitEvent>(evt =>
             {
-                Set(!_value, true);
-                Ui.Changed?.Invoke();
+                Toggle();
+                evt.StopPropagation();
             });
+            RegisterCallback<FocusInEvent>(_ => Ui.Border(this, 2f, Theme.Accent));
+            RegisterCallback<FocusOutEvent>(_ => Ui.Border(this, 0f, Color.clear));
             RegisterCallback<PointerEnterEvent>(_ => style.opacity = 0.9f);
             RegisterCallback<PointerLeaveEvent>(_ => style.opacity = 1f);
+        }
+
+        void Toggle()
+        {
+            Set(!_value, true);
+            Ui.Changed?.Invoke();
         }
 
         public bool Value => _value;
@@ -72,6 +82,7 @@ namespace CityHighways.Presentation
             _changed = changed;
             _released = released;
             pickingMode = PickingMode.Position;
+            focusable = true;
             style.width = width;
             style.height = 28f;
             style.flexShrink = 0f;
@@ -120,6 +131,25 @@ namespace CityHighways.Presentation
                 _released?.Invoke(_value);
             });
             RegisterCallback<GeometryChangedEvent>(_ => Place());
+            RegisterCallback<FocusInEvent>(_ => Ui.Border(this, 2f, Theme.Accent));
+            RegisterCallback<FocusOutEvent>(_ => Ui.Border(this, 0f, Color.clear));
+            // D-pad/stick horizontal steps edit the focused slider.
+            // Vertical navigation still moves to another control.
+            RegisterCallback<NavigationMoveEvent>(evt =>
+            {
+                float delta;
+                if (evt.direction == NavigationMoveEvent.Direction.Left)
+                    delta = -(_step > 0f ? _step : 0.05f);
+                else if (evt.direction == NavigationMoveEvent.Direction.Right)
+                    delta = _step > 0f ? _step : 0.05f;
+                else return;
+
+                float before = _value;
+                SetValue(_value + delta, true);
+                if (!Mathf.Approximately(before, _value))
+                    _released?.Invoke(_value);
+                evt.StopPropagation();
+            });
         }
 
         public float Value => _value;
