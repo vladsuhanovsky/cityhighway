@@ -157,7 +157,10 @@ namespace CityHighways.Presentation
 
         void Build(int quality)
         {
-            var generation = new City3DGenerationTiming(_map.Name, quality,
+            // Profiling must not prevent otherwise valid unnamed maps from building.
+            var timingCity = string.IsNullOrWhiteSpace(_map.Name)
+                ? "(unnamed city)" : _map.Name;
+            var generation = new City3DGenerationTiming(timingCity, quality,
                 System.Diagnostics.Stopwatch.GetTimestamp());
             float density = quality == 0 ? 0.55f : quality == 1 ? 0.8f : 1f;
             // Рельеф — до планировки: сначала сглаженные русла (по ним долины), затем поле высот. Планировщик
