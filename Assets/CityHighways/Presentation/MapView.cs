@@ -120,6 +120,7 @@ namespace CityHighways.Presentation
         readonly Label _gamepadActivationHint;
         bool _gamepadExitedThisFrame;
         string _lastGamepadHintLanguage;
+        GamepadControlGuide.ControllerLayout _lastGamepadHintLayout;
         public bool IsGamepadTargeting => _gamepadCursor.Active;
         public bool GamepadExitedTargetingThisFrame => _gamepadExitedThisFrame;
         public Func<bool> CanGamepadTarget;
@@ -621,9 +622,9 @@ namespace CityHighways.Presentation
             SetHover(location == null ? road : null, point);
             SetHoverLocation(location, point);
             _lastGamepadHintLanguage = LocalizationService.Language;
-            _gamepadCursorHint.text = _lastGamepadHintLanguage == "en"
-                ? "Right stick: aim   D-pad: fine   A: select   B/R3: HUD"
-                : "Правый стик: цель   Крестовина: точнее   A: выбрать   B/R3: интерфейс";
+            _lastGamepadHintLayout = GamepadControlGuide.CurrentLayout();
+            _gamepadCursorHint.text = GamepadControlGuide.MapTargetHint(
+                _lastGamepadHintLanguage == "en", _lastGamepadHintLayout);
         }
 
         void GamepadTargetInput(float deltaTime)
@@ -1112,7 +1113,8 @@ namespace CityHighways.Presentation
                 (priorYaw != _yaw || priorPitch != _pitch ||
                  priorZoom != _zoom || priorTilt != _tiltProgress ||
                  priorPan != _pan ||
-                 _lastGamepadHintLanguage != LocalizationService.Language))
+                 _lastGamepadHintLanguage != LocalizationService.Language ||
+                 _lastGamepadHintLayout != GamepadControlGuide.CurrentLayout()))
                 RefreshGamepadTarget();
             Repaint();
         }
