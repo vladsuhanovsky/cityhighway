@@ -33,7 +33,7 @@ namespace CityHighways.Presentation
             // but it MUST be associated with an established Steam identity.
             // Never store a Web API ticket on disk.
             var steam = NetPlatforms.Steam;
-            string owner = steam != null && steam.Available ? steam.SteamId : null;
+            string owner = steam != null ? steam.SteamId : null;
             if (!SocialReportOutbox.ValidOwner(owner)) return;
 
             request.ticket = null;
