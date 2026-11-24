@@ -1,5 +1,6 @@
 using CityHighways.Presentation;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace CityHighways.Tests
@@ -66,6 +67,21 @@ namespace CityHighways.Tests
             Assert.IsFalse(UiGamepadFocus.IsEligible(decor, root));
             Assert.IsFalse(UiGamepadFocus.IsEligible(unrelated, root));
             Assert.AreSame(button, UiGamepadFocus.FirstEligible(root));
+        }
+
+        [Test]
+        public void FocusWakesOnlyForMeaningfulControllerInput()
+        {
+            Assert.IsFalse(UiGamepadFocus.HasNavigationIntent(
+                Vector2.zero, Vector2.zero, false));
+            Assert.IsFalse(UiGamepadFocus.HasNavigationIntent(
+                Vector2.zero, new Vector2(0.05f, -0.02f), false));
+            Assert.IsTrue(UiGamepadFocus.HasNavigationIntent(
+                Vector2.up, Vector2.zero, false));
+            Assert.IsTrue(UiGamepadFocus.HasNavigationIntent(
+                Vector2.zero, new Vector2(0.9f, 0f), false));
+            Assert.IsTrue(UiGamepadFocus.HasNavigationIntent(
+                Vector2.zero, Vector2.zero, true));
         }
 
         [Test]
