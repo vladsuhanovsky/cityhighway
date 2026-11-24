@@ -31,6 +31,25 @@ namespace CityHighways.Presentation
                     ? previouslyFocused : null;
         }
 
+        /// <summary>
+        /// A HUD item may be rebuilt while a modal owns the controller. If
+        /// its former element is detached, recover only an eligible control
+        /// with the same stable gamepad name from this session's root.
+        /// </summary>
+        public static VisualElement RestoreCandidate(
+            VisualElement root, VisualElement previouslyFocused)
+        {
+            if (root == null || previouslyFocused == null ||
+                previouslyFocused is MapView) return null;
+
+            var existing = RestorableControl(root, previouslyFocused);
+            if (existing != null) return existing;
+
+            return UiGamepadFocus.IsStableControllerName(previouslyFocused.name)
+                ? UiGamepadFocus.FindEligibleNamed(root, previouslyFocused.name)
+                : null;
+        }
+
         public void Update(VisualElement root, VisualElement preferredScope,
             bool controllerActive)
         {
@@ -48,7 +67,7 @@ namespace CityHighways.Presentation
             {
                 if (_previousScope != null && _previousScope != root)
                 {
-                    var restore = RestorableControl(root, _lastHudControl);
+                    var restore = RestoreCandidate(root, _lastHudControl);
                     if (restore != null)
                     {
                         restore.Focus();
