@@ -6242,7 +6242,7 @@
     },
     {
       "key": "game.undo.action",
-      "value": "Undo action"
+      "value": "Undo"
     },
     {
       "key": "game.undo.done",
@@ -6251,6 +6251,22 @@
     {
       "key": "game.undo.unavailable",
       "value": "Undo is unavailable right now."
+    },
+    {
+      "key": "game.undo.confirm_button",
+      "value": "Confirm undo"
+    },
+    {
+      "key": "game.undo.tooltip",
+      "value": "Undo: {0} · Ctrl/Cmd+Z"
+    },
+    {
+      "key": "game.undo.disabled_hint",
+      "value": "Unavailable online, with bots, a timer, tutorials or without a full command history."
+    },
+    {
+      "key": "game.undo.confirm_other",
+      "value": "Player {0} made the last move. Press Confirm undo again within 6 seconds."
     }
   ]
 }
