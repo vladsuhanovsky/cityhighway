@@ -66,6 +66,18 @@ namespace CityHighways.Presentation
             }
         }
 
+        public static float ClassicEventMaxWidth(Tier tier)
+        {
+            switch (tier)
+            {
+                case Tier.Wide: return 330f;
+                case Tier.Compact: return 180f;
+                // Hidden by ShowClassicEventText, but never leave an
+                // invalid width if the text is toggled back on.
+                default: return 100f;
+            }
+        }
+
         public static float MagnateRoundMaxWidth(Tier tier)
         {
             switch (tier)
