@@ -150,7 +150,7 @@ namespace CityHighways.Presentation
                     string.IsNullOrWhiteSpace(row[1]) ||
                     string.IsNullOrWhiteSpace(row[2]) ||
                     !DateTimeOffset.TryParse(row[0], CultureInfo.InvariantCulture,
-                        DateTimeStyles.RoundtripKind, out var capturedUtc) ||
+                        DateTimeStyles.None, out var capturedUtc) ||
                     capturedUtc.Offset != TimeSpan.Zero ||
                     !int.TryParse(row[3], NumberStyles.None,
                         CultureInfo.InvariantCulture, out var run) ||
