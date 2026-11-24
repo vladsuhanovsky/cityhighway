@@ -200,10 +200,13 @@ async function report(db: Db, me: string, body: any) {
   // A client-provided score is not authoritative. Reject malformed
   // or internally inconsistent compressed replays before any DB write
   // or club contribution; do not silently clamp a forged result.
-  if (mode === "classic" || mode === "coop")
-    await validateReplayReport(body);
-  else if (mode !== "magnate")
+  let gameFingerprint: string | null = null;
+  if (mode === "classic" || mode === "coop") {
+    const validated = await validateReplayReport(body);
+    gameFingerprint = await replayFingerprint(mode, mapPath, validated.replay);
+  } else if (mode !== "magnate") {
     throw new Error("invalid report mode");
+  }
 
   const score = mode === "magnate"
     ? clamp(int(body.score), -100, 1000)
