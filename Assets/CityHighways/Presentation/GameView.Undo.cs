@@ -99,9 +99,12 @@ namespace CityHighways.Presentation
                 _modal != Modal.None ? _modalLayer :
                 _drawerOpen ? _drawer :
                 _playersOpen ? _playersPanel : Root;
-            var replacement = GamepadActionFocus.ReplacementAfterDisable(
-                Root, scope, focusedBefore, _undoButton, _redoButton, _logTab);
-            replacement?.Focus();
+            if (_map != null && !_map.IsGamepadTargeting)
+            {
+                var replacement = GamepadActionFocus.ReplacementAfterDisable(
+                    Root, scope, focusedBefore, _undoButton, _redoButton, _logTab);
+                replacement?.Focus();
+            }
         }
 
         void RefreshRedoButton()
