@@ -238,6 +238,7 @@ namespace CityHighways.Presentation
             // Настройки и полные правила — поверх всего, даже поверх итогов партии.
             BuildModals();
             _gamepadGuide = GamepadControlGuide.Create();
+            _gamepadGuide.style.bottom = BottomHeight + 8f;
             Root.Add(_gamepadGuide);
         }
 
