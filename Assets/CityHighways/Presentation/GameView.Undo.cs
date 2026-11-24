@@ -83,9 +83,12 @@ namespace CityHighways.Presentation
 
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
             if (keyboard == null) return;
-            bool modifier = keyboard.ctrlKey.isPressed ||
-                keyboard[UnityEngine.InputSystem.Key.LeftMeta].isPressed ||
-                keyboard[UnityEngine.InputSystem.Key.RightMeta].isPressed;
+            bool onMac = Application.platform == RuntimePlatform.OSXEditor ||
+                Application.platform == RuntimePlatform.OSXPlayer;
+            bool meta = onMac && (keyboard[UnityEngine.InputSystem.Key.LeftMeta].isPressed ||
+                keyboard[UnityEngine.InputSystem.Key.RightMeta].isPressed);
+            bool modifier = UndoPresentation.UndoModifier(
+                keyboard.ctrlKey.isPressed, meta, onMac);
             if (UndoPresentation.WantsShortcut(
                     modifier, keyboard.shiftKey.isPressed,
                     keyboard.zKey.wasPressedThisFrame,
