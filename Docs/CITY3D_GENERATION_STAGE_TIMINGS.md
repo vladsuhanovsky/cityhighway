@@ -20,3 +20,19 @@ Use the **same city, quality, scene settings, machine, Unity version and project
 These are *wall-clock creation durations*, so they include loading, Editor overhead, garbage collection, main-thread work and any scheduling interruptions; percentages are descriptive and not statistical significance estimates. The tool cannot infer improvements in FPS or GPU utilization. Timing instrumentation itself adds a small fixed overhead to each build.
 
 The existing frame monitor and append microbenchmark measure different things and remain unchanged. This stage timing tool is read-only except for explicit CSV exports and does not change CI thresholds.
+
+
+## Unity Profiler CPU Timeline markers
+
+Alongside CSV checkpoints, the same generation flow now uses sixteen static **Unity CPU ProfilerMarker** instances. Their names start with `City3D.Build/` and correspond to the sixteen stage labels in the CSV.
+
+1. In Unity Editor, open **Window → Analysis → Profiler** before creating the 3D city.
+2. Enable recording and select **CPU Usage → Timeline**.
+3. Generate a 3D city in Play Mode. Find the `City3D.Build/` samples on the main thread in the frame where it was constructed.
+4. Expand the slowest stage to inspect its actual child calls, main-thread work and GC allocations. Repeat the same map and quality level when comparing versions.
+
+Marker scopes are exception-safe (`ProfilerMarker.Auto()`) and close even if scene construction throws. They do not change the generated geometry, load order, scene objects or save schema.
+
+**Scope note:** The timeline marker surrounds the main work of each phase. A few lightweight setup operations (notably tuning/exclusion lookup before the planner call) remain outside that marker but inside the corresponding CSV wall-clock interval; total timings may differ. Timeline recording itself also introduces overhead. The wall-clock CSV and the Profiler are **complementary diagnostics**, not interchangeable CPU/GPU/FPS measurements.
+
+Do not use synthetic append timings as proof of whole-city improvement. Use these stage markers to investigate the actual longest generation phase, then repeat captures under controlled conditions.
