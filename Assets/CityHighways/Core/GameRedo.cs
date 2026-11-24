@@ -48,7 +48,11 @@ namespace CityHighways.Core
             if (a == null || b == null) return false;
             return string.Equals(a.kind, b.kind, StringComparison.Ordinal) &&
                 a.player == b.player && a.slot == b.slot &&
-                string.Equals(a.road, b.road, StringComparison.Ordinal) &&
+                // Unity JsonUtility normalizes an absent optional road
+                // string to "" in some deserialized commands. An empty road
+                // is semantically identical to null; a nonempty road must
+                // still match exactly (case-sensitive).
+                string.Equals(a.road ?? "", b.road ?? "", StringComparison.Ordinal) &&
                 a.resource == b.resource && a.machinery == b.machinery &&
                 SameContracts(a.contracts, b.contracts) &&
                 a.index == b.index && a.to == b.to &&
