@@ -211,6 +211,91 @@ namespace CityHighways.Steam
             return result;
         }
 
+        // Steamworks stats arrive asynchronously. Do not call SetAchievement
+        // until UserStatsReceived confirms the current local Steam account.
+        void RequestAchievementStats()
+        {
+            _nextStatsRequest = Time.unscaledTime + 15f;
+            if (!_initialized || _statsReady) return;
+            if (!SteamUserStats.RequestCurrentStats())
+                Debug.LogWarning("City Highways: Steam stats not ready; will retry.");
+        }
+
+        void OnStatsReceived(UserStatsReceived_t result)
+        {
+            if (!_initialized ||
+                result.m_steamIDUser.m_SteamID != SteamUser.GetSteamID().m_SteamID)
+                return;
+            _statsReady = result.m_eResult == EResult.k_EResultOK;
+            if (!_statsReady)
+                _nextStatsRequest = Time.unscaledTime + 15f;
+        }
+
+        /// <summary>Queue already-earned local achievement API IDs.</summary>
+        public void QueueUnlockedAchievements(IReadOnlyCollection<string> achievementIds)
+        {
+            if (achievementIds == null || !Available) return;
+            foreach (string id in achievementIds)
+                if (!string.IsNullOrEmpty(id))
+                    _queuedAchievements.Add(id);
+            if (_statsReady) FlushQueuedAchievements();
+        }
+
+        void FlushQueuedAchievements()
+        {
+            if (!_statsReady || _storePending ||
+                Time.unscaledTime < _nextStoreAttempt || _queuedAchievements.Count == 0)
+                return;
+
+            foreach (string id in _queuedAchievements)
+            {
+                // Already unlocked on Steam (e.g. another PC): no new write.
+                if (SteamUserStats.GetAchievement(id, out bool achieved))
+                {
+                    if (!achieved) 
+                    {
+                        if (SteamUserStats.SetAchievement(id))
+                            _stagedAchievements.Add(id);
+                    }
+                    else if (_stagedAchievements.Contains(id))
+                    {
+                        // StoreStats may have failed previously. Keep this
+                        // staged achievement until the store callback succeeds.
+                    }
+                }
+            }
+
+            // Invalid/unpublished Steam API IDs must not create an endless
+            // StoreStats loop; retry them on a later stats synchronization.
+            if (_stagedAchievements.Count == 0)
+            {
+                _nextStoreAttempt = Time.unscaledTime + 60f;
+                return;
+            }
+
+            if (SteamUserStats.StoreStats())
+                _storePending = true;
+            else
+                _nextStoreAttempt = Time.unscaledTime + 30f;
+        }
+
+        void OnStatsStored(UserStatsStored_t result)
+        {
+            if (!_initialized || !_storePending) return;
+            _storePending = false;
+            if (result.m_eResult == EResult.k_EResultOK)
+            {
+                foreach (string id in _stagedAchievements)
+                    _queuedAchievements.Remove(id);
+                _stagedAchievements.Clear();
+            }
+            else
+            {
+                // Keep staged changes for a delayed StoreStats retry.
+                _nextStoreAttempt = Time.unscaledTime + 30f;
+            }
+        }
+
         public void Poll()
         {
             if (!_initialized) return;
