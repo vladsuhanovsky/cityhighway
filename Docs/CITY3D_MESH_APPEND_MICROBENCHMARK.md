@@ -44,3 +44,14 @@ After loading and comparing compatible captures, enter the **baseline Git revisi
 The save button requires all three manual provenance fields. You can attach the resulting Markdown report to an optimization pull request, together with both raw CSV exports; preserve the original captures to allow independent review. File export does not run additional benchmarks and never rewrites the game's save schema.
 
 **Important:** benchmark revisions and environment fields are self-reported, and the CSV comparator checks only compatible recorded workload metadata. Neither saved reviews nor synthetic results establish frame-rate improvements in the game. Confirm in representative seeded 3D scenes with Unity Profiler and repeated captures.
+
+
+## Sampling quality advisories
+
+The comparison window and exported Markdown review additionally describe three risks per scenario:
+
+- **Few samples:** fewer than seven measured runs per capture. Seven is the current manually triggered benchmark's default; it is a heuristic minimum, not a statistical guarantee.
+- **Wide within-capture range:** (maximum - minimum) / median exceeds 10% for either capture. A single outlier can cause this flag. If the median is zero but the range is not zero, the ratio is treated as unbounded.
+- **Overlapping observed ranges:** the two min/max ranges share any duration, including a shared boundary value. This is a descriptive flag; independent ranges alone do not demonstrate statistical significance.
+
+If any flag occurs, the UI marks the scenario for review. Even without flags, a lower synthetic elapsed-time median is **not proof** of an end-to-end speedup. Repeat captures, record environmental conditions, and inspect frame performance and allocations in Unity Profiler on a representative city. These advisories do not fail CI and do not change existing benchmark CSV fields.
