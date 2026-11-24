@@ -67,3 +67,31 @@ test("the server never accepts legacy duplicate Magnate reports without run IDs"
   assert.match(server, /gameFingerprint = await magnateReportFingerprint\(body\)/);
   assert.match(server, /await creditClubGameOnce\(db,/);
 });
+
+
+test("outbox enqueue, completion and backoff roll back when disk writes fail", () => {
+  assert.match(outbox, /_entries\.Add\(entry\);[\s\S]*?if \(Save\(\)\) return true;[\s\S]*?_entries\.Remove\(entry\)/);
+  assert.match(outbox, /_entries\.RemoveAt\(index\);[\s\S]*?if \(Save\(\)\) return true;[\s\S]*?_entries\.Insert\(index, entry\)/);
+  assert.match(outbox, /int previousAttempts = entry\.attempts;[\s\S]*?if \(Save\(\)\) return true;[\s\S]*?entry\.attempts = previousAttempts/);
+});
+
+test("outbox recovery retains a known-good backup when the primary is corrupt", () => {
+  assert.match(outbox, /_recoveredFromBackup = candidate != _path/);
+  assert.match(outbox, /if \(_recoveredFromBackup\)[\s\S]*?File\.Delete\(_path\)[\s\S]*?File\.Move\(temp, _path\)/);
+  assert.match(outbox, /Encoding\.UTF8\.GetByteCount\(json\) > MaxFileBytes/);
+});
+
+test("server ACKs with failed local removal are retried on disk, not resent on HTTP", () => {
+  assert.match(delivery, /static SocialReportOutbox\.Entry _acknowledgedPending/);
+  assert.match(delivery, /if \(_acknowledgedPending != null\)[\s\S]*?ReportOutbox\.Complete\(_acknowledgedPending\)/);
+  assert.match(delivery, /if \(!ReportOutbox\.Complete\(entry\)\)[\s\S]*?_acknowledgedPending = entry;[\s\S]*?DeferAfterDiskError\(\)/);
+});
+
+test("failed retry persistence has an in-memory delay instead of a per-frame HTTP storm", () => {
+  assert.match(delivery, /if \(nowTicks < _diskRetryAfterUtcTicks\) return/);
+  assert.match(delivery, /if \(!ReportOutbox\.Reschedule\(entry, DateTime\.UtcNow\.Ticks, status\)\)[\s\S]*?DeferAfterDiskError\(\)/);
+});
+
+test("null report response is not acknowledged as an uploaded game", () => {
+  assert.match(delivery, /if \(response == null\)[\s\S]*?ReportOutbox\.Reschedule\(entry, DateTime\.UtcNow\.Ticks, 0\)/);
+});
