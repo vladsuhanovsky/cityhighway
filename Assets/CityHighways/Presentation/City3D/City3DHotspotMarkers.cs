@@ -23,6 +23,8 @@ namespace CityHighways.Presentation
             new ProfilerMarker("City3D.Hotspot/Ground mesh upload and tangents");
         internal static readonly ProfilerMarker Outskirts =
             new ProfilerMarker("City3D.Hotspot/Outskirts ground");
+        internal static readonly ProfilerMarker OutskirtsTexture =
+            new ProfilerMarker("City3D.Hotspot/Outskirts texture bake");
         internal static readonly ProfilerMarker TerrainPixels =
             new ProfilerMarker("City3D.Hotspot/Terrain base pixel fill");
         internal static readonly ProfilerMarker TerrainFootprints =

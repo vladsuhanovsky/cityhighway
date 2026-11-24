@@ -625,7 +625,9 @@ namespace CityHighways.Presentation
                 }
             }
             var outskirts = LoadMaterial("CityGround", Color.white);
-            outskirts.SetTexture("_BaseMap", CityTextures.Outskirts(_map));
+            using (City3DHotspotMarkers.OutskirtsTexture.Auto())
+            using (HotspotTiming.Track("Outskirts texture bake"))
+                outskirts.SetTexture("_BaseMap", CityTextures.Outskirts(_map));
             outskirts.SetFloat("_Smoothness", 0.04f);
             NoSpecular(outskirts);
             // Та же мелкая деталь, что у доски, с тем же шагом на метр.
