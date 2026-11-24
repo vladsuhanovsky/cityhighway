@@ -1096,6 +1096,7 @@ namespace CityHighways.Presentation
             _fx.Add(_toastHolder);
 
             _gamepadGuide = GamepadControlGuide.Create();
+            _gamepadGuide.style.bottom = BottomBarHeight + 8f;
             // Bottom-right help is purely informative and cannot intercept
             // UI clicks. Hide it while the map cursor or a modal is active.
             Root.Add(_gamepadGuide);
