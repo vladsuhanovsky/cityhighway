@@ -21,7 +21,8 @@ namespace CityHighways.Tests
                     throw new InvalidOperationException("Simulated Steam reconnect");
                 }
                 var snapshot = new string[ids.Count];
-                ids.CopyTo(snapshot, 0);
+                int index = 0;
+                foreach (string id in ids) snapshot[index++] = id;
                 Sent.Add(snapshot);
             }
         }
