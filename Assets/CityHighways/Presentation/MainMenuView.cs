@@ -828,7 +828,8 @@ namespace CityHighways.Presentation
         {
             // Esc — в предыдущий раздел (самая вложенная видимая кнопка «← Назад»).
             var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame &&
+                !GamepadTextEntry.TryExit(Root))
                 Ui.GoBack(Root);
 
             // Input System already maps UI Navigate / Submit for controllers.
@@ -843,7 +844,8 @@ namespace CityHighways.Presentation
                 if (pad.buttonEast.wasPressedThisFrame)
                 {
                     _gamepadActive = true;
-                    Ui.GoBack(Root);
+                    if (!GamepadTextEntry.TryExit(Root))
+                        Ui.GoBack(Root);
                 }
             }
             if (_gamepadActive) UiGamepadFocus.EnsureFocus(Root);
