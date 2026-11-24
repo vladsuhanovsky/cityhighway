@@ -14,6 +14,7 @@ namespace CityHighways.Presentation
         public const float ReconcileSeconds = 120f;
 
         ISteamAchievements _lastPublisher;
+        PlayerProfile _lastProfile;
         string _lastSteamId;
         string _lastSignature;
         float _nextReconcile;
@@ -21,6 +22,7 @@ namespace CityHighways.Presentation
         public void Reset()
         {
             _lastPublisher = null;
+            _lastProfile = null;
             _lastSteamId = null;
             _lastSignature = null;
             _nextReconcile = 0f;
@@ -54,6 +56,7 @@ namespace CityHighways.Presentation
 
             string signature = string.Join("|", ids);
             bool same = ReferenceEquals(_lastPublisher, publisher) &&
+                        ReferenceEquals(_lastProfile, profile) &&
                         string.Equals(_lastSteamId, steamId, StringComparison.Ordinal) &&
                         string.Equals(_lastSignature, signature, StringComparison.Ordinal);
             if (same && unscaledTime >= 0f && unscaledTime < _nextReconcile)
@@ -63,6 +66,7 @@ namespace CityHighways.Presentation
             // delivered; the next Tick can safely try again.
             publisher.QueueUnlockedAchievements(ids);
             _lastPublisher = publisher;
+            _lastProfile = profile;
             _lastSteamId = steamId;
             _lastSignature = signature;
             _nextReconcile = unscaledTime + ReconcileSeconds;
