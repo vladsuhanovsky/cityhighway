@@ -90,6 +90,8 @@ namespace CityHighways.Tests
                     GameHudLayout.MagnateRoundMaxWidth(tiers[i - 1]));
                 Assert.GreaterOrEqual(GameHudLayout.MagnateEventMaxWidth(tiers[i]),
                     GameHudLayout.MagnateEventMaxWidth(tiers[i - 1]));
+                Assert.GreaterOrEqual(GameHudLayout.ClassicEventMaxWidth(tiers[i]),
+                    GameHudLayout.ClassicEventMaxWidth(tiers[i - 1]));
             }
         }
 
