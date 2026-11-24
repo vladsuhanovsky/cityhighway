@@ -18,6 +18,9 @@ namespace CityHighways.Presentation
         public static bool HasNavigationIntent(Vector2 dpad, Vector2 stick, bool submit) =>
             submit || dpad.sqrMagnitude > 0.2f || stick.sqrMagnitude > 0.49f;
 
+        public static bool ShouldGoBack(bool buttonPressed, bool mapTargetingOrExiting) =>
+            buttonPressed && !mapTargetingOrExiting;
+
         /// <summary>
         /// Keep a valid UI focus in both gameplay HUDs, without claiming it
         /// from mouse-only players or intercepting game-rule actions.
@@ -42,7 +45,7 @@ namespace CityHighways.Presentation
                 active = true;
                 // B exits the virtual map cursor first. In that frame it
                 // must not also dismiss a game modal or navigate backward.
-                if (!suppressBack) Ui.GoBack(root);
+                if (ShouldGoBack(true, suppressBack)) Ui.GoBack(root);
             }
             if (active) EnsureFocus(root);
         }
