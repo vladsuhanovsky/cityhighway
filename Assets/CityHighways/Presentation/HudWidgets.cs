@@ -334,6 +334,13 @@ namespace CityHighways.Presentation
 
             _viewport.RegisterCallback<GeometryChangedEvent>(_ => Recalculate());
             _strip.RegisterCallback<GeometryChangedEvent>(_ => Recalculate());
+            // Keyboard/gamepad focus must move the horizontal strip to the
+            // selected card; pointer dragging and wheel scrolling stay intact.
+            _strip.RegisterCallback<FocusInEvent>(evt =>
+            {
+                int index = FocusedCardIndex(_strip, evt.target as VisualElement);
+                if (index >= 0) SnapTo(index);
+            });
             // Нажатие ловим на «спуске» события, чтобы заметить перетаскивание раньше карточек.
             _viewport.RegisterCallback<PointerDownEvent>(OnDown, TrickleDown.TrickleDown);
             _viewport.RegisterCallback<PointerMoveEvent>(OnMove, TrickleDown.TrickleDown);
@@ -350,6 +357,15 @@ namespace CityHighways.Presentation
 
         public static bool ShouldCaptureWheel(float x, float y, bool scrollable) =>
             scrollable && Mathf.Abs(x) >= 0.1f && Mathf.Abs(x) > Mathf.Abs(y);
+
+        /// <summary>Resolve a focused nested element to a direct card slot.</summary>
+        public static int FocusedCardIndex(VisualElement strip, VisualElement element)
+        {
+            if (strip == null || element == null) return -1;
+            var card = element;
+            while (card != null && card.parent != strip) card = card.parent;
+            return card == null ? -1 : strip.IndexOf(card);
+        }
 
         /// <summary>Заменить карточки; положение ленты сохраняется (в пределах новой длины).</summary>
         public void SetCards(IEnumerable<VisualElement> cards)
