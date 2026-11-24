@@ -97,6 +97,37 @@ class SteamPreflightTests(unittest.TestCase):
         (self.root / "Packages/manifest.json").write_text('{"dependencies":{}}', encoding="utf-8")
         self.assertTrue(any("Steamworks.NET package" in x for x in validate(self.root, release=True, app_id="123456")))
 
+    def test_release_rejects_blank_manifest_package_version(self):
+        manifest = self.root / "Packages/manifest.json"
+        for value in ["", "   ", None]:
+            with self.subTest(value=value):
+                manifest.write_text(json.dumps({"dependencies": {
+                    "com.rlabrecque.steamworks.net": value}}), encoding="utf-8")
+                self.assertTrue(any("Steamworks.NET package" in x
+                                    for x in validate(self.root, release=True,
+                                                      app_id="123456")))
+
+    def test_release_rejects_unresolved_or_transitive_lockfile_package(self):
+        lock = self.root / "Packages/packages-lock.json"
+        for dependencies in [
+            {},
+            {"com.rlabrecque.steamworks.net": {"version": "", "depth": 0}},
+            {"com.rlabrecque.steamworks.net": {"version": "1.0.0", "depth": 1}},
+        ]:
+            with self.subTest(dependencies=dependencies):
+                lock.write_text(json.dumps({"dependencies": dependencies}),
+                                encoding="utf-8")
+                self.assertTrue(any("Steamworks.NET package is missing or unresolved" in x
+                                    for x in validate(self.root, release=True,
+                                                      app_id="123456")))
+
+    def test_release_rejects_corrupt_unity_package_lock(self):
+        (self.root / "Packages/packages-lock.json").write_text(
+            "{bad json", encoding="utf-8")
+        self.assertTrue(any("Cannot validate Unity packages-lock.json" in x
+                            for x in validate(self.root, release=True,
+                                              app_id="123456")))
+
     def test_release_requires_matching_appid_file(self):
         (self.root / "steam_appid.txt").write_text("480\n", encoding="utf-8")
         self.assertTrue(any("steam_appid.txt differs" in x for x in validate(self.root, release=True, app_id="123456")))
