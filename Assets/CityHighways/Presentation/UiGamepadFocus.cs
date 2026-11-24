@@ -28,7 +28,7 @@ namespace CityHighways.Presentation
         /// decisions are never skipped by a synthetic confirm/cancel.
         /// </summary>
         public static void MaintainGameplayFocus(VisualElement root, ref bool active,
-            bool suppressBack = false)
+            bool suppressBack = false, VisualElement priorityScope = null)
         {
             if (root == null || root.panel == null) return;
             var pad = Gamepad.current;
@@ -47,7 +47,18 @@ namespace CityHighways.Presentation
                 // must not also dismiss a game modal or navigate backward.
                 if (ShouldGoBack(true, suppressBack)) Ui.GoBack(root);
             }
-            if (active) EnsureFocus(root);
+            if (active) EnsureFocus(ResolveScope(root, priorityScope));
+        }
+
+        /// <summary>
+        /// Constrain controller focus to a visible blocking modal rather than
+        /// placing it on underlying HUD buttons during a payment or handoff.
+        /// </summary>
+        public static VisualElement ResolveScope(VisualElement root, VisualElement preferred)
+        {
+            if (root == null) return null;
+            return preferred != null && preferred.enabledInHierarchy &&
+                IsVisible(preferred, root) ? preferred : root;
         }
 
         /// <summary>Find the first active focusable control in visual-tree order.</summary>
