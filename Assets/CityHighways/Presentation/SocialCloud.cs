@@ -169,6 +169,8 @@ namespace CityHighways.Presentation
             public int seats;
             public int seed;
             public string replay;
+            /// <summary>One Magnate match, reused for any HTTP retry.</summary>
+            public string runId;
             public ReportStats stats;
             // friends
             public string[] ids;
