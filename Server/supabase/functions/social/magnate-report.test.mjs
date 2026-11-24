@@ -43,7 +43,9 @@ test("rejects missing, uppercase, dashed and all-zero IDs", async () => {
   for (const runId of [undefined, null, "", "A".repeat(32),
     "a".repeat(31), "a".repeat(33), "g".repeat(32),
     "00000000-0000-0000-0000-000000000001", "0".repeat(32)]) {
-    await bad(request(runId), "runId");
+    const data = request();
+    data.runId = runId;
+    await bad(data, "runId");
   }
 });
 
