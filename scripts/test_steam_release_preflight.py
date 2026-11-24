@@ -75,6 +75,24 @@ class SteamPreflightTests(unittest.TestCase):
     def test_release_rejects_test_appid(self):
         self.assertTrue(any("non-480" in x for x in validate(self.root, release=True, app_id="480")))
 
+    def test_release_rejects_invalid_app_id_forms(self):
+        invalid = [None, "", "0", "480", "0480", "00123456",
+                   "-123456", " 123456", "123456 ", "1.0",
+                   "１２３４５６", "4294967296", "99999999999"]
+        for app_id in invalid:
+            with self.subTest(app_id=app_id):
+                self.assertTrue(any("real, non-480 Steam AppID" in x
+                                    for x in validate(self.root, release=True,
+                                                      app_id=app_id)))
+
+    def test_release_accepts_highest_uint32_app_id(self):
+        (self.root / "steam_appid.txt").write_text("4294967295\n", encoding="utf-8")
+        self.assertEqual(validate(self.root, release=True, app_id="4294967295"), [])
+
+    def test_release_allows_appid_file_to_be_absent_in_packaged_build(self):
+        (self.root / "steam_appid.txt").unlink()
+        self.assertEqual(validate(self.root, release=True, app_id="123456"), [])
+
     def test_release_rejects_missing_package(self):
         (self.root / "Packages/manifest.json").write_text('{"dependencies":{}}', encoding="utf-8")
         self.assertTrue(any("Steamworks.NET package" in x for x in validate(self.root, release=True, app_id="123456")))
