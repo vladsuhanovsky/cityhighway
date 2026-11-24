@@ -79,6 +79,24 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void CsvExportDoesNotResetOrReorderRecordedStages()
+        {
+            long second = Stopwatch.Frequency;
+            var report = new City3DGenerationTiming("City", 1, 0);
+            report.Mark("Relief", second);
+            string first = report.ExportCsv("6000.6.8f1");
+            report.Mark("Districts", 3 * second);
+            string secondExport = report.ExportCsv("6000.6.8f1");
+
+            Assert.AreEqual(1, first.Split('\n').Length - 2);
+            Assert.AreEqual(2, secondExport.Split('\n').Length - 2);
+            Assert.Less(secondExport.IndexOf("\"Relief\""),
+                secondExport.IndexOf("\"Districts\""));
+            Assert.AreEqual(3000d, report.TotalMilliseconds, 0.00001d);
+            Assert.AreEqual(2, report.Stages.Count);
+        }
+
+        [Test]
         public void InvalidStageNamesAndBackwardsTimestampsAreRejected()
         {
             Assert.Throws<ArgumentException>(() =>
