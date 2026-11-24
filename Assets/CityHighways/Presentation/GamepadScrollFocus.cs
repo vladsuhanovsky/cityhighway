@@ -9,14 +9,26 @@ namespace CityHighways.Presentation
     /// </summary>
     public static class GamepadScrollFocus
     {
-        public static bool ContainsContentTarget(VisualElement content,
+        public static bool ContainsContentTarget(ScrollView scroll,
             VisualElement focused)
         {
-            if (content == null || focused == null || content == focused)
+            if (scroll == null || focused == null || focused == scroll ||
+                focused == scroll.contentContainer || !scroll.Contains(focused))
                 return false;
-            for (var node = focused.parent; node != null; node = node.parent)
-                if (node == content) return true;
-            return false;
+
+            // UI Toolkit can expose a different visual/logical parent chain
+            // for ScrollView.Add() children in Edit Mode. The whole ScrollView
+            // is the stable ownership boundary. Exclude its built-in scrollbars
+            // so their focused controls never cause recursive scrolling.
+            var vertical = scroll.verticalScroller;
+            if (vertical != null &&
+                (focused == vertical || vertical.Contains(focused)))
+                return false;
+            var horizontal = scroll.horizontalScroller;
+            if (horizontal != null &&
+                (focused == horizontal || horizontal.Contains(focused)))
+                return false;
+            return true;
         }
 
         public static void Register(ScrollView scroll)
@@ -31,7 +43,7 @@ namespace CityHighways.Presentation
             var scroll = evt.currentTarget as ScrollView;
             var focused = evt.target as VisualElement;
             if (scroll == null || scroll.panel == null ||
-                !ContainsContentTarget(scroll.contentContainer, focused) ||
+                !ContainsContentTarget(scroll, focused) ||
                 !focused.enabledInHierarchy ||
                 !UiGamepadFocus.IsEligible(focused, scroll))
                 return;
