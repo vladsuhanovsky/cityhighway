@@ -18,13 +18,17 @@ namespace CityHighways.Presentation
         public static bool HasNavigationIntent(Vector2 dpad, Vector2 stick, bool submit) =>
             submit || dpad.sqrMagnitude > 0.2f || stick.sqrMagnitude > 0.49f;
 
+        public static bool ShouldGoBack(bool buttonPressed, bool mapTargetingOrExiting) =>
+            buttonPressed && !mapTargetingOrExiting;
+
         /// <summary>
         /// Keep a valid UI focus in both gameplay HUDs, without claiming it
         /// from mouse-only players or intercepting game-rule actions.
         /// Button B uses only a registered visible Back action; mandatory
         /// decisions are never skipped by a synthetic confirm/cancel.
         /// </summary>
-        public static void MaintainGameplayFocus(VisualElement root, ref bool active)
+        public static void MaintainGameplayFocus(VisualElement root, ref bool active,
+            bool suppressBack = false, VisualElement priorityScope = null)
         {
             if (root == null || root.panel == null) return;
             var pad = Gamepad.current;
@@ -39,9 +43,22 @@ namespace CityHighways.Presentation
             if (pad.buttonEast.wasPressedThisFrame)
             {
                 active = true;
-                Ui.GoBack(root);
+                // B exits the virtual map cursor first. In that frame it
+                // must not also dismiss a game modal or navigate backward.
+                if (ShouldGoBack(true, suppressBack)) Ui.GoBack(root);
             }
-            if (active) EnsureFocus(root);
+            if (active) EnsureFocus(ResolveScope(root, priorityScope));
+        }
+
+        /// <summary>
+        /// Constrain controller focus to a visible blocking modal rather than
+        /// placing it on underlying HUD buttons during a payment or handoff.
+        /// </summary>
+        public static VisualElement ResolveScope(VisualElement root, VisualElement preferred)
+        {
+            if (root == null) return null;
+            return preferred != null && preferred.enabledInHierarchy &&
+                IsVisible(preferred, root) ? preferred : root;
         }
 
         /// <summary>Find the first active focusable control in visual-tree order.</summary>

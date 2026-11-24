@@ -112,6 +112,17 @@ namespace CityHighways.Presentation
         public readonly HashSet<string> UpgradeSweeps = new HashSet<string>();
         public float PulseTime;
         public bool Interactive = true;
+        // The map is not a normal HUD focus target. R3 explicitly activates
+        // focus and a virtual cursor; deactivation returns focus to the HUD.
+        GamepadMapCursorState _gamepadCursor;
+        readonly VisualElement _gamepadCursorMarker;
+        readonly Label _gamepadCursorHint;
+        readonly Label _gamepadActivationHint;
+        bool _gamepadExitedThisFrame;
+        string _lastGamepadHintLanguage;
+        public bool IsGamepadTargeting => _gamepadCursor.Active;
+        public bool GamepadExitedTargetingThisFrame => _gamepadExitedThisFrame;
+        public Func<bool> CanGamepadTarget;
         /// <summary>Наклонять поле (2.5D). Берётся из настроек экрана при старте партии.</summary>
         public bool TiltEnabled = true;
 
@@ -360,7 +371,78 @@ namespace CityHighways.Presentation
             Ui.Fill(_labels);
             Add(_labels);
 
-            RegisterCallback<GeometryChangedEvent>(_ => Relayout());
+            // Pure UI Toolkit overlay, not a synthetic mouse device. The
+            // reticle cannot intercept map clicks, drag gestures or hover.
+            _gamepadCursorMarker = new VisualElement();
+            _gamepadCursorMarker.name = "gamepad-map-cursor";
+            _gamepadCursorMarker.pickingMode = PickingMode.Ignore;
+            _gamepadCursorMarker.focusable = false;
+            _gamepadCursorMarker.style.position = Position.Absolute;
+            _gamepadCursorMarker.style.width = 28f;
+            _gamepadCursorMarker.style.height = 28f;
+            _gamepadCursorMarker.style.backgroundColor = new Color(0.03f, 0.05f, 0.08f, 0.25f);
+            Ui.Radius(_gamepadCursorMarker, 14f);
+            Ui.Border(_gamepadCursorMarker, 3f, Theme.Gold);
+            Add(_gamepadCursorMarker);
+            Ui.Show(_gamepadCursorMarker, false);
+
+            _gamepadCursorHint = Ui.Text("", 12f, Theme.Text, true);
+            _gamepadCursorHint.name = "gamepad-map-hint";
+            _gamepadCursorHint.pickingMode = PickingMode.Ignore;
+            _gamepadCursorHint.style.position = Position.Absolute;
+            _gamepadCursorHint.style.left = 12f;
+            _gamepadCursorHint.style.top = 12f;
+            _gamepadCursorHint.style.backgroundColor = Theme.PanelGlass;
+            _gamepadCursorHint.style.maxWidth = 320f;
+            Ui.Radius(_gamepadCursorHint, 7f);
+            Ui.Padding(_gamepadCursorHint, 6f, 10f);
+            Add(_gamepadCursorHint);
+            Ui.Show(_gamepadCursorHint, false);
+
+            // Discoverable R3 affordance only while a controller is attached
+            // and the current turn/modal state permits map interaction.
+            _gamepadActivationHint = Ui.Text("", 12f, Theme.Text, true);
+            _gamepadActivationHint.name = "gamepad-map-activation-hint";
+            _gamepadActivationHint.pickingMode = PickingMode.Ignore;
+            _gamepadActivationHint.style.position = Position.Absolute;
+            _gamepadActivationHint.style.right = 12f;
+            _gamepadActivationHint.style.bottom = 12f;
+            _gamepadActivationHint.style.backgroundColor = Theme.PanelGlass;
+            Ui.Radius(_gamepadActivationHint, 7f);
+            Ui.Padding(_gamepadActivationHint, 6f, 10f);
+            Add(_gamepadActivationHint);
+            Ui.Show(_gamepadActivationHint, false);
+
+            RegisterCallback<NavigationMoveEvent>(evt =>
+            {
+                if (!_gamepadCursor.Active) return;
+                // UI D-pad navigation must not move the focused element out
+                // of the virtual-cursor surface while map targeting is active.
+                evt.PreventDefault();
+                evt.StopPropagation();
+            });
+            RegisterCallback<NavigationSubmitEvent>(evt =>
+            {
+                if (!_gamepadCursor.Active) return;
+                evt.PreventDefault();
+                evt.StopPropagation();
+            });
+            RegisterCallback<NavigationCancelEvent>(evt =>
+            {
+                if (!_gamepadCursor.Active) return;
+                evt.PreventDefault();
+                evt.StopPropagation();
+            });
+
+            RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                Relayout();
+                if (_gamepadCursor.Active)
+                {
+                    _gamepadCursor.Constrain(GamepadTargetBounds);
+                    RefreshGamepadTarget();
+                }
+            });
             RegisterCallback<PointerMoveEvent>(e =>
             {
                 Vector2 position = e.localPosition;
@@ -406,6 +488,8 @@ namespace CityHighways.Presentation
             });
             RegisterCallback<PointerDownEvent>(e =>
             {
+                // Physical pointer interaction always takes ownership back.
+                if (_gamepadCursor.Active) StopGamepadTargeting(false);
                 if (_game == null) return;
                 Vector2 position = e.localPosition;
                 bool leftRotates = LeftRotates && CanRotate;
@@ -482,6 +566,114 @@ namespace CityHighways.Presentation
             if (!this.HasPointerCapture(pointer)) this.CapturePointer(pointer);
             SetHover(null, now);
             SetHoverLocation(null, now);
+        }
+
+        Rect GamepadTargetBounds => new Rect(0f, 0f,
+            Mathf.Max(0f, contentRect.width), Mathf.Max(0f, contentRect.height));
+
+        bool CanTargetWithGamepad()
+        {
+            if (_game == null || _layout == null || !Interactive || panel == null ||
+                contentRect.width < 80f || contentRect.height < 80f)
+                return false;
+            if (panel.focusController?.focusedElement is TextField) return false;
+            return CanGamepadTarget == null || CanGamepadTarget();
+        }
+
+        void StartGamepadTargeting()
+        {
+            _gamepadCursor.Activate(GamepadTargetBounds);
+            focusable = true;
+            Focus();
+            Ui.Show(_gamepadCursorMarker, true);
+            Ui.Show(_gamepadCursorHint, true);
+            Ui.Show(_gamepadActivationHint, false);
+            RefreshGamepadTarget();
+        }
+
+        /// <summary>Leave virtual targeting and let the HUD reclaim UI focus.</summary>
+        public void StopGamepadTargeting(bool restoreHudFocus = true)
+        {
+            if (!_gamepadCursor.Active) return;
+            _gamepadCursor.Deactivate();
+            focusable = false;
+            Blur();
+            Ui.Show(_gamepadCursorMarker, false);
+            Ui.Show(_gamepadCursorHint, false);
+            SetHover(null, Vector2.zero);
+            SetHoverLocation(null, Vector2.zero);
+            _gamepadExitedThisFrame = restoreHudFocus;
+        }
+
+        void RefreshGamepadTarget()
+        {
+            if (!_gamepadCursor.Active) return;
+            Vector2 point = GamepadMapCursorState.Clamp(
+                _gamepadCursor.Position, GamepadTargetBounds);
+            _gamepadCursorMarker.style.left = point.x - 14f;
+            _gamepadCursorMarker.style.top = point.y - 14f;
+            Road road = OpenRoadAt(point);
+            Location location = LocationClicked != null ? LocationAt(point) : null;
+            bool hasTarget = road != null || location != null;
+            Ui.Border(_gamepadCursorMarker, 3f, hasTarget ? Theme.Success : Theme.Gold);
+            // Click() selects a station before an overlapping road in Magnate.
+            // Match that order in the cursor's hover preview.
+            SetHover(location == null ? road : null, point);
+            SetHoverLocation(location, point);
+            _lastGamepadHintLanguage = LocalizationService.Language;
+            _gamepadCursorHint.text = _lastGamepadHintLanguage == "en"
+                ? "Right stick: aim   D-pad: fine   A: select   B/R3: HUD"
+                : "Правый стик: цель   Крестовина: точнее   A: выбрать   B/R3: интерфейс";
+        }
+
+        void GamepadTargetInput(float deltaTime)
+        {
+            _gamepadExitedThisFrame = false;
+            var pad = UnityEngine.InputSystem.Gamepad.current;
+            bool canTarget = pad != null && CanTargetWithGamepad();
+            Ui.Show(_gamepadActivationHint, canTarget && !_gamepadCursor.Active);
+            if (canTarget)
+                _gamepadActivationHint.text = LocalizationService.Language == "en"
+                    ? "R3: aim on map" : "R3: выбрать на карте";
+            if (!canTarget)
+            {
+                StopGamepadTargeting();
+                return;
+            }
+
+            if (pad.rightStickButton.wasPressedThisFrame)
+            {
+                if (_gamepadCursor.Active) StopGamepadTargeting();
+                else StartGamepadTargeting();
+                return;
+            }
+
+            if (!_gamepadCursor.Active) return;
+            if (pad.buttonEast.wasPressedThisFrame)
+            {
+                StopGamepadTargeting();
+                return;
+            }
+
+            Vector2 previousPosition = _gamepadCursor.Position;
+            _gamepadCursor.Constrain(GamepadTargetBounds);
+            if ((previousPosition - _gamepadCursor.Position).sqrMagnitude > 0.0001f)
+                RefreshGamepadTarget();
+            Vector2 stick = pad.rightStick.ReadValue();
+            bool fine = !GamepadMapCursorState.HasMovement(stick);
+            Vector2 movement = fine ? pad.dpad.ReadValue() : stick;
+            float speed = fine ? 145f : 620f;
+            if (_gamepadCursor.Move(movement, Mathf.Max(0f, deltaTime),
+                    GamepadTargetBounds, speed))
+                RefreshGamepadTarget();
+
+            if (pad.buttonSouth.wasPressedThisFrame)
+            {
+                // Same station-first hit testing and event pipeline as mouse,
+                // including GameView/Magnate gameplay validation and overlays.
+                Click(_gamepadCursor.Position);
+                if (!CanTargetWithGamepad()) StopGamepadTargeting();
+            }
         }
 
         /// <summary>Клик левой кнопкой: станция (магнат — «ехать сюда») раньше дороги под ней. true — что-то выбрано.</summary>
@@ -713,6 +905,7 @@ namespace CityHighways.Presentation
 
         public void SetGame(Game game)
         {
+            StopGamepadTargeting();
             _game = game;
             _layout = new BoardLayout(game.Map) { GroundQuads = _groundRoads };
             Affordable.Clear();
@@ -902,12 +1095,25 @@ namespace CityHighways.Presentation
         /// <summary>Кадр: время для анимаций, наклон, свет, плавная подсветка — и перерисовка живых слоёв.</summary>
         public void Tick(float deltaTime)
         {
+            GamepadTargetInput(deltaTime);
             PulseTime += deltaTime;
+            float priorYaw = _yaw, priorPitch = _pitch;
+            float priorZoom = _zoom, priorTilt = _tiltProgress;
+            Vector2 priorPan = _pan;
             if (_game != null)
             {
                 float dt = Mathf.Clamp(deltaTime, 0f, 0.1f);
                 Animate(dt);
             }
+            // Do not repeat map-hover callbacks on every idle frame.
+            // Re-evaluate only when camera projection moves under a fixed
+            // target (stick movement and resize are handled elsewhere).
+            if (_gamepadCursor.Active &&
+                (priorYaw != _yaw || priorPitch != _pitch ||
+                 priorZoom != _zoom || priorTilt != _tiltProgress ||
+                 priorPan != _pan ||
+                 _lastGamepadHintLanguage != LocalizationService.Language))
+                RefreshGamepadTarget();
             Repaint();
         }
 

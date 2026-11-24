@@ -1,3 +1,4 @@
+using System.Linq;
 using CityHighways.Presentation;
 using NUnit.Framework;
 using UnityEngine;
@@ -116,6 +117,45 @@ namespace CityHighways.Tests
             card.style.display = DisplayStyle.Flex;
             card.SetEnabled(false);
             Assert.IsNull(UiGamepadFocus.FindEligibleNamed(root, card.name));
+        }
+
+        [Test]
+        public void MapCursorConsumesBackInsteadOfDismissingGameOverlay()
+        {
+            Assert.IsTrue(UiGamepadFocus.ShouldGoBack(true, false));
+            Assert.IsFalse(UiGamepadFocus.ShouldGoBack(true, true));
+            Assert.IsFalse(UiGamepadFocus.ShouldGoBack(false, true));
+            Assert.IsFalse(UiGamepadFocus.ShouldGoBack(false, false));
+        }
+
+        [Test]
+        public void ActiveOverlayHasFocusPriorityOverUnderlyingHud()
+        {
+            var root = new VisualElement();
+            var toolbar = new Button();
+            root.Add(toolbar);
+            var overlay = new VisualElement();
+            overlay.Add(new Button());
+            root.Add(overlay);
+            Assert.AreSame(overlay, UiGamepadFocus.ResolveScope(root, overlay));
+            Assert.AreSame(overlay.Children().First(), UiGamepadFocus.FirstEligible(
+                UiGamepadFocus.ResolveScope(root, overlay)));
+
+            overlay.style.display = DisplayStyle.None;
+            Assert.AreSame(root, UiGamepadFocus.ResolveScope(root, overlay));
+            overlay.style.display = DisplayStyle.Flex;
+            overlay.SetEnabled(false);
+            Assert.AreSame(root, UiGamepadFocus.ResolveScope(root, overlay));
+        }
+
+        [Test]
+        public void DetachedModalCannotClaimFocusFromGameplay()
+        {
+            var root = new VisualElement();
+            var unrelated = new VisualElement();
+            Assert.AreSame(root, UiGamepadFocus.ResolveScope(root, unrelated));
+            Assert.AreSame(root, UiGamepadFocus.ResolveScope(root, null));
+            Assert.IsNull(UiGamepadFocus.ResolveScope(null, unrelated));
         }
 
         [Test]

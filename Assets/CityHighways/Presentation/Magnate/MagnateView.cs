@@ -79,6 +79,14 @@ namespace CityHighways.Presentation
             Root.style.flexGrow = 1f;
             Root.style.backgroundColor = Theme.Background;
             Root.RegisterCallback<PointerDownEvent>(_ => _gamepadFocusActive = false);
+            // Capture UI Submit before it can activate a focused HUD control
+            // while the player is intentionally choosing a map target.
+            Root.RegisterCallback<NavigationSubmitEvent>(evt =>
+            {
+                if (_map == null || !_map.IsGamepadTargeting || evt.target == _map) return;
+                evt.PreventDefault();
+                evt.StopPropagation();
+            }, TrickleDown.TrickleDown);
 
             _mapArea = Ui.Box();
             _mapArea.style.position = Position.Absolute;
@@ -89,6 +97,12 @@ namespace CityHighways.Presentation
             Root.Add(_mapArea);
 
             _map = new MapView();
+            _map.CanGamepadTarget = () => GamepadMapTargetPolicy.AllowsInput(
+                HumanTurn,
+                _resultsShown,
+                _modal != null || _popupKind != null,
+                _awaitingHandoff,
+                _animating != null);
             Ui.Fill(_map);
             _map.Hovered += OnRoadHover;
             _map.LocationHovered += OnLocationHover;
@@ -298,7 +312,14 @@ namespace CityHighways.Presentation
                 _dirty = false;
                 Refresh();
             }
-            UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive);
+            if (_map.GamepadExitedTargetingThisFrame) _gamepadFocusActive = true;
+            VisualElement controllerScope = _modal != null ? _modalLayer :
+                _awaitingHandoff ? _handoff :
+                _resultsShown ? _results :
+                _popupKind != null ? _popup : Root;
+            UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
+                _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,
+                controllerScope);
             UpdateMapEmphasis();
             CoachTick();
         }
