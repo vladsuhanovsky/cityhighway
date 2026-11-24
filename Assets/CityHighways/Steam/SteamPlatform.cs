@@ -262,14 +262,36 @@ namespace CityHighways.Steam
                 _nextStatsRequest = Time.unscaledTime + 15f;
         }
 
-        /// <summary>Queue already-earned local achievement API IDs.</summary>
+        /// <summary>
+        /// Backward-compatible publisher API for legacy callers. The normal
+        /// profile bridge uses the account-bound overload below.
+        /// </summary>
         public void QueueUnlockedAchievements(IReadOnlyCollection<string> achievementIds)
         {
-            if (achievementIds == null || !Available) return;
-            foreach (string id in achievementIds)
-                if (!string.IsNullOrEmpty(id))
-                    _queuedAchievements.Add(id);
+            if (achievementIds == null || !Available ||
+                !EnsureAchievementAccount()) return;
+            QueueUnlockedAchievementsForAccount(
+                _achievementQueue.AccountId.ToString(), achievementIds);
+        }
+
+        /// <summary>
+        /// Publish only achievements from the profile for the exact currently
+        /// authenticated SteamID. No amount of local dispatch caching can
+        /// authorize a prior account after Steam changed mid-frame.
+        /// </summary>
+        public void QueueUnlockedAchievementsForAccount(string sourceSteamId,
+            IReadOnlyCollection<string> achievementIds)
+        {
+            if (achievementIds == null || !Available ||
+                !EnsureAchievementAccount()) return;
+            if (!string.Equals(sourceSteamId,
+                    _achievementQueue.AccountId.ToString(), StringComparison.Ordinal))
+                return;
+
+            _achievementQueue.QueueForAccount(
+                _achievementQueue.AccountId, achievementIds);
             if (_statsReady) FlushQueuedAchievements();
+            else RequestAchievementStats();
         }
 
         void FlushQueuedAchievements()
