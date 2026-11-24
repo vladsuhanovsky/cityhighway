@@ -123,3 +123,59 @@ completion explicitly.
    shortcuts should not rewind a command.
 5. Switch RU↔EN, inspect the button tooltip and player-owner warning, and
    verify the new sound effect is subtle relative to the master volume.
+
+## Redo of a locally undone action (Stage 2 extension)
+
+A second compact **Redo / Повторить** button now appears next to Undo
+in the game HUD. It restores the last undone deck draw, face-up card
+draw, road construction, free construction or road upgrade.
+
+### Safety and state consistency
+
+- The game keeps up to **eight** previously undone game states **in
+  memory only**. Each successful Undo pushes the former state; each
+  Redo consumes exactly one previously undone step in reverse order.
+- Redo performs a **new deterministic replay** of the exact command
+  history, not a reattachment to an old mutable Game object. The
+  recorded commands must be identical in **kind and all payload fields**
+  through the current prefix. The full current and prior game states
+  must both match their own replay results; the reconstructed result
+  must match the target's saved state before it can become live.
+- Any new game-rule action after Undo invalidates the whole redo
+  timeline. Starting, loading, resynchronizing or leaving a session
+  also clears the in-memory history.
+- Redo is disabled for online games, bots, tutorials, timed games,
+  hidden-hand handoff, incomplete replay history, game-over states
+  and blocked UI/controller map target interactions, just like Undo.
+- UI rebuilding, event unsubscription, journal reconstruction and
+  autosaving are shared with Undo. No game-end achievement credits,
+  statistics, or Steam progress can be replayed by this feature.
+- Redo history does not survive an application restart. A saved
+  game reflects the **currently visible** state; once reloaded the
+  previous Undo/Redo stack is intentionally absent.
+
+### Input and smoke-test checklist
+
+1. In a local all-human Classic game with no timer and visible hands,
+   draw one card, Undo and Redo: verify identical card, deck,
+   current player, action log and save file.
+2. Draw twice to end a turn. Undo the second card (the existing
+   previous-player confirmation is required), then Redo: the turn
+   should advance exactly as before.
+3. Undo twice and Redo twice; verify exact original resources, roads
+   and turn ownership. A ninth Undo should drop the oldest redo slot,
+   not grow the in-memory stack indefinitely.
+4. Undo once, perform a **different** valid action and verify the Redo
+   button is disabled (the new action branched the timeline).
+5. Keyboard: **Ctrl+Y** or **Ctrl+Shift+Z** on Windows/Linux/Steam Deck;
+   **Command+Shift+Z** on macOS. Preserve text-field editing and
+   shortcuts while a modal or map cursor is active.
+6. Check gamepad HUD focus, RU↔EN language switch, 1280×800 Steam Deck
+   top bar, audio feedback and an exit/resume cycle.
+7. Verify no Redo on a finished match, after a network resync or after
+   replacing a session with a new game.
+
+New Edit Mode tests validate the deterministic timeline, safe refusal
+of diverged/tampered histories, deep command payload comparison,
+cross-session denial, repeated undo/redo and keyboard gates.
+Manual Unity visual/gamepad testing remains required.
