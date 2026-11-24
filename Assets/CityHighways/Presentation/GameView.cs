@@ -181,6 +181,7 @@ namespace CityHighways.Presentation
         readonly CityHighwaysApp _app;
         readonly GameSetup _setup;
         public VisualElement Root { get; }
+        bool _gamepadFocusActive;
 
         Game _game;
         IBot[] _bots;
@@ -449,6 +450,7 @@ namespace CityHighways.Presentation
             Root = new VisualElement();
             Root.style.flexGrow = 1f;
             Root.style.backgroundColor = Theme.Background;
+            Root.RegisterCallback<PointerDownEvent>(_ => _gamepadFocusActive = false);
 
             // Макет: карта на весь экран; сверху — ход, событие, журнал и меню, снизу — вкладки, игроки и ресурсы.
             // Всё остальное — выезжающие панели (действия, контракты, журнал), боковое меню и окна.
@@ -1287,6 +1289,9 @@ namespace CityHighways.Presentation
                 Refresh();
             }
 
+            // A controller can navigate the existing HUD and dialog buttons
+            // without invoking or bypassing any game-rule command.
+            UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive);
             TickTurnTimer(deltaTime);
             TickBots(deltaTime);
         }
