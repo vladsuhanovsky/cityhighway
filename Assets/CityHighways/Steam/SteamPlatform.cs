@@ -14,12 +14,14 @@ namespace CityHighways.Steam
     /// Сборка компилируется только при установленном Steamworks.NET и сама регистрируется в NetPlatforms.
     /// Для разработки используется тестовый AppID 480 (файл steam_appid.txt в корне проекта).
     /// </summary>
-    public sealed class SteamPlatform : ISteamPlatform
+    public sealed class SteamPlatform : ISteamPlatform, ISteamAchievements
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Register()
         {
-            NetPlatforms.Steam = new SteamPlatform();
+            var platform = new SteamPlatform();
+            NetPlatforms.Steam = platform;
+            NetPlatforms.SteamAchievements = platform;
         }
 
         bool _tried;
@@ -27,6 +29,14 @@ namespace CityHighways.Steam
         string _problem = "";
         ulong _pendingJoin;
         Callback<GameLobbyJoinRequested_t> _joinRequested;
+        Callback<UserStatsReceived_t> _statsReceived;
+        Callback<UserStatsStored_t> _statsStored;
+        readonly HashSet<string> _queuedAchievements = new HashSet<string>(StringComparer.Ordinal);
+        readonly HashSet<string> _stagedAchievements = new HashSet<string>(StringComparer.Ordinal);
+        bool _statsReady;
+        bool _storePending;
+        float _nextStatsRequest;
+        float _nextStoreAttempt;
 
         public event Action<ulong> JoinRequested;
 
@@ -62,6 +72,9 @@ namespace CityHighways.Steam
                 _initialized = true;
                 SteamNetworkingUtils.InitRelayNetworkAccess();
                 _joinRequested = Callback<GameLobbyJoinRequested_t>.Create(OnJoinRequested);
+                _statsReceived = Callback<UserStatsReceived_t>.Create(OnStatsReceived);
+                _statsStored = Callback<UserStatsStored_t>.Create(OnStatsStored);
+                RequestAchievementStats();
                 _pendingJoin = ParseCommandLineLobby();
                 Application.quitting += Shutdown;
             }
@@ -200,13 +213,25 @@ namespace CityHighways.Steam
 
         public void Poll()
         {
-            if (_initialized) SteamAPI.RunCallbacks();
+            if (!_initialized) return;
+            SteamAPI.RunCallbacks();
+            if (!_statsReady && Time.unscaledTime >= _nextStatsRequest)
+                RequestAchievementStats();
+            if (_statsReady) FlushQueuedAchievements();
         }
 
         public void Shutdown()
         {
             if (!_initialized) return;
             _initialized = false;
+            _statsReady = false;
+            _storePending = false;
+            _statsReceived?.Dispose();
+            _statsStored?.Dispose();
+            _queuedAchievements.Clear();
+            _stagedAchievements.Clear();
+            if (NetPlatforms.SteamAchievements == this)
+                NetPlatforms.SteamAchievements = null;
             SteamAPI.Shutdown();
         }
     }
