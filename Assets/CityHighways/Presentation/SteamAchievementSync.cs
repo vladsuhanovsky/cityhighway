@@ -17,15 +17,11 @@ namespace CityHighways.Presentation
             Achievements.All.Select(a => a.Id), StringComparer.Ordinal);
 
         static float _nextRefresh;
-        static string _lastSteamId;
-        static string _lastSignature;
-        static ISteamAchievements _lastPublisher;
+        static readonly SteamAchievementDispatch Dispatch = new SteamAchievementDispatch();
 
         public static List<string> EligibleIds(PlayerProfile profile, string localSteamId)
         {
-            if (profile == null || string.IsNullOrEmpty(localSteamId) ||
-                !string.Equals(profile.steamId, localSteamId, StringComparison.Ordinal) ||
-                profile.achievements == null)
+            if (!ShouldPublish(profile, localSteamId))
                 return new List<string>();
 
             return profile.achievements
@@ -36,7 +32,9 @@ namespace CityHighways.Presentation
         }
 
         public static bool ShouldPublish(PlayerProfile profile, string steamId) =>
-            profile != null && !string.IsNullOrEmpty(steamId) &&
+            profile != null &&
+            !string.IsNullOrWhiteSpace(steamId) &&
+            !string.IsNullOrWhiteSpace(profile.steamId) &&
             string.Equals(profile.steamId, steamId, StringComparison.Ordinal) &&
             profile.achievements != null;
 
@@ -54,21 +52,16 @@ namespace CityHighways.Presentation
             {
                 var steam = NetPlatforms.Steam;
                 var publisher = NetPlatforms.SteamAchievements;
-                if (steam == null || publisher == null || !steam.Available) return;
-                var profile = Profiles.Active;
-                var steamId = steam.SteamId;
-                if (!ShouldPublish(profile, steamId)) return;
-
-                var ids = EligibleIds(profile, steamId);
-                string signature = string.Join("|", ids);
-                if (ReferenceEquals(_lastPublisher, publisher) &&
-                    _lastSteamId == steamId && _lastSignature == signature)
+                if (steam == null || publisher == null || !steam.Available)
+                {
+                    Dispatch.Reset(); // A fresh session must reconcile owned IDs.
                     return;
+                }
 
-                publisher.QueueUnlockedAchievements(ids);
-                _lastPublisher = publisher;
-                _lastSteamId = steamId;
-                _lastSignature = signature;
+                // A different Steam account or a local/offline profile must
+                // never inherit the previously cached achievement signature.
+                Dispatch.Reconcile(publisher, Profiles.Active, steam.SteamId,
+                    Time.unscaledTime);
             }
             catch (Exception e)
             {
@@ -83,9 +76,7 @@ namespace CityHighways.Presentation
         public static void Reset()
         {
             _nextRefresh = 0f;
-            _lastSteamId = null;
-            _lastSignature = null;
-            _lastPublisher = null;
+            Dispatch.Reset();
         }
     }
 }

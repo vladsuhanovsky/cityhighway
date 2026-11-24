@@ -87,5 +87,29 @@ namespace CityHighways.Tests
             Assert.IsFalse(SteamAchievementSync.ShouldPublish(profile, "0123"));
             Assert.IsTrue(SteamAchievementSync.ShouldPublish(profile, "123"));
         }
+
+        [Test]
+        public void BlankSteamIdentityIsNotAuthenticated()
+        {
+            var profile = new PlayerProfile { steamId = " " };
+            profile.achievements.Add("first_win");
+            Assert.IsFalse(SteamAchievementSync.ShouldPublish(profile, " "));
+            Assert.IsEmpty(SteamAchievementSync.EligibleIds(profile, " "));
+
+            profile.steamId = "account";
+            Assert.IsFalse(SteamAchievementSync.ShouldPublish(profile, "\t"));
+            Assert.IsEmpty(SteamAchievementSync.EligibleIds(profile, "\t"));
+        }
+
+        [Test]
+        public void AccountIdentityNeverAcceptsTrimmedNearMatches()
+        {
+            var profile = new PlayerProfile { steamId = "account" };
+            profile.achievements.Add("first_win");
+            Assert.IsFalse(SteamAchievementSync.ShouldPublish(profile, " account"));
+            Assert.IsFalse(SteamAchievementSync.ShouldPublish(profile, "account "));
+            CollectionAssert.AreEqual(new[] { "first_win" },
+                SteamAchievementSync.EligibleIds(profile, "account"));
+        }
     }
 }

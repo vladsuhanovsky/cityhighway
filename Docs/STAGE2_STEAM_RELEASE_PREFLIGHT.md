@@ -28,3 +28,54 @@ The stricter release check also requires a valid real non-480 AppID, an installe
 - Check non-Steam builds continue to function without Steamworks.NET.
 
 Do not automatically merge a release candidate based on static checks alone.
+
+## Achievement reconciliation / recovery (Stage 2)
+
+The `SteamAchievementSync` bridge now uses a separate,
+Steamworks-independent `SteamAchievementDispatch` policy:
+
+- Eligible achievements are **always** the canonical, case-sensitive IDs
+  already unlocked by the **active profile whose steamId exactly matches
+  the currently signed-in SteamId**. A blank, missing, or mismatched
+  account is not eligible.
+- IDs are deduplicated and sorted before queueing. No unrecognized or
+  arbitrary client-provided IDs can reach the optional publisher.
+- A new publisher (Steam initialization or reinitialization), active
+  profile object, Steam account or unlocked-ID set triggers immediate
+  full reconciliation at the next normal three-second sync tick.
+- Unchanged achievements are queued again after **120 seconds**.
+  Because the optional Steam platform keeps an idempotent set and checks
+  `GetAchievement` before `SetAchievement`, periodic dispatch can
+  recover from transient disconnects without re-awarding an already
+  unlocked achievement.
+- Failed `QueueUnlockedAchievements` calls are **not** recorded as
+  successful dispatches. The outer bridge catches Steam errors and
+  retries after a 30-second cooldown without interrupting gameplay.
+- If Steam is unavailable or a profile is no longer authorized, previous
+  deduplication state is invalidated. Editor play-mode teardown also
+  clears the account and publisher cache.
+
+### Manual Steam-only QA required
+
+With a **real Steam AppID**, Steamworks.NET installed and all IDs
+published in Steamworks Partner, confirm the following:
+
+1. Earn a new in-game achievement: after the game writes the local
+   profile, verify Steam overlay unlock and Steamworks stats storage.
+2. Kill Steam/reconnect or temporarily break stats storage. Local
+   achievements must remain in the profile; after reconnection and
+   periodic synchronization, queued IDs should eventually persist.
+3. Switch active profiles while Steam remains signed into the same
+   account. Only the exact matching profile's unlocked IDs may publish.
+4. Launch as a **different Steam account**. No unlocks from the previous
+   account's profile may be published to the current account.
+5. Launch with a missing Steam client or ordinary non-Steam Unity build:
+   no null exceptions and no gameplay interruption.
+6. Simulate an unpublished API name: verify the existing SteamPlatform
+   warning and delayed retry behavior, not a tight StoreStats loop.
+
+**Scope:** the new Unity Edit Mode tests validate dispatch policy,
+account filtering and retry scheduling with a fake publisher. They do
+not invoke SteamAPI, verify remote persistence, install Steamworks.NET
+or make test AppID 480 production-ready. The release preflight gate
+above remains mandatory.
