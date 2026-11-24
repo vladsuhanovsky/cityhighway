@@ -211,6 +211,28 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void MapTargetingHelpMatchesControllerLabelsInBothLanguages()
+        {
+            foreach (var layout in new[]
+            {
+                GamepadControlGuide.ControllerLayout.PlayStation,
+                GamepadControlGuide.ControllerLayout.Nintendo,
+                GamepadControlGuide.ControllerLayout.Xbox
+            })
+            {
+                foreach (var english in new[] { false, true })
+                {
+                    var hint = GamepadControlGuide.MapTargetHint(english, layout);
+                    StringAssert.Contains(GamepadControlGuide.SubmitLabel(layout, english) +
+                        (english ? ": select" : ": выбрать"), hint);
+                    StringAssert.Contains(GamepadControlGuide.BackLabel(layout, english) +
+                        "/R3:", hint);
+                    StringAssert.Contains("R3", hint);
+                }
+            }
+        }
+
+        [Test]
         public void TextEntryShortcutDoesNotDependOnControllerIdentity()
         {
             foreach (var layout in new[]
