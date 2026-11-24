@@ -6211,6 +6211,34 @@
     {
       "key": "game.error.dynamic.018",
       "value": "Контракт {0} указан дважды."
+    },
+    {
+      "key": "menu.settings.music",
+      "value": "Фоновая музыка"
+    },
+    {
+      "key": "menu.settings.music_hint",
+      "value": "Оригинальная спокойная тема города; включается по желанию."
+    },
+    {
+      "key": "menu.settings.music_volume",
+      "value": "Громкость музыки"
+    },
+    {
+      "key": "menu.settings.music_volume_hint",
+      "value": "Не влияет на звуки действий; общий уровень громкости действует на всё."
+    },
+    {
+      "key": "menu.settings.music_on",
+      "value": "Фоновая музыка включена"
+    },
+    {
+      "key": "menu.settings.music_off",
+      "value": "Фоновая музыка выключена"
+    },
+    {
+      "key": "menu.settings.music_volume_saved",
+      "value": "Громкость музыки сохранена"
     }
   ]
 }

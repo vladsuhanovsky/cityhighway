@@ -26,6 +26,7 @@ namespace CityHighways.Presentation
 
         public Tweener Tweener { get; } = new Tweener();
         public SoundBank Sound { get; private set; }
+        public MusicBank Music { get; private set; }
         public DisplaySettings Display { get; private set; }
 
         VisualElement _root;
@@ -73,6 +74,8 @@ namespace CityHighways.Presentation
             var audio = gameObject.AddComponent<AudioSource>();
             audio.playOnAwake = false;
             Sound = new SoundBank(audio);
+            // Independent source: looping music never interrupts one-shot SFX.
+            Music = new MusicBank(gameObject.AddComponent<AudioSource>());
             Ui.ButtonClicked = () => { if (Display.uiSounds) Sound.Play(Sfx.Click, 0.6f); };
             Ui.Hovered = () => { if (Display.uiSounds) Sound.Play(Sfx.Tick, 0.3f); };
             Ui.Changed = () => { if (Display.uiSounds) Sound.Play(Sfx.Tick, 0.55f); };
@@ -100,6 +103,9 @@ namespace CityHighways.Presentation
 
         void Update()
         {
+            if (Music != null && Display != null)
+                Music.Sync(MusicSoundscape.ShouldPlay(Display.musicEnabled,
+                    Sound != null && Sound.Enabled, Display.musicVolume), Display.musicVolume);
             NetPlatforms.Steam?.Poll();
             CloudProfiles.Tick();
             // Publish only profile achievements belonging to this Steam ID,
@@ -116,6 +122,7 @@ namespace CityHighways.Presentation
 
         void OnDestroy()
         {
+            Music?.Dispose();
             _game?.Release3D();
             _magnate?.Release3D();
             _magnate = null;
