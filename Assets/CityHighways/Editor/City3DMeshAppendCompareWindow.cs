@@ -89,6 +89,12 @@ public sealed class City3DMeshAppendCompareWindow : EditorWindow
                 "–" + item.CurrentMaxMs.ToString("F3", CultureInfo.InvariantCulture) +
                 " ms. Negative change means shorter measured time.",
                 MessageType.None);
+
+            var advisory = City3DMeshAppendBenchmarkAdvisory.Evaluate(item);
+            EditorGUILayout.HelpBox(
+                "Sampling advisory for " + item.Name + ": " +
+                advisory.Explanation,
+                advisory.NeedsReview ? MessageType.Warning : MessageType.Info);
         }
         EditorGUILayout.HelpBox(
             "Differences reflect synthetic Editor wall-clock samples. " +
