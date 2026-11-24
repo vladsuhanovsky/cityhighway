@@ -1,5 +1,18 @@
 name: Steam achievement catalog preflight
 on:
+  push:
+    branches: [main]
+    paths:
+      - "Assets/CityHighways/Presentation/Achievements.cs"
+      - "Assets/CityHighways/Steam/SteamPlatform.cs"
+      - "Assets/CityHighways/Steam/CityHighways.Steam.asmdef"
+      - "Packages/manifest.json"
+      - "Packages/packages-lock.json"
+      - "steam_appid.txt"
+      - "Docs/STEAM_ACHIEVEMENT_API_IDS.md"
+      - "scripts/steam_release_preflight.py"
+      - "scripts/test_steam_release_preflight.py"
+      - ".github/workflows/steam-preflight.yml"
   pull_request:
     paths:
       - "Assets/CityHighways/Presentation/Achievements.cs"
