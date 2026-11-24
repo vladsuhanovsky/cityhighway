@@ -4229,7 +4229,21 @@ namespace CityHighways.Presentation
         {
             float width = Root.layout.width;
             if (float.IsNaN(width) || width < 100f) return;
-            Ui.Show(_logo, width >= 1280f);
+            var tier = GameHudLayout.ForWidth(width);
+            bool showLogo = GameHudLayout.ShowClassicLogo(tier);
+            Ui.Show(_logo, showLogo);
+            Ui.Show(_logoDivider, showLogo);
+            // On Deck the chip remains focusable and its full event text
+            // remains accessible through tooltip/drawer; only its long
+            // caption is hidden to preserve actionable HUD buttons.
+            Ui.Show(_eventPillText, GameHudLayout.ShowClassicEventText(tier));
+            Ui.Padding(_topBar, 0f, GameHudLayout.HorizontalPadding(tier));
+            _turnLabel.style.maxWidth = GameHudLayout.ClassicTurnMaxWidth(tier);
+            float gap = GameHudLayout.ActionGap(tier);
+            _undoButton.style.marginRight = gap;
+            _redoButton.style.marginRight = gap;
+            _logTab.style.marginRight = gap;
+            _menuButton.style.marginRight = gap;
             Ui.Show(_resourcesCaption, width >= 1500f);
             Ui.Show(_handTitle, width >= 1700f);
             Ui.Show(_viewHint, width >= 1800f);
