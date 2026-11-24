@@ -16,6 +16,7 @@ namespace CityHighways.Presentation
     {
         public const int MaxEntries = 24;
         public const int MaxPayloadBytes = 740 * 1024;
+        public const long MaxFileBytes = (long)MaxEntries * MaxPayloadBytes + 256 * 1024;
 
         [Serializable]
         public sealed class Entry
@@ -141,6 +142,11 @@ namespace CityHighways.Presentation
                 try
                 {
                     if (!File.Exists(candidate)) continue;
+                    if (new FileInfo(candidate).Length > MaxFileBytes)
+                    {
+                        Debug.LogWarning("Social report queue is larger than its disk limit.");
+                        continue;
+                    }
                     var state = JsonUtility.FromJson<State>(File.ReadAllText(candidate));
                     if (state?.entries == null) continue;
                     _entries.Clear();
