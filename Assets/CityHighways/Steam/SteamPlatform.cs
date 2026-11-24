@@ -33,6 +33,7 @@ namespace CityHighways.Steam
         Callback<UserStatsStored_t> _statsStored;
         readonly HashSet<string> _queuedAchievements = new HashSet<string>(StringComparer.Ordinal);
         readonly HashSet<string> _stagedAchievements = new HashSet<string>(StringComparer.Ordinal);
+        readonly HashSet<string> _reportedUnknownIds = new HashSet<string>(StringComparer.Ordinal);
         bool _statsReady;
         bool _storePending;
         float _nextStatsRequest;
@@ -252,7 +253,12 @@ namespace CityHighways.Steam
             foreach (string id in new List<string>(_queuedAchievements))
             {
                 if (!SteamUserStats.GetAchievement(id, out bool achieved))
+                {
+                    if (_reportedUnknownIds.Add(id))
+                        Debug.LogWarning("City Highways: Steam achievement API Name '" + id +
+                            "' is unavailable. Check published Steamworks Partner achievements.");
                     continue; // Unknown or unpublished Steamworks API name.
+                }
                 if (achieved)
                 {
                     // If a previous StoreStats failed, the local Steam cache
@@ -314,6 +320,7 @@ namespace CityHighways.Steam
             _statsStored?.Dispose();
             _queuedAchievements.Clear();
             _stagedAchievements.Clear();
+            _reportedUnknownIds.Clear();
             if (NetPlatforms.SteamAchievements == this)
                 NetPlatforms.SteamAchievements = null;
             SteamAPI.Shutdown();
