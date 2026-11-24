@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace CityHighways.Presentation
@@ -16,6 +17,32 @@ namespace CityHighways.Presentation
         /// </summary>
         public static bool HasNavigationIntent(Vector2 dpad, Vector2 stick, bool submit) =>
             submit || dpad.sqrMagnitude > 0.2f || stick.sqrMagnitude > 0.49f;
+
+        /// <summary>
+        /// Keep a valid UI focus in both gameplay HUDs, without claiming it
+        /// from mouse-only players or intercepting game-rule actions.
+        /// Button B uses only a registered visible Back action; mandatory
+        /// decisions are never skipped by a synthetic confirm/cancel.
+        /// </summary>
+        public static void MaintainGameplayFocus(VisualElement root, ref bool active)
+        {
+            if (root == null || root.panel == null) return;
+            var pad = Gamepad.current;
+            if (pad == null)
+            {
+                active = false;
+                return;
+            }
+            if (HasNavigationIntent(pad.dpad.ReadValue(),
+                    pad.leftStick.ReadValue(), pad.buttonSouth.wasPressedThisFrame))
+                active = true;
+            if (pad.buttonEast.wasPressedThisFrame)
+            {
+                active = true;
+                Ui.GoBack(root);
+            }
+            if (active) EnsureFocus(root);
+        }
 
         /// <summary>Find the first active focusable control in visual-tree order.</summary>
         public static VisualElement FirstEligible(VisualElement root)
