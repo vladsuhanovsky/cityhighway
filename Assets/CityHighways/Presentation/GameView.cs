@@ -1287,8 +1287,14 @@ namespace CityHighways.Presentation
 
             if (_dirty)
             {
+                string selectedCard = _gamepadFocusActive && Root.panel != null
+                    ? (Root.panel.focusController.focusedElement as VisualElement)?.name
+                    : null;
                 _dirty = false;
                 Refresh();
+                if (selectedCard != null &&
+                    selectedCard.StartsWith("gamepad-contract-", StringComparison.Ordinal))
+                    UiGamepadFocus.RestoreNamedFocus(Root, selectedCard);
             }
 
             // A controller can navigate the existing HUD and dialog buttons
