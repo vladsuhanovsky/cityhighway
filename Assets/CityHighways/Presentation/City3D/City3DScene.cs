@@ -173,7 +173,7 @@ namespace CityHighways.Presentation
                 _relief = new ReliefField(_map, _riverLines, RiverWidth / 2f + BankWidth, _hubPlaces);
                 Relief.Use(_relief);
             }
-            generation.Mark("Rivers and relief", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.ReliefName, System.Diagnostics.Stopwatch.GetTimestamp());
             // Scene-authored visual overrides are optional and default to the legacy layout.
             var tuning = CityGenerationTuning.FindForMap(_map.Name);
             float buildingMultiplier = tuning != null ? tuning.BuildingDensity : 1f;
@@ -186,7 +186,7 @@ namespace CityHighways.Presentation
                     _hubPlaces.Values.Select(h => h.Origin),
                     buildingMultiplier, treeMultiplier, clearances);
             }
-            generation.Mark("City planning", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.PlanningName, System.Diagnostics.Stopwatch.GetTimestamp());
             // Replace selected visual instances before district/tree meshes and counts are built.
             CityProceduralPrefabBudget.Session prefabBudget;
             using (City3DGenerationMarkers.Prefabs.Auto())
@@ -206,7 +206,7 @@ namespace CityHighways.Presentation
                 BuildingCount = plan.Buildings.Count;
                 TreeCount = plan.Trees.Count;
             }
-            generation.Mark("Prefab replacements", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.PrefabsName, System.Diagnostics.Stopwatch.GetTimestamp());
 
             _quality = quality;
             using (City3DGenerationMarkers.Materials.Auto())
@@ -214,22 +214,22 @@ namespace CityHighways.Presentation
                 SetupRendering(quality);
                 CreateMaterials(plan);
             }
-            generation.Mark("Rendering and materials", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.MaterialsName, System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Ground.Auto())
                 BuildGround();
-            generation.Mark("Ground", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.GroundName, System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Decals.Auto())
                 BuildDecals(plan);
-            generation.Mark("Decals", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.DecalsName, System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Rivers.Auto())
                 BuildRivers();
-            generation.Mark("River meshes", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.RiversName, System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Districts.Auto())
                 BuildDistricts(plan);
-            generation.Mark("District buildings", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.DistrictsName, System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Trees.Auto())
                 BuildTrees(plan);
-            generation.Mark("Trees", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.TreesName, System.Diagnostics.Stopwatch.GetTimestamp());
             // Optional capped visual replacements; unselected props still use
             // the original district-batched geometry and visibility rules.
             using (City3DGenerationMarkers.Props.Auto())
@@ -239,30 +239,30 @@ namespace CityHighways.Presentation
                     _root.transform, _districts, WaterLevel, prefabBudget);
                 BuildProps(plan);
             }
-            generation.Mark("Props and replacement models", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.PropsName, System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Roads.Auto())
                 SetupRoads();
-            generation.Mark("Road setup", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.RoadsName, System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Junctions.Auto())
                 BuildJunctions();
-            generation.Mark("Junctions", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.JunctionsName, System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Stations.Auto())
                 BuildStations();
-            generation.Mark("Stations", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.StationsName, System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Bridges.Auto())
                 BuildBridges();
-            generation.Mark("Bridges", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.BridgesName, System.Diagnostics.Stopwatch.GetTimestamp());
             // Optional scene-authored visuals. Core map geometry and rules remain procedural.
             using (City3DGenerationMarkers.Decorations.Auto())
                 SceneDecorationSpawner.Spawn(_map.Name, _root.transform);
-            generation.Mark("Authored scene decorations", System.Diagnostics.Stopwatch.GetTimestamp());
+            generation.Mark(City3DGenerationMarkers.DecorationsName, System.Diagnostics.Stopwatch.GetTimestamp());
             using (City3DGenerationMarkers.Reflections.Auto())
             {
                 SetupReflections(quality);
                 // Frame sampling starts after construction, excluding one-time map build.
                 FrameMonitor = _root.AddComponent<City3DFrameMonitor>();
             }
-            generation.Mark("Reflections and sampling setup",
+            generation.Mark(City3DGenerationMarkers.ReflectionsName,
                 System.Diagnostics.Stopwatch.GetTimestamp());
             GenerationTiming = generation;
         }
