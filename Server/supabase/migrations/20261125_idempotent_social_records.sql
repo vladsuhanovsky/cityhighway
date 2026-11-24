@@ -112,6 +112,7 @@ begin
   if not exists (
     select 1 from public.club_members
       where club_id = p_club and player_id = p_player
+      for key share
   ) then
     raise exception 'club membership changed';
   end if;
