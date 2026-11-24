@@ -32,7 +32,13 @@ namespace CityHighways.Tests
         {
             var map = Sample();
             var footprints = new[] { new Vector4(.50f, .50f, .04f, .05f) };
-            var terrain = TerrainTexture.ForCity3D(map, footprints);
+            var timings = new City3DHotspotTiming("Москва", 1);
+            var terrain = TerrainTexture.ForCity3D(map, footprints, timings);
+            Assert.AreEqual(3, timings.Samples.Count);
+            Assert.IsTrue(timings.Samples.Any(s => s.Name == "Terrain base pixel fill"));
+            Assert.IsTrue(timings.Samples.Any(s => s.Name == "Terrain building footprints"));
+            Assert.IsTrue(timings.Samples.Any(s => s.Name == "Terrain texture upload"));
+            Assert.IsTrue(timings.Samples.All(s => s.Milliseconds >= 0d));
             Assert.IsNotNull(terrain);
             Assert.AreEqual("CityHighways_Terrain3D", terrain.name);
             Assert.AreEqual(1736, terrain.width);
