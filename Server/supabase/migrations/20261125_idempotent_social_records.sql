@@ -72,7 +72,9 @@ grant execute on function public.record_upsert_best(
 create table if not exists public.club_report_receipts (
   player_id text not null references public.players (id) on delete cascade,
   submission_hash text not null check (submission_hash ~ '^[0-9a-f]{64}$'),
-  club_id uuid not null references public.clubs (id) on delete cascade,
+  -- Historical receipt must outlive a club's deletion: otherwise
+  -- the same replay could be reused in another club after disbanding.
+  club_id uuid not null,
   week text not null,
   created_at timestamptz not null default now(),
   primary key (player_id, submission_hash)
