@@ -6239,6 +6239,18 @@
     {
       "key": "menu.settings.music_volume_saved",
       "value": "Music volume saved"
+    },
+    {
+      "key": "game.undo.action",
+      "value": "Undo action"
+    },
+    {
+      "key": "game.undo.done",
+      "value": "Last action undone."
+    },
+    {
+      "key": "game.undo.unavailable",
+      "value": "Undo is unavailable right now."
     }
   ]
 }
