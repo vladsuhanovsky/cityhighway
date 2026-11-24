@@ -309,5 +309,45 @@ namespace CityHighways.Tests
             Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
                 root, modal, "gamepad-confirm"));
         }
+
+        [Test]
+        public void StableControllerNamesIncludeBothGameplayHudAndLayerRows()
+        {
+            foreach (var name in new[]
+            {
+                "gamepad-contract-choice",
+                "gamepad-card-resource-2",
+                "gamepad-layer-classic-4",
+                "gamepad-layer-magnate-16",
+                "gamepad-magnate-hub-1",
+                "gamepad-hud-undo",
+                "gamepad-hud-redo"
+            })
+                Assert.IsTrue(UiGamepadFocus.IsStableControllerName(name), name);
+
+            foreach (var name in new[] { "", "Gamepad-hud-undo", "label", "gamepad-controller-help" })
+                Assert.IsFalse(UiGamepadFocus.IsStableControllerName(name), name);
+            Assert.IsFalse(UiGamepadFocus.IsStableControllerName(null));
+        }
+
+        [Test]
+        public void RebuiltStableActionCannotRestoreBehindModal()
+        {
+            var root = new VisualElement();
+            var hud = new Button { name = "gamepad-hud-undo" };
+            var modal = new VisualElement();
+            var confirm = new Button { name = "gamepad-dialog-confirm" };
+            root.Add(hud);
+            modal.Add(confirm);
+            root.Add(modal);
+
+            Assert.IsNull(UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-hud-undo"));
+            Assert.AreSame(confirm, UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-dialog-confirm"));
+            modal.style.display = DisplayStyle.None;
+            Assert.AreSame(hud, UiGamepadFocus.FindEligibleNamedInScope(
+                root, modal, "gamepad-hud-undo"));
+        }
     }
 }
