@@ -37,7 +37,8 @@ namespace CityHighways.Tests
                     return false;
                 Sources.Add(steamId);
                 var snapshot = new string[ids.Count];
-                ids.CopyTo(snapshot, 0);
+                int index = 0;
+                foreach (string id in ids) snapshot[index++] = id;
                 Batches.Add(snapshot);
                 return true;
             }
