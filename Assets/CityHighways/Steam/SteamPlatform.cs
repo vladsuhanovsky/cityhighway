@@ -296,17 +296,18 @@ namespace CityHighways.Steam
 
         void FlushQueuedAchievements()
         {
-            if (!_statsReady || _storePending ||
-                Time.unscaledTime < _nextStoreAttempt || _queuedAchievements.Count == 0)
+            if (!EnsureAchievementAccount() || !_statsReady || _storePending ||
+                Time.unscaledTime < _nextStoreAttempt ||
+                _achievementQueue.PendingCount == 0)
                 return;
 
             // Take a snapshot so already-unlocked remote IDs can leave the
             // queue safely without mutating an enumerated HashSet.
-            foreach (string id in new List<string>(_queuedAchievements))
+            foreach (string id in _achievementQueue.PendingSnapshot())
             {
                 if (!SteamUserStats.GetAchievement(id, out bool achieved))
                 {
-                    if (_reportedUnknownIds.Add(id))
+                    if (_achievementQueue.FirstUnknownId(id))
                         Debug.LogWarning("City Highways: Steam achievement API Name '" + id +
                             "' is unavailable. Check published Steamworks Partner achievements.");
                     continue; // Unknown or unpublished Steamworks API name.
@@ -315,16 +316,15 @@ namespace CityHighways.Steam
                 {
                     // If a previous StoreStats failed, the local Steam cache
                     // can still say achieved; retry persistence instead.
-                    if (!_stagedAchievements.Contains(id))
-                        _queuedAchievements.Remove(id);
+                    _achievementQueue.ForgetPersisted(id);
                 }
                 else if (SteamUserStats.SetAchievement(id))
-                    _stagedAchievements.Add(id);
+                    _achievementQueue.Stage(id);
             }
 
             // Invalid/unpublished Steam API IDs must not create an endless
             // StoreStats loop; retry them on a later stats synchronization.
-            if (_stagedAchievements.Count == 0)
+            if (_achievementQueue.StagedCount == 0)
             {
                 _nextStoreAttempt = Time.unscaledTime + 60f;
                 return;
