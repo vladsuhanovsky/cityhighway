@@ -373,9 +373,9 @@ namespace CityHighways.Presentation
             line.style.textOverflow = TextOverflow.Ellipsis;
             line.style.whiteSpace = WhiteSpace.NoWrap;
             chip.Add(line);
-            chip.RegisterCallback<ClickEvent>(e =>
+            chip.name = "gamepad-magnate-truck-" + truck.Id;
+            void ActivateTruck()
             {
-                e.StopPropagation();
                 if (selected)
                 {
                     _selectedTruck = -1;
@@ -389,7 +389,13 @@ namespace CityHighways.Presentation
                 _preview = null;
                 _app.Sound.Play(Sfx.Click, 0.4f);
                 _dirty = true;
+            }
+            chip.RegisterCallback<ClickEvent>(e =>
+            {
+                e.StopPropagation();
+                ActivateTruck();
             });
+            GamepadSelectable.Attach(chip, ActivateTruck);
             return chip;
         }
 
