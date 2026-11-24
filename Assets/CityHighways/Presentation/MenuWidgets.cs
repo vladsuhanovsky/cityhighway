@@ -627,6 +627,7 @@ namespace CityHighways.Presentation
         public ProfileCard(Action onClick)
         {
             pickingMode = PickingMode.Position;
+            focusable = true;
             style.width = 150f;
             style.height = 200f;
             style.alignItems = Align.Center;
@@ -711,10 +712,26 @@ namespace CityHighways.Presentation
                 style.translate = new Translate(new Length(0f), new Length(0f));
                 style.backgroundColor = Theme.PanelGlass;
             });
-            RegisterCallback<ClickEvent>(_ =>
+            void OpenProfile()
             {
                 Ui.ButtonClicked?.Invoke();
                 onClick?.Invoke();
+            }
+            RegisterCallback<ClickEvent>(_ => OpenProfile());
+            RegisterCallback<NavigationSubmitEvent>(evt =>
+            {
+                OpenProfile();
+                evt.StopPropagation();
+            });
+            RegisterCallback<FocusInEvent>(_ =>
+            {
+                _hoverTarget = 1f;
+                Ui.Border(this, 2f, Theme.Accent);
+            });
+            RegisterCallback<FocusOutEvent>(_ =>
+            {
+                _hoverTarget = 0f;
+                Ui.Border(this, 1f, Theme.Line);
             });
         }
 
