@@ -61,6 +61,40 @@ public sealed class City3DGenerationTimingWindow : EditorWindow
             " ms). Validate with Unity Profiler across repeat scene loads.",
             MessageType.Info);
 
+        var hotspots = scene.HotspotTiming;
+        if (hotspots != null && hotspots.Samples.Count > 0)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Hotspot details (wall-clock)", EditorStyles.boldLabel);
+            foreach (var sample in hotspots.Samples.OrderByDescending(x => x.Milliseconds))
+                EditorGUILayout.LabelField(sample.Name,
+                    sample.Milliseconds.ToString("F3", CultureInfo.InvariantCulture) + " ms");
+            EditorGUILayout.HelpBox(
+                "Some hotspot measurements are nested inside other hotspots. " +
+                "Do not add them together or interpret them as FPS or GPU time.",
+                MessageType.Info);
+            if (GUILayout.Button("Save detailed hotspot timings CSV"))
+            {
+                string path = EditorUtility.SaveFilePanel(
+                    "Save 3D hotspot timing CSV",
+                    "", "city3d-generation-hotspots.csv", "csv");
+                if (!string.IsNullOrEmpty(path))
+                {
+                    try
+                    {
+                        File.WriteAllText(path, hotspots.ExportCsv(Application.unityVersion),
+                            new UTF8Encoding(false));
+                        Debug.Log("City3D detailed hotspot timings saved: " + path);
+                    }
+                    catch (Exception ex)
+                    {
+                        EditorUtility.DisplayDialog("Cannot save hotspot timings",
+                            ex.Message, "OK");
+                    }
+                }
+            }
+        }
+
         if (GUILayout.Button("Save stage timings CSV"))
         {
             string path = EditorUtility.SaveFilePanel("Save 3D generation timing CSV",
