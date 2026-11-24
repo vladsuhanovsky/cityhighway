@@ -70,6 +70,22 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ResizingViewportConstrictsActiveCursorWithoutReactivatingIt()
+        {
+            var cursor = new GamepadMapCursorState();
+            cursor.Activate(Area);
+            for (int i = 0; i < 80; i++)
+                cursor.Move(Vector2.right, .05f, Area);
+            cursor.Constrain(new Rect(0f, 0f, 220f, 120f));
+            Assert.AreEqual(206f, cursor.Position.x, 1e-4f);
+            Assert.AreEqual(106f, cursor.Position.y, 1e-4f);
+            cursor.Deactivate();
+            var before = cursor.Position;
+            cursor.Constrain(new Rect(0f, 0f, 10f, 10f));
+            Assert.AreEqual(before, cursor.Position);
+        }
+
+        [Test]
         public void MovementIsIndependentOfUnityPanelAndUsesLocalOffsetBounds()
         {
             var bounds = new Rect(90f, 40f, 230f, 100f);
