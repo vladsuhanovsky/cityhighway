@@ -34,3 +34,7 @@ jobs:
         run: |
           grep -q 'await validateReplayReport(body)' Server/supabase/functions/social/index.ts
           grep -q 'import { validateReplayReport }' Server/supabase/functions/social/index.ts
+          grep -q 'await replayFingerprint(mode, mapPath, validated.replay)' Server/supabase/functions/social/index.ts
+          grep -q 'await upsertPersonalBest(db, me, row)' Server/supabase/functions/social/index.ts
+          grep -q 'await creditClubGameOnce(db,' Server/supabase/functions/social/index.ts
+          grep -q 'club.amount' Server/README.md
