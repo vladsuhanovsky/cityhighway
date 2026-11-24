@@ -12,6 +12,16 @@ namespace CityHighways.Presentation
         VisualElement _previousScope;
         VisualElement _lastHudControl;
 
+        /// <summary>
+        /// A newly started or loaded session must not restore a button
+        /// remembered from the previous game's visual tree.
+        /// </summary>
+        public void Reset()
+        {
+            _previousScope = null;
+            _lastHudControl = null;
+        }
+
         public static VisualElement RestorableControl(
             VisualElement root, VisualElement previouslyFocused)
         {
