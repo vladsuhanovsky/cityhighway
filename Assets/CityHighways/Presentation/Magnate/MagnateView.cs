@@ -192,10 +192,18 @@ namespace CityHighways.Presentation
             _magnateModeTitle.style.marginRight = 14f;
             _magnateTopBar.Add(_magnateModeTitle);
             _roundLabel = Ui.Text("", 14f, Theme.TextDim);
+            _roundLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            _roundLabel.style.overflow = Overflow.Hidden;
+            _roundLabel.style.textOverflow = TextOverflow.Ellipsis;
+            _roundLabel.style.flexShrink = 1f;
             _roundLabel.style.marginRight = 12f;
             _magnateTopBar.Add(_roundLabel);
             // Событие раунда — плашка в верхней строке (подробности во всплывающей подсказке).
             _eventChip = Ui.Text("", 12f, Theme.Gold, true);
+            _eventChip.style.whiteSpace = WhiteSpace.NoWrap;
+            _eventChip.style.overflow = Overflow.Hidden;
+            _eventChip.style.textOverflow = TextOverflow.Ellipsis;
+            _eventChip.style.flexShrink = 1f;
             _eventChip.style.backgroundColor = new Color(0.30f, 0.20f, 0.12f);
             Ui.Padding(_eventChip, 3f, 8f);
             Ui.Radius(_eventChip, 6f);
