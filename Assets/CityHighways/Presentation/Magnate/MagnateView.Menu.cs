@@ -108,7 +108,8 @@ namespace CityHighways.Presentation
             _modalLayer.BringToFront();
             Ui.Slide(_modalLayer, true, 0f, 0f);
             Ui.Slide(card, true, 0f, 4f);
-            _modalLayer.Focus();
+            if (_gamepadFocusActive) UiGamepadFocus.FocusFirst(card);
+            else _modalLayer.Focus();
             _app.Sound.Play(Sfx.Open, 0.5f);
         }
 

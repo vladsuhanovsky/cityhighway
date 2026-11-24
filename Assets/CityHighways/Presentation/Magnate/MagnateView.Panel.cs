@@ -106,7 +106,9 @@ namespace CityHighways.Presentation
             if (onClick != null)
             {
                 card.pickingMode = PickingMode.Position;
+                card.name = "gamepad-magnate-section-" + index;
                 card.RegisterCallback<ClickEvent>(_ => onClick());
+                GamepadSelectable.Attach(card, onClick);
                 card.RegisterCallback<PointerEnterEvent>(_ => card.style.backgroundColor = Theme.PanelHover);
                 card.RegisterCallback<PointerLeaveEvent>(_ => card.style.backgroundColor = Theme.PanelLight);
             }
@@ -371,9 +373,9 @@ namespace CityHighways.Presentation
             line.style.textOverflow = TextOverflow.Ellipsis;
             line.style.whiteSpace = WhiteSpace.NoWrap;
             chip.Add(line);
-            chip.RegisterCallback<ClickEvent>(e =>
+            chip.name = "gamepad-magnate-truck-" + truck.Id;
+            void ActivateTruck()
             {
-                e.StopPropagation();
                 if (selected)
                 {
                     _selectedTruck = -1;
@@ -387,7 +389,13 @@ namespace CityHighways.Presentation
                 _preview = null;
                 _app.Sound.Play(Sfx.Click, 0.4f);
                 _dirty = true;
+            }
+            chip.RegisterCallback<ClickEvent>(e =>
+            {
+                e.StopPropagation();
+                ActivateTruck();
             });
+            GamepadSelectable.Attach(chip, ActivateTruck);
             return chip;
         }
 
@@ -546,11 +554,14 @@ namespace CityHighways.Presentation
                 chip.style.marginBottom = 4f;
                 chip.tooltip = QuickCargoTitle(kind) + (hidden ? LocalizationService.Get("magnate.panel.023") : LocalizationService.Get("magnate.panel.024"));
                 chip.pickingMode = PickingMode.Position;
-                chip.RegisterCallback<ClickEvent>(_ =>
+                chip.name = "gamepad-magnate-cargo-filter-" + kind;
+                void ToggleCargoFilter()
                 {
                     if (!_hiddenKinds.Remove(kind)) _hiddenKinds.Add(kind);
                     _dirty = true;
-                });
+                }
+                chip.RegisterCallback<ClickEvent>(_ => ToggleCargoFilter());
+                GamepadSelectable.Attach(chip, ToggleCargoFilter);
                 filters.Add(chip);
             }
             _popupBody.Add(Pad(filters));
@@ -599,12 +610,15 @@ namespace CityHighways.Presentation
             text.style.flexShrink = 1f;
             text.style.flexGrow = 1f;
             row.Add(text);
-            row.RegisterCallback<ClickEvent>(_ =>
+            row.name = "gamepad-magnate-cargo-" + cargo.Id;
+            void OpenDetails()
             {
                 _popupKind = "cargoDetail";
                 _popupCargo = cargo.Id;
                 _dirty = true;
-            });
+            }
+            row.RegisterCallback<ClickEvent>(_ => OpenDetails());
+            GamepadSelectable.Attach(row, OpenDetails);
             if (withPick)
             {
                 var pick = Ui.Button(LocalizationService.Get("magnate.panel.030"), () => AssignCargo(cargo), ButtonKind.Secondary, 12f);

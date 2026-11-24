@@ -249,6 +249,9 @@ namespace CityHighways.Presentation
         /// </summary>
         public static void StyleScroller(ScrollView scroll, float wheelStep = 48f)
         {
+            // Every styled ScrollView can reveal the keyboard/gamepad focused
+            // control; callers don't need separate listeners per panel.
+            GamepadScrollFocus.Register(scroll);
             scroll.mouseWheelScrollSize = wheelStep;
             scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             scroll.verticalScrollerVisibility = ScrollerVisibility.Auto;

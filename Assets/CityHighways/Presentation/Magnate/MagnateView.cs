@@ -31,6 +31,7 @@ namespace CityHighways.Presentation
 
         public VisualElement Root { get; }
         bool _gamepadFocusActive;
+        readonly GamepadFocusReturn _gamepadFocusReturn = new GamepadFocusReturn();
         readonly VisualElement _mapArea, _players, _handoff, _results;
         readonly Label _roundLabel, _eventChip, _tooltip, _banner;
         readonly VisualElement _eventIcon;
@@ -309,14 +310,21 @@ namespace CityHighways.Presentation
 
             if (_dirty)
             {
+                string selectedControl = _gamepadFocusActive && Root.panel != null
+                    ? (Root.panel.focusController.focusedElement as VisualElement)?.name
+                    : null;
                 _dirty = false;
                 Refresh();
+                if (!string.IsNullOrEmpty(selectedControl) &&
+                    selectedControl.StartsWith("gamepad-magnate-", StringComparison.Ordinal))
+                    UiGamepadFocus.RestoreNamedFocus(Root, selectedControl);
             }
             if (_map.GamepadExitedTargetingThisFrame) _gamepadFocusActive = true;
             VisualElement controllerScope = _modal != null ? _modalLayer :
                 _awaitingHandoff ? _handoff :
                 _resultsShown ? _results :
                 _popupKind != null ? _popup : Root;
+            _gamepadFocusReturn.Update(Root, controllerScope, _gamepadFocusActive);
             UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
                 _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,
                 controllerScope);

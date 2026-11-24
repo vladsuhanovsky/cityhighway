@@ -64,14 +64,15 @@ namespace CityHighways.Presentation
         /// <summary>Find the first active focusable control in visual-tree order.</summary>
         public static VisualElement FirstEligible(VisualElement root)
         {
-            if (root == null) return null;
-            if (IsEligible(root, root)) return root;
+            if (root == null || !IsVisible(root, root)) return null;
+            // Modal layers may be focusable only to receive Escape. Their
+            // action buttons must take priority over the backdrop itself.
             foreach (var child in root.Children())
             {
                 var found = FindIn(child, root);
                 if (found != null) return found;
             }
-            return null;
+            return IsEligible(root, root) ? root : null;
         }
 
         static VisualElement FindIn(VisualElement element, VisualElement root)
@@ -133,7 +134,9 @@ namespace CityHighways.Presentation
         {
             if (root == null || root.panel == null) return false;
             var focused = root.panel.focusController.focusedElement as VisualElement;
-            if (IsEligible(focused, root)) return false;
+            if (IsEligible(focused, root) &&
+                (focused != root || FirstEligible(root) == root))
+                return false;
             return FocusFirst(root);
         }
 

@@ -182,6 +182,7 @@ namespace CityHighways.Presentation
         readonly GameSetup _setup;
         public VisualElement Root { get; }
         bool _gamepadFocusActive;
+        readonly GamepadFocusReturn _gamepadFocusReturn = new GamepadFocusReturn();
 
         Game _game;
         IBot[] _bots;
@@ -1321,6 +1322,7 @@ namespace CityHighways.Presentation
                 _modal != Modal.None ? _modalLayer :
                 _drawerOpen ? _drawer :
                 _playersOpen ? _playersPanel : Root;
+            _gamepadFocusReturn.Update(Root, controllerScope, _gamepadFocusActive);
             UiGamepadFocus.MaintainGameplayFocus(Root, ref _gamepadFocusActive,
                 _map.IsGamepadTargeting || _map.GamepadExitedTargetingThisFrame,
                 controllerScope);

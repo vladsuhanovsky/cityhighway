@@ -205,6 +205,8 @@ namespace CityHighways.Presentation
             }
             Ui.Slide(_modalLayer, true, 0f, 0f);
             Ui.Slide(ModalElement(modal), true, 0f, 4f);
+            if (_gamepadFocusActive)
+                UiGamepadFocus.FocusFirst(ModalElement(modal));
             _app.Sound.Play(Sfx.Open, 0.5f);
         }
 
