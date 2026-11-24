@@ -106,11 +106,11 @@ namespace CityHighways.Presentation
 
             return context == Context.Magnate
                 ? english
-                    ? $"D-pad: HUD   {submit}: select   {back}: back   R3: map cursor   ${triggers}: zoom"
-                    : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   ${triggers}: масштаб"
+                    ? $"D-pad: HUD   {submit}: select   {back}: back   R3: map cursor   {triggers}: zoom"
+                    : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   {triggers}: масштаб"
                 : english
-                    ? $"D-pad: HUD   {submit}: select   {back}: back   R3: map cursor   ${shoulders}: rotate"
-                    : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   ${shoulders}: поворот";
+                    ? $"D-pad: HUD   {submit}: select   {back}: back   R3: map cursor   {shoulders}: rotate"
+                    : $"Крестовина: интерфейс   {submit}: выбрать   {back}: назад   R3: курсор   {shoulders}: поворот";
         }
 
         /// <summary>Virtual map cursor has its own legend while HUD help is hidden.</summary>
