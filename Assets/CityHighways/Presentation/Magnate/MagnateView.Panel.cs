@@ -607,12 +607,15 @@ namespace CityHighways.Presentation
             text.style.flexShrink = 1f;
             text.style.flexGrow = 1f;
             row.Add(text);
-            row.RegisterCallback<ClickEvent>(_ =>
+            row.name = "gamepad-magnate-cargo-" + cargo.Id;
+            void OpenDetails()
             {
                 _popupKind = "cargoDetail";
                 _popupCargo = cargo.Id;
                 _dirty = true;
-            });
+            }
+            row.RegisterCallback<ClickEvent>(_ => OpenDetails());
+            GamepadSelectable.Attach(row, OpenDetails);
             if (withPick)
             {
                 var pick = Ui.Button(LocalizationService.Get("magnate.panel.030"), () => AssignCargo(cargo), ButtonKind.Secondary, 12f);
