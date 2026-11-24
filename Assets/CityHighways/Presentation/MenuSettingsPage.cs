@@ -350,6 +350,43 @@ namespace CityHighways.Presentation
             Show(_display.volume);
             s.Add(Row(LocalizationService.Get("menu.settings.detail.031"), LocalizationService.Get("menu.settings.detail.032"), volumeRow));
 
+            // Original loop is independent of SFX and opt-in for migrated saves.
+            s.Add(Row(LocalizationService.Get("menu.settings.music"),
+                LocalizationService.Get("menu.settings.music_hint"),
+                new SwitchToggle(_display.musicEnabled, on =>
+            {
+                _display.musicEnabled = on;
+                Save();
+                _app.Music?.Sync(MusicSoundscape.ShouldPlay(on, _setup.sound,
+                    _display.musicVolume), _display.musicVolume);
+                UpdatePreview(LocalizationService.Get(on
+                    ? "menu.settings.music_on" : "menu.settings.music_off"));
+            })));
+
+            var musicVolumeRow = Ui.Row();
+            musicVolumeRow.style.alignItems = Align.Center;
+            var musicValue = Ui.Number("", 16f, Theme.Text, true);
+            musicValue.style.width = 54f;
+            musicValue.style.unityTextAlign = TextAnchor.MiddleRight;
+            void ShowMusicVolume(float valueNow) =>
+                musicValue.text = Mathf.RoundToInt(valueNow * 100f) + "%";
+            musicVolumeRow.Add(new ValueSlider(220f, _display.musicVolume, 0.05f, valueNow =>
+            {
+                _display.musicVolume = MusicSoundscape.SafeVolume(valueNow);
+                ShowMusicVolume(_display.musicVolume);
+                _app.Music?.Sync(MusicSoundscape.ShouldPlay(
+                    _display.musicEnabled, _setup.sound, _display.musicVolume),
+                    _display.musicVolume);
+            }, _ =>
+            {
+                Save();
+                UpdatePreview(LocalizationService.Get("menu.settings.music_volume_saved"));
+            }));
+            musicVolumeRow.Add(musicValue);
+            ShowMusicVolume(_display.musicVolume);
+            s.Add(Row(LocalizationService.Get("menu.settings.music_volume"),
+                LocalizationService.Get("menu.settings.music_volume_hint"), musicVolumeRow));
+
             s.Add(Row(LocalizationService.Get("menu.settings.detail.033"), LocalizationService.Get("menu.settings.detail.034"), new SwitchToggle(_display.uiSounds, on =>
             {
                 _display.uiSounds = on;
@@ -640,6 +677,7 @@ namespace CityHighways.Presentation
             _app.Sound.Enabled = true;
             _setup.Save();
             Save();
+            _app.Music?.Sync(false, _display.musicVolume);
             _backgroundChanged?.Invoke();
             Rebuild();
             UpdatePreview(LocalizationService.Get("menu.settings.detail.108"));
