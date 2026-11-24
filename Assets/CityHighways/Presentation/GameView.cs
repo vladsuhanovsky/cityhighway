@@ -335,6 +335,7 @@ namespace CityHighways.Presentation
         // Верхняя панель: логотип, ход, событие, ресурсы, меню и настройки
         readonly VisualElement _topBar;
         readonly Label _logo;
+        readonly VisualElement _logoDivider;
         readonly Label _turnLabel;
         readonly VisualElement _eventPill;
         readonly VisualElement _eventPillDot;
@@ -760,12 +761,12 @@ namespace CityHighways.Presentation
             _logo.style.whiteSpace = WhiteSpace.NoWrap;
             _logo.style.marginRight = 14f;
             _topBar.Add(_logo);
-            var divider = Ui.Box();
-            divider.style.width = 1f;
-            divider.style.height = 26f;
-            divider.style.backgroundColor = Theme.Line;
-            divider.style.marginRight = 12f;
-            _topBar.Add(divider);
+            _logoDivider = Ui.Box();
+            _logoDivider.style.width = 1f;
+            _logoDivider.style.height = 26f;
+            _logoDivider.style.backgroundColor = Theme.Line;
+            _logoDivider.style.marginRight = 12f;
+            _topBar.Add(_logoDivider);
             _turnLabel = Ui.Text("", 16f, null, true);
             _turnLabel.style.whiteSpace = WhiteSpace.NoWrap;
             _turnLabel.style.marginRight = 12f;
