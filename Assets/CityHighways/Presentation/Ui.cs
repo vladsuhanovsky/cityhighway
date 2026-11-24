@@ -429,6 +429,19 @@ namespace CityHighways.Presentation
                 }
             }, TrickleDown.TrickleDown);
             button.RegisterCallback<PointerUpEvent>(_ => button.style.scale = new Scale(Vector3.one), TrickleDown.TrickleDown);
+            // Native UI Toolkit Buttons handle NavigationSubmitEvent. Make their
+            // keyboard/gamepad focus visible, even without hover from a mouse.
+            button.RegisterCallback<FocusInEvent>(_ =>
+            {
+                Border(button, 2f, Theme.Accent);
+                button.style.backgroundColor = hover;
+            });
+            button.RegisterCallback<FocusOutEvent>(_ =>
+            {
+                Border(button, outlined ? 1f : 0f, Theme.Line);
+                button.style.backgroundColor = normal;
+                button.style.scale = new Scale(Vector3.one);
+            });
             return button;
         }
 
