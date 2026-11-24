@@ -254,5 +254,36 @@ namespace CityHighways.Tests
             Assert.AreEqual(Now, entry.nextAttemptUtcTicks);
         }
 
+        [Test]
+        public void RecoveringBackupNeverReplacesTheGoodBackupWithCorruptPrimary()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "first", "{}", Now));
+            Assert.IsTrue(outbox.Enqueue(SteamA, "second", "{}", Now + 1));
+
+            File.WriteAllText(_path, "broken primary");
+            var recovered = new SocialReportOutbox(_path);
+            Assert.AreEqual(1, recovered.Count);
+            Assert.AreEqual("first", recovered.Entries[0].key);
+
+            Assert.IsTrue(recovered.Enqueue(SteamA, "third", "{}", Now + 2));
+            File.WriteAllText(_path, "broken again");
+            var secondRecovery = new SocialReportOutbox(_path);
+            Assert.AreEqual(1, secondRecovery.Count);
+            Assert.AreEqual("first", secondRecovery.Entries[0].key,
+                "The first repair must not replace the healthy backup with corrupt primary data.");
+        }
+
+        [Test]
+        public void EnqueueRejectsOutOfRangeClockAndInvalidCurrentTime()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsFalse(outbox.Enqueue(SteamA, "future", "{}", DateTime.MaxValue.Ticks + 1));
+            Assert.IsFalse(outbox.Enqueue(SteamA, "negative", "{}", -1));
+            Assert.IsNull(outbox.Next(SteamA, -1));
+            Assert.IsNull(outbox.Next(SteamA, DateTime.MaxValue.Ticks + 1));
+            Assert.AreEqual(0, outbox.Count);
+        }
+
     }
 }
