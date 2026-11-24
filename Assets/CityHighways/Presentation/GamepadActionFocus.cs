@@ -17,11 +17,11 @@ namespace CityHighways.Presentation
             if (root == null || activeScope != root || previouslyFocused == null)
                 return null;
 
-            if (ReferenceEquals(previouslyFocused, undo) &&
+            if (object.ReferenceEquals(previouslyFocused, undo) &&
                 !UiGamepadFocus.IsEligible(undo, root))
                 return Eligible(redo, root) ?? Eligible(fallback, root);
 
-            if (ReferenceEquals(previouslyFocused, redo) &&
+            if (object.ReferenceEquals(previouslyFocused, redo) &&
                 !UiGamepadFocus.IsEligible(redo, root))
                 return Eligible(undo, root) ?? Eligible(fallback, root);
 
