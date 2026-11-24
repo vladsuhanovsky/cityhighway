@@ -6267,6 +6267,26 @@
     {
       "key": "game.undo.confirm_other",
       "value": "Последнее действие сделал игрок {0}. Нажмите «Подтвердить» ещё раз в течение 6 секунд."
+    },
+    {
+      "key": "game.redo.action",
+      "value": "Повторить"
+    },
+    {
+      "key": "game.redo.done",
+      "value": "Отменённое действие повторено."
+    },
+    {
+      "key": "game.redo.unavailable",
+      "value": "Сейчас повтор действия недоступен."
+    },
+    {
+      "key": "game.redo.tooltip",
+      "value": "Повторить: {0} · Ctrl+Y / Ctrl+Shift+Z"
+    },
+    {
+      "key": "game.redo.disabled_hint",
+      "value": "Нет отменённого действия или повтор недоступен для этой партии."
     }
   ]
 }
