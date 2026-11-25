@@ -75,9 +75,14 @@ namespace CityHighways.Presentation
                 JsonUtility.ToJson(request), DateTime.UtcNow.Ticks);
             if (!queued)
             {
+                bool recoveryBlocked = ReportOutbox.LoadBlocked;
                 News.Add(LocalizationService.Language == "en"
-                    ? "Could not store the game report for later upload (queue is full or disk is unavailable)."
-                    : "Не удалось сохранить отчёт партии для отправки (очередь заполнена или диск недоступен).");
+                    ? (recoveryBlocked
+                        ? "Report queue is damaged. Old files preserved; new report could not be saved."
+                        : "Could not store the game report for later upload (queue is full or disk is unavailable).")
+                    : (recoveryBlocked
+                        ? "Очередь отчётов повреждена. Старые файлы сохранены, новый отчёт не записан."
+                        : "Не удалось сохранить отчёт партии для отправки (очередь заполнена или диск недоступен)."));
                 Changed?.Invoke();
                 return;
             }
