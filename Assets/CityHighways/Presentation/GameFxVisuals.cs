@@ -94,7 +94,7 @@ namespace CityHighways.Presentation
             _effects.Attach(label);
             _effects.Add(1.3f, k =>
             {
-                label.style.top = at.y - 12f - 34f * Ui.EaseOutCubic(k);
+                label.style.top = at.y - 12f - (Ui.ReducedMotion ? 0f : 34f * Ui.EaseOutCubic(k));
                 label.style.opacity = k < 0.1f ? k / 0.1f : k > 0.7f ? (1f - k) / 0.3f : 1f;
             }, () => _effects.Remove(label), 0f, false);
         }

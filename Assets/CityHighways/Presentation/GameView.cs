@@ -2233,6 +2233,19 @@ namespace CityHighways.Presentation
             bool bot = IsBot(playerIndex);
             float hold = bot ? 1.0f : 1.8f;
 
+            if (Ui.ReducedMotion)
+            {
+                // Preserve readable result, sound and blocking hold without flight or flip.
+                SetLook(true);
+                SetFlip(1f);
+                card.style.left = center.x;
+                card.style.top = center.y;
+                card.style.opacity = 1f;
+                _app.Sound.Play(buff ? Sfx.Bell : Sfx.Error, 0.7f);
+                _effects.After(hold, () => _effects.Remove(card), true);
+                return;
+            }
+
             // 1. Из колоды в центр.
             _app.Sound.Play(Sfx.Swish, 0.6f);
             _effects.Add(0.35f, k =>

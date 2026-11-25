@@ -7,6 +7,36 @@ namespace CityHighways.Tests
 {
     public class GameFxVisualsTests
     {
+        bool _oldReducedMotion;
+
+        [SetUp]
+        public void SaveMotionSetting()
+        {
+            _oldReducedMotion = Ui.ReducedMotion;
+            Ui.ReducedMotion = false;
+        }
+
+        [TearDown]
+        public void RestoreMotionSetting() => Ui.ReducedMotion = _oldReducedMotion;
+
+        [Test]
+        public void ReducedMotionFloatingTextRemainsStationaryAndStillExpires()
+        {
+            Ui.ReducedMotion = true;
+            var tween = new Tweener();
+            var layer = new VisualElement();
+            var visuals = new GameFxVisuals(new GameFxLifetime(tween, layer));
+            visuals.FloatAt(new Vector2(100f, 80f), "+5", Color.white);
+            var text = (Label)layer[0];
+            Assert.AreEqual(68f, text.style.top.value.value, 0.001f);
+            tween.Tick(0.6f);
+            Assert.AreEqual(68f, text.style.top.value.value, 0.001f);
+            Assert.AreEqual(1f, text.style.opacity.value, 0.001f);
+            Assert.AreEqual(0, tween.BlockingCount);
+            tween.Tick(1f);
+            Assert.AreEqual(0, layer.childCount);
+        }
+
         [Test]
         public void FloatingTextCompletesAndRemovesOnlyItsOwnElement()
         {

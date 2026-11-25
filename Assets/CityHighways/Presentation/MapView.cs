@@ -2984,12 +2984,14 @@ namespace CityHighways.Presentation
         /// </summary>
         public void Flash(Color color)
         {
+            if (Ui.ReducedMotion) return;
             _flashColor = color;
             _flashStart = PulseTime;
         }
 
         void DrawFlash(Painter2D p, Rect area)
         {
+            if (Ui.ReducedMotion) return;
             float t = (PulseTime - _flashStart) / FlashDuration;
             if (t < 0f || t > 1f) return;
             float s = Mathf.Sin(t * Mathf.PI);
