@@ -125,8 +125,8 @@ namespace CityHighways.Tests
             Assert.AreEqual(a.coopDone, b.coopDone);
             Assert.AreEqual(a.coopFailed, b.coopFailed);
             Assert.AreEqual(a.coopRounds, b.coopRounds);
-            CollectionAssert.AreEqual(a.coopOrders, b.coopOrders);
-            CollectionAssert.AreEqual(a.coopRoundsLeft, b.coopRoundsLeft);
+            CollectionAssert.AreEqual(a.coopOrders ?? Array.Empty<string>(), b.coopOrders ?? Array.Empty<string>());
+            CollectionAssert.AreEqual(a.coopRoundsLeft ?? Array.Empty<int>(), b.coopRoundsLeft ?? Array.Empty<int>());
             Assert.AreEqual(a.currentEvent, b.currentEvent);
             Assert.AreEqual(a.eventNumber, b.eventNumber);
             Assert.AreEqual(a.finalTurnsLeft, b.finalTurnsLeft);
