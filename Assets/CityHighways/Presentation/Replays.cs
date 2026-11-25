@@ -294,7 +294,7 @@ namespace CityHighways.Presentation
                 var replay = JsonUtility.FromJson<ReplayFile>(json);
                 // The file name is the index key: never accept a replay that
                 // silently claims a different key after disk corruption.
-                return replay != null && replay.start != null && replay.id == id
+                return replay != null && replay.id == id && ReplayLocalSanity.IsReadable(replay)
                     ? replay : null;
             }
             catch (Exception e)
