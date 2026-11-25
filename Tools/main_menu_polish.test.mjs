@@ -9,6 +9,10 @@ const route = get("Assets/CityHighways/Presentation/MenuRoadDeparture.cs");
 const shade = get("Assets/CityHighways/Presentation/MenuLegibilityVeil.cs");
 const widgets = get("Assets/CityHighways/Presentation/MenuWidgets.cs");
 const rhythm = get("Assets/CityHighways/Presentation/MenuHomeActionLayout.cs");
+const styleType = get("Assets/CityHighways/Presentation/MainMenuStyle.cs");
+const asset = get("Assets/CityHighways/Resources/CityHighways/UI/MainMenuStyle.asset");
+const styleMeta = get("Assets/CityHighways/Presentation/MainMenuStyle.cs.meta");
+const inspector = get("Assets/CityHighways/Editor/MainMenuStyleEditorMenu.cs");
 const ru = JSON.parse(get("Assets/CityHighways/Resources/CityHighways/Localization/ru.json")).entries;
 const en = JSON.parse(get("Assets/CityHighways/Resources/CityHighways/Localization/en.json")).entries;
 const home = view.slice(view.indexOf("VisualElement BuildHome(SaveFile saved)"),
@@ -255,4 +259,72 @@ test("all six menu labels still come from existing RU and EN translation keys", 
 test("home action layout exposes a bounded three-group height for smaller screens", () => {
   assert.match(rhythm, /public static float PairHeight => PrimaryHeight \+ InsidePairGap \+ SecondaryHeight;/);
   assert.match(rhythm, /public static float ThreePairsHeight => PairHeight \* 3f \+ BetweenGroupsGap \* 2f;/);
+});
+
+test("an actual editable menu-style asset is shipped in Unity Resources", () => {
+  assert.match(styleType, /\[CreateAssetMenu\(/);
+  assert.match(styleType, /public sealed class MainMenuStyle : ScriptableObject/);
+  assert.match(styleType, /ResourcePath = "CityHighways\/UI\/MainMenuStyle"/);
+  assert.match(styleType, /Resources\.Load<MainMenuStyle>\(ResourcePath\)/);
+  const scriptGuid = styleMeta.match(/guid: ([0-9a-f]{32})/)?.[1];
+  assert.ok(scriptGuid);
+  assert.ok(asset.includes("guid: " + scriptGuid + ", type: 3"));
+  for (const name of ["buttonWidth", "primaryHeight", "secondaryHeight",
+      "insidePairGap", "betweenGroupsGap", "primaryFontSize",
+      "secondaryFontSize", "logoFontSize", "subtitleFontSize",
+      "newsWidth", "newsMinHeight", "newsBottomGap", "centerDarkening",
+      "trafficSpeed", "newGameGradientStart", "newGameGradientEnd",
+      "secondaryNormal", "secondaryHover"]) {
+    assert.match(asset, new RegExp("^  " + name + ":", "m"));
+    assert.match(styleType, new RegExp("\\b" + name + "\\b"));
+  }
+});
+
+test("Unity toolbar opens the editable asset directly in Inspector", () => {
+  assert.match(inspector, /\[MenuItem\("City Highways\/UI\/Edit Main Menu Style"\)\]/);
+  assert.match(inspector, /AssetDatabase\.LoadAssetAtPath<MainMenuStyle>\(AssetPath\)/);
+  assert.match(inspector, /Selection\.activeObject = style/);
+  assert.match(inspector, /CustomEditor\(typeof\(MainMenuStyle\)\)/);
+  assert.match(inspector, /DrawDefaultInspector\(\)/);
+});
+
+test("home layout reads style asset and retains a backwards-compatible fallback", () => {
+  assert.match(rhythm, /public static float Width => WidthFor\(MainMenuStyle\.Current\)/);
+  assert.match(rhythm, /public static float PrimaryHeight => PrimaryHeightFor\(MainMenuStyle\.Current\)/);
+  assert.match(rhythm, /public static float SecondaryHeight => SecondaryHeightFor\(MainMenuStyle\.Current\)/);
+  assert.match(rhythm, /public static float SecondaryFontSize => SecondaryFontSizeFor\(MainMenuStyle\.Current\)/);
+  assert.match(rhythm, /style != null \? Mathf\.Clamp\(style\.buttonWidth, 320f, 640f\) : DefaultWidth/);
+});
+
+test("header and news sizes are editable without changing C# source", () => {
+  assert.match(home, /Ui\.Text\("City Highways", MenuHomeActionLayout\.LogoFontSize/);
+  assert.match(home, /MenuHomeActionLayout\.SubtitleFontSize/);
+  assert.match(home, /_newsBox\.style\.width = MenuHomeActionLayout\.NewsWidth/);
+  assert.match(home, /_newsBox\.style\.minHeight = MenuHomeActionLayout\.NewsMinHeight/);
+  assert.match(home, /_newsBox\.style\.marginBottom = MenuHomeActionLayout\.NewsBottomGap/);
+});
+
+test("each button reads editable primary/secondary colors", () => {
+  assert.match(home, /new MenuButton\(glyph, text, onClick, primary, MainMenuStyle\.Current\)/);
+  assert.match(home, /MainMenuStyle\.Current\.secondaryNormal/);
+  assert.match(home, /MainMenuStyle\.Current\.secondaryHover/);
+  assert.match(widgets, /_style\.newGameGradientStart/);
+  assert.match(widgets, /_style\.newGameGradientEnd/);
+  assert.match(widgets, /_style\.primaryFontSize/);
+});
+
+test("city veil and car speed can be tuned in Inspector", () => {
+  assert.match(shade, /style\.centerDarkening/);
+  assert.match(road, /style\.trafficSpeed/);
+  assert.match(road, /_trafficTime \+= dt \* _trafficSpeed/);
+});
+
+test("style edits are not rejected by layout NUnit tests", () => {
+  const t = get("Assets/CityHighways/Tests/MenuHomeActionLayoutTests.cs");
+  assert.match(t, /WidthFor\(null\)/);
+  assert.match(t, /Is\.InRange\(320f, 640f\)/);
+  assert.doesNotMatch(t, /Assert\.AreEqual\(480f, MenuHomeActionLayout\.Width\)/);
+  const s = get("Assets/CityHighways/Tests/MainMenuStyleTests.cs");
+  assert.match(s, /IndependentEditorChangesFlowIntoRuntimeMetrics/);
+  assert.match(s, /ShippedStyleCanBeOpenedAsAResourcesAsset/);
 });
