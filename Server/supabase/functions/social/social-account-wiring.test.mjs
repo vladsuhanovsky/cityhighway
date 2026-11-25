@@ -61,7 +61,7 @@ test("friends and club ghosts cannot reuse old Steam session replay caches", () 
   assert.match(ghosts, /SteamOwner = SocialCloud\.CurrentSteamAccount/);
   assert.match(ghosts, /SteamGeneration = SocialCloud\.CurrentAccountGeneration/);
   assert.match(ghosts, /!SocialCloud\.BelongsToCurrentSession\(SteamOwner, SteamGeneration\)/);
-  assert.match(ghosts, /string account = SocialCloud\.CurrentSteamAccount/);
+  assert.match(ghosts, /_ = SocialCloud\.CurrentSteamAccount/);
 });
 
 test("club menu resets session-bound invite, search and club results", () => {
@@ -74,4 +74,12 @@ test("club menu resets session-bound invite, search and club results", () => {
 test("lobby club tag and logo never read stale session caches", () => {
   assert.match(social, /public static string ClubTag[\s\S]*?EnsureSocialAccount\(\);[\s\S]*?return Club != null/);
   assert.match(social, /public static string ClubLogoId[\s\S]*?EnsureSocialAccount\(\);[\s\S]*?return Club != null/);
+});
+
+test("signed-out menus cannot show a cached SteamId's pending report count", () => {
+  assert.match(delivery, /public static int PendingReportsForCurrentAccount[\s\S]*?EnsureSocialAccount\(\);[\s\S]*?string owner = _accountScope\.Owner/);
+});
+
+test("direct social club state access always refreshes the current account scope", () => {
+  assert.match(social, /public static ClubState Club[\s\S]*?get \{ EnsureSocialAccount\(\); return _club; \}/);
 });
