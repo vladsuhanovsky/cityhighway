@@ -9,6 +9,17 @@ namespace CityHighways.Presentation
     {
         static SocialReportOutbox _reportOutbox;
         static bool _reportInFlight;
+        // The server accepted this report but the local removal failed.
+        // Retry the disk operation, never the already-acknowledged HTTP POST.
+        static SocialReportOutbox.Entry _acknowledgedPending;
+        static long _diskRetryAfterUtcTicks;
+        const long DiskRetryTicks = 30 * TimeSpan.TicksPerSecond;
+
+        static void DeferAfterDiskError()
+        {
+            _diskRetryAfterUtcTicks = DateTime.UtcNow.Ticks + DiskRetryTicks;
+            Debug.LogWarning("Social report queue disk update failed; retrying in 30 seconds.");
+        }
 
         static SocialReportOutbox ReportOutbox
         {
@@ -70,10 +81,25 @@ namespace CityHighways.Presentation
         /// <summary>Called from the existing SocialCloud.Tick loop and after successful uploads.</summary>
         static void TrySendQueuedReport()
         {
-            if (_reportInFlight || !Available) return;
+            if (_reportInFlight) return;
+            long nowTicks = DateTime.UtcNow.Ticks;
+            if (nowTicks < _diskRetryAfterUtcTicks) return;
+
+            if (_acknowledgedPending != null)
+            {
+                if (!ReportOutbox.Complete(_acknowledgedPending))
+                {
+                    DeferAfterDiskError();
+                    return;
+                }
+                _acknowledgedPending = null;
+                Changed?.Invoke();
+            }
+
+            if (!Available) return;
             var steam = NetPlatforms.Steam;
             if (steam == null || !SocialReportOutbox.ValidOwner(steam.SteamId)) return;
-            var entry = ReportOutbox.Next(steam.SteamId, DateTime.UtcNow.Ticks);
+            var entry = ReportOutbox.Next(steam.SteamId, nowTicks);
             if (entry == null) return;
 
             Request request;
@@ -90,7 +116,12 @@ namespace CityHighways.Presentation
             catch (Exception error)
             {
                 Debug.LogWarning("Discarding unreadable social report: " + error.Message);
-                ReportOutbox.Complete(entry);
+                if (!ReportOutbox.Complete(entry))
+                {
+                    _acknowledgedPending = entry;
+                    DeferAfterDiskError();
+                }
+                Changed?.Invoke();
                 return;
             }
 
@@ -98,9 +129,22 @@ namespace CityHighways.Presentation
             Send<ReportResponse>(request, response =>
             {
                 _reportInFlight = false;
-                // Acknowledge only a successful server response; never remove
-                // a report merely because a UnityWebRequest was attempted.
-                ReportOutbox.Complete(entry);
+                if (response == null)
+                {
+                    if (!ReportOutbox.Reschedule(entry, DateTime.UtcNow.Ticks, 0))
+                        DeferAfterDiskError();
+                    Debug.LogWarning("Social report response was empty; keeping it for retry.");
+                    return;
+                }
+
+                // Acknowledge only a successful server response. If removing
+                // that ACK from disk fails, retry the write without resending
+                // the same HTTP report every frame.
+                if (!ReportOutbox.Complete(entry))
+                {
+                    _acknowledgedPending = entry;
+                    DeferAfterDiskError();
+                }
                 Changed?.Invoke();
                 AfterReport(response);
                 TrySendQueuedReport();
@@ -109,7 +153,8 @@ namespace CityHighways.Presentation
                 _reportInFlight = false;
                 // The report remains on disk until acknowledged, even for
                 // temporary authentication, schema or server rollout errors.
-                ReportOutbox.Reschedule(entry, DateTime.UtcNow.Ticks, status);
+                if (!ReportOutbox.Reschedule(entry, DateTime.UtcNow.Ticks, status))
+                    DeferAfterDiskError();
                 Debug.LogWarning("Social report will retry: " + message);
             }, expectedSteamId: entry.ownerSteamId);
         }
