@@ -44,7 +44,9 @@ namespace CityHighways.Presentation
             get
             {
                 EnsureSocialAccount();
-                string owner = NetPlatforms.Steam?.SteamId;
+                // Offline/sign-out must not display a previous account's
+                // pending report count merely because SteamId stayed cached.
+                string owner = _accountScope.Owner;
                 if (!SocialReportOutbox.ValidOwner(owner)) return 0;
                 int count = 0;
                 foreach (var entry in ReportOutbox.Entries)
