@@ -1753,75 +1753,9 @@ namespace CityHighways.Presentation
             Ui.Show(_tooltip, true);
         }
 
-        static string RoadKindLabel(Resource? resource)
-        {
-            if (!EnglishUi) return ResourceInfo.RoadKind(resource);
-            if (!resource.HasValue) return "Street (any resource)";
-            switch (resource.Value)
-            {
-                case Resource.Asphalt: return "Street";
-                case Resource.Concrete: return "Avenue";
-                case Resource.Steel: return "Bridge";
-                case Resource.Gravel: return "Country Road";
-                default: return "Road";
-            }
-        }
 
-        string RoadTooltip(Road road)
-        {
-            string kind = RoadKindLabel(road.Resource);
-            string resource = road.Resource.HasValue ? Palette.CardTitle(road.Resource.Value) : LocalizationService.Get("game.ui.050");
-            string text = EnglishUi ? $"<b>{DisplayPlace(LocationName(road.A))} — {DisplayPlace(LocationName(road.B))}</b>\n{kind} · length {road.Length} · {resource} · {_game.Config.PointsForLength(road.Length)} pts" : $"<b>{LocationName(road.A)} — {LocationName(road.B)}</b>\n{char.ToUpper(kind[0]) + kind.Substring(1)} · длина {road.Length} · {resource} · {_game.Config.PointsForLength(road.Length)} очк.";
 
-            int? owner = _game.GetRoadOwner(road.Id);
-            if (!owner.HasValue && road.Id == _game.FinalOrderRoadId)
-                text += EnglishUi ? $"\n<color=#FFCC40>Final City Hall order: +{_game.Config.FinalOrderBonus} pts to whoever builds it in the last round</color>" : $"\n<color=#FFCC40>Финальный заказ мэрии: +{_game.Config.FinalOrderBonus} очков тому, кто построит её в последнем круге</color>";
-            if (owner.HasValue)
-            {
-                text += (EnglishUi ? "\nBuilt by: " : "\nПостроил: ") + _game.Players[owner.Value].Name;
-                if (_game.IsRushHourRoad(road.Id))
-                    text += EnglishUi ? $"\n<color=#FF9A33>Busy highway (rush hour): toll ×{_game.Config.RushHourTollMultiplier}</color>" : $"\n<color=#FF9A33>Загруженная магистраль (час пик): проезд ×{_game.Config.RushHourTollMultiplier}</color>";
-                int traffic = _game.TrafficOn(road.Id);
-                if (traffic > 0) text += EnglishUi ? $"\nTraffic: {traffic} rival routes" : $"\nЗагрузка: {traffic} {Plural(traffic, "маршрут", "маршрута", "маршрутов")} соперников";
-                if (_game.IsJammed(road.Id))
-                    text += EnglishUi ? $"\n<color=#FF6B5B>Traffic jam: +{_game.Config.JamFee} pts paid to the city. The owner can upgrade the road to a highway.</color>" : $"\n<color=#FF6B5B>Пробка: проезд ещё +{_game.Config.JamFee} очк. городу. Владелец может улучшить дорогу до магистрали.</color>";
-                else if (_game.Config.JamThreshold > 0 && !_game.IsRushHourRoad(road.Id) && traffic == _game.Config.JamThreshold - 1)
-                    text += EnglishUi ? "\n<color=#FFB35B>One more route will cause a traffic jam</color>" : "\n<color=#FFB35B>Ещё один маршрут — и здесь пробка</color>";
-                int viewer = Viewer;
-                if (owner.Value != viewer && !IsBot(viewer))
-                {
-                    if (_game.HasPass(viewer, owner.Value)) text += EnglishUi ? "\nYour road pass makes this toll free" : "\nУ вас пропуск: проезд владельцу бесплатно";
-                    else text += EnglishUi ? $"\nYour toll: −{_game.TollFor(road.Id, viewer)} pts to the owner" : $"\nПроезд для вас: −{_game.TollFor(road.Id, viewer)} очк. владельцу";
-                    if (_game.IsJammed(road.Id)) text += EnglishUi ? $" and −{_game.JamFeeFor(road.Id)} to the city" : $" и −{_game.JamFeeFor(road.Id)} городу";
-                }
-                return text;
-            }
-            if (_game.IsScheduledRepair(road.Id)) text += EnglishUi ? "\n<color=#FF6B6B>Repair Year: closed this round (City Hall permit allows construction)</color>" : "\n<color=#FF6B6B>Год ремонта: закрыт в этом круге (разрешение мэрии пускает строить)</color>";
-            else if (_game.IsUnderRepair(road.Id)) text += EnglishUi ? "\n<color=#FF6B6B>Roadworks: closed until end of round</color>" : "\n<color=#FF6B6B>Ремонт: закрыт до конца круга</color>";
-            if (!owner.HasValue && _game.IsNextRepair(road.Id)) text += EnglishUi ? "\n<color=#FF9A33>Repair Year: road closes next round — build it now</color>" : "\n<color=#FF9A33>Год ремонта: закроют в следующем круге — успейте построить</color>";
-            if (_game.IsParadeClosed(road.Id)) text += EnglishUi ? "\n<color=#CC80FF>Parade: closed until end of round</color>" : "\n<color=#CC80FF>Парад: закрыт до конца круга</color>";
-            if (road.Resource == Resource.Gravel && _game.CurrentEvent?.Kind == CityEventKind.Snow)
-                text += EnglishUi ? $"\n<color=#D9EBFF>Snowfall: +{_game.Config.SnowExtraCost} cards to build cost</color>" : $"\n<color=#D9EBFF>Снегопад: +{_game.Config.SnowExtraCost} карта к цене</color>";
-            if (_game.CurrentEvent?.Kind == CityEventKind.Investor)
-                text += EnglishUi ? $"\n<color=#FFD94D>Investor: +{_game.Config.InvestorBonus} pts for construction</color>" : $"\n<color=#FFD94D>Инвестор: +{_game.Config.InvestorBonus} очка за постройку</color>";
-            int cost = _game.BuildCost(road);
-            if (cost < road.Length) text += EnglishUi ? $"\n<color=#7FC8FF>City Hall subsidy: now costs {cost} cards</color>" : $"\n<color=#7FC8FF>Субсидия мэрии: сейчас стоит {cost} карт(ы)</color>";
-            if (_game.CurrentEvent != null && _game.CurrentEvent.Kind == CityEventKind.RushHour)
-                text += EnglishUi ? "\n<color=#FF9A33>Rush hour: the road built now will charge double tolls</color>" : "\n<color=#FF9A33>Час пик: построенная сейчас дорога станет платной ×2</color>";
-            if (HumanToAct && _game.Phase == GamePhase.AwaitingAction)
-            {
-                bool free = _game.CanBuildRoadFree(road.Id);
-                var ways = _game.GetPaymentOptions(road.Id);
-                if (free) text += EnglishUi ? "\n<color=#66E7FF>Free construction available</color>" : "\n<color=#66E7FF>Доступно бесплатное строительство</color>";
-                if (ways.Count > 0)
-                    text += EnglishUi ? $"\n<color=#7FD88A>Preview: {_game.BuildCost(road)} cards · {ways.Count} payment options</color>"
-                        : $"\n<color=#7FD88A>Предпросмотр: {_game.BuildCost(road)} карт · способов оплаты: {ways.Count}</color>";
-                string blocker = _game.GetBuildBlocker(road.Id);
-                return text + "\n" + (blocker != null && !free && ways.Count == 0 ? LocalizationService.TranslateGameError(blocker)
-                    : EnglishUi ? "<color=#7FD88A>Click to build</color>" : "<color=#7FD88A>Кликните, чтобы построить</color>");
-            }
-            return text;
-        }
+        string RoadTooltip(Road road) => GameTooltipText.Road(_game, road, Viewer, IsBot(Viewer), HumanToAct);
 
         // ================================================================== Анимации по изменениям
 
@@ -2969,12 +2903,7 @@ namespace CityHighways.Presentation
             }
         }
 
-        string PlayerTooltip(int index)
-        {
-            var player = _game.Players[index];
-            string character = player.Character != CharacterKind.None ? " · " + CharacterLocalization.Title(player.Character) : "";
-            return EnglishUi ? $"{player.Name}{character}{BotTag(index)}\n{_game.VisibleScore(player)} pts · {player.RoadPieces} road pieces · {player.HandSize} cards" + (_game.Config.InfluenceEnabled ? $" · {player.Influence} influence" : "") + "\nMore details in the Players panel." : $"{player.Name}{character}{BotTag(index)}\n{_game.VisibleScore(player)} очков · {player.RoadPieces} участков · {player.HandSize} карт" + (_game.Config.InfluenceEnabled ? $" · {player.Influence} влияния" : "") + "\nПодробнее — в панели «Игроки».";
-        }
+        string PlayerTooltip(int index) => GameTooltipText.Player(_game, index, BotTag(index));
 
         void RefreshPlayers()
         {
@@ -4210,21 +4139,9 @@ namespace CityHighways.Presentation
             element.RegisterCallback<PointerLeaveEvent>(_ => Ui.Show(_tooltip, false));
         }
 
-        string ResourceTooltip(Resource resource)
-        {
-            if (NeedsHandoff) return LocalizationService.Get("game.tooltip.hand_hidden");
-            int count = _game.Players[Viewer].CardCount(resource);
-            string name = EnglishUi ? Palette.CardTitle(resource) : ResourceInfo.RussianName(resource);
-            string use = resource == Resource.Machinery ? LocalizationService.Get("game.ui.165") : LocalizationService.Get("game.ui.166") + RoadKindLabel(resource);
-            return EnglishUi ? $"{name}: {count} cards\n{use}. Each segment represents one card." : $"{char.ToUpper(name[0]) + name.Substring(1)}: {count} шт.\n{use}. Одно деление — одна карта.";
-        }
+        string ResourceTooltip(Resource resource) => GameTooltipText.ResourceCards(_game, Viewer, NeedsHandoff, resource);
 
-        string PiecesTooltip()
-        {
-            var viewer = _game.Players[Viewer];
-            int start = _game.Config.RoadPiecesFor(_game.Players.Count);
-            return string.Format(LocalizationService.Get("game.tooltip.remaining_roads"), viewer.RoadPieces, start, _game.Config.FinalRoundPieces);
-        }
+        string PiecesTooltip() => GameTooltipText.Pieces(_game, Viewer);
 
         /// <summary>Адаптивность: на узком окне прячем второстепенное, панели не шире окна.</summary>
         void AdaptLayout()
@@ -4292,26 +4209,7 @@ namespace CityHighways.Presentation
             ShowMapTooltip(LocationTooltip(location), position);
         }
 
-        string LocationTooltip(Location location)
-        {
-            var lines = new List<string> { $"{DisplayPlace(location.Name)} · {DisplayPlace(DistrictName(location.DistrictId))}" };
-            var roads = _game.Map.Roads.Where(r => (r.A == location.Id || r.B == location.Id) && _game.IsRoadOpen(r.Id)).ToList();
-            int free = roads.Count(r => !_game.GetRoadOwner(r.Id).HasValue);
-            lines.Add(string.Format(LocalizationService.Get("game.tooltip.location_roads"), roads.Count, free));
-            var owners = roads.Select(r => _game.GetRoadOwner(r.Id)).Where(o => o.HasValue).GroupBy(o => o.Value)
-                .Select(g => $"{_game.Players[g.Key].Name} — {g.Count()}").ToList();
-            if (owners.Count > 0) lines.Add(LocalizationService.Get("game.tooltip.built_by") + string.Join(", ", owners));
-            if (!NeedsHandoff)
-            {
-                var viewer = _game.Players[Viewer];
-                foreach (var contract in viewer.Contracts.Where(c => c.Districts.Contains(location.DistrictId)))
-                {
-                    bool done = _game.CheckContract(viewer.Index, contract).Completed;
-                    lines.Add(string.Format(LocalizationService.Get("game.tooltip.your_contract"), ContractTitle(contract), contract.Points, done ? LocalizationService.Get("game.tooltip.completed") : ""));
-                }
-            }
-            return string.Join("\n", lines);
-        }
+        string LocationTooltip(Location location) => GameTooltipText.Location(_game, location, Viewer, NeedsHandoff);
 
         static string MayorGoalName(MayorGoal goal)
         {

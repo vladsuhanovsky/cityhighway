@@ -369,13 +369,7 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Название контракта одной строкой: «А — Б», «А — Б через В» или «А — Б и В».</summary>
-        string ContractTitle(Contract contract)
-        {
-            string title = $"{DistrictName(contract.DistrictA)} — {DistrictName(contract.DistrictB)}";
-            if (contract.Kind == ContractKind.Transit) title += (EnglishUi ? " via " : " через ") + DistrictName(contract.DistrictC);
-            else if (contract.Kind == ContractKind.Hub) title += (EnglishUi ? " and " : " и ") + DistrictName(contract.DistrictC);
-            return title;
-        }
+        string ContractTitle(Contract contract) => GameTooltipText.ContractTitle(_game.Map, contract);
 
         static VisualElement DistrictChip(Color color)
         {

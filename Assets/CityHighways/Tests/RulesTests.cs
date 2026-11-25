@@ -949,22 +949,19 @@ namespace CityHighways.Tests
         [Test]
         public void RoadKinds_InGameTooltips_FollowSelectedLanguage()
         {
-            var method = typeof(GameView).GetMethod("RoadKindLabel",
-                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-            Assert.IsNotNull(method);
             string initial = LocalizationService.Language;
             try
             {
                 LocalizationService.SetLanguage("en");
                 foreach (Resource value in new[] { Resource.Asphalt, Resource.Concrete, Resource.Steel, Resource.Gravel })
                 {
-                    var title = (string)method.Invoke(null, new object[] { (Resource?)value });
+                    var title = GameTooltipText.RoadKindLabel(value);
                     Assert.IsFalse(Regex.IsMatch(title, "[а-яё]", RegexOptions.IgnoreCase), value.ToString());
                 }
-                Assert.AreEqual("Bridge", method.Invoke(null, new object[] { (Resource?)Resource.Steel }));
-                Assert.AreEqual("Street (any resource)", method.Invoke(null, new object[] { null }));
+                Assert.AreEqual("Bridge", GameTooltipText.RoadKindLabel(Resource.Steel));
+                Assert.AreEqual("Street (any resource)", GameTooltipText.RoadKindLabel(null));
                 LocalizationService.SetLanguage("ru");
-                Assert.AreEqual("мост", method.Invoke(null, new object[] { (Resource?)Resource.Steel }));
+                Assert.AreEqual("мост", GameTooltipText.RoadKindLabel(Resource.Steel));
             }
             finally
             {
