@@ -77,7 +77,7 @@ namespace CityHighways.Net
     public static class NetCodec
     {
         /// <summary>Меняется при любой несовместимой правке протокола или правил: разные версии не играют вместе.</summary>
-        public const int ProtocolVersion = 10; // 10 — cooperative difficulty metadata and ranked eligibility
+        public const int ProtocolVersion = 11; // 11 — optional Supply Season scenario and event kinds
 
         public static byte[] Encode(NetMessage message) => Encoding.UTF8.GetBytes(JsonUtility.ToJson(message));
 

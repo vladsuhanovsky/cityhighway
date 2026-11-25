@@ -17,7 +17,9 @@ namespace CityHighways.Core
         /// <summary>Снегопад: щебёночные дороги в этот круг на SnowExtraCost карт дороже.</summary>
         Snow,
         /// <summary>Инвестор: каждая дорога, построенная в этот круг, приносит +InvestorBonus очков.</summary>
-        Investor
+        Investor,
+        AsphaltDelivery,
+        ConcreteShortage
     }
 
     /// <summary>Городское событие текущего круга.</summary>
@@ -48,6 +50,8 @@ namespace CityHighways.Core
                     case CityEventKind.Parade: return "Парад";
                     case CityEventKind.Snow: return "Снегопад";
                     case CityEventKind.Investor: return "Инвестор";
+                    case CityEventKind.AsphaltDelivery: return "Поставка асфальта";
+                    case CityEventKind.ConcreteShortage: return "Дефицит бетона";
                     default: return "Новый район";
                 }
             }
@@ -79,6 +83,10 @@ namespace CityHighways.Core
                     return $"Щебёночные дороги в этот круг на {config.SnowExtraCost} карт(у) дороже.";
                 case CityEventKind.Investor:
                     return $"Каждая дорога, построенная в этот круг, приносит ещё +{config.InvestorBonus} очка.";
+                case CityEventKind.AsphaltDelivery:
+                    return $"Асфальтовые дороги в этот круг дешевле на {config.AsphaltDeliveryDiscount} карт(у) (но не меньше одной).";
+                case CityEventKind.ConcreteShortage:
+                    return $"Бетонные дороги в этот круг на {config.ConcreteShortageExtraCost} карт(у) дороже; разрешение мэрии снимает надбавку.";
                 default:
                     return $"На окраине открылся район «{game.Map.DistrictName(DistrictId)}»: новые места, дороги и контракты.";
             }

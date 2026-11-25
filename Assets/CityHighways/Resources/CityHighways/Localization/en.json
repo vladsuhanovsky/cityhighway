@@ -377,6 +377,26 @@
       "value": "Mayor's Friend: the player who spent the most influence gains +{0} points."
     },
     {
+      "key": "menu.scenario.supply",
+      "value": "Supply Season"
+    },
+    {
+      "key": "menu.scenario.supply_summary",
+      "value": "Asphalt deliveries and concrete shortages change construction costs."
+    },
+    {
+      "key": "menu.scenario.supply_change_1",
+      "value": "Asphalt Delivery: {0} events, {1} fewer cards (minimum one)."
+    },
+    {
+      "key": "menu.scenario.supply_change_2",
+      "value": "Concrete Shortage: {0} events, {1} extra cards; a City Hall permit waives the surcharge."
+    },
+    {
+      "key": "menu.scenario.supply_change_3",
+      "value": "In co-op, a concrete shortage increases crisis just like snowfall."
+    },
+    {
       "key": "common.enabled",
       "value": "Enabled"
     },

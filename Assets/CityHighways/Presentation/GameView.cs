@@ -4056,6 +4056,8 @@ namespace CityHighways.Presentation
                     case CityEventKind.Parade: return "Парад";
                     case CityEventKind.Snow: return "Снегопад";
                     case CityEventKind.Investor: return "Инвестор";
+                    case CityEventKind.AsphaltDelivery: return "Поставка асфальта";
+                    case CityEventKind.ConcreteShortage: return "Дефицит бетона";
                     default: return "Новый район";
                 }
             }
@@ -4067,6 +4069,8 @@ namespace CityHighways.Presentation
                 case CityEventKind.Parade: return "Parade";
                 case CityEventKind.Snow: return "Snowfall";
                 case CityEventKind.Investor: return "Investor";
+                case CityEventKind.AsphaltDelivery: return "Asphalt Delivery";
+                case CityEventKind.ConcreteShortage: return "Concrete Shortage";
                 default: return "New District";
             }
         }
@@ -4099,6 +4103,10 @@ namespace CityHighways.Presentation
                     return $"Gravel roads cost {config.SnowExtraCost} extra cards this round.";
                 case CityEventKind.Investor:
                     return $"Every road built this round earns an extra +{config.InvestorBonus} pts.";
+                case CityEventKind.AsphaltDelivery:
+                    return $"Asphalt roads cost {config.AsphaltDeliveryDiscount} fewer cards this round (minimum one).";
+                case CityEventKind.ConcreteShortage:
+                    return $"Concrete roads cost {config.ConcreteShortageExtraCost} extra cards this round; a City Hall permit waives the surcharge.";
                 default:
                     return $"New district {DisplayPlace(_game.Map.DistrictName(cityEvent.DistrictId))} opened on the outskirts, bringing locations, roads and contracts.";
             }
@@ -4114,6 +4122,8 @@ namespace CityHighways.Presentation
                 case CityEventKind.Parade: return new Color(0.80f, 0.50f, 1f);
                 case CityEventKind.Snow: return new Color(0.85f, 0.92f, 1f);
                 case CityEventKind.Investor: return new Color(1f, 0.85f, 0.30f);
+                case CityEventKind.AsphaltDelivery: return new Color(0.38f, 0.85f, 0.70f);
+                case CityEventKind.ConcreteShortage: return new Color(1f, 0.52f, 0.32f);
                 default: return new Color(0.40f, 0.85f, 0.50f);
             }
         }

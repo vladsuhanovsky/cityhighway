@@ -13,7 +13,8 @@ namespace CityHighways.Core
         /// <summary>Год ремонта: каждый круг закрыты несколько свободных участков (следующие видны заранее), длинные дороги дают влияние.</summary>
         RepairYear,
         /// <summary>Выборы мэра: два аукциона, влияния больше, взятки дешевле, «друг мэра» в конце.</summary>
-        Elections
+        Elections,
+        SupplySeason
     }
 
     /// <summary>
@@ -24,7 +25,7 @@ namespace CityHighways.Core
     {
         public static readonly IReadOnlyList<ScenarioKind> All = new[]
         {
-            ScenarioKind.Standard, ScenarioKind.Winter, ScenarioKind.GreaterMoscow, ScenarioKind.RepairYear, ScenarioKind.Elections
+            ScenarioKind.Standard, ScenarioKind.Winter, ScenarioKind.GreaterMoscow, ScenarioKind.RepairYear, ScenarioKind.Elections, ScenarioKind.SupplySeason
         };
 
         public static ScenarioKind Of(GameConfig config) =>
@@ -38,6 +39,7 @@ namespace CityHighways.Core
                 case ScenarioKind.GreaterMoscow: return "Большой город";
                 case ScenarioKind.RepairYear: return "Год ремонта";
                 case ScenarioKind.Elections: return "Выборы мэра";
+                case ScenarioKind.SupplySeason: return "Сезон поставок";
                 default: return "Обычные правила";
             }
         }
@@ -51,6 +53,7 @@ namespace CityHighways.Core
                 case ScenarioKind.GreaterMoscow: return "Окраины открыты сразу, участков и контрактов больше — длинная партия.";
                 case ScenarioKind.RepairYear: return "Каждый круг часть дорог на ремонте; следующие видны заранее.";
                 case ScenarioKind.Elections: return "Два аукциона, больше влияния, дешёвые взятки, «друг мэра».";
+                case ScenarioKind.SupplySeason: return "Поставки асфальта и дефицит бетона меняют стоимость строительства.";
                 default: return "Правила без изменений.";
             }
         }
@@ -92,6 +95,13 @@ namespace CityHighways.Core
                         $"Взятки стоят {c.BribeDiscountCost} влияния.",
                         $"«Друг мэра»: кто за партию потратил больше всех влияния, получает +{c.MayorFriendBonus} очков."
                     };
+                case ScenarioKind.SupplySeason:
+                    return new[]
+                    {
+                        $"Поставка асфальта: {c.AsphaltDeliveryEvents} события, скидка {c.AsphaltDeliveryDiscount} карта (минимум одна).",
+                        $"Дефицит бетона: {c.ConcreteShortageEvents} события, надбавка {c.ConcreteShortageExtraCost} карта; разрешение мэрии снимает её.",
+                        "В кооперативе дефицит бетона повышает кризис, как снегопад."
+                    };
                 default:
                     return new[] { "Правила без изменений." };
             }
@@ -131,6 +141,10 @@ namespace CityHighways.Core
                     c.BribeDiscountCost = 1;
                     c.BribeExtraCardCost = 1;
                     c.MayorFriendBonus = 6;
+                    break;
+                case ScenarioKind.SupplySeason:
+                    c.AsphaltDeliveryEvents = 2;
+                    c.ConcreteShortageEvents = 2;
                     break;
             }
             return c;

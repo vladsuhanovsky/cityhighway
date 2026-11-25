@@ -560,13 +560,13 @@ namespace CityHighways.Core
             }
             foreach (int kind in data.eventDeck ?? new int[0])
             {
-                if (kind < 0 || kind > (int)CityEventKind.Investor) throw new FormatException($"Неизвестное событие {kind}.");
+                if (kind < 0 || kind > (int)CityEventKind.ConcreteShortage) throw new FormatException($"Неизвестное событие {kind}.");
                 game._eventDeck.Add((CityEventKind)kind);
             }
             foreach (var id in data.rushHourRoads ?? new string[0]) game._rushHourRoads.Add(FindRoad(id).Id);
             if (data.currentEvent >= 0)
             {
-                if (data.currentEvent > (int)CityEventKind.Investor) throw new FormatException($"Неизвестное событие {data.currentEvent}.");
+                if (data.currentEvent > (int)CityEventKind.ConcreteShortage) throw new FormatException($"Неизвестное событие {data.currentEvent}.");
                 var roads = (data.eventRoads ?? new string[0]).Select(id => FindRoad(id).Id).ToList();
                 game.CurrentEvent = new CityEvent((CityEventKind)data.currentEvent, roads,
                     string.IsNullOrEmpty(data.eventDistrict) ? null : data.eventDistrict);

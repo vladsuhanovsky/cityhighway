@@ -212,7 +212,11 @@ namespace CityHighways.Core
                     return road.Length + Config.SnowExtraCost;
                 if (road.Resource == Resource.Concrete && snowfall && Config.SnowHitsConcrete)
                     return road.Length + Config.SnowExtraCost;
+                if (road.Resource == Resource.Concrete && CurrentEvent?.Kind == CityEventKind.ConcreteShortage)
+                    return road.Length + Math.Max(0, Config.ConcreteShortageExtraCost);
             }
+            if (road.Resource == Resource.Asphalt && CurrentEvent?.Kind == CityEventKind.AsphaltDelivery)
+                return Math.Max(1, road.Length - Math.Max(0, Config.AsphaltDeliveryDiscount));
             if (!road.IsBridge) return road.Length;
             int cost = road.Length;
             if (CurrentEvent != null && CurrentEvent.Kind == CityEventKind.Subsidy) cost -= Config.BridgeSubsidy;
@@ -662,6 +666,8 @@ namespace CityHighways.Core
             for (int i = 0; i < Config.ParadeEvents; i++) _eventDeck.Add(CityEventKind.Parade);
             for (int i = 0; i < Config.SnowEvents; i++) _eventDeck.Add(CityEventKind.Snow);
             for (int i = 0; i < Config.InvestorEvents; i++) _eventDeck.Add(CityEventKind.Investor);
+            for (int i = 0; i < Config.AsphaltDeliveryEvents; i++) _eventDeck.Add(CityEventKind.AsphaltDelivery);
+            for (int i = 0; i < Config.ConcreteShortageEvents; i++) _eventDeck.Add(CityEventKind.ConcreteShortage);
             int closedCount = ClosedExpansions().Count;
             for (int i = 0; i < closedCount; i++) _eventDeck.Add(CityEventKind.NewDistrict);
             ShuffleUtil.InPlace(_eventDeck, _rng);

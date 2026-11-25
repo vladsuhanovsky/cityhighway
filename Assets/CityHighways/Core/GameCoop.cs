@@ -173,7 +173,7 @@ namespace CityHighways.Core
         bool CoopOnEvent(CityEventKind kind)
         {
             if (!IsCooperative || Phase == GamePhase.GameOver || Config.CoopCrisisPerBadEvent <= 0) return false;
-            if (kind != CityEventKind.Repair && kind != CityEventKind.Snow && kind != CityEventKind.Parade) return false;
+            if (kind != CityEventKind.Repair && kind != CityEventKind.Snow && kind != CityEventKind.Parade && kind != CityEventKind.ConcreteShortage) return false;
             Crisis += Config.CoopCrisisPerBadEvent;
             Emit($"Событие давит на город: кризис +{Config.CoopCrisisPerBadEvent} → {Crisis} из {CrisisMax}.");
             if (Crisis < CrisisMax) return false;
