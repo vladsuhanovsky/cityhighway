@@ -78,6 +78,17 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void FriendsRejectNonSteamPlayerIdentityAndUnsupportedRecordMode()
+        {
+            Assert.IsFalse(SocialReadContracts.ValidateFriends(
+                Friends(Record.Replace("76561198000000001", "not-a-steam-user"))));
+            Assert.IsFalse(SocialReadContracts.ValidateFriends(
+                Friends(Record.Replace("\"mode\":\"classic\"", "\"mode\":\"magnate\""))));
+            Assert.IsTrue(SocialReadContracts.ValidateFriends(
+                Friends(Record.Replace("\"mode\":\"classic\"", "\"mode\":\"coop\""))));
+        }
+
+        [Test]
         public void FriendsRejectExcessiveArrayOrResponseSize()
         {
             Assert.IsFalse(SocialReadContracts.ValidateFriends(
