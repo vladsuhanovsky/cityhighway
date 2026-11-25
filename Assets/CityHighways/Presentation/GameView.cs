@@ -95,6 +95,7 @@ namespace CityHighways.Presentation
         PlayerLook[] _looks = new PlayerLook[0];
         /// <summary>Сколько влияния ушло в профили после партии — показывается в итогах.</summary>
         List<Profiles.Credit> _profileCredits;
+        bool _campaignPassed, _campaignSaved;
 
         PlayerLook LookOf(int index) => index >= 0 && index < _looks.Length ? _looks[index] : PlayerLook.None;
 
@@ -1081,6 +1082,12 @@ namespace CityHighways.Presentation
             {
                 var map = CityHighwaysApp.LoadMap(_setup.mapResourcePath);
                 int seed = UnityEngine.Random.Range(0, int.MaxValue);
+                if (_setup.IsCampaign)
+                {
+                    var mission = CampaignCatalog.Find(_setup.campaignMission);
+                    if (mission == null) throw new InvalidOperationException("Unknown campaign mission.");
+                    seed = mission.Seed;
+                }
                 if (_setup.tutorial)
                 {
                     // Обучение: одна и та же раздача, без персонажей и лишних правил.
@@ -1150,7 +1157,7 @@ namespace CityHighways.Presentation
             catch (Exception e)
             {
                 Debug.LogException(e);
-                SaveSystem.Delete();
+                SaveSystem.Delete(_setup);
                 ShowError((EnglishUi ? "The save was damaged or did not match the map and was deleted.\n" : "Сохранение повреждено или не подходит к карте, поэтому удалено.\n") + e.Message);
                 return;
             }
@@ -1705,6 +1712,14 @@ namespace CityHighways.Presentation
             // Автосохранение после каждого хода; по окончании партии — запись статистики.
             if (finished)
             {
+                if (_setup.IsCampaign)
+                {
+                    var mission = CampaignCatalog.Find(_setup.campaignMission);
+                    _campaignPassed = mission != null && mission.Passed(_game);
+                    _campaignSaved = !_campaignPassed || CampaignStorage.TryComplete(_setup.campaignOwner, mission.Id);
+                    if (_campaignSaved) SaveSystem.Delete(_setup);
+                    return; // no ordinary wallet, achievements, stats, replay or cloud records
+                }
                 if (!Online && !_setup.tutorial) SaveSystem.Delete();
                 // Сначала профили (они знают, какие достижения открыла партия), потом запись в статистику.
                 _profileCredits = Profiles.CreditAfterGame(_game, _setup, Online ? _net.LocalSeat : (int?)null);
@@ -2761,6 +2776,11 @@ namespace CityHighways.Presentation
             }
 
             _statusText.text = Instruction(acting) + TimerText();
+            if (_setup.IsCampaign)
+            {
+                var mission = CampaignCatalog.Find(_setup.campaignMission);
+                if (mission != null) _statusText.tooltip = CampaignText.MissionTitle(mission) + " · " + CampaignText.Goal(mission);
+            }
             _statusText.style.color = TimerEnabled && HumanToAct && !_timerExpired && _turnTimeLeft <= 10f ? Theme.Danger : Theme.Text;
             MarkLogSeen();
             _finalRound.text = FinalText();
@@ -3489,6 +3509,17 @@ namespace CityHighways.Presentation
                 box.Add(influence);
             }
 
+            if (_setup.IsCampaign)
+            {
+                var mission = CampaignCatalog.Find(_setup.campaignMission);
+                if (mission != null)
+                {
+                    var outcome = Ui.Text(CampaignText.MissionTitle(mission) + " — " + CampaignText.Result(_campaignPassed, _campaignSaved) + "\n" + CampaignText.Goal(mission), 16f, _campaignPassed && _campaignSaved ? Theme.Gold : Theme.Danger, true);
+                    outcome.style.whiteSpace = WhiteSpace.Normal;
+                    outcome.style.marginTop = 10f;
+                    box.Add(outcome);
+                }
+            }
             box.Add(GameSummary(result));
 
             var buttons = Ui.Row();
@@ -3509,7 +3540,18 @@ namespace CityHighways.Presentation
                 : Ui.Button(LocalizationService.Get("game.ui.147"), () => _app.StartGame(_setup), ButtonKind.Primary, 17f);
             again.style.marginRight = 12f;
             buttons.Add(again);
-            buttons.Add(Ui.Button(LocalizationService.Get("game.ui.031"), _app.ShowMenu, ButtonKind.Secondary, 17f));
+            if (_setup.IsCampaign)
+            {
+                if (_campaignPassed && !_campaignSaved)
+                    buttons.Add(Ui.Button(EnglishUi ? "Retry saving" : "Повторить сохранение", () =>
+                    {
+                        _campaignSaved = CampaignStorage.TryComplete(_setup.campaignOwner, _setup.campaignMission);
+                        if (_campaignSaved) SaveSystem.Delete(_setup);
+                        ShowGameOver();
+                    }, ButtonKind.Secondary, 17f));
+                buttons.Add(Ui.Button(CampaignText.Title, _app.ShowCampaign, ButtonKind.Secondary, 17f));
+            }
+            else buttons.Add(Ui.Button(LocalizationService.Get("game.ui.031"), _app.ShowMenu, ButtonKind.Secondary, 17f));
             box.Add(buttons);
 
             ShowOverlay(OverlayKind.GameOver, Centered(box), Theme.Shade);

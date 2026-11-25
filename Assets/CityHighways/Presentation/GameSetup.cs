@@ -59,6 +59,10 @@ namespace CityHighways.Presentation
         /// <summary>Кооператив «Город против всех»: все компании — одна команда против города.</summary>
         public bool cooperative;
         public int coopDifficulty;
+        // Campaign checkpoints persist these fields; ordinary menu preferences do not use them.
+        public string campaignMission = "";
+        public string campaignOwner = "";
+        public bool IsCampaign => !string.IsNullOrEmpty(campaignMission);
         /// <summary>«Логистический магнат» — основной режим: город генерируется заново, компании возят грузы.</summary>
         public bool magnate = true;
         /// <summary>Сложность магната (MagnateDifficulty как int): 0 лёгкая, 1 обычная, 2 сложная, 3 эксперт.</summary>

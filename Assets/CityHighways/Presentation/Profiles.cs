@@ -27,6 +27,8 @@ namespace CityHighways.Presentation
         public string avatar = "";
         /// <summary>Профиль привязан к аккаунту Steam: ник и аватар берутся оттуда.</summary>
         public string steamId = "";
+        // Stable local campaign identity, independent of profile renames.
+        public string campaignId = "";
 
         public bool IsSteam => !string.IsNullOrEmpty(steamId);
 
