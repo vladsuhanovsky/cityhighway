@@ -10,11 +10,11 @@ Status: proposed product/engineering roadmap, agreed starting point for the stab
 
 ## Stage 6 — stabilization (P0)
 
-Batch 1, Draft PR #134: optional ring fix; geometry preflight; save/replay compatibility audit and version guard; 64-seed stress range plus determinism; reproducible diagnostics and City Generator Lab foundation; localization classifier and HUD audit; isolated Play Mode smoke and CI. Pending final HEAD CI.
+Batch 1, merged PR #134 (1b7c1b6): optional ring fix; geometry preflight; save/replay compatibility audit and version guard; 64-seed stress range plus determinism; reproducible diagnostics and City Generator Lab foundation; localization classifier and HUD audit; isolated Play Mode smoke and CI. Final HEAD 2e6f347: 1,341 Edit Mode tests and 2 Play Mode tests passed; localization audit passed (56 unresolved heuristic candidates). Manual Lab and visual acceptance remain open.
 
 Next gates:
 - [ ] Repair any CI failures, especially new generator coverage. Preserve real failed seeds and regression cases. Capture 3D river/hub/road reproduction.
-- [ ] Prevent destructive deletion on failed save load; add safe backup/recovery and old-build golden fixtures (see SAVE_REPLAY_COMPATIBILITY_AUDIT.md). Review Magnate persistence and map revision identity.
+- [ ] Batch 2: non-destructive load failure, bounded Classic/campaign save I/O, previous snapshot backup and explicit Editor recovery, save-summary localization. Pending CI and manual recovery smoke. Historical golden fixtures, runtime recovery UX, Magnate persistence and map revision identity remain open (see SAVE_RECOVERY.md).
 - [ ] Full standalone boot/menu/game/return tests with isolated data; actual controller and Deck 1280x800.
 - [ ] Resolve real localization defects, review unresolved scanner candidates; RU/EN visual matrix and no clipped text.
 - [ ] Profile timer-only refresh, payment allocations and map repaint; measured targeted changes only.
