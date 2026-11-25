@@ -895,13 +895,22 @@ namespace CityHighways.Presentation
             _game = game;
             Affordable.Clear();
             PathRoads.Clear();
-            BuildProgress.Clear();
-            RoadSweeps.Clear();
-            UpgradeSweeps.Clear();
+            ResetTransientEffects();
             HoverRoad = null;
             SetConstructionPreview(null, false, false);
             RefreshVisibility();
             Repaint();
+        }
+
+        void ResetTransientEffects()
+        {
+            BuildProgress.Clear();
+            RoadSweeps.Clear();
+            UpgradeSweeps.Clear();
+            RoutePath = null;
+            RouteProgress = 0f;
+            _sparks.Clear();
+            _flashStart = PulseTime - FlashDuration - 1f;
         }
 
         public void SetGame(Game game)
@@ -914,9 +923,7 @@ namespace CityHighways.Presentation
             HighlightTo = null;
             HighlightThird = null;
             PathRoads.Clear();
-            BuildProgress.Clear();
-            RoadSweeps.Clear();
-            UpgradeSweeps.Clear();
+            ResetTransientEffects();
             HoverRoad = null;
             SelectedRoadId = null;
             SetConstructionPreview(null, false, false);

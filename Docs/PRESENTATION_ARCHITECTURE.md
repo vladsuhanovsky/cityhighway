@@ -12,6 +12,7 @@ The Core layer remains the authority for validation and game state transitions.
 | --- | --- |
 | `GameView.cs` | Gameplay screen composition, input coordination, turn state and animation orchestration |
 | `GameFxSnapshot.cs` | Detached presentation state capture and deterministic card-flight planning |
+| `GameFxLifetime.cs` | Scope-owned effect scheduling and temporary UI element cleanup |
 | `GameHudReadout.cs` | Classic player/status/final-round display data without VisualElements |
 | `GameTooltipText.cs` | Read-only Classic road, location, player, resource and pieces tooltips; shared contract titles | 
 | `GameView.Contracts.cs` | Contract selection and cards, pinned paths, route highlighting |
@@ -55,3 +56,7 @@ have coherent responsibilities, explicit dependencies and focused tests.
 ## HUD / animation-state boundary
 
 The snapshot captures the same Core values as before; only presentation state is detached. Card-flight planning preserves resource/player order, face-up slot matching, and 0.15-second stagger. A mismatched player count is ignored instead of producing invalid flight indices. The HUD readout uses explicit session flags and Core's visible score; it does not read private card identities for player rows. Existing tween callbacks, audio, UI elements, save/replay and network flows are unchanged. Eight parameterized Edit Mode cases cover snapshot capture, card-flight planning, status precedence and RU/EN player display data. Manual check: draw cards (face-up and deck), build roads, observe bot/online/hotseat status, final round and reduced motion. No measured performance claim.
+
+## Effect lifetime / reset boundary
+
+Classic GameView now schedules its effects via GameFxLifetime. Beginning or replacing a party cancels only that scope and removes temporary cards, coins, and floating labels; persistent HUD and tutorial elements remain separately owned. Toast, tooltip, event glow and deferred start are reset. MapView clears its transient route, construction and particle effects when the map game changes. Tweener supports scope cancellation and skips cancelled callbacks in an in-progress Tick snapshot (also for global Clear). Undo/Redo uses Begin's scoped reset instead of a global clear. Five Edit Mode cases cover cancellation, completion, reset during callbacks, clear during callbacks and scope isolation. Verify visual playback and online resync manually; no timing or performance claims.
