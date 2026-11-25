@@ -30,6 +30,8 @@ namespace CityHighways.Presentation
                 case "Москва": return "Moscow";
                 case "Амстердам": return "Amsterdam";
                 case "Чунцин": return "Chongqing";
+                case "Париж": return "Paris";
+                case "Берлин": return "Berlin";
                 case "Центр": return "Centre";
                 case "Восток": return "East";
                 case "Запад": return "West";

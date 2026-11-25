@@ -965,7 +965,7 @@ namespace CityHighways.Presentation
                     float spread = members.Max(l => Mathf.Sqrt(Mathf.Pow((l.X - mx) * 1400f, 2f) + Mathf.Pow((l.Y - my) * 780f, 2f)));
                     if (spread > 230f) continue;
                 }
-                var label = Ui.Text(MagnateLocationText.Name(district.Name).ToUpperInvariant(), 14f, DistrictLabelColor, true);
+                var label = Ui.Text(CityMapText.Name(district.Name).ToUpperInvariant(), 14f, DistrictLabelColor, true);
                 label.style.letterSpacing = 3f;
                 label.style.whiteSpace = WhiteSpace.NoWrap;
                 // Обводка: подпись района читается и поверх дорог, и поверх светлых крыш.
@@ -980,7 +980,7 @@ namespace CityHighways.Presentation
 
             foreach (var location in game.Map.Locations)
             {
-                var label = Ui.Text(MagnateLocationText.Name(location.Name), 12f, Ink, true);
+                var label = Ui.Text(CityMapText.Name(location.Name), 12f, Ink, true);
                 label.style.whiteSpace = WhiteSpace.NoWrap;
                 label.style.unityTextOutlineWidth = 0.4f;
                 label.style.unityTextOutlineColor = new Color(0f, 0f, 0f, 0.8f);
@@ -995,7 +995,7 @@ namespace CityHighways.Presentation
 
             if (game.Map.Ring != null)
             {
-                var ring = Ui.Text(MagnateLocationText.Name(game.Map.Ring.Name), 12f, new Color(1f, 0.72f, 0.35f, 0.85f), true);
+                var ring = Ui.Text(CityMapText.Name(game.Map.Ring.Name), 12f, new Color(1f, 0.72f, 0.35f, 0.85f), true);
                 ring.style.backgroundColor = LabelBack;
                 Ui.Padding(ring, 0f, 4f);
                 _ringLabel = Holder(80f);
@@ -1003,7 +1003,7 @@ namespace CityHighways.Presentation
                 _labels.Add(_ringLabel);
             }
 
-            BuildTitle(MagnateLocationText.Name(game.Map.Name));
+            BuildTitle(CityMapText.Name(game.Map.Name));
             Relayout();
         }
 

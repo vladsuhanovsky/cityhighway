@@ -8,7 +8,7 @@ namespace CityHighways.Presentation
     {
         static bool En => LocalizationService.Language == "en";
         static string T(string en, string ru) => En ? en : ru;
-        static string Place(string value) => MagnateLocationText.Name(value);
+        static string Place(string value) => CityMapText.Name(value);
 
         public static string Title(ReplayFile file) =>
             (file.source == "local" ? T("Match replay", "Повтор партии") : T("Replay: ", "Повтор: ") + file.author)

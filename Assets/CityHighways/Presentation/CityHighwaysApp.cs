@@ -303,7 +303,7 @@ namespace CityHighways.Presentation
             _root.Add(loading.Root);
             int people = setup.players.Count;
             if (!string.IsNullOrEmpty(mapName))
-                loading.SetSubtitle(LocalizationService.Language == "en" ? $"Map: {MagnateLocationText.Name(mapName)} · {people} companies" : $"Карта «{mapName}» · {people} {Plural(people, "компания", "компании", "компаний")}");
+                loading.SetSubtitle(LocalizationService.Language == "en" ? $"Map: {CityMapText.Name(mapName)} · {people} companies" : $"Карта «{mapName}» · {people} {Plural(people, "компания", "компании", "компаний")}");
             GameView view = null;
             var steps = new List<(string, Action)>
             {

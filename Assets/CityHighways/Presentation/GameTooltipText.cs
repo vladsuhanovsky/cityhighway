@@ -8,7 +8,7 @@ namespace CityHighways.Presentation
     public static class GameTooltipText
     {
         static bool EnglishUi => LocalizationService.Language == "en";
-        static string DisplayPlace(string name) => MagnateLocationText.Name(name);
+        static string DisplayPlace(string name) => CityMapText.Name(name);
         static string DistrictName(CityMap map, string id) => DisplayPlace(map.DistrictName(id));
 
         static string Plural(int n, string one, string few, string many)

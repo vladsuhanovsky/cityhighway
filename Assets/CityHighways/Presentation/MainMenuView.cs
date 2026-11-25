@@ -1238,14 +1238,8 @@ namespace CityHighways.Presentation
             if (_mapButton != null)
             {
                 var map = GameSetup.MapOf(_setup.mapResourcePath);
-                _mapButton.text = LocalizationService.Language == "en"
-                    ? (map.Path.EndsWith("amsterdam") ? "Amsterdam" : map.Path.EndsWith("chongqing") ? "Chongqing" : "Moscow")
-                    : map.Title;
-                _mapHint.text = LocalizationService.Language == "en"
-                    ? (map.Path.EndsWith("amsterdam") ? "Compact canal city: the IJ bay separates Noord, the Amstel runs toward the centre, and the A10 ring surrounds the city."
-                       : map.Path.EndsWith("chongqing") ? "A city of bridges and hills: the centre lies between the Yangtze and Jialing rivers, with bridges connecting the banks."
-                       : "A large city with 66 locations, the Moskva River crossing the map and three outlying districts.")
-                    : map.Hint;
+                _mapButton.text = map.DisplayTitle;
+                _mapHint.text = map.DisplayHint;
                 _modeButton.text = LocalizationService.Get(_setup.magnate ? "menu.new_game.mode_magnate" : _setup.cooperative ? "menu.new_game.mode_coop" : "menu.new_game.mode_competitive");
                 var rules = _setup.CreateConfig();
                 var magnateRules = new MagnateConfig();

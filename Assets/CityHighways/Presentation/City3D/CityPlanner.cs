@@ -80,7 +80,7 @@ namespace CityHighways.Presentation
         {
             string name = map?.Name ?? "";
             if (name == "Чунцин") return CityStyle.Chinese;
-            if (name == "Амстердам") return CityStyle.European;
+            if (name == "Амстердам" || name == "Париж" || name == "Берлин") return CityStyle.European;
             return CityStyle.Standard;
         }
 
