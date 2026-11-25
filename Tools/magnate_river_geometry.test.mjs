@@ -98,3 +98,12 @@ test("CI checks generator, 3D water and shared policy when they change", () => {
     assert.ok(workflow.split(file).length - 1 >= 2, file);
   }
 });
+
+test("hub placement prioritizes completely dry building footprints", () => {
+  assert.match(hubs, /bool bestIsDry = false/);
+  assert.match(hubs, /bool dry = riverGap >= 0\.015f/);
+  assert.match(hubs, /if \(bestIsDry && !dry\) continue/);
+  assert.match(hubs, /if \(dry && !bestIsDry\)/);
+  assert.match(hubs, /float gap = SegmentDistance\(site, a, b\) - riverHalf/);
+  assert.match(hubs, /riverGap = Mathf\.Min\(riverGap, gap\)/);
+});
