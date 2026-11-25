@@ -140,3 +140,37 @@ test("null club acknowledgement is reconstructed as null instead of Unity JsonUt
   assert.match(ack, /response = new SocialCloud\.ReportResponse[\s\S]*?club = clubAck/);
   assert.doesNotMatch(ack, /JsonUtility\.FromJson<SocialCloud\.ReportResponse>/);
 });
+
+
+test("pending report snapshots carry a version and integrity checksum", () => {
+  assert.match(outbox, /const int CurrentFormatVersion = 1/);
+  assert.match(outbox, /SHA256\.Create\(\)/);
+  assert.match(outbox, /formatVersion = CurrentFormatVersion/);
+  assert.match(outbox, /checksum = Checksum\(_entries\)/);
+  assert.match(outbox, /string\.Equals\(state\.checksum, Checksum\(state\.entries\), StringComparison\.Ordinal\)/);
+});
+
+test("legacy snapshots are accepted only in their known serialized shape", () => {
+  assert.match(outbox, /sealed class LegacyState/);
+  assert.match(outbox, /state\.formatVersion == 0/);
+  assert.match(outbox, /string\.Equals\(json, JsonUtility\.ToJson\(legacy\), StringComparison\.Ordinal\)/);
+});
+
+test("corrupt snapshots cannot silently discard entries or overwrite originals", () => {
+  assert.match(outbox, /static bool ValidEntries\(List<Entry> entries\)/);
+  assert.match(outbox, /if \(validEntries == null\)[\s\S]*?continue;/);
+  assert.match(outbox, /_entries\.AddRange\(validEntries\)/);
+  assert.match(outbox, /if \(hadSnapshot\)[\s\S]*?_loadBlocked = true/);
+  assert.match(outbox, /if \(_loadBlocked\)[\s\S]*?return false;/);
+});
+
+test("unreadable local game report is retained with bounded retry instead of deleted", () => {
+  assert.match(delivery, /Unreadable social report retained for later repair/);
+  assert.match(delivery, /if \(!ReportOutbox\.Reschedule\(entry, DateTime\.UtcNow\.Ticks, 422\)\)/);
+  assert.doesNotMatch(delivery, /Discarding unreadable social report/);
+});
+
+test("missing Steam identity produces visible notification rather than silent report loss", () => {
+  assert.match(delivery, /if \(!SocialReportOutbox\.ValidOwner\(owner\)\)[\s\S]*?Steam identity is unavailable/);
+  assert.match(delivery, /Steam-аккаунт недоступен/);
+});
