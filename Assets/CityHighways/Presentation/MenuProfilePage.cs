@@ -244,7 +244,7 @@ namespace CityHighways.Presentation
             var left = Card(14f);
             left.style.alignItems = Align.Center;
             left.style.marginRight = 14f;
-            left.style.width = 280f;
+            left.style.width = InterfaceLayout.ProfileSidebarWidth;
             left.style.justifyContent = Justify.Center;
             left.Add(Ui.Text(LocalizationService.Get("menu.profile.005"), 18f, Theme.Text, true));
             var hint = Ui.Text(LocalizationService.Get("menu.profile.013"), 12f, Theme.TextDim);
