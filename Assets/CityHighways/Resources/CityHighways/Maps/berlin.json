@@ -1,0 +1,1347 @@
+{
+ "name": "Берлин",
+ "districts": [
+  {
+   "id": "center",
+   "name": "Центр"
+  },
+  {
+   "id": "west",
+   "name": "Шарлоттенбург"
+  },
+  {
+   "id": "north",
+   "name": "Веддинг"
+  },
+  {
+   "id": "east",
+   "name": "Фридрихсхайн"
+  },
+  {
+   "id": "south",
+   "name": "Темпельхоф"
+  },
+  {
+   "id": "parks",
+   "name": "Тиргартен"
+  },
+  {
+   "id": "kreuzberg",
+   "name": "Кройцберг"
+  },
+  {
+   "id": "neukoelln",
+   "name": "Нойкёльн"
+  },
+  {
+   "id": "airports",
+   "name": "Аэропорты"
+  },
+  {
+   "id": "port",
+   "name": "Трептов"
+  },
+  {
+   "id": "business",
+   "name": "Александерплац"
+  },
+  {
+   "id": "spandau",
+   "name": "Шпандау",
+   "expansion": true
+  },
+  {
+   "id": "pankow",
+   "name": "Панков",
+   "expansion": true
+  },
+  {
+   "id": "koepenick",
+   "name": "Кёпеник",
+   "expansion": true
+  }
+ ],
+ "locations": [
+  {
+   "id": "b01",
+   "name": "Цитадель",
+   "district": "spandau",
+   "x": 0.083,
+   "y": 0.088
+  },
+  {
+   "id": "b02",
+   "name": "Шпандау",
+   "district": "spandau",
+   "x": 0.208,
+   "y": 0.072
+  },
+  {
+   "id": "b03",
+   "name": "Юнгфернхайде",
+   "district": "west",
+   "x": 0.365,
+   "y": 0.088
+  },
+  {
+   "id": "b04",
+   "name": "Веддинг",
+   "district": "north",
+   "x": 0.49,
+   "y": 0.072
+  },
+  {
+   "id": "b05",
+   "name": "Гезундбруннен",
+   "district": "north",
+   "x": 0.647,
+   "y": 0.088
+  },
+  {
+   "id": "b06",
+   "name": "Панков",
+   "district": "pankow",
+   "x": 0.772,
+   "y": 0.072
+  },
+  {
+   "id": "b07",
+   "name": "Вайсензе",
+   "district": "pankow",
+   "x": 0.929,
+   "y": 0.088
+  },
+  {
+   "id": "b08",
+   "name": "Рулебен",
+   "district": "spandau",
+   "x": 0.067,
+   "y": 0.222
+  },
+  {
+   "id": "b09",
+   "name": "Вестенд",
+   "district": "west",
+   "x": 0.224,
+   "y": 0.238
+  },
+  {
+   "id": "b10",
+   "name": "Шарлоттенбург",
+   "district": "west",
+   "x": 0.349,
+   "y": 0.222
+  },
+  {
+   "id": "b11",
+   "name": "Моабит",
+   "district": "north",
+   "x": 0.506,
+   "y": 0.238
+  },
+  {
+   "id": "b12",
+   "name": "Хауптбанхоф",
+   "district": "center",
+   "x": 0.631,
+   "y": 0.222
+  },
+  {
+   "id": "b13",
+   "name": "Пренцлауэр-Берг",
+   "district": "business",
+   "x": 0.788,
+   "y": 0.238
+  },
+  {
+   "id": "b14",
+   "name": "Лихтенберг",
+   "district": "east",
+   "x": 0.913,
+   "y": 0.222
+  },
+  {
+   "id": "b15",
+   "name": "Олимпийский стадион",
+   "district": "west",
+   "x": 0.083,
+   "y": 0.388
+  },
+  {
+   "id": "b16",
+   "name": "Бисмаркштрассе",
+   "district": "west",
+   "x": 0.208,
+   "y": 0.372
+  },
+  {
+   "id": "b17",
+   "name": "Тиргартен",
+   "district": "parks",
+   "x": 0.365,
+   "y": 0.388
+  },
+  {
+   "id": "b18",
+   "name": "Рейхстаг",
+   "district": "center",
+   "x": 0.49,
+   "y": 0.372
+  },
+  {
+   "id": "b19",
+   "name": "Музейный остров",
+   "district": "center",
+   "x": 0.647,
+   "y": 0.388
+  },
+  {
+   "id": "b20",
+   "name": "Александерплац",
+   "district": "business",
+   "x": 0.772,
+   "y": 0.372
+  },
+  {
+   "id": "b21",
+   "name": "Остбанхоф",
+   "district": "east",
+   "x": 0.929,
+   "y": 0.388
+  },
+  {
+   "id": "b22",
+   "name": "Груневальд",
+   "district": "parks",
+   "x": 0.067,
+   "y": 0.622
+  },
+  {
+   "id": "b23",
+   "name": "Курфюрстендамм",
+   "district": "west",
+   "x": 0.224,
+   "y": 0.638
+  },
+  {
+   "id": "b24",
+   "name": "Зоологический сад",
+   "district": "parks",
+   "x": 0.349,
+   "y": 0.622
+  },
+  {
+   "id": "b25",
+   "name": "Потсдамская площадь",
+   "district": "center",
+   "x": 0.506,
+   "y": 0.638
+  },
+  {
+   "id": "b26",
+   "name": "Морицплац",
+   "district": "kreuzberg",
+   "x": 0.631,
+   "y": 0.622
+  },
+  {
+   "id": "b27",
+   "name": "Гёрлицер-парк",
+   "district": "kreuzberg",
+   "x": 0.788,
+   "y": 0.638
+  },
+  {
+   "id": "b28",
+   "name": "Трептов-парк",
+   "district": "port",
+   "x": 0.913,
+   "y": 0.622
+  },
+  {
+   "id": "b29",
+   "name": "Далем",
+   "district": "parks",
+   "x": 0.083,
+   "y": 0.788
+  },
+  {
+   "id": "b30",
+   "name": "Штеглиц",
+   "district": "south",
+   "x": 0.208,
+   "y": 0.772
+  },
+  {
+   "id": "b31",
+   "name": "Шёнеберг",
+   "district": "south",
+   "x": 0.365,
+   "y": 0.788
+  },
+  {
+   "id": "b32",
+   "name": "Темпельхоф",
+   "district": "south",
+   "x": 0.49,
+   "y": 0.772
+  },
+  {
+   "id": "b33",
+   "name": "Германплац",
+   "district": "neukoelln",
+   "x": 0.647,
+   "y": 0.788
+  },
+  {
+   "id": "b34",
+   "name": "Зонненаллее",
+   "district": "neukoelln",
+   "x": 0.772,
+   "y": 0.772
+  },
+  {
+   "id": "b35",
+   "name": "Кёпеник",
+   "district": "koepenick",
+   "x": 0.929,
+   "y": 0.788
+  },
+  {
+   "id": "b36",
+   "name": "Лихтерфельде",
+   "district": "south",
+   "x": 0.067,
+   "y": 0.912
+  },
+  {
+   "id": "b37",
+   "name": "Мариендорф",
+   "district": "south",
+   "x": 0.224,
+   "y": 0.928
+  },
+  {
+   "id": "b38",
+   "name": "Букков",
+   "district": "neukoelln",
+   "x": 0.349,
+   "y": 0.912
+  },
+  {
+   "id": "b39",
+   "name": "Рудов",
+   "district": "airports",
+   "x": 0.506,
+   "y": 0.928
+  },
+  {
+   "id": "b40",
+   "name": "Шёнефельд",
+   "district": "airports",
+   "x": 0.631,
+   "y": 0.912
+  },
+  {
+   "id": "b41",
+   "name": "Адлерсхоф",
+   "district": "port",
+   "x": 0.788,
+   "y": 0.928
+  },
+  {
+   "id": "b42",
+   "name": "Мюггельзее",
+   "district": "koepenick",
+   "x": 0.913,
+   "y": 0.912
+  }
+ ],
+ "roads": [
+  {
+   "id": "r01",
+   "from": "b01",
+   "to": "b02",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r02",
+   "from": "b02",
+   "to": "b03",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r03",
+   "from": "b03",
+   "to": "b04",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r04",
+   "from": "b04",
+   "to": "b05",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r05",
+   "from": "b05",
+   "to": "b06",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r06",
+   "from": "b06",
+   "to": "b07",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r07",
+   "from": "b08",
+   "to": "b09",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r08",
+   "from": "b09",
+   "to": "b10",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r09",
+   "from": "b10",
+   "to": "b11",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r10",
+   "from": "b11",
+   "to": "b12",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r11",
+   "from": "b12",
+   "to": "b13",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r12",
+   "from": "b13",
+   "to": "b14",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r13",
+   "from": "b15",
+   "to": "b16",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r14",
+   "from": "b16",
+   "to": "b17",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r15",
+   "from": "b17",
+   "to": "b18",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r16",
+   "from": "b18",
+   "to": "b19",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r17",
+   "from": "b19",
+   "to": "b20",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r18",
+   "from": "b20",
+   "to": "b21",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r19",
+   "from": "b22",
+   "to": "b23",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r20",
+   "from": "b23",
+   "to": "b24",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r21",
+   "from": "b24",
+   "to": "b25",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r22",
+   "from": "b25",
+   "to": "b26",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r23",
+   "from": "b26",
+   "to": "b27",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r24",
+   "from": "b27",
+   "to": "b28",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r25",
+   "from": "b29",
+   "to": "b30",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r26",
+   "from": "b30",
+   "to": "b31",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r27",
+   "from": "b31",
+   "to": "b32",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r28",
+   "from": "b32",
+   "to": "b33",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r29",
+   "from": "b33",
+   "to": "b34",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r30",
+   "from": "b34",
+   "to": "b35",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r31",
+   "from": "b36",
+   "to": "b37",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r32",
+   "from": "b37",
+   "to": "b38",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r33",
+   "from": "b38",
+   "to": "b39",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r34",
+   "from": "b39",
+   "to": "b40",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r35",
+   "from": "b40",
+   "to": "b41",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r36",
+   "from": "b41",
+   "to": "b42",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r37",
+   "from": "b01",
+   "to": "b08",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r38",
+   "from": "b02",
+   "to": "b09",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r39",
+   "from": "b03",
+   "to": "b10",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r40",
+   "from": "b04",
+   "to": "b11",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r41",
+   "from": "b05",
+   "to": "b12",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r42",
+   "from": "b06",
+   "to": "b13",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r43",
+   "from": "b07",
+   "to": "b14",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r44",
+   "from": "b08",
+   "to": "b15",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r45",
+   "from": "b09",
+   "to": "b16",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r46",
+   "from": "b10",
+   "to": "b17",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r47",
+   "from": "b11",
+   "to": "b18",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r48",
+   "from": "b12",
+   "to": "b19",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r49",
+   "from": "b13",
+   "to": "b20",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r50",
+   "from": "b14",
+   "to": "b21",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r51",
+   "from": "b15",
+   "to": "b22",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r52",
+   "from": "b17",
+   "to": "b24",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r53",
+   "from": "b18",
+   "to": "b25",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r54",
+   "from": "b19",
+   "to": "b26",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r55",
+   "from": "b21",
+   "to": "b28",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r56",
+   "from": "b22",
+   "to": "b29",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r57",
+   "from": "b23",
+   "to": "b30",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r58",
+   "from": "b24",
+   "to": "b31",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r59",
+   "from": "b25",
+   "to": "b32",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r60",
+   "from": "b26",
+   "to": "b33",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r61",
+   "from": "b27",
+   "to": "b34",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r62",
+   "from": "b28",
+   "to": "b35",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r63",
+   "from": "b29",
+   "to": "b36",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r64",
+   "from": "b30",
+   "to": "b37",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r65",
+   "from": "b31",
+   "to": "b38",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r66",
+   "from": "b32",
+   "to": "b39",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r67",
+   "from": "b33",
+   "to": "b40",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r68",
+   "from": "b34",
+   "to": "b41",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r69",
+   "from": "b35",
+   "to": "b42",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r70",
+   "from": "b03",
+   "to": "b11",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r71",
+   "from": "b07",
+   "to": "b13",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r72",
+   "from": "b09",
+   "to": "b17",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r73",
+   "from": "b13",
+   "to": "b19",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r74",
+   "from": "b15",
+   "to": "b23",
+   "length": 4,
+   "resource": "steel"
+  },
+  {
+   "id": "r75",
+   "from": "b19",
+   "to": "b25",
+   "length": 4,
+   "resource": "steel"
+  },
+  {
+   "id": "r76",
+   "from": "b25",
+   "to": "b31",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r77",
+   "from": "b27",
+   "to": "b35",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r78",
+   "from": "b31",
+   "to": "b37",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r79",
+   "from": "b33",
+   "to": "b41",
+   "length": 4,
+   "resource": "asphalt"
+  }
+ ],
+ "contracts": [
+  {
+   "id": "c01",
+   "from": "business",
+   "to": "center",
+   "points": 4
+  },
+  {
+   "id": "c02",
+   "from": "business",
+   "to": "east",
+   "points": 4
+  },
+  {
+   "id": "c03",
+   "from": "center",
+   "to": "kreuzberg",
+   "points": 4
+  },
+  {
+   "id": "c04",
+   "from": "center",
+   "to": "parks",
+   "points": 4
+  },
+  {
+   "id": "c05",
+   "from": "kreuzberg",
+   "to": "port",
+   "points": 4
+  },
+  {
+   "id": "c06",
+   "from": "north",
+   "to": "west",
+   "points": 4
+  },
+  {
+   "id": "c07",
+   "from": "airports",
+   "to": "center",
+   "points": 5
+  },
+  {
+   "id": "c08",
+   "from": "airports",
+   "to": "kreuzberg",
+   "points": 5
+  },
+  {
+   "id": "c09",
+   "from": "neukoelln",
+   "to": "parks",
+   "points": 5
+  },
+  {
+   "id": "c10",
+   "from": "center",
+   "to": "neukoelln",
+   "points": 6
+  },
+  {
+   "id": "c11",
+   "from": "center",
+   "to": "west",
+   "points": 6
+  },
+  {
+   "id": "c12",
+   "from": "kreuzberg",
+   "to": "south",
+   "points": 6
+  },
+  {
+   "id": "c13",
+   "from": "business",
+   "to": "kreuzberg",
+   "points": 7
+  },
+  {
+   "id": "c14",
+   "from": "business",
+   "to": "north",
+   "points": 7
+  },
+  {
+   "id": "c15",
+   "from": "east",
+   "to": "kreuzberg",
+   "points": 7
+  },
+  {
+   "id": "c16",
+   "from": "airports",
+   "to": "parks",
+   "points": 8
+  },
+  {
+   "id": "c17",
+   "from": "center",
+   "to": "east",
+   "points": 8
+  },
+  {
+   "id": "c18",
+   "from": "kreuzberg",
+   "to": "north",
+   "points": 8
+  },
+  {
+   "id": "c19",
+   "from": "kreuzberg",
+   "to": "parks",
+   "points": 8
+  },
+  {
+   "id": "c20",
+   "from": "neukoelln",
+   "to": "west",
+   "points": 8
+  },
+  {
+   "id": "c21",
+   "from": "business",
+   "to": "neukoelln",
+   "points": 9
+  },
+  {
+   "id": "c22",
+   "from": "east",
+   "to": "neukoelln",
+   "points": 9
+  },
+  {
+   "id": "c23",
+   "from": "port",
+   "to": "south",
+   "points": 9
+  },
+  {
+   "id": "c24",
+   "from": "airports",
+   "to": "north",
+   "points": 12
+  },
+  {
+   "id": "c25",
+   "from": "center",
+   "to": "port",
+   "points": 12
+  },
+  {
+   "id": "c26",
+   "from": "east",
+   "to": "north",
+   "points": 12
+  },
+  {
+   "id": "c27",
+   "from": "neukoelln",
+   "to": "north",
+   "points": 12
+  },
+  {
+   "id": "c28",
+   "from": "airports",
+   "to": "business",
+   "points": 13
+  },
+  {
+   "id": "c29",
+   "from": "business",
+   "to": "parks",
+   "points": 13
+  },
+  {
+   "id": "c30",
+   "from": "kreuzberg",
+   "to": "west",
+   "points": 13
+  },
+  {
+   "id": "c31",
+   "from": "business",
+   "to": "west",
+   "points": 14
+  },
+  {
+   "id": "c32",
+   "from": "airports",
+   "to": "east",
+   "points": 19
+  },
+  {
+   "id": "c33",
+   "from": "north",
+   "to": "port",
+   "points": 19
+  },
+  {
+   "id": "c34",
+   "from": "parks",
+   "to": "port",
+   "points": 19
+  },
+  {
+   "id": "c35",
+   "from": "east",
+   "to": "parks",
+   "points": 20
+  },
+  {
+   "id": "c36",
+   "from": "port",
+   "to": "west",
+   "points": 22
+  },
+  {
+   "id": "c37",
+   "from": "spandau",
+   "to": "south",
+   "points": 9
+  },
+  {
+   "id": "c38",
+   "from": "spandau",
+   "to": "east",
+   "points": 24
+  },
+  {
+   "id": "c39",
+   "from": "pankow",
+   "to": "center",
+   "points": 6
+  },
+  {
+   "id": "c40",
+   "from": "pankow",
+   "to": "airports",
+   "points": 19
+  },
+  {
+   "id": "c41",
+   "from": "koepenick",
+   "to": "east",
+   "points": 6
+  },
+  {
+   "id": "c42",
+   "from": "koepenick",
+   "to": "parks",
+   "points": 21
+  },
+  {
+   "id": "c43",
+   "from": "center",
+   "to": "parks",
+   "points": 16,
+   "kind": "transit",
+   "third": "airports"
+  },
+  {
+   "id": "c44",
+   "from": "west",
+   "to": "kreuzberg",
+   "points": 33,
+   "kind": "hub",
+   "third": "port"
+  },
+  {
+   "id": "c45",
+   "from": "north",
+   "to": "neukoelln",
+   "points": 23,
+   "kind": "transit",
+   "third": "business"
+  },
+  {
+   "id": "c46",
+   "from": "east",
+   "to": "airports",
+   "points": 27,
+   "kind": "hub",
+   "third": "center"
+  },
+  {
+   "id": "c47",
+   "from": "south",
+   "to": "port",
+   "points": 26,
+   "kind": "transit",
+   "third": "west"
+  },
+  {
+   "id": "c48",
+   "from": "parks",
+   "to": "business",
+   "points": 22,
+   "kind": "hub",
+   "third": "north"
+  }
+ ],
+ "river": [
+  {
+   "x": 0,
+   "y": 0.47
+  },
+  {
+   "x": 0.143,
+   "y": 0.46
+  },
+  {
+   "x": 0.286,
+   "y": 0.49
+  },
+  {
+   "x": 0.429,
+   "y": 0.52
+  },
+  {
+   "x": 0.571,
+   "y": 0.54
+  },
+  {
+   "x": 0.714,
+   "y": 0.5
+  },
+  {
+   "x": 0.857,
+   "y": 0.46
+  },
+  {
+   "x": 1,
+   "y": 0.45
+  }
+ ],
+ "rivers": [
+  {
+   "name": "Шпрее",
+   "points": [
+    {
+     "x": 0,
+     "y": 0.47
+    },
+    {
+     "x": 0.143,
+     "y": 0.46
+    },
+    {
+     "x": 0.286,
+     "y": 0.49
+    },
+    {
+     "x": 0.429,
+     "y": 0.52
+    },
+    {
+     "x": 0.571,
+     "y": 0.54
+    },
+    {
+     "x": 0.714,
+     "y": 0.5
+    },
+    {
+     "x": 0.857,
+     "y": 0.46
+    },
+    {
+     "x": 1,
+     "y": 0.45
+    }
+   ]
+  }
+ ],
+ "goals": [
+  {
+   "id": "g1",
+   "name": "Воздушная гавань",
+   "kind": "locations",
+   "district": "airports",
+   "count": 2,
+   "points": 8
+  },
+  {
+   "id": "g2",
+   "name": "Город мостов",
+   "kind": "bridges",
+   "count": 3,
+   "points": 8
+  },
+  {
+   "id": "g3",
+   "name": "Вся агломерация",
+   "kind": "network",
+   "count": 7,
+   "points": 8
+  },
+  {
+   "id": "g4",
+   "name": "Дороги окраин",
+   "kind": "resource_pieces",
+   "resource": "gravel",
+   "count": 9,
+   "points": 6
+  },
+  {
+   "id": "g5",
+   "name": "Дальние трассы",
+   "kind": "long_roads",
+   "length": 3,
+   "count": 3,
+   "points": 7
+  },
+  {
+   "id": "g6",
+   "name": "Сердце города",
+   "kind": "locations",
+   "district": "center",
+   "count": 3,
+   "points": 8
+  },
+  {
+   "id": "g7",
+   "name": "Портовый город",
+   "kind": "locations",
+   "district": "port",
+   "count": 2,
+   "points": 6
+  }
+ ],
+ "piecesScale": 0.85
+}

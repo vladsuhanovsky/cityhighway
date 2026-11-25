@@ -68,7 +68,7 @@ namespace CityHighways.Presentation
                 content.style.flexShrink = 1f;
                 var title = Ui.Text($"{i + 1:00} · {CampaignText.MissionTitle(mission)}", 17f, i < completed ? Theme.Gold : Theme.Text, true);
                 content.Add(title);
-                string map = MagnateLocationText.Name(GameSetup.MapOf(mission.Map).Title);
+                string map = CityMapText.Name(GameSetup.MapOf(mission.Map).Title);
                 var detail = Ui.Text(map + " · " + ScenarioMenuLocalization.Title(mission.Scenario) + " · " +
                     (mission.Coop ? CampaignText.T("Co-op", "Кооператив") + " / " + CoopDifficultyText.Title((int)mission.Difficulty) : CampaignText.T("Competitive", "Соревнование")) +
                     " · " + CampaignText.Goal(mission), 13f, Theme.TextDim);

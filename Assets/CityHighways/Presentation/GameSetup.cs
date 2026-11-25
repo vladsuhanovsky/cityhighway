@@ -87,16 +87,22 @@ namespace CityHighways.Presentation
             public string Path;
             public string Title;
             public string Hint;
+            public string EnglishTitle;
+            public string EnglishHint;
+            public string DisplayTitle => LocalizationService.Language == "en" ? EnglishTitle : Title;
+            public string DisplayHint => LocalizationService.Language == "en" ? EnglishHint : Hint;
         }
 
         public static readonly MapChoice[] Maps =
         {
             new MapChoice { Path = "CityHighways/Maps/moscow", Title = "Москва",
-                Hint = "Большой город: 66 мест, Москва-река через всю карту и три района на окраинах." },
+                Hint = "Большой город: 66 мест, Москва-река через всю карту и три района на окраинах.", EnglishTitle = "Moscow", EnglishHint = "A large city with 66 locations, the Moskva River and three outlying districts." },
             new MapChoice { Path = "CityHighways/Maps/amsterdam", Title = "Амстердам",
-                Hint = "Компактный город каналов: залив Эй отрезает Норд, Амстел подходит к центру. Кольцо A10." },
+                Hint = "Компактный город каналов: залив Эй отрезает Норд, Амстел подходит к центру.", EnglishTitle = "Amsterdam", EnglishHint = "A compact canal city: the IJ bay separates Noord, and the Amstel runs toward the centre." },
             new MapChoice { Path = "CityHighways/Maps/chongqing", Title = "Чунцин",
-                Hint = "Город мостов и гор: центр зажат между Янцзы и Цзялинцзян, к любому берегу — по мосту." },
+                Hint = "Город мостов и гор: центр зажат между Янцзы и Цзялинцзян, к любому берегу — по мосту.", EnglishTitle = "Chongqing", EnglishHint = "A city of bridges and hills between the Yangtze and Jialing rivers." },
+            new MapChoice { Path = "CityHighways/Maps/paris", Title = "Париж", EnglishTitle = "Paris", Hint = "Два берега Сены, музейные кварталы и три района расширения.", EnglishHint = "Two banks of the Seine, museum quarters and three expansion districts." },
+            new MapChoice { Path = "CityHighways/Maps/berlin", Title = "Берлин", EnglishTitle = "Berlin", Hint = "Сеть районов вдоль Шпрее, транспортные узлы и три района расширения.", EnglishHint = "Districts along the Spree, transport hubs and three expansion districts." },
         };
 
         public static MapChoice MapOf(string path) =>

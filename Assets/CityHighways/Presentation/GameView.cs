@@ -53,7 +53,7 @@ namespace CityHighways.Presentation
             }
         }
 
-        static string DisplayPlace(string name) => MagnateLocationText.Name(name);
+        static string DisplayPlace(string name) => CityMapText.Name(name);
 
         enum OverlayKind
         {

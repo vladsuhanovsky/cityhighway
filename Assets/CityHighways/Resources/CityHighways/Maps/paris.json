@@ -1,0 +1,1347 @@
+{
+ "name": "Париж",
+ "districts": [
+  {
+   "id": "center",
+   "name": "Центр"
+  },
+  {
+   "id": "west",
+   "name": "Запад"
+  },
+  {
+   "id": "north",
+   "name": "Север"
+  },
+  {
+   "id": "east",
+   "name": "Восток"
+  },
+  {
+   "id": "south",
+   "name": "Юг"
+  },
+  {
+   "id": "latin",
+   "name": "Латинский квартал"
+  },
+  {
+   "id": "museum",
+   "name": "Музейный квартал"
+  },
+  {
+   "id": "business",
+   "name": "Дефанс"
+  },
+  {
+   "id": "airports",
+   "name": "Аэропорты"
+  },
+  {
+   "id": "port",
+   "name": "Берси"
+  },
+  {
+   "id": "parks",
+   "name": "Парки"
+  },
+  {
+   "id": "versailles",
+   "name": "Версаль",
+   "expansion": true
+  },
+  {
+   "id": "denis",
+   "name": "Сен-Дени",
+   "expansion": true
+  },
+  {
+   "id": "vincennes",
+   "name": "Венсен",
+   "expansion": true
+  }
+ ],
+ "locations": [
+  {
+   "id": "p01",
+   "name": "Нантер",
+   "district": "business",
+   "x": 0.083,
+   "y": 0.088
+  },
+  {
+   "id": "p02",
+   "name": "Ла Дефанс",
+   "district": "business",
+   "x": 0.208,
+   "y": 0.072
+  },
+  {
+   "id": "p03",
+   "name": "Клиши",
+   "district": "north",
+   "x": 0.365,
+   "y": 0.088
+  },
+  {
+   "id": "p04",
+   "name": "Монмартр",
+   "district": "north",
+   "x": 0.49,
+   "y": 0.072
+  },
+  {
+   "id": "p05",
+   "name": "Стад де Франс",
+   "district": "denis",
+   "x": 0.647,
+   "y": 0.088
+  },
+  {
+   "id": "p06",
+   "name": "Сен-Дени",
+   "district": "denis",
+   "x": 0.772,
+   "y": 0.072
+  },
+  {
+   "id": "p07",
+   "name": "Бурже",
+   "district": "airports",
+   "x": 0.929,
+   "y": 0.088
+  },
+  {
+   "id": "p08",
+   "name": "Нёйи",
+   "district": "west",
+   "x": 0.067,
+   "y": 0.222
+  },
+  {
+   "id": "p09",
+   "name": "Триумфальная арка",
+   "district": "west",
+   "x": 0.224,
+   "y": 0.238
+  },
+  {
+   "id": "p10",
+   "name": "Сен-Лазар",
+   "district": "north",
+   "x": 0.349,
+   "y": 0.222
+  },
+  {
+   "id": "p11",
+   "name": "Опера",
+   "district": "center",
+   "x": 0.506,
+   "y": 0.238
+  },
+  {
+   "id": "p12",
+   "name": "Северный вокзал",
+   "district": "north",
+   "x": 0.631,
+   "y": 0.222
+  },
+  {
+   "id": "p13",
+   "name": "Бельвиль",
+   "district": "east",
+   "x": 0.788,
+   "y": 0.238
+  },
+  {
+   "id": "p14",
+   "name": "Руасси",
+   "district": "airports",
+   "x": 0.913,
+   "y": 0.222
+  },
+  {
+   "id": "p15",
+   "name": "Булонский лес",
+   "district": "parks",
+   "x": 0.083,
+   "y": 0.388
+  },
+  {
+   "id": "p16",
+   "name": "Трокадеро",
+   "district": "west",
+   "x": 0.208,
+   "y": 0.372
+  },
+  {
+   "id": "p17",
+   "name": "Конкорд",
+   "district": "museum",
+   "x": 0.365,
+   "y": 0.388
+  },
+  {
+   "id": "p18",
+   "name": "Лувр",
+   "district": "center",
+   "x": 0.49,
+   "y": 0.372
+  },
+  {
+   "id": "p19",
+   "name": "Шатле",
+   "district": "center",
+   "x": 0.647,
+   "y": 0.388
+  },
+  {
+   "id": "p20",
+   "name": "Бастилия",
+   "district": "east",
+   "x": 0.772,
+   "y": 0.372
+  },
+  {
+   "id": "p21",
+   "name": "Насьон",
+   "district": "east",
+   "x": 0.929,
+   "y": 0.388
+  },
+  {
+   "id": "p22",
+   "name": "Сен-Клу",
+   "district": "west",
+   "x": 0.067,
+   "y": 0.622
+  },
+  {
+   "id": "p23",
+   "name": "Эйфелева башня",
+   "district": "museum",
+   "x": 0.224,
+   "y": 0.638
+  },
+  {
+   "id": "p24",
+   "name": "Дом инвалидов",
+   "district": "museum",
+   "x": 0.349,
+   "y": 0.622
+  },
+  {
+   "id": "p25",
+   "name": "Орсе",
+   "district": "museum",
+   "x": 0.506,
+   "y": 0.638
+  },
+  {
+   "id": "p26",
+   "name": "Сен-Мишель",
+   "district": "latin",
+   "x": 0.631,
+   "y": 0.622
+  },
+  {
+   "id": "p27",
+   "name": "Аустерлиц",
+   "district": "port",
+   "x": 0.788,
+   "y": 0.638
+  },
+  {
+   "id": "p28",
+   "name": "Берси",
+   "district": "port",
+   "x": 0.913,
+   "y": 0.622
+  },
+  {
+   "id": "p29",
+   "name": "Версаль",
+   "district": "versailles",
+   "x": 0.083,
+   "y": 0.788
+  },
+  {
+   "id": "p30",
+   "name": "Севр",
+   "district": "versailles",
+   "x": 0.208,
+   "y": 0.772
+  },
+  {
+   "id": "p31",
+   "name": "Монпарнас",
+   "district": "south",
+   "x": 0.365,
+   "y": 0.788
+  },
+  {
+   "id": "p32",
+   "name": "Люксембург",
+   "district": "latin",
+   "x": 0.49,
+   "y": 0.772
+  },
+  {
+   "id": "p33",
+   "name": "Пантеон",
+   "district": "latin",
+   "x": 0.647,
+   "y": 0.788
+  },
+  {
+   "id": "p34",
+   "name": "Тольбиак",
+   "district": "south",
+   "x": 0.772,
+   "y": 0.772
+  },
+  {
+   "id": "p35",
+   "name": "Венсен",
+   "district": "vincennes",
+   "x": 0.929,
+   "y": 0.788
+  },
+  {
+   "id": "p36",
+   "name": "Велизи",
+   "district": "versailles",
+   "x": 0.067,
+   "y": 0.912
+  },
+  {
+   "id": "p37",
+   "name": "Исси",
+   "district": "south",
+   "x": 0.224,
+   "y": 0.928
+  },
+  {
+   "id": "p38",
+   "name": "Ванв",
+   "district": "south",
+   "x": 0.349,
+   "y": 0.912
+  },
+  {
+   "id": "p39",
+   "name": "Монсури",
+   "district": "parks",
+   "x": 0.506,
+   "y": 0.928
+  },
+  {
+   "id": "p40",
+   "name": "Жантийи",
+   "district": "south",
+   "x": 0.631,
+   "y": 0.912
+  },
+  {
+   "id": "p41",
+   "name": "Иври",
+   "district": "port",
+   "x": 0.788,
+   "y": 0.928
+  },
+  {
+   "id": "p42",
+   "name": "Венсенский лес",
+   "district": "vincennes",
+   "x": 0.913,
+   "y": 0.912
+  }
+ ],
+ "roads": [
+  {
+   "id": "r01",
+   "from": "p01",
+   "to": "p02",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r02",
+   "from": "p02",
+   "to": "p03",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r03",
+   "from": "p03",
+   "to": "p04",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r04",
+   "from": "p04",
+   "to": "p05",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r05",
+   "from": "p05",
+   "to": "p06",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r06",
+   "from": "p06",
+   "to": "p07",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r07",
+   "from": "p08",
+   "to": "p09",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r08",
+   "from": "p09",
+   "to": "p10",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r09",
+   "from": "p10",
+   "to": "p11",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r10",
+   "from": "p11",
+   "to": "p12",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r11",
+   "from": "p12",
+   "to": "p13",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r12",
+   "from": "p13",
+   "to": "p14",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r13",
+   "from": "p15",
+   "to": "p16",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r14",
+   "from": "p16",
+   "to": "p17",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r15",
+   "from": "p17",
+   "to": "p18",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r16",
+   "from": "p18",
+   "to": "p19",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r17",
+   "from": "p19",
+   "to": "p20",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r18",
+   "from": "p20",
+   "to": "p21",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r19",
+   "from": "p22",
+   "to": "p23",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r20",
+   "from": "p23",
+   "to": "p24",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r21",
+   "from": "p24",
+   "to": "p25",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r22",
+   "from": "p25",
+   "to": "p26",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r23",
+   "from": "p26",
+   "to": "p27",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r24",
+   "from": "p27",
+   "to": "p28",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r25",
+   "from": "p29",
+   "to": "p30",
+   "length": 3,
+   "resource": "gravel"
+  },
+  {
+   "id": "r26",
+   "from": "p30",
+   "to": "p31",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r27",
+   "from": "p31",
+   "to": "p32",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r28",
+   "from": "p32",
+   "to": "p33",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r29",
+   "from": "p33",
+   "to": "p34",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r30",
+   "from": "p34",
+   "to": "p35",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r31",
+   "from": "p36",
+   "to": "p37",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r32",
+   "from": "p37",
+   "to": "p38",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r33",
+   "from": "p38",
+   "to": "p39",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r34",
+   "from": "p39",
+   "to": "p40",
+   "length": 3,
+   "resource": "concrete"
+  },
+  {
+   "id": "r35",
+   "from": "p40",
+   "to": "p41",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r36",
+   "from": "p41",
+   "to": "p42",
+   "length": 3,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r37",
+   "from": "p01",
+   "to": "p08",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r38",
+   "from": "p02",
+   "to": "p09",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r39",
+   "from": "p03",
+   "to": "p10",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r40",
+   "from": "p04",
+   "to": "p11",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r41",
+   "from": "p05",
+   "to": "p12",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r42",
+   "from": "p06",
+   "to": "p13",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r43",
+   "from": "p07",
+   "to": "p14",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r44",
+   "from": "p08",
+   "to": "p15",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r45",
+   "from": "p09",
+   "to": "p16",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r46",
+   "from": "p10",
+   "to": "p17",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r47",
+   "from": "p11",
+   "to": "p18",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r48",
+   "from": "p12",
+   "to": "p19",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r49",
+   "from": "p13",
+   "to": "p20",
+   "length": 2,
+   "resource": "any"
+  },
+  {
+   "id": "r50",
+   "from": "p14",
+   "to": "p21",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r51",
+   "from": "p16",
+   "to": "p23",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r52",
+   "from": "p17",
+   "to": "p24",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r53",
+   "from": "p18",
+   "to": "p25",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r54",
+   "from": "p19",
+   "to": "p26",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r55",
+   "from": "p20",
+   "to": "p27",
+   "length": 3,
+   "resource": "steel"
+  },
+  {
+   "id": "r56",
+   "from": "p22",
+   "to": "p29",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r57",
+   "from": "p23",
+   "to": "p30",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r58",
+   "from": "p24",
+   "to": "p31",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r59",
+   "from": "p25",
+   "to": "p32",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r60",
+   "from": "p26",
+   "to": "p33",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r61",
+   "from": "p27",
+   "to": "p34",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r62",
+   "from": "p28",
+   "to": "p35",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r63",
+   "from": "p29",
+   "to": "p36",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r64",
+   "from": "p30",
+   "to": "p37",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r65",
+   "from": "p31",
+   "to": "p38",
+   "length": 2,
+   "resource": "gravel"
+  },
+  {
+   "id": "r66",
+   "from": "p32",
+   "to": "p39",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r67",
+   "from": "p33",
+   "to": "p40",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r68",
+   "from": "p34",
+   "to": "p41",
+   "length": 2,
+   "resource": "concrete"
+  },
+  {
+   "id": "r69",
+   "from": "p35",
+   "to": "p42",
+   "length": 2,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r70",
+   "from": "p01",
+   "to": "p09",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r71",
+   "from": "p05",
+   "to": "p11",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r72",
+   "from": "p11",
+   "to": "p17",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r73",
+   "from": "p13",
+   "to": "p21",
+   "length": 4,
+   "resource": "asphalt"
+  },
+  {
+   "id": "r74",
+   "from": "p17",
+   "to": "p23",
+   "length": 4,
+   "resource": "steel"
+  },
+  {
+   "id": "r75",
+   "from": "p19",
+   "to": "p27",
+   "length": 4,
+   "resource": "steel"
+  },
+  {
+   "id": "r76",
+   "from": "p23",
+   "to": "p29",
+   "length": 4,
+   "resource": "gravel"
+  },
+  {
+   "id": "r77",
+   "from": "p25",
+   "to": "p33",
+   "length": 4,
+   "resource": "any"
+  },
+  {
+   "id": "r78",
+   "from": "p31",
+   "to": "p39",
+   "length": 4,
+   "resource": "concrete"
+  },
+  {
+   "id": "r79",
+   "from": "p35",
+   "to": "p41",
+   "length": 4,
+   "resource": "gravel"
+  }
+ ],
+ "contracts": [
+  {
+   "id": "c01",
+   "from": "center",
+   "to": "east",
+   "points": 4
+  },
+  {
+   "id": "c02",
+   "from": "center",
+   "to": "latin",
+   "points": 4
+  },
+  {
+   "id": "c03",
+   "from": "center",
+   "to": "museum",
+   "points": 4
+  },
+  {
+   "id": "c04",
+   "from": "east",
+   "to": "port",
+   "points": 4
+  },
+  {
+   "id": "c05",
+   "from": "north",
+   "to": "west",
+   "points": 4
+  },
+  {
+   "id": "c06",
+   "from": "parks",
+   "to": "south",
+   "points": 4
+  },
+  {
+   "id": "c07",
+   "from": "business",
+   "to": "north",
+   "points": 5
+  },
+  {
+   "id": "c08",
+   "from": "business",
+   "to": "parks",
+   "points": 5
+  },
+  {
+   "id": "c09",
+   "from": "east",
+   "to": "north",
+   "points": 5
+  },
+  {
+   "id": "c10",
+   "from": "latin",
+   "to": "port",
+   "points": 5
+  },
+  {
+   "id": "c11",
+   "from": "museum",
+   "to": "parks",
+   "points": 5
+  },
+  {
+   "id": "c12",
+   "from": "east",
+   "to": "south",
+   "points": 6
+  },
+  {
+   "id": "c13",
+   "from": "center",
+   "to": "south",
+   "points": 7
+  },
+  {
+   "id": "c14",
+   "from": "east",
+   "to": "latin",
+   "points": 7
+  },
+  {
+   "id": "c15",
+   "from": "north",
+   "to": "port",
+   "points": 7
+  },
+  {
+   "id": "c16",
+   "from": "airports",
+   "to": "north",
+   "points": 8
+  },
+  {
+   "id": "c17",
+   "from": "center",
+   "to": "parks",
+   "points": 8
+  },
+  {
+   "id": "c18",
+   "from": "center",
+   "to": "west",
+   "points": 8
+  },
+  {
+   "id": "c19",
+   "from": "museum",
+   "to": "port",
+   "points": 8
+  },
+  {
+   "id": "c20",
+   "from": "north",
+   "to": "south",
+   "points": 8
+  },
+  {
+   "id": "c21",
+   "from": "airports",
+   "to": "center",
+   "points": 9
+  },
+  {
+   "id": "c22",
+   "from": "airports",
+   "to": "port",
+   "points": 9
+  },
+  {
+   "id": "c23",
+   "from": "north",
+   "to": "parks",
+   "points": 9
+  },
+  {
+   "id": "c24",
+   "from": "south",
+   "to": "west",
+   "points": 9
+  },
+  {
+   "id": "c25",
+   "from": "east",
+   "to": "museum",
+   "points": 12
+  },
+  {
+   "id": "c26",
+   "from": "airports",
+   "to": "south",
+   "points": 13
+  },
+  {
+   "id": "c27",
+   "from": "airports",
+   "to": "latin",
+   "points": 14
+  },
+  {
+   "id": "c28",
+   "from": "latin",
+   "to": "west",
+   "points": 14
+  },
+  {
+   "id": "c29",
+   "from": "east",
+   "to": "parks",
+   "points": 19
+  },
+  {
+   "id": "c30",
+   "from": "airports",
+   "to": "museum",
+   "points": 20
+  },
+  {
+   "id": "c31",
+   "from": "east",
+   "to": "west",
+   "points": 20
+  },
+  {
+   "id": "c32",
+   "from": "business",
+   "to": "latin",
+   "points": 21
+  },
+  {
+   "id": "c33",
+   "from": "business",
+   "to": "east",
+   "points": 22
+  },
+  {
+   "id": "c34",
+   "from": "airports",
+   "to": "west",
+   "points": 23
+  },
+  {
+   "id": "c35",
+   "from": "airports",
+   "to": "parks",
+   "points": 24
+  },
+  {
+   "id": "c36",
+   "from": "airports",
+   "to": "business",
+   "points": 25
+  },
+  {
+   "id": "c37",
+   "from": "versailles",
+   "to": "latin",
+   "points": 8
+  },
+  {
+   "id": "c38",
+   "from": "versailles",
+   "to": "east",
+   "points": 22
+  },
+  {
+   "id": "c39",
+   "from": "denis",
+   "to": "center",
+   "points": 5
+  },
+  {
+   "id": "c40",
+   "from": "denis",
+   "to": "west",
+   "points": 14
+  },
+  {
+   "id": "c41",
+   "from": "vincennes",
+   "to": "east",
+   "points": 9
+  },
+  {
+   "id": "c42",
+   "from": "vincennes",
+   "to": "west",
+   "points": 26
+  },
+  {
+   "id": "c43",
+   "from": "center",
+   "to": "latin",
+   "points": 27,
+   "kind": "transit",
+   "third": "airports"
+  },
+  {
+   "id": "c44",
+   "from": "west",
+   "to": "museum",
+   "points": 25,
+   "kind": "hub",
+   "third": "port"
+  },
+  {
+   "id": "c45",
+   "from": "north",
+   "to": "business",
+   "points": 17,
+   "kind": "transit",
+   "third": "parks"
+  },
+  {
+   "id": "c46",
+   "from": "east",
+   "to": "airports",
+   "points": 7,
+   "kind": "hub",
+   "third": "center"
+  },
+  {
+   "id": "c47",
+   "from": "south",
+   "to": "port",
+   "points": 31,
+   "kind": "transit",
+   "third": "west"
+  },
+  {
+   "id": "c48",
+   "from": "latin",
+   "to": "parks",
+   "points": 9,
+   "kind": "hub",
+   "third": "north"
+  }
+ ],
+ "river": [
+  {
+   "x": 0,
+   "y": 0.52
+  },
+  {
+   "x": 0.143,
+   "y": 0.53
+  },
+  {
+   "x": 0.286,
+   "y": 0.51
+  },
+  {
+   "x": 0.429,
+   "y": 0.47
+  },
+  {
+   "x": 0.571,
+   "y": 0.46
+  },
+  {
+   "x": 0.714,
+   "y": 0.49
+  },
+  {
+   "x": 0.857,
+   "y": 0.51
+  },
+  {
+   "x": 1,
+   "y": 0.48
+  }
+ ],
+ "rivers": [
+  {
+   "name": "Сена",
+   "points": [
+    {
+     "x": 0,
+     "y": 0.52
+    },
+    {
+     "x": 0.143,
+     "y": 0.53
+    },
+    {
+     "x": 0.286,
+     "y": 0.51
+    },
+    {
+     "x": 0.429,
+     "y": 0.47
+    },
+    {
+     "x": 0.571,
+     "y": 0.46
+    },
+    {
+     "x": 0.714,
+     "y": 0.49
+    },
+    {
+     "x": 0.857,
+     "y": 0.51
+    },
+    {
+     "x": 1,
+     "y": 0.48
+    }
+   ]
+  }
+ ],
+ "goals": [
+  {
+   "id": "g1",
+   "name": "Воздушная гавань",
+   "kind": "locations",
+   "district": "airports",
+   "count": 2,
+   "points": 8
+  },
+  {
+   "id": "g2",
+   "name": "Город мостов",
+   "kind": "bridges",
+   "count": 3,
+   "points": 8
+  },
+  {
+   "id": "g3",
+   "name": "Вся агломерация",
+   "kind": "network",
+   "count": 7,
+   "points": 8
+  },
+  {
+   "id": "g4",
+   "name": "Дороги окраин",
+   "kind": "resource_pieces",
+   "resource": "gravel",
+   "count": 9,
+   "points": 6
+  },
+  {
+   "id": "g5",
+   "name": "Дальние трассы",
+   "kind": "long_roads",
+   "length": 3,
+   "count": 3,
+   "points": 7
+  },
+  {
+   "id": "g6",
+   "name": "Сердце города",
+   "kind": "locations",
+   "district": "center",
+   "count": 3,
+   "points": 8
+  },
+  {
+   "id": "g7",
+   "name": "Портовый город",
+   "kind": "locations",
+   "district": "port",
+   "count": 2,
+   "points": 6
+  }
+ ],
+ "piecesScale": 0.9
+}
