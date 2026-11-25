@@ -29,6 +29,8 @@ namespace CityHighways.Presentation
         const float WaterLevel = 0.004f, BankHeight = 0.03f, RiverWidth = 0.26f, BankWidth = 0.025f;
         public const float RiverWaterHalfWidth = RiverWidth / 2f;
         public const float RiverBankHalfWidth = RiverWaterHalfWidth + BankWidth;
+        public const float CrosswalkNear = BoardLayout.JunctionArm - 0.036f;
+        public const float CrosswalkFar = BoardLayout.JunctionArm - 0.014f;
         const float DeckTop = 0.05f;
         /// <summary>Декали лежат чуть выше земли (0) и ниже воды (WaterLevel).</summary>
         const float DecalHeight = 0.002f;
@@ -1753,7 +1755,7 @@ namespace CityHighways.Presentation
                         W(center + n * half + d * arm, JunctionTop), W(center - n * half + d * arm, JunctionTop), asphalt);
                     const int stripes = 5;
                     float stripe = RoadWidth / (stripes * 2f - 1f);
-                    float near = arm - 0.036f, far = arm - 0.014f, y = JunctionTop + 0.0004f;
+                    float near = CrosswalkNear, far = CrosswalkFar, y = JunctionTop + 0.0004f;
                     for (int k = 0; k < stripes; k++)
                     {
                         float x0 = -half + stripe * 2f * k, x1 = x0 + stripe;
