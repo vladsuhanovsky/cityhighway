@@ -86,7 +86,9 @@ namespace CityHighways.Presentation
         static string IndexPath => Path.Combine(Folder, "index.json");
         static string FileOf(string id) => ReplayStorageIO.PathFor(Folder, id);
 
-        public static IReadOnlyList<Entry> Entries => Load().entries;
+        // A snapshot prevents menu callers from casting IReadOnlyList back
+        // to List<Entry> and mutating the committed catalog in memory.
+        public static IReadOnlyList<Entry> Entries => Load().entries.ToArray();
 
         static Index Load()
         {
@@ -124,7 +126,15 @@ namespace CityHighways.Presentation
             // index, reconstruct the missing entry on the next startup.
             try
             {
-                if (RecoverOrphans(_index) > 0 || repaired) SaveIndex();
+                int recovered = RecoverOrphans(_index);
+                var transaction = new ReplayIndexTransaction(_index.entries, Keep);
+                if (recovered > 0 || repaired || transaction.RemovedIds.Count > 0)
+                {
+                    if (transaction.Commit(
+                        entries => SaveIndex(new Index { entries = entries }),
+                        ids => DeletePruned(ids)))
+                        _index.entries = transaction.Entries;
+                }
             }
             catch (Exception e)
             {
@@ -146,20 +156,22 @@ namespace CityHighways.Presentation
                 index.entries.Add(EntryOf(replay));
                 recovered++;
             }
-            if (recovered > 0) Prune(index);
             return recovered;
         }
 
-        static void SaveIndex()
+        static bool SaveIndex(Index index)
         {
             try
             {
-                Directory.CreateDirectory(Folder);
-                ReplayStorageIO.WriteAtomic(IndexPath, JsonUtility.ToJson(Load()));
+                string json = JsonUtility.ToJson(index);
+                ReplayStorageIO.RequireUtf8Size(json, ReplayStorageIO.MaxIndexBytes);
+                ReplayStorageIO.WriteAtomic(IndexPath, json);
+                return true;
             }
             catch (Exception e)
             {
                 Debug.LogWarning("Не удалось записать список повторов: " + e.Message);
+                return false;
             }
         }
 
@@ -232,19 +244,26 @@ namespace CityHighways.Presentation
         /// <summary>Положить повтор в хранилище (свой или скачанный).</summary>
         public static bool Store(ReplayFile replay)
         {
-            if (replay == null || !ReplayStorageIO.IsSafeId(replay.id)) return false;
+            if (!ReplayLocalSanity.IsReadable(replay)) return false;
             try
             {
-                Directory.CreateDirectory(Folder);
-                // Load the prior index before writing this file, otherwise
-                // first-use orphan recovery briefly indexes it twice.
-                var index = Load();
-                ReplayStorageIO.WriteAtomic(FileOf(replay.id), JsonUtility.ToJson(replay));
-                index.entries.RemoveAll(e => e.id == replay.id);
-                index.entries.Add(EntryOf(replay));
-                Prune(index);
-                SaveIndex();
-                return true;
+                // Serialize and check actual UTF-8 bytes before any write.
+                string payload = JsonUtility.ToJson(replay);
+                ReplayStorageIO.RequireUtf8Size(payload, ReplayStorageIO.MaxLocalReplayBytes);
+                var current = Load();
+                var next = new Index { entries = current.entries.ToList() };
+                ReplayStorageIO.WriteAtomic(FileOf(replay.id), payload);
+                next.entries.RemoveAll(e => e.id == replay.id);
+                next.entries.Add(EntryOf(replay));
+                var transaction = new ReplayIndexTransaction(next.entries, Keep);
+                bool retained = transaction.Contains(replay.id);
+                // On index failure the file is an orphan, recoverable at the
+                // next startup; old metadata and pruned files remain intact.
+                if (!transaction.Commit(
+                    entries => SaveIndex(new Index { entries = entries }),
+                    ids => DeletePruned(ids))) return false;
+                _index = new Index { entries = transaction.Entries };
+                return retained;
             }
             catch (Exception e)
             {
@@ -253,31 +272,15 @@ namespace CityHighways.Presentation
             }
         }
 
-        /// <summary>Лишние повторы — самые старые, кроме лучших по карте и режиму у каждого автора.</summary>
-        static void Prune(Index index)
+        static void DeletePruned(IEnumerable<string> ids)
         {
-            if (index.entries.Count <= Keep) return;
-            // Keep the best for each author/map/mode, but cap the number of
-            // protected groups too. Otherwise >Keep unique groups made the
-            // documented storage limit impossible to enforce.
-            var protectedIds = new HashSet<string>(index.entries
-                .GroupBy(e => (e.mode, e.mapPath, (e.author ?? "").ToLowerInvariant()))
-                .Select(g => g.OrderByDescending(e => e.authorScore)
-                    .ThenByDescending(e => e.date, StringComparer.Ordinal).First())
-                .OrderByDescending(e => e.date, StringComparer.Ordinal)
-                .Take(Keep).Select(e => e.id));
-            foreach (var old in index.entries.OrderBy(e => e.date, StringComparer.Ordinal).ToList())
+            foreach (string id in ids)
             {
-                if (index.entries.Count <= Keep) break;
-                if (protectedIds.Contains(old.id)) continue;
-                index.entries.Remove(old);
-                try
+                if (!ReplayStorageIO.IsSafeId(id)) continue;
+                try { File.Delete(FileOf(id)); }
+                catch (Exception e)
                 {
-                    File.Delete(FileOf(old.id));
-                }
-                catch (Exception)
-                {
-                    // Файл занят или уже удалён — уберём в следующий раз.
+                    Debug.LogWarning("Не удалось удалить старый повтор: " + e.Message);
                 }
             }
         }
@@ -293,7 +296,7 @@ namespace CityHighways.Presentation
                 var replay = JsonUtility.FromJson<ReplayFile>(json);
                 // The file name is the index key: never accept a replay that
                 // silently claims a different key after disk corruption.
-                return replay != null && replay.start != null && replay.id == id
+                return replay != null && replay.id == id && ReplayLocalSanity.IsReadable(replay)
                     ? replay : null;
             }
             catch (Exception e)
@@ -322,12 +325,15 @@ namespace CityHighways.Presentation
             try
             {
                 if (Directory.Exists(Folder)) Directory.Delete(Folder, true);
+                _index = new Index();
             }
             catch (Exception e)
             {
                 Debug.LogWarning("Не удалось удалить повторы: " + e.Message);
+                // If deleting files failed, re-read the directory on next
+                // access rather than showing a permanently empty catalog.
+                _index = null;
             }
-            _index = new Index();
         }
 
         // ---------------------------------------------------------------- Для облака: сжатие
@@ -439,8 +445,12 @@ namespace CityHighways.Presentation
                         output.Write(buffer, 0, received);
                     }
                     string json = new UTF8Encoding(false, true).GetString(output.ToArray());
+                    // JsonUtility can fabricate default GameConfig for absent
+                    // start.config, masking an invalid wire payload.
+                    if (!ReplayJsonStartConfig.HasExplicitConfig(json)) return null;
                     var replay = JsonUtility.FromJson<ReplayFile>(json);
-                    return ValidCloudReplay(replay) ? replay : null;
+                    return ValidCloudReplay(replay) && ReplayLocalSanity.IsReadable(replay)
+                        ? replay : null;
                 }
             }
             catch (Exception e)

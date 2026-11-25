@@ -145,6 +145,27 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void RejectsCloudReplayWithMissingGameConfiguration()
+        {
+            // JsonUtility may serialize a null inline class as a default
+            // object. Rename the actual wire key to simulate a *missing*
+            // start.config without changing any other valid replay fields.
+            string json = JsonUtility.ToJson(ValidReplay());
+            StringAssert.Contains("\"config\":", json);
+            string withoutConfig = json.Replace("\"config\":", "\"unknownConfig\":");
+            Assert.AreNotEqual(json, withoutConfig);
+            Assert.IsNull(Replays.UnpackCloud(GzipBase64(withoutConfig)));
+        }
+
+        [Test]
+        public void RejectsCloudReplayWithCorruptedPlayerNames()
+        {
+            var replay = ValidReplay();
+            replay.start.players[0] = "";
+            Assert.IsNull(Replays.UnpackCloud(Replays.Pack(replay)));
+        }
+
+        [Test]
         public void RejectsInconsistentAuthorSeatAndScore()
         {
             var replay = ValidReplay();
