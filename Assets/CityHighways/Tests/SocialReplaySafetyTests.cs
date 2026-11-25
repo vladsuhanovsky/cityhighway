@@ -145,6 +145,22 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void RejectsCloudReplayWithMissingGameConfiguration()
+        {
+            var replay = ValidReplay();
+            replay.start.config = null;
+            Assert.IsNull(Replays.UnpackCloud(Replays.Pack(replay)));
+        }
+
+        [Test]
+        public void RejectsCloudReplayWithCorruptedPlayerNames()
+        {
+            var replay = ValidReplay();
+            replay.start.players[0] = "";
+            Assert.IsNull(Replays.UnpackCloud(Replays.Pack(replay)));
+        }
+
+        [Test]
         public void RejectsInconsistentAuthorSeatAndScore()
         {
             var replay = ValidReplay();
