@@ -59,7 +59,14 @@ namespace CityHighways.Presentation
             // Never store a Web API ticket on disk.
             var steam = NetPlatforms.Steam;
             string owner = steam != null ? steam.SteamId : null;
-            if (!SocialReportOutbox.ValidOwner(owner)) return;
+            if (!SocialReportOutbox.ValidOwner(owner))
+            {
+                News.Add(LocalizationService.Language == "en"
+                    ? "Game report not saved: Steam identity is unavailable."
+                    : "Отчёт партии не сохранён: Steam-аккаунт недоступен.");
+                Changed?.Invoke();
+                return;
+            }
 
             request.ticket = null;
             request.claimedId = null;
@@ -115,12 +122,15 @@ namespace CityHighways.Presentation
             }
             catch (Exception error)
             {
-                Debug.LogWarning("Discarding unreadable social report: " + error.Message);
-                if (!ReportOutbox.Complete(entry))
-                {
-                    _acknowledgedPending = entry;
+                // Do not delete the only copy of an unreadable report. Hold
+                // this entry for an hour and allow other valid games to upload.
+                // A later game patch or manual queue repair may recover it.
+                Debug.LogWarning("Unreadable social report retained for later repair: " + error.Message);
+                if (!ReportOutbox.Reschedule(entry, DateTime.UtcNow.Ticks, 422))
                     DeferAfterDiskError();
-                }
+                News.Add(LocalizationService.Language == "en"
+                    ? "An unsent game report needs repair. It was kept on disk."
+                    : "Неотправленный отчёт требует восстановления. Он сохранён на диске.");
                 Changed?.Invoke();
                 return;
             }
