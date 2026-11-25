@@ -270,17 +270,6 @@ namespace CityHighways.Presentation
             }
         }
 
-        /// <summary>
-        /// Compute retention without deleting anything. Deletions occur only
-        /// after the replacement index has been durably committed.
-        /// </summary>
-        static List<string> Prune(Index index)
-        {
-            var before = index.entries.ToList();
-            index.entries = ReplayRetention.Select(before, Keep);
-            return ReplayRetention.Removed(before, index.entries);
-        }
-
         static void DeletePruned(IEnumerable<string> ids)
         {
             foreach (string id in ids)
