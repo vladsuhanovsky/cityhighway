@@ -155,6 +155,20 @@ namespace CityHighways.Presentation
             }
         }
 
+        /// <summary>
+        /// Validate a replay envelope before allocating/decoding its base64
+        /// payload. The server returns { replay: base64, author: string }.
+        /// </summary>
+        public static bool ValidateReplay(string json)
+        {
+            if (!SocialReportAck.TryReadRoot(json, 768 * 1024, out var root) ||
+                !Text(root, "replay", Replays.MaxCloudReplayBase64, required: true) ||
+                !Text(root, "author", 128))
+                return false;
+            string encoded = (string)root["replay"];
+            return encoded.Length % 4 == 0;
+        }
+
         public static bool ValidateClubList(string json)
         {
             if (!Parse(json, out var root) || !Array(root, "clubs", 30, out var clubs))
