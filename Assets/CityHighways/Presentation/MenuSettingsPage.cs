@@ -100,7 +100,7 @@ namespace CityHighways.Presentation
             body.Add(_content);
 
             var previewCard = Ui.Column();
-            previewCard.style.width = 340f;
+            previewCard.style.width = InterfaceLayout.SettingsPreviewWidth;
             previewCard.style.backgroundColor = Theme.Panel;
             Ui.Radius(previewCard, 12f);
             Ui.Padding(previewCard, 14f, 14f);
