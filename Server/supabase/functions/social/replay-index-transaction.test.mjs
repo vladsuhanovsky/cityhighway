@@ -13,6 +13,8 @@ const transTests = source("Assets/CityHighways/Tests/ReplayIndexTransactionTests
 const localTests = source("Assets/CityHighways/Tests/ReplayLocalSanityTests.cs");
 const diskTests = source("Assets/CityHighways/Tests/ReplayStorageIOTests.cs");
 const cloudTests = source("Assets/CityHighways/Tests/SocialReplaySafetyTests.cs");
+const rawConfig = source("Assets/CityHighways/Presentation/ReplayJsonStartConfig.cs");
+const rawConfigTests = source("Assets/CityHighways/Tests/ReplayJsonStartConfigTests.cs");
 const workflow = source(".github/workflows/social-replay-validation.yml");
 
 test("retention policy is pure and deterministic", () => {
@@ -138,4 +140,34 @@ test("failed clear does not pretend the replay directory was removed", () => {
   assert.match(clear, /Directory\.Delete\(Folder, true\)/);
   assert.match(clear, /_index = null;/);
   assert.match(clear, /catch \(Exception e\)/);
+});
+
+test("cloud decoder verifies explicit raw start.config before JsonUtility defaulting", () => {
+  const unpack = replays.slice(replays.indexOf("public static ReplayFile UnpackCloud("),
+    replays.indexOf("public static ReplayFile Unpack("));
+  const config = unpack.indexOf("if (!ReplayJsonStartConfig.HasExplicitConfig(json)) return null;");
+  const parse = unpack.indexOf("JsonUtility.FromJson<ReplayFile>(json)");
+  assert.ok(config >= 0 && parse > config);
+  assert.match(cloudTests, /RejectsCloudReplayWithMissingGameConfiguration/);
+});
+
+test("raw replay config checker detects object-valued start.config, not a substring", () => {
+  assert.match(rawConfig, /public static bool HasExplicitConfig\(string json\)/);
+  assert.match(rawConfig, /if \(level == 0 && key == "start"\)/);
+  assert.match(rawConfig, /else if \(level == 1 && key == "config"\)/);
+  assert.match(rawConfig, /_foundStart && _foundConfig/);
+  assert.match(rawConfig, /Peek\(\) != '\{'/);
+});
+
+test("raw config checker scans history without allocating per-command game objects", () => {
+  assert.match(rawConfig, /const int MaxDepth = 24/);
+  assert.match(rawConfig, /bool ReadArray\(int depth\)/);
+  assert.match(rawConfigTests, /SkipsLargeHistoryWithoutArrayMemberLimit/);
+  assert.match(rawConfigTests, /RejectsDuplicateStartOrConfigFields/);
+  assert.match(rawConfigTests, /RejectsMissingNullOrNestedWrongConfiguration/);
+});
+
+test("raw cloud config files and regressions trigger both CI workflows", () => {
+  assert.equal(workflow.split("ReplayJsonStartConfig.cs").length - 1, 2);
+  assert.equal(workflow.split("ReplayJsonStartConfigTests.cs").length - 1, 2);
 });
