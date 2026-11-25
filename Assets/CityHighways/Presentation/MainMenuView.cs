@@ -212,17 +212,30 @@ namespace CityHighways.Presentation
         /// <summary>Карточка профиля в левом нижнем углу главного меню: клик — полный профиль.</summary>
         VisualElement BuildProfileCorner()
         {
+            var corner = Ui.Column();
+            corner.style.position = Position.Absolute;
+            corner.style.left = 28f;
+            corner.style.bottom = 28f;
+            corner.style.width = 160f;
+            corner.style.alignItems = Align.Center;
             _profileCard = new ProfileCard(() =>
             {
                 _profile.Rebuild();
                 ShowPage(Page.Profile);
             });
-            _profileCard.style.position = Position.Absolute;
-            _profileCard.style.left = 28f;
-            _profileCard.style.bottom = 28f;
-            // Аватар Steam приходит не сразу — подтягиваем, пока не появится.
+            corner.Add(_profileCard);
+
+            // Personal statistics belong next to the active avatar, not to
+            // the global primary navigation. No hard-coded Steam nickname.
+            var stats = Ui.Button(LocalizationService.Get("menu.home.stats"),
+                () => ShowPage(Page.Stats), ButtonKind.Secondary, 13f);
+            stats.style.width = 150f;
+            stats.style.minHeight = 32f;
+            stats.style.marginTop = 7f;
+            stats.style.backgroundColor = new Color(0.085f, 0.13f, 0.20f, 0.94f);
+            corner.Add(stats);
             _profileCard.schedule.Execute(RefreshProfileCorner).Every(1000);
-            return _profileCard;
+            return corner;
         }
 
         void RefreshProfileCorner() => _profileCard?.Set(Profiles.Active);
