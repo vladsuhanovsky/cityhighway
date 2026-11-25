@@ -11,3 +11,7 @@ ClockOnlyRenderRetainsHudControlsAcrossFrames executes the same clock renderer c
 ## CI license serialization
 
 PR #134 and PR #136 encountered Unity Personal activation failures while Edit Mode and Play Mode were dispatched concurrently; this is an infrastructure failure before NUnit execution, not evidence of a failing test. Both Unity workflows now share the repository-wide `cityhighways-unity-license` concurrency group with `queue: max` and `cancel-in-progress: false`. GitHub Actions serializes the workflows and queues up to 100 pending runs, preserving both independent check names. Non-Unity checks remain parallel. This mitigates concurrent seat requests within this repository; it does not guarantee that the license server is reachable or that external Unity sessions release seats. If activation still fails, review Unity account entitlement and GameCI logs; retry failed checks without masking failures. See https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency.
+
+## Batch 6
+
+CoopCheckpointCanReplaceAnAttachedMapAcrossFrames mounts an isolated UIDocument and MapView, runs up to 12 bot actions in the actual co-op configuration, serializes and loads a checkpoint, compares crisis and selected game state, replaces the attached map and checks cleanup. No actual user save, profile, scene boot, main menu, or controller hardware is used. Together with the three existing tests this exercises four Play Mode cases, not a standalone build smoke.
