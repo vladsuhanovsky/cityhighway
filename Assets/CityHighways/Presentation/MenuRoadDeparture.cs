@@ -22,7 +22,7 @@ namespace CityHighways.Presentation
             if (t <= 0.55f)
                 return new Vector2(Mathf.Lerp(width * 0.61f, width * 0.74f, t / 0.55f), lane);
             float turn = (t - 0.55f) / 0.45f;
-            return new Vector2(Mathf.Lerp(width * 0.74f, width * 0.82f, turn),
+            return new Vector2(Mathf.Lerp(width * 0.74f, width * 0.84f, turn),
                 Mathf.Lerp(lane, roadTop - 55f, turn));
         }
     }
