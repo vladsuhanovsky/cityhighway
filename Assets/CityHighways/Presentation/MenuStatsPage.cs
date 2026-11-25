@@ -218,7 +218,7 @@ namespace CityHighways.Presentation
             {
                 players.style.marginRight = 12f;
                 var characters = CharactersBlock();
-                characters.style.width = 400f;
+                characters.style.width = InterfaceLayout.StatsCharactersWidth;
                 bottom.Add(characters);
             }
             _body.Add(bottom);
