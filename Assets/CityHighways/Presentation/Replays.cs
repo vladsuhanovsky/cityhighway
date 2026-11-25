@@ -319,6 +319,17 @@ namespace CityHighways.Presentation
             return encoded.Length - paddingAt <= 2;
         }
 
+        // Keep this list aligned with VALID_COMMAND_KINDS in the server's
+        // report-validator.mjs. Unknown actions cannot reach game replay.
+        static readonly HashSet<string> AllowedCloudReplayActions =
+            new HashSet<string>(StringComparer.Ordinal)
+            {
+                "keep_initial", "draw_face_up", "draw_deck", "build", "build_free",
+                "draw_contracts", "keep_contracts", "pass", "draw_luck",
+                "choose_luck", "upgrade", "propose_trade", "respond_trade",
+                "influence", "bid", "bribe", "accuse", "choose_character"
+            };
+
         static bool ValidCloudReplay(ReplayFile replay)
         {
             if (replay == null || replay.version != ReplayFile.CurrentVersion ||
@@ -340,7 +351,7 @@ namespace CityHighways.Presentation
                 return false;
 
             foreach (var command in replay.history)
-                if (command == null || string.IsNullOrEmpty(command.kind) ||
+                if (command == null || !AllowedCloudReplayActions.Contains(command.kind) ||
                     command.player < -1 || command.player >= replay.players.Length)
                     return false;
             return true;
