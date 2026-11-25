@@ -235,8 +235,12 @@ namespace CityHighways.Presentation
             if (!Exists(id)) return null;
             try
             {
-                var replay = JsonUtility.FromJson<ReplayFile>(File.ReadAllText(FileOf(id)));
-                return replay?.start != null ? replay : null;
+                string json = ReplayStorageIO.ReadBoundedUtf8(FileOf(id), ReplayStorageIO.MaxLocalReplayBytes);
+                var replay = JsonUtility.FromJson<ReplayFile>(json);
+                // The file name is the index key: never accept a replay that
+                // silently claims a different key after disk corruption.
+                return replay != null && replay.start != null && replay.id == id
+                    ? replay : null;
             }
             catch (Exception e)
             {
