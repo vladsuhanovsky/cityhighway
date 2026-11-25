@@ -24,7 +24,7 @@ namespace CityHighways.Presentation
         public static float RulesContentHeight => Value(Style != null ? (float?)Style.rulesContentHeight : null, 570f, 350f, 850f);
         public static float SettingsNavigationWidth => Value(Style != null ? (float?)Style.settingsNavigationWidth : null, 210f, 150f, 340f);
         public static float StatsHistoryHeight => Value(Style != null ? (float?)Style.statsHistoryHeight : null, 600f, 350f, 850f);
-        public static float ProfileContentHeight => Value(Style != null ? (float?)Style.profileContentHeight : null, 580f, 350f, 850f);
+        public static float ProfileContentHeight => Value(Style != null ? (float?)Style.profileContentHeight : null, 664f, 350f, 850f);
 
         public static float HudTopBarHeight => Value(Style != null ? (float?)Style.hudTopBarHeight : null, 60f, 42f, 110f);
         public static float HudBottomBarHeight => Value(Style != null ? (float?)Style.hudBottomBarHeight : null, 72f, 50f, 120f);
