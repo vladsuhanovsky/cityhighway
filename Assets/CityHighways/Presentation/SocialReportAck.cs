@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using UnityEngine;
 
 namespace CityHighways.Presentation
 {
@@ -26,31 +25,41 @@ namespace CityHighways.Presentation
                 return false;
 
             if (!root.TryGetValue("improved", out var improved) || !(improved is bool) ||
-                !root.TryGetValue("best", out var rawBest) || !ReadInt(rawBest, -100, 1000, out _) ||
+                !root.TryGetValue("best", out var rawBest) || !ReadInt(rawBest, -100, 1000, out int best) ||
                 !root.TryGetValue("club", out var rawClub))
                 return false;
 
+            SocialCloud.ReportClub clubAck = null;
             if (rawClub != null)
             {
                 if (!(rawClub is Dictionary<string, object> club) ||
                     !club.TryGetValue("kind", out var kind) || !(kind is string kindName) ||
                     string.IsNullOrEmpty(kindName) || kindName.Length > 64 ||
-                    !club.TryGetValue("amount", out var amount) || !ReadInt(amount, 0, 10000, out _) ||
+                    !club.TryGetValue("amount", out var amount) || !ReadInt(amount, 0, 10000, out int credited) ||
                     !club.TryGetValue("closed", out var closed) || !(closed is bool) ||
                     !club.TryGetValue("logo", out var logo) ||
                     (logo != null && (!(logo is string logoText) || logoText.Length > 128)))
                     return false;
+
+                clubAck = new SocialCloud.ReportClub
+                {
+                    kind = kindName,
+                    amount = credited,
+                    closed = (bool)closed,
+                    logo = logo as string
+                };
             }
 
-            try
+            // Unity's JsonUtility materializes a ReportClub even for JSON
+            // "club": null. Build the acknowledged response directly from
+            // verified values to preserve null and avoid implicit defaults.
+            response = new SocialCloud.ReportResponse
             {
-                response = JsonUtility.FromJson<SocialCloud.ReportResponse>(json);
-                return response != null;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+                improved = (bool)improved,
+                best = best,
+                club = clubAck
+            };
+            return true;
         }
 
         static bool ReadInt(object value, int min, int max, out int number)
