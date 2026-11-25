@@ -90,7 +90,7 @@ namespace CityHighways.Core
                     if (_contractDeck.Count == 0) return "Контракты закончились.";
                     break;
                 case InfluenceAction.Permit:
-                    bool eventNeedsPermit = CurrentEvent != null && (CurrentEvent.Kind == CityEventKind.Parade || CurrentEvent.Kind == CityEventKind.Snow);
+                    bool eventNeedsPermit = CurrentEvent != null && (CurrentEvent.Kind == CityEventKind.Parade || CurrentEvent.Kind == CityEventKind.Snow || CurrentEvent.Kind == CityEventKind.ConcreteShortage);
                     if (!eventNeedsPermit && !Config.PermanentSnow && _scheduledRepairs.Count == 0)
                         return "Разрешение нужно только в парад, снег или на ремонт.";
                     break;

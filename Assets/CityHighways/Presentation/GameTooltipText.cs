@@ -70,7 +70,11 @@ namespace CityHighways.Presentation
             if (game.CurrentEvent?.Kind == CityEventKind.Investor)
                 text += EnglishUi ? $"\n<color=#FFD94D>Investor: +{game.Config.InvestorBonus} pts for construction</color>" : $"\n<color=#FFD94D>Инвестор: +{game.Config.InvestorBonus} очка за постройку</color>";
             int cost = game.BuildCost(road);
-            if (cost < road.Length) text += EnglishUi ? $"\n<color=#7FC8FF>City Hall subsidy: now costs {cost} cards</color>" : $"\n<color=#7FC8FF>Субсидия мэрии: сейчас стоит {cost} карт(ы)</color>";
+            if (road.Resource == Resource.Concrete && game.CurrentEvent?.Kind == CityEventKind.ConcreteShortage)
+                text += EnglishUi ? $"\n<color=#FF9A66>Concrete shortage: {cost} cards to build (permit waives surcharge)</color>" : $"\n<color=#FF9A66>Дефицит бетона: цена {cost} карт (разрешение снимает надбавку)</color>";
+            if (road.Resource == Resource.Asphalt && game.CurrentEvent?.Kind == CityEventKind.AsphaltDelivery)
+                text += EnglishUi ? $"\n<color=#7FC8FF>Asphalt delivery: now costs {cost} cards</color>" : $"\n<color=#7FC8FF>Поставка асфальта: сейчас стоит {cost} карт(ы)</color>";
+            else if (cost < road.Length) text += EnglishUi ? $"\n<color=#7FC8FF>City Hall subsidy: now costs {cost} cards</color>" : $"\n<color=#7FC8FF>Субсидия мэрии: сейчас стоит {cost} карт(ы)</color>";
             if (game.CurrentEvent != null && game.CurrentEvent.Kind == CityEventKind.RushHour)
                 text += EnglishUi ? "\n<color=#FF9A33>Rush hour: the road built now will charge double tolls</color>" : "\n<color=#FF9A33>Час пик: построенная сейчас дорога станет платной ×2</color>";
             if (humanToAct && game.Phase == GamePhase.AwaitingAction)

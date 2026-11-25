@@ -22,6 +22,7 @@ namespace CityHighways.Presentation
                 case ScenarioKind.GreaterMoscow: return T("greater");
                 case ScenarioKind.RepairYear: return T("repairs");
                 case ScenarioKind.Elections: return T("elections");
+                case ScenarioKind.SupplySeason: return T("supply");
                 default: return T("standard");
             }
         }
@@ -34,6 +35,7 @@ namespace CityHighways.Presentation
                 case ScenarioKind.GreaterMoscow: return T("greater_summary");
                 case ScenarioKind.RepairYear: return T("repairs_summary");
                 case ScenarioKind.Elections: return T("elections_summary");
+                case ScenarioKind.SupplySeason: return T("supply_summary");
                 default: return T("standard_summary");
             }
         }
@@ -86,6 +88,13 @@ namespace CityHighways.Presentation
                         string.Format(T("elections_change_2"), c.InfluencePerContract, c.InfluencePerComplexContract, c.InfluencePerNewDistrict),
                         string.Format(T("elections_change_3"), c.BribeDiscountCost),
                         string.Format(T("elections_change_4"), c.MayorFriendBonus)
+                    };
+                case ScenarioKind.SupplySeason:
+                    return new[]
+                    {
+                        string.Format(T("supply_change_1"), c.AsphaltDeliveryEvents, c.AsphaltDeliveryDiscount),
+                        string.Format(T("supply_change_2"), c.ConcreteShortageEvents, c.ConcreteShortageExtraCost),
+                        T("supply_change_3")
                     };
                 default: return new[] { T("standard_summary") };
             }

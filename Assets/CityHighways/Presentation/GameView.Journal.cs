@@ -173,6 +173,20 @@ namespace CityHighways.Presentation
                 if (investor.Success)
                     return $"Event: Investor. Each road built this round earns +{investor.Groups[1].Value} pts.";
             }
+            if (title == "Поставка асфальта")
+            {
+                var delivery = System.Text.RegularExpressions.Regex.Match(body,
+                    @"^Асфальтовые дороги в этот круг дешевле на (\d+) карт\(у\) \(но не меньше одной\)\.$");
+                if (delivery.Success)
+                    return $"Event: Asphalt Delivery. Asphalt roads cost {delivery.Groups[1].Value} fewer cards this round (minimum one).";
+            }
+            if (title == "Дефицит бетона")
+            {
+                var shortage = System.Text.RegularExpressions.Regex.Match(body,
+                    @"^Бетонные дороги в этот круг на (\d+) карт\(у\) дороже; разрешение мэрии снимает надбавку\.$");
+                if (shortage.Success)
+                    return $"Event: Concrete Shortage. Concrete roads cost {shortage.Groups[1].Value} extra cards this round; a City Hall permit waives the surcharge.";
+            }
             if (title == "Новый район")
             {
                 var district = System.Text.RegularExpressions.Regex.Match(body,

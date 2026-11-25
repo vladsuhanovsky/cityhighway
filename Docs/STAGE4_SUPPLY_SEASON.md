@@ -1,0 +1,5 @@
+# Stage 4 — Supply Season city events
+
+Optional scenario appended at ID 5; new event kinds appended at IDs 7 and 8. Two copies each are added only by the new scenario. Legacy decks have zero new copies and retain RNG ordering. Asphalt Delivery discounts explicitly asphalt roads by one card (minimum one), not neutral roads or bridges; Concrete Shortage adds one card to explicitly concrete roads, waived by City Hall permit. It increases co-op crisis using the existing bad-event rule. Road-piece length and score unchanged. Both events expire/cancel using existing lifecycle. Values are initial design hypotheses, not playtested balance.
+
+Core cost/payment/AI, event deck, snapshot restoration, scenario rules, localized current event labels and historical journal, tooltips, scenario selection and online host label wired. Network protocol 11 requires all players update. Existing scenario/replay IDs retained. No Magnate event changes or cloud database changes. Twelve new Edit Mode cases. Manual QA: scenario selection and rules RU/EN, event HUD/tooltip and permit, co-op crisis, save/reload, replay, actual network and balance.

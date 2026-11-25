@@ -494,7 +494,7 @@ namespace CityHighways.Presentation
                 Ui.Show(_inviteButton, session.Transport.CanInvite);
                 Ui.SetEnabled(_addBotButton, hostSession.CanAddSeat);
                 _timerButton.text = _turnSeconds > 0 ? string.Format(LocalizationService.Get("menu.online.dynamic.turn_timer"), _turnSeconds) : LocalizationService.Get("menu.online.046");
-                _scenarioButton.text = LocalizationService.Get("menu.online.047") + Scenarios.Title((ScenarioKind)Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1));
+                _scenarioButton.text = LocalizationService.Get("menu.online.047") + ScenarioMenuLocalization.Title((ScenarioKind)Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1));
                 _mapButton.text = LocalizationService.Get("menu.online.048") + GameSetup.MapOf(_setup.mapResourcePath).Title;
                 _modeButton.text = _setup.cooperative ? LocalizationService.Get("menu.online.049") : LocalizationService.Get("menu.online.050");
                 Ui.Show(_coopDifficultyButton, _setup.cooperative);

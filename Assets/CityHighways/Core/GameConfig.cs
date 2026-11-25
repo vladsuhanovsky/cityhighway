@@ -102,6 +102,11 @@ namespace CityHighways.Core
         public string ParadeDistrict = "center";
         public int SnowExtraCost = 1;
         public int InvestorBonus = 2;
+        // Optional Supply Season events. Zero copies preserve the legacy deck and RNG order.
+        public int AsphaltDeliveryEvents;
+        public int ConcreteShortageEvents;
+        public int AsphaltDeliveryDiscount = 1;
+        public int ConcreteShortageExtraCost = 1;
 
         /// <summary>Улучшение дороги: своя дорога становится магистралью (проезд ×RushHourTollMultiplier)
         /// за половину её длины в картах (с округлением вверх), это действие хода, +UpgradePoints очков.</summary>
