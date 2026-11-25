@@ -11,15 +11,20 @@ namespace CityHighways.Presentation
     public sealed class MenuLegibilityVeil : VisualElement
     {
         readonly ColorMesh _mesh = new ColorMesh();
+        readonly float _strength;
 
         public MenuLegibilityVeil()
         {
+            var style = MainMenuStyle.Current;
+            _strength = style != null ? Mathf.Clamp(style.centerDarkening, 0f, 0.8f) : 0.5f;
             pickingMode = PickingMode.Ignore;
             Ui.Fill(this);
             generateVisualContent += Draw;
         }
 
-        public static float Opacity(float x, float y)
+        public static float Opacity(float x, float y) => Opacity(x, y, 0.5f);
+
+        public static float Opacity(float x, float y, float strength)
         {
             // Normalized canvas coordinates. A smooth falloff prevents any
             // obvious rectangle underneath transparent menu buttons.
@@ -27,7 +32,7 @@ namespace CityHighways.Presentation
             float vertical = Mathf.Clamp01((y - 0.07f) / 0.20f) *
                              Mathf.Clamp01((0.81f - y) / 0.17f);
             float ease = horizontal * horizontal * (3f - 2f * horizontal);
-            return 0.50f * ease * vertical;
+            return Mathf.Clamp(strength, 0f, 0.8f) * ease * vertical;
         }
 
         void Draw(MeshGenerationContext context)
@@ -49,8 +54,8 @@ namespace CityHighways.Presentation
                         new Vector2(x1 * r.width, y0 * r.height),
                         new Vector2(x1 * r.width, y1 * r.height),
                         new Vector2(x0 * r.width, y1 * r.height),
-                        Shade(Opacity(x0, y0)), Shade(Opacity(x1, y0)),
-                        Shade(Opacity(x1, y1)), Shade(Opacity(x0, y1)));
+                        Shade(Opacity(x0, y0, _strength)), Shade(Opacity(x1, y0, _strength)),
+                        Shade(Opacity(x1, y1, _strength)), Shade(Opacity(x0, y1, _strength)));
                 }
             }
             _mesh.Flush(context);
