@@ -59,6 +59,24 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void FirstViewerCannotAlterLaterSubscribersMetadataDecision()
+        {
+            var queue = new SocialReplayFlights();
+            int accepted = 0, rejected = 0;
+            queue.Begin(Record(score: 97), replay =>
+            {
+                accepted++;
+                // This callback mutates the shared replay, but must not
+                // change the decision for subscribers validated earlier.
+                replay.authorScore = 80;
+            }, _ => Assert.Fail(), out int token);
+            queue.Begin(Record(score: 97), _ => accepted++, _ => rejected++, out _);
+            Assert.IsTrue(queue.Complete(42, token, Replay(), "mismatch"));
+            Assert.AreEqual(2, accepted);
+            Assert.AreEqual(0, rejected);
+        }
+
+        [Test]
         public void RecordMetadataIsCopiedWhenSubscriberJoins()
         {
             var queue = new SocialReplayFlights();
