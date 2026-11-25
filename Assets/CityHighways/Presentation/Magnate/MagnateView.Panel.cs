@@ -192,7 +192,7 @@ namespace CityHighways.Presentation
                 if (current) Ui.Border(dot, 1.5f, Color.white);
                 dot.style.marginRight = 4f;
                 chip.Add(dot);
-                chip.Add(Ui.Text($"{position}. {p.Name} {p.Score}", 12f, current ? Theme.Text : Theme.TextDim, current));
+                chip.Add(Ui.Text($"{position}. {PlayerIdentity.Label(p.Index, p.Name)} {p.Score}", 12f, current ? Theme.Text : Theme.TextDim, current));
                 list.Add(chip);
             }
             players.Add(list);
@@ -268,7 +268,7 @@ namespace CityHighways.Presentation
             }
             if (player.IsBot)
             {
-                card.Add(Header(player.Name, color));
+                card.Add(Header(PlayerIdentity.Label(player.Index, player.Name), color));
                 card.Add(Hint(_game.IsOpeningRound ? LocalizationService.Get("magnate.panel.011")
                     : _game.Phase == MagnatePhase.Build ? LocalizationService.Get("magnate.panel.012") : LocalizationService.Get("magnate.panel.013")));
                 return;

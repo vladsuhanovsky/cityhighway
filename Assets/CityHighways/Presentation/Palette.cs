@@ -28,7 +28,25 @@ namespace CityHighways.Presentation
             new Color(0.66f, 0.92f, 0.86f), new Color(0.94f, 0.70f, 0.56f)
         };
 
-        public static Color PlayerColor(int index) => Players[((index % Players.Length) + Players.Length) % Players.Length];
+        // Alternative company colors inspired by a color-vision-friendly
+        // categorical palette; not a guarantee for every display or vision type.
+        static readonly Color[] AccessiblePlayers =
+        {
+            new Color32(0, 114, 178, 255),   // blue
+            new Color32(230, 159, 0, 255),   // orange
+            new Color32(0, 158, 115, 255),   // bluish green
+            new Color32(204, 121, 167, 255), // reddish purple
+            new Color32(240, 228, 66, 255)   // yellow
+        };
+
+        public static Color PlayerColor(int index, bool accessible)
+        {
+            var colors = accessible ? AccessiblePlayers : Players;
+            return colors[((index % colors.Length) + colors.Length) % colors.Length];
+        }
+
+        public static Color PlayerColor(int index) =>
+            PlayerColor(index, DisplaySettings.Active?.accessiblePlayerColors == true);
 
         public static Color DistrictColor(int index) => Districts[((index % Districts.Length) + Districts.Length) % Districts.Length];
 

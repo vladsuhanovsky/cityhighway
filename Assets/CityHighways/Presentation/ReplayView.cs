@@ -440,7 +440,7 @@ namespace CityHighways.Presentation
                 }
                 var head = Ui.Row();
                 head.style.alignItems = Align.Center;
-                var name = Ui.Text(player.Name + (player.Index == _file.authorSeat ? " ★" : ""), 14f, Theme.Text, true);
+                var name = Ui.Text(PlayerIdentity.Label(player.Index, player.Name) + (player.Index == _file.authorSeat ? " ★" : ""), 14f, Theme.Text, true);
                 name.style.flexGrow = 1f;
                 head.Add(name);
                 int score = _game.Result != null

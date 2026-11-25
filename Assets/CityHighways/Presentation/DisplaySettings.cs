@@ -43,6 +43,10 @@ namespace CityHighways.Presentation
         public bool uiSounds = true;
         /// <summary>Доступность: меньше анимаций (переходы почти мгновенные).</summary>
         public bool reducedMotion;
+        /// <summary>Optional alternative company colors; default palette stays unchanged.</summary>
+        public bool accessiblePlayerColors;
+        /// <summary>Stable seat numbers in HUD and matching road ownership pips.</summary>
+        public bool showOwnerMarkers;
         /// <summary>Доступность: масштаб интерфейса, 0,9–1,3.</summary>
         public float uiScale = 1f;
         /// <summary>Уровень качества Unity (Project Settings → Quality); −1 — не трогать.</summary>

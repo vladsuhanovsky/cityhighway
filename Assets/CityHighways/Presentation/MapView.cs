@@ -1551,10 +1551,45 @@ namespace CityHighways.Presentation
             DrawCones(p);
             DrawSnowfall(p, area);
             Overlay?.Invoke(p);
+            DrawOwnerMarkers(p);
 
             if (_dimLevel > 0.001f) DrawContractHighlight(p, area);
             DrawFireworks(p, dt);
             DrawFlash(p, area);
+        }
+
+        // Draw one small screen-space marker per road, independently of 2D/3D
+        // road materials. Dots identify the stable seat, not turn order.
+        void DrawOwnerMarkers(Painter2D p)
+        {
+            if (!PlayerIdentity.MarkersEnabled || _layout == null) return;
+            foreach (var road in _game.Map.Roads)
+            {
+                if (!RoadVisible(road)) continue;
+                int? owner = _game.GetRoadOwner(road.Id);
+                if (!owner.HasValue || !PlayerIdentity.HasRoadMarker(owner.Value, _game.Players.Count)) continue;
+                var segments = _layout.GetSegments(road);
+                int built = BuiltSegments(road, segments.Count);
+                if (built <= 0) continue;
+                var segment = segments[(built - 1) / 2];
+                var dir = Dir(segment);
+                var center = segment.Center + new Vector2(-dir.y, dir.x) * 13f;
+                if (!contentRect.Contains(center)) continue;
+
+                p.fillColor = new Color(0.06f, 0.08f, 0.11f, 0.96f);
+                CirclePath(p, center, 8f);
+                p.Fill();
+                p.strokeColor = Palette.PlayerColor(owner.Value);
+                p.lineWidth = 1.5f;
+                CirclePath(p, center, 8f);
+                p.Stroke();
+                p.fillColor = Color.white;
+                for (int i = 0; i < PlayerIdentity.PipCount(owner.Value); i++)
+                {
+                    CirclePath(p, center + PlayerIdentity.PipOffset(owner.Value, i), 1.35f);
+                    p.Fill();
+                }
+            }
         }
 
         /// <summary>Ghost road overlay is a visual-only preview, never modifies ownership.</summary>
