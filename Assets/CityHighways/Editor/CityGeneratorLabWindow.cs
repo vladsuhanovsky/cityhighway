@@ -40,7 +40,11 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         EditorGUILayout.LabelField("Duration", current.milliseconds + " ms");
         EditorGUILayout.LabelField("Locations / roads / hubs",
             (current.locations?.Length ?? 0) + " / " + (current.roads?.Length ?? 0) + " / " + (current.hubs?.Length ?? 0));
-        if (current.generated) DrawPreview();
+        if (current.generated)
+        {
+            DrawPreview();
+            EditorGUILayout.LabelField("Blue: rivers · gold: bridges · red: hubs · white: public roads");
+        }
         if (GUILayout.Button("Export selected diagnostic JSON"))
         {
             string dir = EditorUtility.OpenFolderPanel("Export seed diagnostics", "", "");
@@ -121,6 +125,5 @@ public sealed class CityGeneratorLabWindow : EditorWindow
             EditorGUI.DrawRect(new Rect(p.x - size / 2, p.y - size / 2, size, size),
                 hubs.Contains(point.id) ? new Color(.95f, .4f, .3f) : Color.white);
         }
-        EditorGUILayout.LabelField("Blue: rivers · gold: bridges · red: hubs · white: public roads");
     }
 }
