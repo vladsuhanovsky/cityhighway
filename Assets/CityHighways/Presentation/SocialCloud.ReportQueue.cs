@@ -146,7 +146,11 @@ namespace CityHighways.Presentation
                     DeferAfterDiskError();
                 }
                 Changed?.Invoke();
-                AfterReport(response);
+                // The server response is for the original Steam account.
+                // If the user switched accounts while HTTP was in flight,
+                // do not display their record/club notifications in the new account.
+                if (NetPlatforms.Steam?.SteamId == entry.ownerSteamId)
+                    AfterReport(response);
                 TrySendQueuedReport();
             }, reportFailure: (message, status) =>
             {
