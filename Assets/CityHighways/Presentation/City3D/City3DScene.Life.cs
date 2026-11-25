@@ -24,7 +24,7 @@ namespace CityHighways.Presentation
 
         // ================================================================== Бордюры и разметка
 
-        readonly Dictionary<string, (GameObject go, int owner)> _curbs = new Dictionary<string, (GameObject, int)>();
+        readonly Dictionary<string, (GameObject go, int owner, BuiltRoad road)> _curbs = new Dictionary<string, (GameObject, int, BuiltRoad)>();
         readonly Dictionary<int, Material> _ownerMaterials = new Dictionary<int, Material>();
 
         /// <summary>
@@ -61,85 +61,51 @@ namespace CityHighways.Presentation
             {
                 var owner = game.GetRoadOwner(road.Id);
                 // Мосты тоже: на них — только полосы цвета владельца (без бордюров и разметки по земле).
-                bool want = owner.HasValue && _builtRoads.ContainsKey(road.Id) && !_constructing.Contains(road.Id);
+                bool hasRoad = _builtRoads.TryGetValue(road.Id, out var built);
+                bool want = owner.HasValue && hasRoad && built != null && built.Root != null && !_constructing.Contains(road.Id);
                 bool has = _curbs.TryGetValue(road.Id, out var curb);
-                if (has && (!want || curb.owner != owner.Value))
+                // Даже при прежнем владельце заново построенная дорога может иметь другое полотно.
+                if (has && (!want || curb.owner != owner.Value || !ReferenceEquals(curb.road, built) || curb.go == null))
                 {
-                    if (curb.go != null) Destroy(curb.go);
+                    if (curb.go != null)
+                    {
+                        curb.go.SetActive(false);
+                        Destroy(curb.go);
+                    }
                     _curbs.Remove(road.Id);
                     has = false;
                 }
                 if (!want || has) continue;
-                var la = game.Map.GetLocation(road.A);
-                var lb = game.Map.GetLocation(road.B);
-                if (la == null || lb == null) continue;
-                var start = BoardLayout.World(la.X, la.Y);
-                var end = BoardLayout.World(lb.X, lb.Y);
-                TrimForJunctions(ref start, ref end);
                 bool isPublic = owner.Value >= publicOwner;
-                var go = BuildCurbs(road.Id, _builtRoads[road.Id], start, end, isPublic ? null : OwnerMaterial(owner.Value, ownerColor(owner.Value)), road.IsBridge);
-                _curbs[road.Id] = (go, owner.Value);
+                var go = BuildCurbs(road.Id, built, isPublic ? null : OwnerMaterial(owner.Value, ownerColor(owner.Value)),
+                    road.IsBridge || built.HasBridge);
+                _curbs[road.Id] = (go, owner.Value, built);
             }
         }
 
         const float RoadTop = 0.006f;
 
-        /// <summary>Точка верха полотна на расстоянии d от начала: земля по линии дороги плюс высота куска (подъезд, пролёт).</summary>
-        static Vector3 SurfaceAt(BuiltRoad built, float d)
-        {
-            float height = RoadTop;
-            foreach (var piece in built.Pieces)
-                if (d >= piece.From - 1e-4f && d <= piece.To + 1e-4f)
-                {
-                    float t = piece.To - piece.From > 1e-5f ? Mathf.Clamp01((d - piece.From) / (piece.To - piece.From)) : 0f;
-                    height = Mathf.Lerp(piece.FromHeight, piece.ToHeight, t);
-                    break;
-                }
-            return built.PointAt(d) + Vector3.up * height;
-        }
-
         /// <summary>
-        /// Два бордюра по краям полотна и полосы цвета владельца вдоль них (curbMaterial; null — городская дорога
-        /// магната, без цвета), белый пунктир по оси. У моста — только полосы, по высоте полотна (подъезды, пролёт).
+        /// Все детали строятся по окончательному BuiltRoad, а не повторно по координатам станций.
+        /// На мостах остаются только цветные полосы, в том числе на подъездах.
         /// </summary>
-        GameObject BuildCurbs(string roadId, BuiltRoad built, Vector3 start, Vector3 end, Material curbMaterial, bool bridge)
+        GameObject BuildCurbs(string roadId, BuiltRoad built, Material curbMaterial, bool bridge)
         {
             var root = new GameObject("Road details " + roadId);
             root.transform.SetParent(_root.transform, false);
-            var along = end - start;
-            along.y = 0f;
-            float length = along.magnitude;
-            if (length < 0.01f) return root;
-            along /= length;
-            var across = new Vector3(-along.z, 0f, along.x);
+            if (built.Length < 0.01f) return root;
             float edge = RoadWidth / 2f - 0.004f;
             var white = CityAtlas.Solid(CityAtlas.Row.Misc, CityAtlas.Railing);
 
             if (curbMaterial != null)
             {
-                // Полосы цвета владельца на полотне у обоих краёв: видно издалека и под любым углом, и на мостах.
                 var bands = new MeshBuilder();
                 var paint = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofLight);
-                var line = built.End - built.Start;
-                line.y = 0f;
-                var side = new Vector3(-line.z, 0f, line.x).normalized;
                 float outer = RoadWidth / 2f - (bridge ? 0.006f : 0.008f), inner = outer - 0.014f;
-                const float step = 0.04f;
-                for (float d = 0f; d < built.Length - 1e-4f; d += step)
-                {
-                    float e = Mathf.Min(built.Length, d + step);
-                    var p0 = SurfaceAt(built, d) + Vector3.up * 0.0006f;
-                    var p1 = SurfaceAt(built, e) + Vector3.up * 0.0006f;
-                    foreach (float s in new[] { -1f, 1f })
-                    {
-                        var o0 = side * (outer * s);
-                        var i0 = side * (inner * s);
-                        // Грань смотрит вверх при любом знаке стороны.
-                        // (как у разметки: сначала левая кромка полосы, потом правая — грань вверх)
-                        if (s > 0f) bands.Quad(p0 + o0, p1 + o0, p1 + i0, p0 + i0, paint);
-                        else bands.Quad(p0 + i0, p1 + i0, p1 + o0, p0 + o0, paint);
-                    }
-                }
+                foreach (var q in RoadMarkingGeometry.Strips(built, 0f, built.Length, inner, outer, 0.0006f))
+                    bands.Quad(q.A, q.B, q.C, q.D, paint);
+                foreach (var q in RoadMarkingGeometry.Strips(built, 0f, built.Length, -outer, -inner, 0.0006f))
+                    bands.Quad(q.A, q.B, q.C, q.D, paint);
                 if (bands.VertexCount > 0) AddMesh("Owner bands", bands.ToMesh("City3D Owner " + roadId), curbMaterial, root.transform, false);
             }
             if (bridge) return root;
@@ -148,25 +114,24 @@ namespace CityHighways.Presentation
             {
                 var curbs = new MeshBuilder();
                 var solid = CityAtlas.Solid(CityAtlas.Row.Roof, CityAtlas.RoofLight);
-                foreach (float side in new[] { -1f, 1f })
+                var across = RoadMarkingGeometry.Across(built);
+                foreach (var piece in built.Pieces)
                 {
-                    var a = start + across * (edge * side) + Vector3.up * (RoadTop + 0.0015f);
-                    var b = end + across * (edge * side) + Vector3.up * (RoadTop + 0.0015f);
-                    curbs.Beam(a, b, 0.006f, 0.003f, solid, solid);
+                    if (piece.Kind != RoadPieceKind.Road || piece.To - piece.From < 1e-5f) continue;
+                    foreach (float side in new[] { -1f, 1f })
+                    {
+                        var offset = across * (edge * side) + Vector3.up * 0.0015f;
+                        var a = RoadMarkingGeometry.SurfaceAt(built, piece, piece.From) + offset;
+                        var b = RoadMarkingGeometry.SurfaceAt(built, piece, piece.To) + offset;
+                        curbs.Beam(a, b, 0.006f, 0.003f, solid, solid);
+                    }
                 }
-                AddMesh("Curbs", curbs.ToMesh("City3D Curbs " + roadId), curbMaterial, root.transform, false);
+                if (curbs.VertexCount > 0) AddMesh("Curbs", curbs.ToMesh("City3D Curbs " + roadId), curbMaterial, root.transform, false);
             }
 
-            // Разметка: штрих 3 см через 2,5 см, чуть выше асфальта, чтобы не мерцала.
             var marks = new MeshBuilder();
-            const float dash = 0.03f, gap = 0.025f;
-            for (float t = gap; t + dash < length - gap * 0.5f; t += dash + gap)
-            {
-                var a = start + along * t + Vector3.up * (RoadTop + 0.0004f);
-                var b = start + along * (t + dash) + Vector3.up * (RoadTop + 0.0004f);
-                var side = across * 0.0018f;
-                marks.Quad(a + side, b + side, b - side, a - side, white);   // грань смотрит вверх
-            }
+            foreach (var q in RoadMarkingGeometry.LaneMarks(built))
+                marks.Quad(q.A, q.B, q.C, q.D, white);
             if (marks.VertexCount > 0) AddMesh("Lane marks", marks.ToMesh("City3D Marks " + roadId), _buildings, root.transform, false);
             return root;
         }
