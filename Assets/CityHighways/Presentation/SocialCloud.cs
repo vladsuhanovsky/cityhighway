@@ -379,6 +379,13 @@ namespace CityHighways.Presentation
                                 failed?.Invoke(Problem);
                                 return;
                             }
+                            if (request.action == "replay" &&
+                                !SocialReadContracts.ValidateReplay(text))
+                            {
+                                Problem = "Invalid social replay response";
+                                failed?.Invoke(Problem);
+                                return;
+                            }
                             if (request.action == "club_list" &&
                                 !SocialReadContracts.ValidateClubList(text))
                             {
