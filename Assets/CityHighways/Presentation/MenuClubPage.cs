@@ -25,6 +25,7 @@ namespace CityHighways.Presentation
         readonly Label _pendingReports;
         Tab _tab = Tab.Club;
         bool _searching;
+        int _searchRevision;
         string _query = "";
         SocialCloud.ClubBrief[] _found;
         string _viewSteamAccount;
@@ -134,6 +135,7 @@ namespace CityHighways.Presentation
                 // that fetched them. A -> B -> A must reset these too.
                 _viewSteamAccount = owner;
                 _viewSteamGeneration = generation;
+                unchecked { _searchRevision++; }
                 _found = null;
                 _searching = false;
                 _query = "";
@@ -480,16 +482,27 @@ namespace CityHighways.Presentation
 
         void Search()
         {
+            // A later query must win even when the previous HTTP request
+            // completes after it. Reject results from old Steam sessions.
+            unchecked { _searchRevision++; }
+            int requestId = _searchRevision;
+            string owner = SocialCloud.CurrentSteamAccount;
+            int generation = SocialCloud.CurrentAccountGeneration;
+            string query = _query;
             _searching = true;
-            SocialCloud.ListClubs(_query, clubs =>
+            SocialCloud.ListClubs(query, clubs =>
             {
+                if (requestId != _searchRevision ||
+                    !SocialCloud.BelongsToCurrentSession(owner, generation)) return;
                 _searching = false;
                 _found = clubs;
                 Rebuild();
             }, error =>
             {
+                if (requestId != _searchRevision ||
+                    !SocialCloud.BelongsToCurrentSession(owner, generation)) return;
                 _searching = false;
-                _found = new SocialCloud.ClubBrief[0];
+                // Keep existing valid search results on transient errors.
                 Fail(error);
             });
         }
