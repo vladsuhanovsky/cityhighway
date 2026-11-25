@@ -125,10 +125,13 @@ namespace CityHighways.Presentation
             try
             {
                 int recovered = RecoverOrphans(_index);
-                var removed = Prune(_index);
-                if (recovered > 0 || repaired || removed.Count > 0)
+                var transaction = new ReplayIndexTransaction(_index.entries, Keep);
+                if (recovered > 0 || repaired || transaction.RemovedIds.Count > 0)
                 {
-                    if (SaveIndex(_index)) DeletePruned(removed);
+                    if (transaction.Commit(
+                        entries => SaveIndex(new Index { entries = entries }),
+                        ids => DeletePruned(ids)))
+                        _index.entries = transaction.Entries;
                 }
             }
             catch (Exception e)
