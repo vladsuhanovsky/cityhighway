@@ -183,7 +183,9 @@ namespace CityHighways.Presentation
             return null; // Unknown formats remain unchanged rather than inventing a translation.
         }
 
-        string JournalDisplayText(string message)
+        string JournalDisplayText(string message) => FormatJournalMessage(_game, message);
+
+        public static string FormatJournalMessage(Game game, string message)
         {
             if (!EnglishUi || string.IsNullOrEmpty(message)) return message;
             switch (message)
@@ -215,8 +217,8 @@ namespace CityHighways.Presentation
             if (crisis.Success) return $"The city grows: crisis +1 → {crisis.Groups[1].Value} of {crisis.Groups[2].Value}.";
             var eventCrisis = System.Text.RegularExpressions.Regex.Match(message, @"^Событие давит на город: кризис \+(\d+) → (\d+) из (\d+)\.$");
             if (eventCrisis.Success) return $"A city event increases the crisis by {eventCrisis.Groups[1].Value} → {eventCrisis.Groups[2].Value} of {eventCrisis.Groups[3].Value}.";
-            string scenario = _game == null ? null :
-                ScenarioMenuLocalization.JournalAnnouncement(message, _game.Scenario, _game.Config);
+            string scenario = game == null ? null :
+                ScenarioMenuLocalization.JournalAnnouncement(message, game.Scenario, game.Config);
             if (scenario != null) return scenario;
             string trade = LocalizationService.TranslateTradeJournal(message);
             if (trade != null) return trade;
@@ -228,8 +230,8 @@ namespace CityHighways.Presentation
             if (coop != null) return coop;
             string cityEvent = ArchivedCityEventText(message);
             if (cityEvent != null) return cityEvent;
-            if (_game == null) return message;
-            foreach (var player in _game.Players)
+            if (game == null) return message;
+            foreach (var player in game.Players)
             {
                 string prefix = player.Name + " ";
                 if (!message.StartsWith(prefix, StringComparison.Ordinal)) continue;
@@ -258,7 +260,7 @@ namespace CityHighways.Presentation
                 if (goalClaim.Success)
                 {
                     string goalName = goalClaim.Groups[1].Value;
-                    var matchedGoal = _game.ActiveGoals.FirstOrDefault(g => g.Name == goalName);
+                    var matchedGoal = game.ActiveGoals.FirstOrDefault(g => g.Name == goalName);
                     return $"{player.Name} claims City Hall goal “{(matchedGoal != null ? MayorGoalName(matchedGoal) : goalName)}” (+{goalClaim.Groups[2].Value} pts).";
                 }
 
