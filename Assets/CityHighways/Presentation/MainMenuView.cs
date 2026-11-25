@@ -333,55 +333,74 @@ namespace CityHighways.Presentation
                 page.Add(card);
             }
 
+            // Keep six edges perfectly aligned. Each pair has two sizes,
+            // one shared width, a 4px inner gap and a 12px group gap.
             var buttons = Ui.Column();
-            buttons.style.width = 480f;
+            buttons.style.width = MenuHomeActionLayout.Width;
+            buttons.style.alignItems = Align.Stretch;
             page.Add(buttons);
 
-            MenuButton Add(MenuIcon.Glyph glyph, string text, Action onClick, bool primary)
+            VisualElement AddGroup(bool last)
+            {
+                var group = Ui.Column();
+                group.style.width = MenuHomeActionLayout.Width;
+                group.style.alignItems = Align.Stretch;
+                group.style.marginBottom = last ? 0f : MenuHomeActionLayout.BetweenGroupsGap;
+                buttons.Add(group);
+                return group;
+            }
+
+            MenuButton Add(VisualElement group, MenuIcon.Glyph glyph,
+                string text, Action onClick, bool primary)
             {
                 var button = new MenuButton(glyph, text, onClick, primary);
+                button.style.width = MenuHomeActionLayout.Width;
+                button.style.height = MenuHomeActionLayout.PrimaryHeight;
+                button.style.minHeight = MenuHomeActionLayout.PrimaryHeight;
+                button.style.marginBottom = MenuHomeActionLayout.InsidePairGap;
                 _menuButtons.Add(button);
-                buttons.Add(button);
+                group.Add(button);
                 return button;
             }
-            // Three main entry points, each with its closely related action
-            // immediately below it. Keep the iconic red New Game button.
-            Add(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.home.new_game"),
-                OpenNewGameWithDeparture, true);
 
-            // Quick Start genuinely bypasses game setup. It is a separate
-            // button, never a second control nested inside New Game.
-            var quick = Ui.Button(LocalizationService.Get("menu.home.quick_start"),
-                StartGame, ButtonKind.Secondary, 14f);
-            quick.style.alignSelf = Align.Center;
-            quick.style.width = 244f;
-            quick.style.minHeight = 36f;
-            quick.style.backgroundColor = new Color(0.12f, 0.17f, 0.23f, 0.94f);
-            quick.style.marginBottom = 10f;
-            buttons.Add(quick);
-
-            UnityEngine.UIElements.Button AddSubAction(string key, Action action)
+            UnityEngine.UIElements.Button AddSubAction(VisualElement group, string key, Action action)
             {
+                // Use the color-aware factory so hover and focus restore the
+                // same dark-blue surface rather than a different theme color.
                 var sub = Ui.Button(LocalizationService.Get(key), action,
-                    ButtonKind.Secondary, 14f);
-                sub.style.alignSelf = Align.FlexStart;
-                sub.style.marginLeft = 52f;
-                sub.style.width = 374f;
-                sub.style.minHeight = 33f;
-                sub.style.marginBottom = 10f;
-                sub.style.backgroundColor = new Color(0.075f, 0.12f, 0.18f, 0.96f);
-                buttons.Add(sub);
+                    new Color(0.16f, 0.23f, 0.31f, 0.98f),
+                    new Color(0.25f, 0.35f, 0.45f, 1f),
+                    Theme.Text, MenuHomeActionLayout.SecondaryFontSize);
+                sub.style.width = MenuHomeActionLayout.Width;
+                sub.style.height = MenuHomeActionLayout.SecondaryHeight;
+                sub.style.minHeight = MenuHomeActionLayout.SecondaryHeight;
+                sub.style.marginBottom = 0f;
+                sub.style.alignSelf = Align.Stretch;
+                group.Add(sub);
                 return sub;
             }
 
-            Add(MenuIcon.Glyph.Cap, LocalizationService.Get(
+            // Group 1: start a configured game, or jump straight in.
+            var startGroup = AddGroup(false);
+            Add(startGroup, MenuIcon.Glyph.Gamepad,
+                LocalizationService.Get("menu.home.new_game"),
+                OpenNewGameWithDeparture, true);
+            // This invokes StartGame directly and never opens New Game setup.
+            AddSubAction(startGroup, "menu.home.quick_start", StartGame);
+
+            // Group 2: tutorial plus a closely related rules shortcut.
+            var learnGroup = AddGroup(false);
+            Add(learnGroup, MenuIcon.Glyph.Cap, LocalizationService.Get(
                 AnyTutorialDone ? "menu.home.tutorial" : "menu.home.tutorial_hint"),
                 () => ShowPage(Page.Tutorial), false);
-            AddSubAction("menu.home.rules", () => OpenRules(null, Page.Home));
+            AddSubAction(learnGroup, "menu.home.rules", () => OpenRules(null, Page.Home));
 
-            _onlineButton = Add(MenuIcon.Glyph.Globe,
+            // Group 3: online mode plus community actions.
+            var onlineGroup = AddGroup(true);
+            _onlineButton = Add(onlineGroup, MenuIcon.Glyph.Globe,
                 LocalizationService.Get("menu.home.online"), () =>
             {
+                // A banned account keeps the existing notification behavior.
                 if (Profiles.Active.cloudBanned)
                 {
                     if (!_bellOpen) ToggleBell();
@@ -392,7 +411,7 @@ namespace CityHighways.Presentation
             _onlineBadge = Pill("");
             Ui.Show(_onlineBadge, false);
             _onlineButton.Badge.Add(_onlineBadge);
-            AddSubAction("menu.home.clubs", () => ShowPage(Page.Club));
+            AddSubAction(onlineGroup, "menu.home.clubs", () => ShowPage(Page.Club));
 
             // Profile-linked Statistics now lives next to the profile card.
             // Settings and language live together at the top-right gear.

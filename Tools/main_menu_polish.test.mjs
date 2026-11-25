@@ -8,6 +8,7 @@ const road = get("Assets/CityHighways/Presentation/MenuHighwayOverlay.cs");
 const route = get("Assets/CityHighways/Presentation/MenuRoadDeparture.cs");
 const shade = get("Assets/CityHighways/Presentation/MenuLegibilityVeil.cs");
 const widgets = get("Assets/CityHighways/Presentation/MenuWidgets.cs");
+const rhythm = get("Assets/CityHighways/Presentation/MenuHomeActionLayout.cs");
 const ru = JSON.parse(get("Assets/CityHighways/Resources/CityHighways/Localization/ru.json")).entries;
 const en = JSON.parse(get("Assets/CityHighways/Resources/CityHighways/Localization/en.json")).entries;
 const home = view.slice(view.indexOf("VisualElement BuildHome(SaveFile saved)"),
@@ -26,31 +27,31 @@ test("golden logo and pixel skyline remain the page's visual anchor", () => {
 });
 
 test("New Game is always the red highlighted primary tile", () => {
-  assert.match(home, /Add\(MenuIcon\.Glyph\.Gamepad, LocalizationService\.Get\("menu\.home\.new_game"\),\s*OpenNewGameWithDeparture, true\)/);
+  assert.match(home, /Add\(startGroup, MenuIcon\.Glyph\.Gamepad,\s*LocalizationService\.Get\("menu\.home\.new_game"\),\s*OpenNewGameWithDeparture, true\)/);
   assert.match(widgets, /_primary \? new Color\(0\.75f, 0\.22f, 0\.17f\)/);
 });
 
 test("Play Now is a separate action and not a nested New Game badge", () => {
-  assert.match(home, /var quick = Ui\.Button\(LocalizationService\.Get\("menu\.home\.quick_start"\),\s*StartGame,/);
-  assert.match(home, /buttons\.Add\(quick\)/);
+  assert.match(home, /AddSubAction\(startGroup, "menu\.home\.quick_start", StartGame\)/);
+  assert.match(home, /group\.Add\(sub\)/);
   assert.doesNotMatch(home, /newGame\.Badge\.Add\(quick\)/);
   assert.equal(translated(ru, "menu.home.quick_start"), "Играть сразу");
   assert.equal(translated(en, "menu.home.quick_start"), "Play Now");
 });
 
 test("main column retains exactly the three top-level play intents", () => {
-  assert.match(home, /Add\(MenuIcon\.Glyph\.Gamepad/);
-  assert.match(home, /Add\(MenuIcon\.Glyph\.Cap/);
-  assert.match(home, /_onlineButton = Add\(MenuIcon\.Glyph\.Globe/);
+  assert.match(home, /Add\(startGroup, MenuIcon\.Glyph\.Gamepad/);
+  assert.match(home, /Add\(learnGroup, MenuIcon\.Glyph\.Cap/);
+  assert.match(home, /_onlineButton = Add\(onlineGroup, MenuIcon\.Glyph\.Globe/);
   assert.doesNotMatch(home, /Add\(MenuIcon\.Glyph\.Gear/);
   assert.doesNotMatch(home, /Add\(MenuIcon\.Glyph\.Chart/);
 });
 
 test("Rules is adjacent to Tutorial and Clubs is adjacent to Online", () => {
   const tutorial = home.indexOf("MenuIcon.Glyph.Cap");
-  const rules = home.indexOf('AddSubAction("menu.home.rules"');
+  const rules = home.indexOf('AddSubAction(learnGroup, "menu.home.rules"');
   const online = home.indexOf("MenuIcon.Glyph.Globe");
-  const clubs = home.indexOf('AddSubAction("menu.home.clubs"');
+  const clubs = home.indexOf('AddSubAction(onlineGroup, "menu.home.clubs"');
   assert.ok(tutorial > 0 && rules > tutorial && online > rules && clubs > online);
 });
 
@@ -181,4 +182,77 @@ test("Escape and Steam Deck back dismiss a visible settings popover first", () =
   assert.match(tick, /if \(_settingsPopupOpen\) ToggleSettingsPopup\(\);\s*else Ui\.GoBack\(Root\)/);
   assert.match(tick, /keyboard\.escapeKey\.wasPressedThisFrame/);
   assert.match(tick, /pad\.buttonEast\.wasPressedThisFrame/);
+});
+
+
+test("all six home actions share the primary New Game width", () => {
+  assert.match(rhythm, /public const float Width = 480f;/);
+  assert.match(home, /buttons\.style\.width = MenuHomeActionLayout\.Width;/);
+  assert.match(home, /group\.style\.width = MenuHomeActionLayout\.Width;/);
+  assert.match(home, /button\.style\.width = MenuHomeActionLayout\.Width;/);
+  assert.match(home, /sub\.style\.width = MenuHomeActionLayout\.Width;/);
+  assert.match(home, /buttons\.style\.alignItems = Align\.Stretch;/);
+  assert.match(home, /group\.style\.alignItems = Align\.Stretch;/);
+  assert.match(home, /sub\.style\.alignSelf = Align\.Stretch;/);
+});
+
+test("the three main actions and three secondary actions use different but consistent heights", () => {
+  assert.match(rhythm, /public const float PrimaryHeight = 58f;/);
+  assert.match(rhythm, /public const float SecondaryHeight = 46f;/);
+  assert.match(home, /button\.style\.height = MenuHomeActionLayout\.PrimaryHeight;/);
+  assert.match(home, /button\.style\.minHeight = MenuHomeActionLayout\.PrimaryHeight;/);
+  assert.match(home, /sub\.style\.height = MenuHomeActionLayout\.SecondaryHeight;/);
+  assert.match(home, /sub\.style\.minHeight = MenuHomeActionLayout\.SecondaryHeight;/);
+});
+
+test("secondary labels are bigger and visibly clickable", () => {
+  assert.match(rhythm, /public const float SecondaryFontSize = 17f;/);
+  assert.match(home, /Theme\.Text, MenuHomeActionLayout\.SecondaryFontSize/);
+  assert.match(home, /new Color\(0\.16f, 0\.23f, 0\.31f, 0\.98f\)/);
+  assert.match(home, /new Color\(0\.25f, 0\.35f, 0\.45f, 1f\)/);
+  assert.match(home, /group\.Add\(sub\)/);
+  assert.doesNotMatch(home, /sub\.style\.marginLeft = 52f/);
+});
+
+test("exact 4px within a pair and 12px between pairs", () => {
+  assert.match(rhythm, /public const float InsidePairGap = 4f;/);
+  assert.match(rhythm, /public const float BetweenGroupsGap = 12f;/);
+  assert.match(home, /button\.style\.marginBottom = MenuHomeActionLayout\.InsidePairGap;/);
+  assert.match(home, /group\.style\.marginBottom = last \? 0f : MenuHomeActionLayout\.BetweenGroupsGap;/);
+  assert.match(home, /sub\.style\.marginBottom = 0f;/);
+});
+
+test("three actual action pairs, not six unrelated buttons", () => {
+  assert.match(home, /var startGroup = AddGroup\(false\)/);
+  assert.match(home, /var learnGroup = AddGroup\(false\)/);
+  assert.match(home, /var onlineGroup = AddGroup\(true\)/);
+  assert.match(home, /AddSubAction\(startGroup, "menu\.home\.quick_start", StartGame\)/);
+  assert.match(home, /AddSubAction\(learnGroup, "menu\.home\.rules"/);
+  assert.match(home, /AddSubAction\(onlineGroup, "menu\.home\.clubs"/);
+  assert.equal((home.match(/var (?:start|learn|online)Group = AddGroup\(/g) || []).length, 3);
+});
+
+test("regression: no narrow quick-start or offset Rules and Clubs buttons", () => {
+  assert.doesNotMatch(home, /quick\.style\.width = 244f/);
+  assert.doesNotMatch(home, /sub\.style\.width = 374f/);
+  assert.doesNotMatch(home, /sub\.style\.marginLeft = 52f/);
+  assert.doesNotMatch(home, /newGame\.Badge\.Add\(quick\)/);
+});
+
+test("all six menu labels still come from existing RU and EN translation keys", () => {
+  const keys = ["menu.home.new_game", "menu.home.quick_start", "menu.home.tutorial",
+    "menu.home.rules", "menu.home.online", "menu.home.clubs"];
+  for (const translations of [ru, en]) {
+    for (const key of keys) {
+      const matches = translations.filter(e => e.key === key);
+      assert.equal(matches.length, 1, key);
+      assert.ok(matches[0].value.length > 0, key);
+    }
+  }
+  assert.match(home, /AnyTutorialDone \? "menu\.home\.tutorial" : "menu\.home\.tutorial_hint"/);
+});
+
+test("home action layout exposes a bounded three-group height for smaller screens", () => {
+  assert.match(rhythm, /public static float PairHeight => PrimaryHeight \+ InsidePairGap \+ SecondaryHeight;/);
+  assert.match(rhythm, /public static float ThreePairsHeight => PairHeight \* 3f \+ BetweenGroupsGap \* 2f;/);
 });
