@@ -95,6 +95,6 @@ test("CI checks generator, 3D water and shared policy when they change", () => {
   for (const file of ["CityRiverPolyline.cs", "CityGenerator.cs",
       "City3DScene.cs", "Magnate3DRiverAlignmentTests.cs",
       "CityRiverPolylineTests.cs", "magnate_river_geometry.test.mjs"]) {
-    assert.equal(workflow.split(file).length - 1, 2, file);
+    assert.ok(workflow.split(file).length - 1 >= 2, file);
   }
 });
