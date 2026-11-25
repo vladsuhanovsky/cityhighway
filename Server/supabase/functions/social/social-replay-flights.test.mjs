@@ -56,9 +56,9 @@ test("subscriber snapshot prevents mutable card from weakening metadata checks",
 });
 
 test("every coalesced viewer still verifies its own clicked score and map", () => {
-  assert.match(gate, /SocialReplayMatch\.Matches\(subscriber\.Record, replay\)/);
-  assert.match(gate, /NotifySuccess\(subscriber, replay\)/);
-  assert.match(gate, /NotifyFailure\(subscriber, mismatchError\)/);
+  assert.match(gate, /SocialReplayMatch\.Matches\(subscribers\[i\]\.Record, replay\)/);
+  assert.match(gate, /NotifySuccess\(subscribers\[i\], replay\)/);
+  assert.match(gate, /NotifyFailure\(subscribers\[i\], mismatchError\)/);
   assert.match(match, /record\.score != replay\.authorScore/);
   assert.match(match, /record\.mapPath, replay\.mapPath/);
 });
@@ -112,4 +112,11 @@ test("repeated clicks on one ghost do not start multiple raid activations", () =
   assert.match(load, /_replayLoading = false;/);
   assert.match(load, /Steam account changed; raid cancelled/);
   assert.match(load, /failed\?\.Invoke\(error\)/);
+});
+
+test("all per-viewer replay decisions are fixed before any subscriber callback", () => {
+  assert.match(gate, /var matches = new bool\[subscribers\.Count\];/);
+  assert.match(gate, /matches\[i\] = SocialReplayMatch\.Matches\(subscribers\[i\]\.Record, replay\)/);
+  assert.match(gate, /if \(matches\[i\]\)/);
+  assert.match(tests, /FirstViewerCannotAlterLaterSubscribersMetadataDecision/);
 });
