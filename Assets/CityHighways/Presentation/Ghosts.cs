@@ -109,7 +109,7 @@ namespace CityHighways.Presentation
             {
                 Replay = Replays.Read(ReplayId);
                 if (Replay != null) done?.Invoke(Replay);
-                else failed?.Invoke("Повтор этой партии не сохранился.");
+                else failed?.Invoke(LocalizationService.Language == "en" ? "This match replay was not saved." : "Повтор этой партии не сохранился.");
                 return;
             }
             if (RecordId > 0)
@@ -148,7 +148,7 @@ namespace CityHighways.Presentation
                 });
                 return;
             }
-            failed?.Invoke("У этого рекорда нет повтора.");
+            failed?.Invoke(LocalizationService.Language == "en" ? "No replay is available for this record." : "У этого рекорда нет повтора.");
         }
 
         /// <summary>Посчитать счёт призрака по кругам, проиграв его партию (быстро: только действия, без интерфейса).</summary>
@@ -156,7 +156,9 @@ namespace CityHighways.Presentation
         {
             ScoreByRound = null;
             var replay = Replay;
-            if (replay?.start == null || map == null || replay.authorSeat < 0) return;
+            if (replay?.start?.players == null || replay.start.config == null || map == null ||
+                replay.authorSeat < 0 || replay.authorSeat >= replay.start.players.Length ||
+                replay.history == null || replay.history.Length == 0) return;
             try
             {
                 var start = replay.start;
@@ -167,13 +169,14 @@ namespace CityHighways.Presentation
                 int AuthorScore() => game.Players[replay.authorSeat].RoadPoints + game.Players[replay.authorSeat].GoalPoints + game.Players[replay.authorSeat].LuckPoints;
                 foreach (var command in replay.history ?? new GameCommand[0])
                 {
-                    if (!game.Execute(command).Success) break;
+                    // Never publish a plausible-looking partial timeline from an incompatible replay.
+                    if (!game.Execute(command).Success) return;
                     if (game.Phase == GamePhase.SetupContracts) continue;
                     int round = (game.TurnNumber - 1) / Math.Max(1, players) + 1;
                     while (scores.Count <= round) scores.Add(AuthorScore());
                     scores[round] = AuthorScore();
                 }
-                ScoreByRound = scores.ToArray();
+                if (scores.Count > 1) ScoreByRound = scores.ToArray();
             }
             catch (Exception e)
             {

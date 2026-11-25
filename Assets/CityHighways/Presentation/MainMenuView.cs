@@ -176,6 +176,7 @@ namespace CityHighways.Presentation
 
         void ShowPage(Page page)
         {
+            if (page != Page.NewGame) CancelGhostRequest();
             _page = page;
             foreach (var pair in _pages) Ui.Show(pair.Value, pair.Key == page);
             // Единый переход: страница проявляется и чуть поднимается.
