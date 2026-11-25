@@ -6,6 +6,8 @@ on:
       - "Server/supabase/functions/social/**"
       - "Assets/CityHighways/Presentation/SocialCloud*.cs"
       - "Assets/CityHighways/Presentation/SocialReportOutbox.cs"
+      - "Assets/CityHighways/Presentation/SocialReportAck.cs"
+      - "Assets/CityHighways/Tests/SocialReportAckTests.cs"
       - "Server/supabase/migrations/20261125_idempotent_social_records.sql"
       - ".github/workflows/social-replay-validation.yml"
   push:
@@ -14,6 +16,8 @@ on:
       - "Server/supabase/functions/social/**"
       - "Assets/CityHighways/Presentation/SocialCloud*.cs"
       - "Assets/CityHighways/Presentation/SocialReportOutbox.cs"
+      - "Assets/CityHighways/Presentation/SocialReportAck.cs"
+      - "Assets/CityHighways/Tests/SocialReportAckTests.cs"
       - "Server/supabase/migrations/20261125_idempotent_social_records.sql"
       - ".github/workflows/social-replay-validation.yml"
   workflow_dispatch:

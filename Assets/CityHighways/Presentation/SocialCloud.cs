@@ -286,6 +286,21 @@ namespace CityHighways.Presentation
                                 reportFailure?.Invoke(Problem, web.responseCode);
                                 return;
                             }
+                            // Unity JsonUtility silently fills missing primitive fields.
+                            // Only a structurally valid social.report response may ACK a
+                            // persisted game report; malformed HTTP 200 is retriable.
+                            if (request.action == "report")
+                            {
+                                if (!SocialReportAck.TryParse(text, out var ack))
+                                {
+                                    Problem = "Invalid social report acknowledgement";
+                                    reportFailure?.Invoke(Problem, 0);
+                                    return;
+                                }
+                                Problem = "";
+                                done?.Invoke(ack as T);
+                                return;
+                            }
                             Problem = "";
                             done?.Invoke(JsonUtility.FromJson<T>(text));
                         }
