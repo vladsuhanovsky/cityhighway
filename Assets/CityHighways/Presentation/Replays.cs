@@ -124,7 +124,7 @@ namespace CityHighways.Presentation
             // index, reconstruct the missing entry on the next startup.
             try
             {
-                if (RecoverOrphans(_index) > 0 || repaired) SaveIndex();
+                if (RecoverOrphans(_index) > 0 || repaired) SaveIndex(_index);
             }
             catch (Exception e)
             {
@@ -150,16 +150,19 @@ namespace CityHighways.Presentation
             return recovered;
         }
 
-        static void SaveIndex()
+        static bool SaveIndex(Index index)
         {
             try
             {
-                Directory.CreateDirectory(Folder);
-                ReplayStorageIO.WriteAtomic(IndexPath, JsonUtility.ToJson(Load()));
+                string json = JsonUtility.ToJson(index);
+                ReplayStorageIO.RequireUtf8Size(json, ReplayStorageIO.MaxIndexBytes);
+                ReplayStorageIO.WriteAtomic(IndexPath, json);
+                return true;
             }
             catch (Exception e)
             {
                 Debug.LogWarning("Не удалось записать список повторов: " + e.Message);
+                return false;
             }
         }
 
@@ -243,7 +246,7 @@ namespace CityHighways.Presentation
                 index.entries.RemoveAll(e => e.id == replay.id);
                 index.entries.Add(EntryOf(replay));
                 Prune(index);
-                SaveIndex();
+                SaveIndex(index);
                 return true;
             }
             catch (Exception e)
