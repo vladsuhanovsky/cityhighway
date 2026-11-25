@@ -208,6 +208,7 @@ namespace CityHighways.Presentation
         static readonly SocialAccountScope _accountScope = new SocialAccountScope();
         static readonly SocialRequestGate _friendRequests = new SocialRequestGate();
         static readonly SocialRequestGate _clubRequests = new SocialRequestGate();
+        static readonly SocialReplayFlights _replayFlights = new SocialReplayFlights();
 
         /// <summary>The signed-in Steam identity for cloud-derived UI state.</summary>
         public static string CurrentSteamAccount
@@ -240,6 +241,11 @@ namespace CityHighways.Presentation
             Problem = "";
             _friendRequests.Invalidate();
             _clubRequests.Invalidate();
+            // Complete pending viewers with an explicit cancellation instead
+            // of leaving loading controls stuck after a Steam account switch.
+            _replayFlights.CancelAll(LocalizationService.Language == "en"
+                ? "Steam account changed; replay download cancelled."
+                : "Steam-аккаунт изменился, загрузка повтора отменена.");
             _friendsBusy = false;
             _clubBusy = false;
             _clubActionBusy = false;
@@ -544,27 +550,31 @@ namespace CityHighways.Presentation
                 return;
             }
 
-            Send<ReplayResponse>(new Request { action = "replay", recordId = record.id }, response =>
+            EnsureSocialAccount();
+            long recordId = record.id;
+            // Both the ghost banner and the friends/clubs screen can request
+            // the same record. Share the network request, not the validation:
+            // each subscriber retains its clicked record metadata.
+            if (!_replayFlights.Begin(record, done, failed, out int token))
+                return;
+
+            Send<ReplayResponse>(new Request { action = "replay", recordId = recordId }, response =>
             {
                 var replay = Replays.UnpackCloud(response?.replay);
                 if (replay == null)
                 {
-                    failed?.Invoke(LocalizationService.Language == "en"
+                    _replayFlights.Fail(recordId, token, LocalizationService.Language == "en"
                         ? "The downloaded replay is invalid or too large."
                         : "Скачанный повтор повреждён или слишком велик.");
                     return;
                 }
-                if (!SocialReplayMatch.Matches(record, replay))
-                {
-                    failed?.Invoke(LocalizationService.Language == "en"
-                        ? "The downloaded replay does not match the selected record."
-                        : "Скачанный повтор не соответствует выбранному рекорду.");
-                    return;
-                }
+
                 replay.source = "friend";
                 if (!string.IsNullOrEmpty(response.author)) replay.author = response.author;
-                done?.Invoke(replay);
-            }, failed);
+                _replayFlights.Complete(recordId, token, replay, LocalizationService.Language == "en"
+                    ? "The downloaded replay does not match the selected record."
+                    : "Скачанный повтор не соответствует выбранному рекорду.");
+            }, error => _replayFlights.Fail(recordId, token, error));
         }
 
         /// <summary>
