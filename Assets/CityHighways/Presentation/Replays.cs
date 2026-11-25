@@ -84,7 +84,7 @@ namespace CityHighways.Presentation
 
         public static string Folder => Path.Combine(Application.persistentDataPath, "replays");
         static string IndexPath => Path.Combine(Folder, "index.json");
-        static string FileOf(string id) => Path.Combine(Folder, id + ".json");
+        static string FileOf(string id) => ReplayStorageIO.PathFor(Folder, id);
 
         public static IReadOnlyList<Entry> Entries => Load().entries;
 
@@ -92,18 +92,62 @@ namespace CityHighways.Presentation
         {
             if (_index != null) return _index;
             _index = new Index();
+            bool repaired = false;
             try
             {
-                if (File.Exists(IndexPath)) _index = JsonUtility.FromJson<Index>(File.ReadAllText(IndexPath)) ?? new Index();
-                // Индекс потерян или устарел — убираем записи без файлов.
-                _index.entries.RemoveAll(e => e == null || string.IsNullOrEmpty(e.id) || !File.Exists(FileOf(e.id)));
+                if (File.Exists(IndexPath))
+                {
+                    string json = ReplayStorageIO.ReadBoundedUtf8(IndexPath, ReplayStorageIO.MaxIndexBytes);
+                    _index = JsonUtility.FromJson<Index>(json) ?? new Index();
+                }
+                if (_index.entries == null)
+                {
+                    _index.entries = new List<Entry>();
+                    repaired = true;
+                }
+                // Duplicate and unsafe index keys must not shadow files or
+                // cause the UI to render the same replay multiple times.
+                var unique = new HashSet<string>(StringComparer.Ordinal);
+                if (_index.entries.RemoveAll(e => e == null ||
+                    !ReplayStorageIO.IsSafeId(e.id) || !unique.Add(e.id) ||
+                    !File.Exists(FileOf(e.id))) > 0)
+                    repaired = true;
             }
             catch (Exception e)
             {
                 Debug.LogWarning("Не удалось прочитать список повторов: " + e.Message);
                 _index = new Index();
+                repaired = true;
+            }
+
+            // If the process stopped after writing a replay but before its
+            // index, reconstruct the missing entry on the next startup.
+            try
+            {
+                if (RecoverOrphans(_index) > 0 || repaired) SaveIndex();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Не удалось восстановить индекс повторов: " + e.Message);
             }
             return _index;
+        }
+
+        static int RecoverOrphans(Index index)
+        {
+            var known = new HashSet<string>(index.entries.Select(e => e.id), StringComparer.Ordinal);
+            int recovered = 0;
+            // Only safe, unindexed candidates are read; the scan is capped.
+            foreach (string id in ReplayStorageIO.UnindexedIds(Folder, known))
+            {
+                var replay = Read(id);
+                if (replay == null) continue;
+                known.Add(id);
+                index.entries.Add(EntryOf(replay));
+                recovered++;
+            }
+            if (recovered > 0) Prune(index);
+            return recovered;
         }
 
         static void SaveIndex()
@@ -111,7 +155,7 @@ namespace CityHighways.Presentation
             try
             {
                 Directory.CreateDirectory(Folder);
-                File.WriteAllText(IndexPath, JsonUtility.ToJson(Load()));
+                ReplayStorageIO.WriteAtomic(IndexPath, JsonUtility.ToJson(Load()));
             }
             catch (Exception e)
             {
@@ -144,7 +188,7 @@ namespace CityHighways.Presentation
             var winners = game.Result != null ? new HashSet<int>(game.Result.Winners.Select(w => w.PlayerIndex)) : new HashSet<int>();
             return new ReplayFile
             {
-                id = DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + UnityEngine.Random.Range(1000, 9999),
+                id = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 16),
                 date = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 mode = game.IsCooperative ? "coop" : "classic",
                 map = game.Map.Name,
@@ -172,28 +216,32 @@ namespace CityHighways.Presentation
             return replay != null && Store(replay) ? replay.id : null;
         }
 
+        static Entry EntryOf(ReplayFile replay) => new Entry
+        {
+            id = replay.id,
+            date = replay.date,
+            mode = replay.mode,
+            map = replay.map,
+            mapPath = replay.mapPath,
+            author = replay.author,
+            authorScore = replay.authorScore,
+            won = replay.won,
+            actions = replay.Actions
+        };
+
         /// <summary>Положить повтор в хранилище (свой или скачанный).</summary>
         public static bool Store(ReplayFile replay)
         {
-            if (replay == null || string.IsNullOrEmpty(replay.id)) return false;
+            if (replay == null || !ReplayStorageIO.IsSafeId(replay.id)) return false;
             try
             {
                 Directory.CreateDirectory(Folder);
-                File.WriteAllText(FileOf(replay.id), JsonUtility.ToJson(replay));
+                // Load the prior index before writing this file, otherwise
+                // first-use orphan recovery briefly indexes it twice.
                 var index = Load();
+                ReplayStorageIO.WriteAtomic(FileOf(replay.id), JsonUtility.ToJson(replay));
                 index.entries.RemoveAll(e => e.id == replay.id);
-                index.entries.Add(new Entry
-                {
-                    id = replay.id,
-                    date = replay.date,
-                    mode = replay.mode,
-                    map = replay.map,
-                    mapPath = replay.mapPath,
-                    author = replay.author,
-                    authorScore = replay.authorScore,
-                    won = replay.won,
-                    actions = replay.Actions
-                });
+                index.entries.Add(EntryOf(replay));
                 Prune(index);
                 SaveIndex();
                 return true;
@@ -209,9 +257,15 @@ namespace CityHighways.Presentation
         static void Prune(Index index)
         {
             if (index.entries.Count <= Keep) return;
+            // Keep the best for each author/map/mode, but cap the number of
+            // protected groups too. Otherwise >Keep unique groups made the
+            // documented storage limit impossible to enforce.
             var protectedIds = new HashSet<string>(index.entries
                 .GroupBy(e => (e.mode, e.mapPath, (e.author ?? "").ToLowerInvariant()))
-                .Select(g => g.OrderByDescending(e => e.authorScore).First().id));
+                .Select(g => g.OrderByDescending(e => e.authorScore)
+                    .ThenByDescending(e => e.date, StringComparer.Ordinal).First())
+                .OrderByDescending(e => e.date, StringComparer.Ordinal)
+                .Take(Keep).Select(e => e.id));
             foreach (var old in index.entries.OrderBy(e => e.date, StringComparer.Ordinal).ToList())
             {
                 if (index.entries.Count <= Keep) break;
@@ -228,15 +282,19 @@ namespace CityHighways.Presentation
             }
         }
 
-        public static bool Exists(string id) => !string.IsNullOrEmpty(id) && File.Exists(FileOf(id));
+        public static bool Exists(string id) => ReplayStorageIO.IsSafeId(id) && File.Exists(FileOf(id));
 
         public static ReplayFile Read(string id)
         {
             if (!Exists(id)) return null;
             try
             {
-                var replay = JsonUtility.FromJson<ReplayFile>(File.ReadAllText(FileOf(id)));
-                return replay?.start != null ? replay : null;
+                string json = ReplayStorageIO.ReadBoundedUtf8(FileOf(id), ReplayStorageIO.MaxLocalReplayBytes);
+                var replay = JsonUtility.FromJson<ReplayFile>(json);
+                // The file name is the index key: never accept a replay that
+                // silently claims a different key after disk corruption.
+                return replay != null && replay.start != null && replay.id == id
+                    ? replay : null;
             }
             catch (Exception e)
             {
@@ -334,7 +392,7 @@ namespace CityHighways.Presentation
         {
             if (replay == null || replay.version != ReplayFile.CurrentVersion ||
                 (replay.mode != "classic" && replay.mode != "coop") ||
-                string.IsNullOrEmpty(replay.id) ||
+                !ReplayStorageIO.IsSafeId(replay.id) ||
                 string.IsNullOrEmpty(replay.mapPath) ||
                 replay.start == null || replay.start.players == null ||
                 replay.players == null || replay.scores == null || replay.humans == null ||
