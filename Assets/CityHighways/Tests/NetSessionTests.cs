@@ -164,6 +164,127 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ClientWaitsForFullSyncAndRejectsDuplicateOrGapPackets()
+        {
+            double now = 0;
+            var hub = new LoopbackHub();
+            var host = new HostSession(hub.CreateHost(), LoadSmall, "Host");
+            var client = new ClientSession(hub.Connect(), LoadSmall, "Client", () => now);
+            var all = new NetSession[] { host, client };
+            Pump(all);
+            host.StartGame(Start(host, 9), "small", 0);
+            Pump(all);
+            Assert.IsTrue(host.Perform(g => g.KeepInitialContracts(0, g.Players[0].PendingContracts.Take(2).Select(c => c.Id).ToList())).Success);
+            Pump(all);
+            Assert.IsTrue(client.Perform(g => g.KeepInitialContracts(1, g.Players[1].PendingContracts.Take(2).Select(c => c.Id).ToList())).Success);
+            Assert.IsTrue(client.AwaitingHost);
+            host.Transport.Send(client.Transport.LocalId, NetCodec.Encode(new NetMessage
+            {
+                type = NetMessage.Commands, from = 0, commands = host.Game.History.ToArray()
+            }));
+            client.Poll();
+            Assert.IsTrue(client.AwaitingHost, "Duplicate batch is not acknowledgement");
+            now = ClientRecovery.TimeoutSeconds;
+            client.Poll();
+            Assert.IsTrue(client.Synchronizing);
+            Assert.IsTrue(client.AwaitingHost);
+            Assert.IsFalse(client.Perform(g => g.Pass()).Success);
+            host.Transport.Send(client.Transport.LocalId, NetCodec.Encode(new NetMessage
+            {
+                type = NetMessage.Commands, from = 99, commands = new[] { GameCommand.Pass(0) }
+            }));
+            client.Poll();
+            Assert.IsTrue(client.Synchronizing);
+            Pump(all, 5);
+            Assert.IsFalse(client.AwaitingHost);
+            Assert.AreEqual(Json(host.Game), Json(client.Game));
+        }
+
+        [Test]
+        public void RecoveryClosesAfterBoundedSyncAttemptsAndIgnoresLatePackets()
+        {
+            double now = 0;
+            var hub = new LoopbackHub();
+            var host = new HostSession(hub.CreateHost(), LoadSmall, "Host");
+            var client = new ClientSession(hub.Connect(), LoadSmall, "Client", () => now);
+            var all = new NetSession[] { host, client };
+            Pump(all);
+            host.StartGame(Start(host, 9), "small", 0);
+            Pump(all);
+            int closed = 0;
+            client.Closed += _ => closed++;
+            host.Transport.Send(client.Transport.LocalId, NetCodec.Encode(new NetMessage
+            {
+                type = NetMessage.Commands, from = 99, commands = new[] { GameCommand.Pass(0) }
+            }));
+            client.Poll();
+            Assert.IsTrue(client.Synchronizing);
+            now = 6;
+            client.Poll();
+            Assert.IsFalse(client.IsClosed);
+            now = 12;
+            client.Poll();
+            Assert.IsTrue(client.IsClosed);
+            Assert.AreEqual(1, closed);
+            Assert.IsFalse(client.Perform(g => g.Pass()).Success);
+            Pump(all);
+            Assert.AreEqual(1, closed);
+        }
+
+        [Test]
+        public void InvalidStartClosesWithoutThrowingOrStartingGame()
+        {
+            var hub = new LoopbackHub();
+            var host = new HostSession(hub.CreateHost(), LoadSmall, "Host");
+            var client = new ClientSession(hub.Connect(), LoadSmall, "Client");
+            Pump(new NetSession[] { host, client });
+            int started = 0, closed = 0;
+            client.Started += () => started++;
+            client.Closed += _ => closed++;
+            host.Transport.Send(client.Transport.LocalId, NetCodec.Encode(new NetMessage { type = NetMessage.Start }));
+            Assert.DoesNotThrow(() => client.Poll());
+            Assert.IsTrue(client.IsClosed);
+            Assert.IsFalse(client.InGame);
+            Assert.AreEqual(0, started);
+            Assert.AreEqual(1, closed);
+        }
+
+        [Test]
+        public void StaleSyncDoesNotRollBackAcceptedHistory()
+        {
+            var hub = new LoopbackHub();
+            var host = new HostSession(hub.CreateHost(), LoadSmall, "Host");
+            var client = new ClientSession(hub.Connect(), LoadSmall, "Client");
+            var all = new NetSession[] { host, client };
+            Pump(all);
+            host.StartGame(Start(host, 9), "small", 0);
+            Pump(all);
+            Assert.IsTrue(host.Perform(g => g.KeepInitialContracts(0, g.Players[0].PendingContracts.Take(2).Select(c => c.Id).ToList())).Success);
+            Pump(all);
+            string before = Json(client.Game);
+            int resynced = 0;
+            client.Resynced += () => resynced++;
+            host.Transport.Send(client.Transport.LocalId, NetCodec.Encode(new NetMessage
+            {
+                type = NetMessage.Sync, start = host.Game.StartInfo, commands = new GameCommand[0], seats = host.Seats.ToArray()
+            }));
+            client.Poll();
+            Assert.AreEqual(before, Json(client.Game));
+            Assert.AreEqual(0, resynced);
+        }
+
+        [Test]
+        public void ClosedHostCannotPerformOrChangeLobby()
+        {
+            var hub = new LoopbackHub();
+            var host = new HostSession(hub.CreateHost(), LoadSmall, "Host");
+            host.Dispose();
+            host.AddBot(0);
+            Assert.AreEqual(1, host.Seats.Count);
+            Assert.IsFalse(host.Perform(g => g.Pass()).Success);
+        }
+
+        [Test]
         public void HostLeaves_ClientIsClosedWithMessage()
         {
             var hub = new LoopbackHub();
