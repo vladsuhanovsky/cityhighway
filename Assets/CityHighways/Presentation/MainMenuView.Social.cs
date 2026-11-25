@@ -15,6 +15,7 @@ namespace CityHighways.Presentation
         Label _ghostText, _ghostOthers;
         Button _ghostRaid, _ghostWatch;
         Ghost _bannerGhost;
+        readonly GhostBannerRequest _ghostRequest = new GhostBannerRequest();
 
         VisualElement BuildGhostBanner()
         {
@@ -42,20 +43,10 @@ namespace CityHighways.Presentation
             texts.Add(_ghostOthers);
             _ghostBanner.Add(texts);
 
-            _ghostWatch = Ui.Button("▶ Повтор", () =>
-            {
-                var ghost = _bannerGhost;
-                ghost?.LoadReplay(replay => Replays.Play?.Invoke(replay), error => _ghostOthers.text = error);
-            }, ButtonKind.Secondary, 14f);
+            _ghostWatch = Ui.Button("▶ Повтор", () => RequestGhost(false), ButtonKind.Secondary, 14f);
             _ghostWatch.style.marginLeft = 10f;
             _ghostBanner.Add(_ghostWatch);
-            _ghostRaid = Ui.Button("Бросить вызов", () =>
-            {
-                var ghost = _bannerGhost;
-                if (ghost == null) return;
-                _ghostOthers.text = "Готовим рейд…";
-                ghost.LoadReplay(_ => _app.StartRaid(ghost), error => _ghostOthers.text = error);
-            }, ButtonKind.Primary, 14f);
+            _ghostRaid = Ui.Button("Бросить вызов", () => RequestGhost(true), ButtonKind.Primary, 14f);
             _ghostRaid.style.marginLeft = 8f;
             _ghostRaid.tooltip = "Рейд: те же карта, колода, соперники (боты) и компании, что в партии рекордсмена. Вы садитесь на его место — дальше решают ваши ходы.";
             _ghostBanner.Add(_ghostRaid);
@@ -77,20 +68,66 @@ namespace CityHighways.Presentation
             return _ghostBanner;
         }
 
+        void CancelGhostRequest()
+        {
+            _ghostRequest.Cancel();
+            _bannerGhost = null;
+        }
+
+        void RequestGhost(bool raid)
+        {
+            if (Root.panel == null || _page != Page.NewGame || _bannerGhost == null) return;
+            var ghost = _bannerGhost;
+            if (!_ghostRequest.TryBegin(out int token)) return;
+            _ghostWatch.SetEnabled(false);
+            _ghostRaid.SetEnabled(false);
+            bool english = LocalizationService.Language == "en";
+            _ghostOthers.text = raid ? (english ? "Preparing raid…" : "Готовим рейд…")
+                : (english ? "Loading replay…" : "Загружаем повтор…");
+
+            bool Complete()
+            {
+                if (Root.panel == null || _page != Page.NewGame ||
+                    !_ghostRequest.TryComplete(token)) return false;
+                _ghostWatch.SetEnabled(true);
+                _ghostRaid.SetEnabled(true);
+                return true;
+            }
+
+            ghost.LoadReplay(replay =>
+            {
+                if (!Complete()) return;
+                if (raid) _app.StartRaid(ghost);
+                else Replays.Play?.Invoke(replay);
+            }, error =>
+            {
+                if (Complete()) _ghostOthers.text = error;
+            });
+        }
+
         void RefreshGhostBanner()
         {
             if (_ghostBanner == null) return;
             if (_setup.magnate)
             {
+                CancelGhostRequest();
                 Ui.Show(_ghostBanner, false);
                 return;
             }
             string mode = _setup.cooperative ? "coop" : "classic";
             var ghosts = Ghosts.For(mode, _setup.mapResourcePath);
-            _bannerGhost = ghosts.FirstOrDefault();
+            var next = ghosts.FirstOrDefault();
+            if (!GhostBannerRequest.SameRecord(_bannerGhost, next))
+            {
+                CancelGhostRequest();
+                _bannerGhost = next;
+            }
+            _ghostRaid.SetEnabled(!_ghostRequest.Pending);
+            _ghostWatch.SetEnabled(!_ghostRequest.Pending);
             Ui.Show(_ghostBanner, _bannerGhost != null);
             if (_bannerGhost == null) return;
             _ghostText.text = _bannerGhost.Challenge;
+            if (_ghostRequest.Pending) return;
             var others = ghosts.Skip(1).Where(g => g.Source != "self").Take(4).Select(g => $"{g.Name} {g.Score}").ToList();
             var own = ghosts.FirstOrDefault(g => g.Source == "self");
             string line = others.Count > 0 ? "Ещё рекорды: " + string.Join(", ", others) + "." : "";

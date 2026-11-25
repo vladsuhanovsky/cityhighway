@@ -88,6 +88,11 @@ namespace CityHighways.Presentation
                 text += english ? $" · round {round}: record {theirs}, yours {mine}" : $" · к {round}-му кругу: {theirs}, у вас {mine}";
                 _ghostChip.style.color = mine >= theirs ? new Color(0.62f, 0.95f, 0.66f) : new Color(1f, 0.78f, 0.62f);
             }
+            if (timeline == null)
+            {
+                _ghostChip.style.color = new Color(0.78f, 0.86f, 1f);
+                _ghostChip.tooltip += english ? " Round-by-round comparison unavailable." : " Сравнение по кругам недоступно.";
+            }
             _ghostChip.text = text;
         }
 
