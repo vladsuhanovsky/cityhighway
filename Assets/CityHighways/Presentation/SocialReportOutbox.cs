@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 
@@ -29,10 +30,34 @@ namespace CityHighways.Presentation
             public int attempts;
         }
 
+        // The format written by old builds contained only entries.
+        // Keep its exact shape to migrate existing queues losslessly.
+        [Serializable]
+        sealed class LegacyState
+        {
+            public List<Entry> entries = new List<Entry>();
+        }
+
         [Serializable]
         sealed class State
         {
+            public int formatVersion;
+            public string checksum;
             public List<Entry> entries = new List<Entry>();
+        }
+
+        const int CurrentFormatVersion = 1;
+
+        // Detect accidental disk edits/truncation; this is not an authentication
+        // signature and must never be used to trust a gameplay report.
+        static string Checksum(List<Entry> entries)
+        {
+            string canonical = JsonUtility.ToJson(new LegacyState { entries = entries });
+            using (var sha = SHA256.Create())
+            {
+                byte[] digest = sha.ComputeHash(Encoding.UTF8.GetBytes(canonical));
+                return BitConverter.ToString(digest).Replace("-", "").ToLowerInvariant();
+            }
         }
 
         readonly string _path;
