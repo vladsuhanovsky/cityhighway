@@ -188,7 +188,7 @@ namespace CityHighways.Presentation
             Root.Add(body);
 
             _nav = Ui.Column();
-            _nav.style.width = 250f;
+            _nav.style.width = InterfaceLayout.RulesNavigationWidth;
             _nav.style.marginRight = 16f;
             _nav.style.backgroundColor = Theme.Panel;
             Ui.Radius(_nav, 12f);
