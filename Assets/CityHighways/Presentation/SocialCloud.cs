@@ -584,18 +584,33 @@ namespace CityHighways.Presentation
         public static void RefreshClub(Action done = null)
         {
             EnsureSocialAccount();
+            // An in-flight create/join/leave/logo operation takes priority.
+            // A GET started during mutation could return pre-mutation state.
+            if (_clubActionBusy)
+            {
+                done?.Invoke();
+                return;
+            }
             _clubAt = Time.realtimeSinceStartup;
+            int requestId = _clubRequests.Begin();
             _clubBusy = true;
             Send<ClubState>(new Request { action = "club" }, state =>
             {
+                if (!_clubRequests.IsCurrent(requestId)) return;
                 _clubBusy = false;
-                Club = state;
-                Changed?.Invoke();
+                if (state != null)
+                {
+                    Club = state;
+                    Changed?.Invoke();
+                }
+                else
+                    Debug.LogWarning("Social club response is empty; retaining last good state.");
                 done?.Invoke();
             }, _ =>
             {
+                if (!_clubRequests.IsCurrent(requestId)) return;
                 _clubBusy = false;
-                Changed?.Invoke(); // страница покажет, что не загрузилось
+                Changed?.Invoke();
                 done?.Invoke();
             });
         }
