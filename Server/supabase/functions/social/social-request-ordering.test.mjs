@@ -54,7 +54,7 @@ test("refreshes respect ongoing club mutations", () => {
   assert.match(club, /int requestId = _clubRequests\.Begin\(\);/);
 });
 
-test("club GET ignores stale successes and failures, and retains good state on empty 200", () => {
+test("club GET ignores stale callbacks and retains state on a null parsed response", () => {
   const club = social.slice(social.indexOf("public static void RefreshClub("),
     social.indexOf("static void ClubAction("));
   assert.equal((club.match(/if \(!_clubRequests\.IsCurrent\(requestId\)\) return;/g) || []).length, 2);
