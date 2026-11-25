@@ -33,7 +33,7 @@ MonoBehaviour:
   rulesContentHeight: 570
   settingsNavigationWidth: 210
   statsHistoryHeight: 600
-  profileContentHeight: 580
+  profileContentHeight: 664
   hudTopBarHeight: 60
   hudBottomBarHeight: 72
   hudDrawerWidth: 380
