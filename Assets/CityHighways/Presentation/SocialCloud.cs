@@ -209,6 +209,7 @@ namespace CityHighways.Presentation
         static readonly SocialRequestGate _friendRequests = new SocialRequestGate();
         static readonly SocialRequestGate _clubRequests = new SocialRequestGate();
         static readonly SocialReplayFlights _replayFlights = new SocialReplayFlights();
+        static readonly HashSet<long> _openingReplays = new HashSet<long>();
 
         /// <summary>The signed-in Steam identity for cloud-derived UI state.</summary>
         public static string CurrentSteamAccount
@@ -536,8 +537,21 @@ namespace CityHighways.Presentation
         /// <summary>Скачать повтор рекорда (друга или клубного товарища) и сразу открыть его.</summary>
         public static void OpenRecordReplay(RecordInfo record, Action<string> failed = null)
         {
-            if (record == null) return;
-            FetchReplay(record, replay => Replays.Play?.Invoke(replay), failed);
+            if (record == null || record.id <= 0) return;
+            EnsureSocialAccount();
+            // Double-clicking a replay row must open one replay screen,
+            // not invoke Replays.Play once for every queued subscriber.
+            long recordId = record.id;
+            if (!_openingReplays.Add(recordId)) return;
+            FetchReplay(record, replay =>
+            {
+                _openingReplays.Remove(recordId);
+                Replays.Play?.Invoke(replay);
+            }, error =>
+            {
+                _openingReplays.Remove(recordId);
+                failed?.Invoke(error);
+            });
         }
 
         public static void FetchReplay(RecordInfo record, Action<ReplayFile> done, Action<string> failed = null)
