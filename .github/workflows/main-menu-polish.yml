@@ -1,0 +1,49 @@
+name: Main menu visual regression guard
+
+on:
+  pull_request:
+    paths:
+      - "Assets/CityHighways/Presentation/MainMenuView.cs"
+      - "Assets/CityHighways/Presentation/MenuHighwayOverlay.cs"
+      - "Assets/CityHighways/Presentation/MenuRoadDeparture.cs"
+      - "Assets/CityHighways/Presentation/MenuLegibilityVeil.cs"
+      - "Assets/CityHighways/Presentation/MenuWidgets.cs"
+      - "Assets/CityHighways/Tests/MenuRoadDepartureTests.cs"
+      - "Assets/CityHighways/Tests/MenuLegibilityVeilTests.cs"
+      - "Assets/CityHighways/Resources/CityHighways/Localization/ru.json"
+      - "Assets/CityHighways/Resources/CityHighways/Localization/en.json"
+      - "Tools/main_menu_polish.test.mjs"
+      - ".github/workflows/main-menu-polish.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Assets/CityHighways/Presentation/MainMenuView.cs"
+      - "Assets/CityHighways/Presentation/MenuHighwayOverlay.cs"
+      - "Assets/CityHighways/Presentation/MenuRoadDeparture.cs"
+      - "Assets/CityHighways/Presentation/MenuLegibilityVeil.cs"
+      - "Assets/CityHighways/Presentation/MenuWidgets.cs"
+      - "Assets/CityHighways/Tests/MenuRoadDepartureTests.cs"
+      - "Assets/CityHighways/Tests/MenuLegibilityVeilTests.cs"
+      - "Assets/CityHighways/Resources/CityHighways/Localization/ru.json"
+      - "Assets/CityHighways/Resources/CityHighways/Localization/en.json"
+      - "Tools/main_menu_polish.test.mjs"
+      - ".github/workflows/main-menu-polish.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  menu-contracts:
+    name: Home hierarchy, localization and pixel highway
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Verify main menu visual contracts
+        run: node --test Tools/main_menu_polish.test.mjs
+      - name: Audit RU and EN localization
+        run: python3 Tools/localization_audit.py --output "${{ runner.temp }}/menu-localization-audit.json"
