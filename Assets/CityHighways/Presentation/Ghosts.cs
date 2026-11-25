@@ -28,6 +28,9 @@ namespace CityHighways.Presentation
         public string ReplayId;
         /// <summary>Повтор, загруженный для рейда.</summary>
         public ReplayFile Replay;
+        /// <summary>Cloud replay must not be reused after a Steam session switch.</summary>
+        public string SteamOwner;
+        public int SteamGeneration;
         /// <summary>Счёт призрака (дороги + цели + удача) к началу каждого круга — для сравнения по ходу рейда.</summary>
         public int[] ScoreByRound;
 
@@ -64,7 +67,9 @@ namespace CityHighways.Presentation
             MapName = record.mapName,
             Source = source,
             Date = record.date,
-            RecordId = record.id
+            RecordId = record.id,
+            SteamOwner = SocialCloud.CurrentSteamAccount,
+            SteamGeneration = SocialCloud.CurrentAccountGeneration
         };
 
         public static Ghost FromEntry(Replays.Entry entry, bool self) => new Ghost
@@ -83,6 +88,15 @@ namespace CityHighways.Presentation
         /// <summary>Загрузить повтор призрака (местный — с диска, облачный — с сервера).</summary>
         public void LoadReplay(Action<ReplayFile> done, Action<string> failed)
         {
+            if ((Source == "friend" || Source == "club") &&
+                !SocialCloud.BelongsToCurrentSession(SteamOwner, SteamGeneration))
+            {
+                failed?.Invoke(LocalizationService.Language == "en"
+                    ? "This friend's replay belongs to a previous Steam session."
+                    : "Повтор друга относится к предыдущему Steam-сеансу.");
+                return;
+            }
+
             if (Replay != null)
             {
                 done?.Invoke(Replay);
@@ -145,6 +159,9 @@ namespace CityHighways.Presentation
         /// <summary>Все призраки на карте в режиме — лучший результат каждого автора, от большего счёта к меньшему.</summary>
         public static List<Ghost> For(string mode, string mapPath)
         {
+            // Ensure any social caches from an old Steam account are cleared
+            // before reading them into the new game's ghost selection.
+            _ = SocialCloud.CurrentSteamAccount;
             var list = new List<Ghost>();
             if (string.IsNullOrEmpty(mapPath)) return list;
             string me = Profiles.Active?.name ?? "";

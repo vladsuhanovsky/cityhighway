@@ -43,7 +43,10 @@ namespace CityHighways.Presentation
         {
             get
             {
-                string owner = NetPlatforms.Steam?.SteamId;
+                EnsureSocialAccount();
+                // Offline/sign-out must not display a previous account's
+                // pending report count merely because SteamId stayed cached.
+                string owner = _accountScope.Owner;
                 if (!SocialReportOutbox.ValidOwner(owner)) return 0;
                 int count = 0;
                 foreach (var entry in ReportOutbox.Entries)
@@ -54,6 +57,7 @@ namespace CityHighways.Presentation
 
         static void QueueReport(Request request, string key)
         {
+            EnsureSocialAccount();
             // A report can be persisted while the profile is still syncing,
             // but it MUST be associated with an established Steam identity.
             // Never store a Web API ticket on disk.
@@ -93,6 +97,7 @@ namespace CityHighways.Presentation
         /// <summary>Called from the existing SocialCloud.Tick loop and after successful uploads.</summary>
         static void TrySendQueuedReport()
         {
+            EnsureSocialAccount();
             if (_reportInFlight) return;
             long nowTicks = DateTime.UtcNow.Ticks;
             if (nowTicks < _diskRetryAfterUtcTicks) return;

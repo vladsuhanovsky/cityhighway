@@ -26,7 +26,7 @@ test("fresh web API ticket is fetched only by send transport, never persisted", 
   const serialize = delivery.indexOf("JsonUtility.ToJson(request)");
   assert.ok(assign >= 0 && serialize > assign);
   assert.match(client, /steam\.RequestWebApiTicket\(TicketIdentity, ticket =>/);
-  assert.match(client, /if \(expectedSteamId != null && steam\.SteamId != expectedSteamId\)/);
+  assert.match(client, /if \(!_accountScope\.Matches\(owner, epoch\)[\s\S]*?expectedSteamId != null && owner != expectedSteamId/);
 });
 
 test("outbox uploads the stored report only when its current owner is online", () => {

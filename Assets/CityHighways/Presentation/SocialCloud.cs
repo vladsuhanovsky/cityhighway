@@ -191,7 +191,12 @@ namespace CityHighways.Presentation
         /// <summary>Рекорды друзей Steam (все карты и режимы), последняя загрузка.</summary>
         public static readonly List<RecordInfo> FriendRecords = new List<RecordInfo>();
         /// <summary>Свой клуб; null — ещё не загружен, HasClub = false — не состоит.</summary>
-        public static ClubState Club { get; private set; }
+        static ClubState _club;
+        public static ClubState Club
+        {
+            get { EnsureSocialAccount(); return _club; }
+            private set { _club = value; }
+        }
         public static string Problem { get; private set; } = "";
         /// <summary>Что-то обновилось (друзья, клуб, итог отчёта) — страницы перерисовываются.</summary>
         public static event Action Changed;
@@ -200,6 +205,43 @@ namespace CityHighways.Presentation
 
         static float _friendsAt = -999f, _clubAt = -999f;
         static bool _friendsBusy, _clubBusy;
+        static readonly SocialAccountScope _accountScope = new SocialAccountScope();
+
+        /// <summary>The signed-in Steam identity for cloud-derived UI state.</summary>
+        public static string CurrentSteamAccount
+        {
+            get { EnsureSocialAccount(); return _accountScope.Owner; }
+        }
+
+        public static int CurrentAccountGeneration
+        {
+            get { EnsureSocialAccount(); return _accountScope.Generation; }
+        }
+
+        public static bool BelongsToCurrentSession(string owner, int generation)
+        {
+            EnsureSocialAccount();
+            return _accountScope.Matches(owner, generation);
+        }
+
+        static void EnsureSocialAccount()
+        {
+            var steam = NetPlatforms.Steam;
+            string owner = steam != null && steam.Available ? steam.SteamId : null;
+            if (!_accountScope.Update(owner)) return;
+
+            // Club invite codes, friend records, and notifications belong to
+            // the old account. They must not survive a Steam account switch.
+            FriendRecords.Clear();
+            Club = null;
+            News.Clear();
+            Problem = "";
+            _friendsBusy = false;
+            _clubBusy = false;
+            _friendsAt = -999f;
+            _clubAt = -999f;
+            Changed?.Invoke();
+        }
 
         /// <summary>Облако доступно: Steam запущен, профиль уже синхронизирован с сервером.</summary>
         public static bool Available
@@ -208,6 +250,7 @@ namespace CityHighways.Presentation
             {
                 var steam = NetPlatforms.Steam;
                 return steam != null && steam.Available && !string.IsNullOrEmpty(steam.SteamId) && !string.IsNullOrEmpty(CloudProfiles.ServerId)
+                       && CloudProfiles.ServerId == "steam:" + steam.SteamId
                        && !(Profiles.Active?.cloudBanned ?? false);
             }
         }
@@ -220,7 +263,7 @@ namespace CityHighways.Presentation
                 var steam = NetPlatforms.Steam;
                 if (steam == null || !steam.Available) return LocalizationService.Language == "en" ? "Friends’ records and clubs require Steam: launch the game through Steam." : "Рекорды друзей и клубы работают через Steam: запустите игру из Steam.";
                 if (Profiles.Active?.cloudBanned ?? false) return LocalizationService.Language == "en" ? "The account has been blocked by an administrator." : "Аккаунт заблокирован администратором.";
-                if (string.IsNullOrEmpty(CloudProfiles.ServerId))
+                if (CloudProfiles.ServerId != "steam:" + steam.SteamId)
                     return string.IsNullOrEmpty(CloudProfiles.Problem)
                         ? (LocalizationService.Language == "en" ? "Your profile is still syncing with the server…" : "Профиль ещё синхронизируется с сервером…")
                         : (LocalizationService.Language == "en" ? "Cannot connect to the server: " : "Нет связи с сервером: ") + CloudProfiles.Problem;
@@ -231,6 +274,8 @@ namespace CityHighways.Presentation
         /// <summary>Каждый кадр: подтянуть друзей и клуб, когда облако стало доступно, и обновлять раз в несколько минут.</summary>
         public static void Tick()
         {
+            // Clear old account data even if the new account is offline.
+            EnsureSocialAccount();
             if (!Available) return;
             float now = Time.realtimeSinceStartup;
             if (!_friendsBusy && now - _friendsAt > FriendsPeriod) RefreshFriends();
@@ -243,6 +288,7 @@ namespace CityHighways.Presentation
         static void Send<T>(Request request, Action<T> done, Action<string> failed = null,
             Action<string, long> reportFailure = null, string expectedSteamId = null) where T : class
         {
+            EnsureSocialAccount();
             var steam = NetPlatforms.Steam;
             if (!Available || steam == null)
             {
@@ -250,15 +296,21 @@ namespace CityHighways.Presentation
                 reportFailure?.Invoke(Unavailable, 0);
                 return;
             }
+            string owner = _accountScope.Owner;
+            int epoch = _accountScope.Generation;
             steam.RequestWebApiTicket(TicketIdentity, ticket =>
             {
                 try
                 {
-                    // If Steam account changes during async ticket acquisition,
-                    // do NOT publish a queued report as the newly signed-in user.
-                    if (expectedSteamId != null && steam.SteamId != expectedSteamId)
+                    EnsureSocialAccount();
+                    // A -> B -> A is still a different session: reject old
+                    // callbacks even if the SteamID later matches again.
+                    if (!_accountScope.Matches(owner, epoch) ||
+                        steam.SteamId != owner ||
+                        (expectedSteamId != null && owner != expectedSteamId))
                     {
-                        reportFailure?.Invoke("Steam account changed", 0);
+                        if (expectedSteamId != null)
+                            reportFailure?.Invoke("Steam account changed", 0);
                         return;
                     }
                     request.ticket = ticket ?? "";
@@ -277,6 +329,16 @@ namespace CityHighways.Presentation
                     {
                         try
                         {
+                            EnsureSocialAccount();
+                            if (!_accountScope.Matches(owner, epoch) || steam.SteamId != owner)
+                            {
+                                // The remote POST may have succeeded, but a
+                                // stale response must not mutate the next
+                                // account's UI. Queue retries remain idempotent.
+                                if (expectedSteamId != null)
+                                    reportFailure?.Invoke("Steam account changed", 0);
+                                return;
+                            }
                             string text = web.downloadHandler?.text ?? "";
                             string error = ErrorOf(text);
                             if (web.result != UnityWebRequest.Result.Success || !string.IsNullOrEmpty(error))
@@ -380,11 +442,13 @@ namespace CityHighways.Presentation
 
         public static void RefreshFriends(Action done = null)
         {
+            EnsureSocialAccount();
             _friendsAt = Time.realtimeSinceStartup;
             var ids = FriendIds();
             if (ids.Length == 0)
             {
                 FriendRecords.Clear();
+                Changed?.Invoke();
                 done?.Invoke();
                 return;
             }
@@ -501,6 +565,7 @@ namespace CityHighways.Presentation
 
         public static void RefreshClub(Action done = null)
         {
+            EnsureSocialAccount();
             _clubAt = Time.realtimeSinceStartup;
             _clubBusy = true;
             Send<ClubState>(new Request { action = "club" }, state =>
@@ -543,8 +608,23 @@ namespace CityHighways.Presentation
             Send<ClubListResponse>(new Request { action = "club_list", query = query ?? "" }, r => done?.Invoke(r?.clubs ?? new ClubBrief[0]), failed);
 
         /// <summary>Тег и герб своего клуба — для лобби и карточки профиля (пусто — не в клубе).</summary>
-        public static string ClubTag => Club != null && Club.HasClub ? Club.club.tag : "";
-        public static string ClubLogoId => Club != null && Club.HasClub ? Club.club.logo : "";
+        public static string ClubTag
+        {
+            get
+            {
+                EnsureSocialAccount();
+                return Club != null && Club.HasClub ? Club.club.tag : "";
+            }
+        }
+
+        public static string ClubLogoId
+        {
+            get
+            {
+                EnsureSocialAccount();
+                return Club != null && Club.HasClub ? Club.club.logo : "";
+            }
+        }
 
         // ---------------------------------------------------------------- Тексты целей
 
