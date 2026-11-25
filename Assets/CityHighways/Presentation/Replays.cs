@@ -240,8 +240,10 @@ namespace CityHighways.Presentation
             try
             {
                 Directory.CreateDirectory(Folder);
-                ReplayStorageIO.WriteAtomic(FileOf(replay.id), JsonUtility.ToJson(replay));
+                // Load the prior index before writing this file, otherwise
+                // first-use orphan recovery briefly indexes it twice.
                 var index = Load();
+                ReplayStorageIO.WriteAtomic(FileOf(replay.id), JsonUtility.ToJson(replay));
                 index.entries.RemoveAll(e => e.id == replay.id);
                 index.entries.Add(EntryOf(replay));
                 Prune(index);
