@@ -191,7 +191,12 @@ namespace CityHighways.Presentation
         /// <summary>Рекорды друзей Steam (все карты и режимы), последняя загрузка.</summary>
         public static readonly List<RecordInfo> FriendRecords = new List<RecordInfo>();
         /// <summary>Свой клуб; null — ещё не загружен, HasClub = false — не состоит.</summary>
-        public static ClubState Club { get; private set; }
+        static ClubState _club;
+        public static ClubState Club
+        {
+            get { EnsureSocialAccount(); return _club; }
+            private set { _club = value; }
+        }
         public static string Problem { get; private set; } = "";
         /// <summary>Что-то обновилось (друзья, клуб, итог отчёта) — страницы перерисовываются.</summary>
         public static event Action Changed;
