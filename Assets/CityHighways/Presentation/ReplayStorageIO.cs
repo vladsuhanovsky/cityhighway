@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Text;
 
 namespace CityHighways.Presentation
@@ -46,6 +47,26 @@ namespace CityHighways.Presentation
             if (string.IsNullOrEmpty(folder) || !IsSafeId(id))
                 throw new ArgumentException("Unsafe replay ID or missing storage folder.");
             return Path.Combine(folder, id + ".json");
+        }
+
+        public const int MaxRecoveryScan = 300;
+
+        /// <summary>
+        /// Enumerate only safe replay candidates, excluding index.json and
+        /// already indexed files. A hard scan cap keeps startup predictable.
+        /// </summary>
+        public static IEnumerable<string> UnindexedIds(string folder, ISet<string> indexedIds)
+        {
+            if (indexedIds == null) throw new ArgumentNullException(nameof(indexedIds));
+            if (!Directory.Exists(folder)) yield break;
+            int scanned = 0;
+            foreach (var file in Directory.EnumerateFiles(folder, "*.json", SearchOption.TopDirectoryOnly))
+            {
+                if (++scanned > MaxRecoveryScan) yield break;
+                string id = Path.GetFileNameWithoutExtension(file);
+                if (IsSafeId(id) && !indexedIds.Contains(id))
+                    yield return id;
+            }
         }
 
         /// <summary>Read at most maxBytes, using strict UTF-8 and no unbounded ReadAllText.</summary>
