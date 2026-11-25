@@ -242,16 +242,22 @@ namespace CityHighways.Presentation
             if (replay == null || !ReplayStorageIO.IsSafeId(replay.id)) return false;
             try
             {
-                Directory.CreateDirectory(Folder);
-                // Load the prior index before writing this file, otherwise
-                // first-use orphan recovery briefly indexes it twice.
-                var index = Load();
-                ReplayStorageIO.WriteAtomic(FileOf(replay.id), JsonUtility.ToJson(replay));
-                index.entries.RemoveAll(e => e.id == replay.id);
-                index.entries.Add(EntryOf(replay));
-                Prune(index);
-                SaveIndex(index);
-                return true;
+                // Serialize and check actual UTF-8 bytes before any write.
+                string payload = JsonUtility.ToJson(replay);
+                ReplayStorageIO.RequireUtf8Size(payload, ReplayStorageIO.MaxLocalReplayBytes);
+                var current = Load();
+                var next = new Index { entries = current.entries.ToList() };
+                ReplayStorageIO.WriteAtomic(FileOf(replay.id), payload);
+                next.entries.RemoveAll(e => e.id == replay.id);
+                next.entries.Add(EntryOf(replay));
+                var removed = Prune(next);
+                bool retained = next.entries.Any(e => e.id == replay.id);
+                // On index failure the file is an orphan, recoverable at the
+                // next startup; old metadata and pruned files remain intact.
+                if (!SaveIndex(next)) return false;
+                _index = next;
+                DeletePruned(removed);
+                return retained;
             }
             catch (Exception e)
             {
