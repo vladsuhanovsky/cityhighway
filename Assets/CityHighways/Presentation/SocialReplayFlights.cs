@@ -89,13 +89,13 @@ namespace CityHighways.Presentation
         static void NotifySuccess(Subscriber subscriber, ReplayFile replay)
         {
             try { subscriber.Done?.Invoke(replay); }
-            catch (Exception e) { Debug.LogException(e); }
+            catch (Exception e) { Debug.LogWarning("Social replay callback failed: " + e.Message); }
         }
 
         static void NotifyFailure(Subscriber subscriber, string error)
         {
             try { subscriber.Failed?.Invoke(error); }
-            catch (Exception e) { Debug.LogException(e); }
+            catch (Exception e) { Debug.LogWarning("Social replay callback failed: " + e.Message); }
         }
 
         public bool Complete(long id, int token, ReplayFile replay, string mismatchError)
