@@ -11,6 +11,8 @@ The Core layer remains the authority for validation and game state transitions.
 | Module | Responsibility |
 | --- | --- |
 | `GameView.cs` | Gameplay screen composition, input coordination, turn state and animation orchestration |
+| `GameFxSnapshot.cs` | Detached presentation state capture and deterministic card-flight planning |
+| `GameHudReadout.cs` | Classic player/status/final-round display data without VisualElements |
 | `GameTooltipText.cs` | Read-only Classic road, location, player, resource and pieces tooltips; shared contract titles | 
 | `GameView.Contracts.cs` | Contract selection and cards, pinned paths, route highlighting |
 | `GameView.Panels.cs` | Sheets, player drawer, modal windows and settings controls |
@@ -37,8 +39,8 @@ these files is a source organization change, not a runtime or API boundary.
 
 ## Next decomposition targets
 
-- Separate remaining gameplay animation construction from screen coordination.
-- Move HUD and status-bar rendering into reusable widgets with explicit inputs.
+- Snapshot capture and card-flight planning extracted to `GameFxSnapshot`; remaining effects and tween construction are still coordinated by GameView.
+- Player HUD readout, turn instruction and final-round text extracted to `GameHudReadout`; widget composition and binding remain in GameView.
 - Map tooltip text and read-only queries extracted to `GameTooltipText`; keep event positioning and viewer/handoff decisions in the screen. Next: extract reusable tooltip positioning and HUD refresh logic.
 - Replace direct, cross-panel field access gradually with explicit interfaces
   once the behavior is protected by regression tests.
@@ -49,3 +51,7 @@ have coherent responsibilities, explicit dependencies and focused tests.
 ## Tooltip boundary (roadmap continuation)
 
 `GameTooltipText` has no VisualElement, callback, or GameView dependency. The screen passes the current viewer, bot status, handoff and action eligibility; the formatter reads existing Core methods and localization. Contract titles share the same formatter. Six RU/EN test cases cover read-only road state transitions, hidden handoff information, and player/pieces values. Manual smoke checks: hover road/location/player/resources before and after building, during hotseat handoff, in RU/EN, and at narrow/wide viewport sizes. No claims about manual QA or performance measurements are made by this extraction.
+
+## HUD / animation-state boundary
+
+The snapshot captures the same Core values as before; only presentation state is detached. Card-flight planning preserves resource/player order, face-up slot matching, and 0.15-second stagger. A mismatched player count is ignored instead of producing invalid flight indices. The HUD readout uses explicit session flags and Core's visible score; it does not read private card identities for player rows. Existing tween callbacks, audio, UI elements, save/replay and network flows are unchanged. Eight parameterized Edit Mode cases cover snapshot capture, card-flight planning, status precedence and RU/EN player display data. Manual check: draw cards (face-up and deck), build roads, observe bot/online/hotseat status, final round and reduced motion. No measured performance claim.

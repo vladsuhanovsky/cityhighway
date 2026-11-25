@@ -24,7 +24,6 @@ namespace CityHighways.Presentation
         const float BotDelay = 0.55f;
         /// <summary>Сколько последних записей хранит и показывает журнал (старые уходят).</summary>
         const int LogHistory = 200;
-        const int ResourceCount = ResourceInfo.Count;
         static bool EnglishUi => LocalizationService.Language == "en";
         static string LuckCardTitle(LuckCardKind kind)
         {
@@ -127,56 +126,12 @@ namespace CityHighways.Presentation
             }
         }
 
-        sealed class Snapshot
-        {
-            public int[,] Hands;
-            public Resource?[] FaceUp;
-            public readonly Dictionary<string, int> Owners = new Dictionary<string, int>();
-            public readonly HashSet<string> Completed = new HashSet<string>();
-            public int Acting;
-            public GamePhase Phase;
-            public int ContractDeck;
-            public int EventNumber;
-            public int LuckNumber;
-            public readonly Dictionary<string, int> GoalOwners = new Dictionary<string, int>();
-            /// <summary>Сколько каждому заплатили за проезд и какие дороги в пробке.</summary>
-            public int[] Earned;
-            /// <summary>Видимые очки без проезда (дороги, цели, удача, штрафы) — для всплывающих «+N».</summary>
-            public int[] Points;
-            public readonly HashSet<string> Jammed = new HashSet<string>();
-            public readonly HashSet<string> Highways = new HashSet<string>();
-        }
+
 
         /// <summary>Строка о финале под статусом: последний круг (ходов до конца, заказ мэрии) или «скоро финал».</summary>
-        string FinalText()
-        {
-            if (_game.IsFinalRound)
-            {
-                int left = _game.FinalTurnsLeft;
-                string text = EnglishUi ? (left <= 1 ? "Final round: this is the last turn!" : $"Final round: {left} turns remaining")
-                    : (left <= 1 ? "Последний круг: это последний ход партии!" : $"Последний круг: до конца {left} {Plural(left, "ход", "хода", "ходов")}");
-                var order = _game.FinalOrderRoad;
-                if (order != null)
-                    text += _game.FinalOrderWinner >= 0
-                        ? (EnglishUi ? $"\nFinal city order completed by {_game.Players[_game.FinalOrderWinner].Name}" : $"\nФинальный заказ выполнил {_game.Players[_game.FinalOrderWinner].Name}")
-                        : (EnglishUi ? $"\nFinal city order: {DisplayPlace(LocationName(order.A))} — {DisplayPlace(LocationName(order.B))} (+{_game.Config.FinalOrderBonus})" : $"\nФинальный заказ: {LocationName(order.A)} — {LocationName(order.B)} (+{_game.Config.FinalOrderBonus})");
-                return text;
-            }
-            if (_game.FinalWarned)
-            {
-                int toFinal = _game.FewestPieces - _game.Config.FinalRoundPieces;
-                return toFinal > 0 ? (EnglishUi ? $"Final round approaching: the building leader has {toFinal} road pieces above the final-round threshold" : $"Скоро финал: до последнего круга {toFinal} {Plural(toFinal, "участок", "участка", "участков")} у лидера стройки") : "";
-            }
-            return "";
-        }
+        string FinalText() => GameHudReadout.FinalText(_game);
 
-        static string Plural(int n, string one, string few, string many)
-        {
-            int m10 = n % 10, m100 = n % 100;
-            if (m10 == 1 && m100 != 11) return one;
-            if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-            return many;
-        }
+
 
         readonly CityHighwaysApp _app;
         readonly GameSetup _setup;
@@ -441,7 +396,7 @@ namespace CityHighways.Presentation
         /// <summary>Закреплённая подсветка: игрок → id контракта. Держится, пока игрок сам её не снимет.</summary>
         readonly Dictionary<int, string> _pinnedContracts = new Dictionary<int, string>();
         string _selectionKey;
-        Snapshot _snapshot;
+        GameFxSnapshot _snapshot;
         float _playSeconds;
 
         public const string TutorialPrefsKey = "CityHighways.TutorialDone.v1";
@@ -1799,44 +1754,9 @@ namespace CityHighways.Presentation
             }
         }
 
-        Snapshot TakeSnapshot()
-        {
-            var s = new Snapshot
-            {
-                Hands = new int[_game.Players.Count, ResourceCount],
-                FaceUp = _game.FaceUpCards.ToArray(),
-                Acting = _game.ActingPlayerIndex,
-                Phase = _game.Phase,
-                ContractDeck = _game.ContractDeckCount,
-                EventNumber = _game.EventNumber,
-                LuckNumber = _game.LuckNumber,
-                Earned = _game.Players.Select(p => p.TollsEarned).ToArray(),
-                Points = _game.Players.Select(p => p.RoadPoints + p.GoalPoints + p.LuckPoints + p.PenaltyPoints).ToArray()
-            };
-            foreach (var goal in _game.ActiveGoals)
-            {
-                var goalOwner = _game.GoalOwner(goal.Id);
-                if (goalOwner.HasValue) s.GoalOwners[goal.Id] = goalOwner.Value;
-            }
+        GameFxSnapshot TakeSnapshot() => GameFxSnapshot.Capture(_game);
 
-            foreach (var player in _game.Players)
-            {
-                for (int c = 0; c < ResourceCount; c++) s.Hands[player.Index, c] = player.CardCount((Resource)c);
-                foreach (var contract in player.Contracts)
-                    if (_game.CheckContract(player.Index, contract).Completed) s.Completed.Add(player.Index + ":" + contract.Id);
-            }
-
-            foreach (var route in _game.Map.Roads)
-            {
-                var owner = _game.GetRoadOwner(route.Id);
-                if (owner.HasValue) s.Owners[route.Id] = owner.Value;
-                if (owner.HasValue && _game.IsJammed(route.Id)) s.Jammed.Add(route.Id);
-                if (owner.HasValue && _game.IsRushHourRoad(route.Id)) s.Highways.Add(route.Id);
-            }
-            return s;
-        }
-
-        void AnimateChanges(Snapshot before, Snapshot now)
+        void AnimateChanges(GameFxSnapshot before, GameFxSnapshot now)
         {
             // Новые дороги — укладываем участки по одному.
             float claimDuration = 0f;
@@ -1853,32 +1773,8 @@ namespace CityHighways.Presentation
                     StartRoadSweep(roadId, true);
 
             // Новые карты в руках — летят из открытого ряда или из колоды.
-            var changedSlots = new List<int>();
-            for (int i = 0; i < now.FaceUp.Length && i < before.FaceUp.Length; i++)
-                if (!Nullable.Equals(before.FaceUp[i], now.FaceUp[i])) changedSlots.Add(i);
-
-            int flight = 0;
-            for (int p = 0; p < _game.Players.Count; p++)
-            {
-                for (int c = 0; c < ResourceCount; c++)
-                {
-                    int gained = now.Hands[p, c] - before.Hands[p, c];
-                    for (int k = 0; k < gained; k++)
-                    {
-                        int slot = -1;
-                        foreach (int index in changedSlots)
-                        {
-                            if (before.FaceUp[index] == (Resource)c)
-                            {
-                                slot = index;
-                                break;
-                            }
-                        }
-                        if (slot >= 0) changedSlots.Remove(slot);
-                        FlyCard(p, (Resource)c, slot, flight++ * 0.15f);
-                    }
-                }
-            }
+            foreach (var flight in GameFxSnapshot.PlanCardFlights(before.Hands, now.Hands, before.FaceUp, now.FaceUp))
+                FlyCard(flight.Player, flight.Resource, flight.FaceUpSlot, flight.Delay);
 
             if (now.ContractDeck < before.ContractDeck && now.EventNumber == before.EventNumber) _app.Sound.Play(Sfx.Swish);
 
@@ -2907,22 +2803,18 @@ namespace CityHighways.Presentation
 
         void RefreshPlayers()
         {
-            int acting = _game.ActingPlayerIndex;
-            int start = Math.Max(1, _game.Config.RoadPiecesFor(_game.Players.Count));
             foreach (var player in _game.Players)
             {
                 var row = _playerRows[player.Index];
-                bool active = player.Index == acting;
-                string character = player.Character != CharacterKind.None ? " · " + Characters.Title(player.Character) : "";
-                row.Name.text = player.Name + character + BotTag(player.Index);
-                row.Ability.text = player.Character == CharacterKind.None ? "" : CharacterLocalization.Ability(player.Character, _game.Config)
-                    + (player.Character == CharacterKind.Foreman ? (EnglishUi ? $" Remaining: {player.FreeRoadsLeft}." : $" Осталось: {player.FreeRoadsLeft}.") : "");
-                Ui.Show(row.Ability, player.Character != CharacterKind.None);
-                // Видимые очки: дороги, цели, удача, штрафы и проезд (он платится по ходу партии). Контракты секретны.
-                int points = _game.VisibleScore(player);
+                var data = GameHudReadout.Player(_game, player, BotTag(player.Index));
+                bool active = data.Active;
+                row.Name.text = data.Name;
+                row.Ability.text = data.Ability;
+                Ui.Show(row.Ability, data.HasAbility);
+                int points = data.Score;
                 row.Score.text = points.ToString();
-                row.Stats.text = EnglishUi ? $"{player.RoadPieces} roads · {player.HandSize} cards" + (_game.Config.InfluenceEnabled ? $" · {player.Influence} inf." : "") : $"{player.RoadPieces} уч · {player.HandSize} карт" + (_game.Config.InfluenceEnabled ? $" · {player.Influence} вл" : "");
-                row.Pieces.Set(player.RoadPieces / (float)start);
+                row.Stats.text = data.Stats;
+                row.Pieces.Set(data.PiecesRatio);
                 row.Root.style.backgroundColor = active ? Theme.PanelHover : Theme.PanelLight;
                 var look = LookOf(player.Index);
                 var frame = Profiles.FrameColor(look.Frame);
@@ -2966,36 +2858,9 @@ namespace CityHighways.Presentation
             Ui.Show(_passButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction && !_game.HasAnyLegalAction());
         }
 
-        string Instruction(int acting)
-        {
-            if (acting < 0) return LocalizationService.Get("game.ui.092");
-            if (AwaitingHost) return LocalizationService.Get("game.ui.039");
-            if (IsRealBot(acting)) return LocalizationService.Get("game.ui.093");
-            if (IsBot(acting)) return EnglishUi ? $"{_game.Players[acting].Name} is playing online…" : $"Ходит {_game.Players[acting].Name} (по сети)…";
-            if (NeedsHandoff) return LocalizationService.Get("game.ui.094");
-
-            switch (_game.Phase)
-            {
-                case GamePhase.SetupContracts:
-                    return _game.ActingPlayerIndex >= 0 && _game.Players[_game.ActingPlayerIndex].CharacterOffer.Count > 0
-                        ? LocalizationService.Get("game.ui.095")
-                        : LocalizationService.Get("game.ui.096");
-                case GamePhase.AwaitingAction:
-                    return LocalizationService.Get("game.ui.097");
-                case GamePhase.DrawingSecondCard:
-                    return LocalizationService.Get("game.ui.098");
-                case GamePhase.ChoosingContracts:
-                    return LocalizationService.Get("game.ui.099");
-                case GamePhase.ChoosingLuck:
-                    return LocalizationService.Get("game.ui.100");
-                case GamePhase.RespondingTrade:
-                    return LocalizationService.Get("game.ui.101");
-                case GamePhase.Bidding:
-                    return LocalizationService.Get("game.ui.102");
-                default:
-                    return "";
-            }
-        }
+        string Instruction(int acting) => acting < 0
+            ? GameHudReadout.Instruction(_game, acting, false, false, false, false)
+            : GameHudReadout.Instruction(_game, acting, AwaitingHost, IsRealBot(acting), IsBot(acting), NeedsHandoff);
 
         /// <summary>Ресурсы в верхней панели: деления по картам в руке и полоска оставшихся участков.</summary>
         void RefreshHand()
