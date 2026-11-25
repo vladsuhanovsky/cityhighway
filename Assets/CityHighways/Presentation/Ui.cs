@@ -359,7 +359,7 @@ namespace CityHighways.Presentation
         {
             var e = Column();
             e.style.backgroundColor = Theme.PanelLight;
-            Radius(e, 10f);
+            Radius(e, InterfaceLayout.CardRadius);
             Border(e, 1f, Theme.Line);
             Padding(e, padding, padding);
             return e;
@@ -369,7 +369,7 @@ namespace CityHighways.Presentation
         {
             var label = Text(LocalizationService.TranslateLegacy(text).ToUpperInvariant(), 12f, Theme.TextDim, true);
             label.style.letterSpacing = 1.5f;
-            label.style.marginBottom = 8f;
+            label.style.marginBottom = InterfaceLayout.SectionGap;
             return label;
         }
 
@@ -415,8 +415,8 @@ namespace CityHighways.Presentation
             button.style.unityTextAlign = TextAnchor.MiddleCenter;
             button.style.color = textColor;
             button.style.backgroundColor = normal;
-            button.style.minHeight = 38f;
-            Radius(button, 8f);
+            button.style.minHeight = InterfaceLayout.CommonButtonHeight;
+            Radius(button, InterfaceLayout.CommonButtonRadius);
             Border(button, outlined ? 1f : 0f, Theme.Line);
             Padding(button, 8f, 16f);
             Margin(button, 0f);
