@@ -33,12 +33,14 @@ public sealed class InterfaceEditorWindow : EditorWindow
             "newGameGradientStart", "newGameGradientEnd",
             "secondaryNormal", "secondaryHover", "centerDarkening",
             "trafficSpeed" },
-        new[] { "newGameHelpMaxWidth" },
-        new[] { "onlineNameFieldWidth" },
-        new[] { "rulesNavigationWidth", "rulesContentHeight" },
-        new[] { "settingsNavigationWidth" },
-        new[] { "statsHistoryHeight", "profileContentHeight" },
-        new[] { "hudTopBarHeight", "hudBottomBarHeight", "hudDrawerWidth" }
+        new[] { "newGameHelpMaxWidth", "newGameOptionsCardWidth" },
+        new[] { "onlineNameFieldWidth", "onlineInputMinHeight" },
+        new[] { "rulesNavigationWidth", "rulesSearchWidth", "rulesContentHeight" },
+        new[] { "settingsNavigationWidth", "settingsPreviewWidth" },
+        new[] { "statsHistoryHeight", "statsCharactersWidth",
+            "profileContentHeight", "profileSidebarWidth" },
+        new[] { "hudTopBarHeight", "hudBottomBarHeight", "hudDrawerWidth",
+            "hudPlayersPanelWidth" }
     };
 
     int _tab;
@@ -67,7 +69,7 @@ public sealed class InterfaceEditorWindow : EditorWindow
     {
         string folder = Path.GetDirectoryName(path);
         if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-        var result = CreateInstance<T>();
+        var result = ScriptableObject.CreateInstance<T>();
         AssetDatabase.CreateAsset(result, path);
         AssetDatabase.SaveAssets();
         return result;
