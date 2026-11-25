@@ -28,12 +28,19 @@ MonoBehaviour:
   cardCornerRadius: 10
   cardSectionSpacing: 8
   newGameHelpMaxWidth: 640
+  newGameOptionsCardWidth: 360
   onlineNameFieldWidth: 320
+  onlineInputMinHeight: 38
   rulesNavigationWidth: 250
+  rulesSearchWidth: 560
   rulesContentHeight: 570
   settingsNavigationWidth: 210
+  settingsPreviewWidth: 340
   statsHistoryHeight: 600
+  statsCharactersWidth: 400
   profileContentHeight: 664
+  profileSidebarWidth: 280
   hudTopBarHeight: 60
   hudBottomBarHeight: 72
   hudDrawerWidth: 380
+  hudPlayersPanelWidth: 420
