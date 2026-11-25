@@ -16,6 +16,7 @@ namespace CityHighways.Presentation
         public string Name = "";
         public int Score;
         public bool Won;
+        public int Seats;
         public string Mode = "classic";
         public string MapPath = "";
         public string MapName = "";
@@ -62,6 +63,7 @@ namespace CityHighways.Presentation
             Name = record.name,
             Score = record.score,
             Won = record.won,
+            Seats = record.seats,
             Mode = record.mode,
             MapPath = record.mapPath,
             MapName = record.mapName,
@@ -111,8 +113,20 @@ namespace CityHighways.Presentation
             }
             if (RecordId > 0)
             {
-                SocialCloud.FetchReplay(new SocialCloud.RecordInfo { id = RecordId, name = Name }, replay =>
+                SocialCloud.FetchReplay(new SocialCloud.RecordInfo
                 {
+                    id = RecordId,
+                    name = Name,
+                    mode = Mode,
+                    mapPath = MapPath,
+                    mapName = MapName,
+                    score = Score,
+                    won = Won,
+                    seats = Seats
+                }, replay =>
+                {
+                    if (!SocialCloud.BelongsToCurrentSession(SteamOwner, SteamGeneration))
+                        return;
                     replay.source = Source == "club" ? "club" : "friend";
                     Replay = replay;
                     done?.Invoke(replay);
