@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace CityHighways.Presentation
 {
@@ -16,6 +17,12 @@ namespace CityHighways.Presentation
         public static bool IsUrgent(bool visible, float remaining) => visible && remaining <= 10f;
         public static bool NeedsRefresh(float before, float after) =>
             Seconds(before) != Seconds(after) || IsUrgent(true, before) != IsUrgent(true, after);
+
+        public static void Render(Label label, string instruction, bool visible, float remaining, bool english)
+        {
+            label.text = visible ? instruction + Text(remaining, english) : instruction;
+            label.style.color = IsUrgent(visible, remaining) ? Theme.Danger : Theme.Text;
+        }
 
         public static string Text(float remaining, bool english)
         {

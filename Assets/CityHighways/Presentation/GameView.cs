@@ -1448,12 +1448,6 @@ namespace CityHighways.Presentation
             _dirty = true;
         }
 
-        string TimerText()
-        {
-            if (!TimerEnabled || !HumanToAct || _timerExpired) return "";
-            return HudTurnClock.Text(_turnTimeLeft, EnglishUi);
-        }
-
         /// <summary>Отметить, что игрок видел журнал до этого места (пока его карты открыты).</summary>
         void MarkLogSeen()
         {
@@ -2805,9 +2799,8 @@ namespace CityHighways.Presentation
 
         void RefreshStatusClock(int acting)
         {
-            _statusText.text = Instruction(acting) + TimerText();
-            _statusText.style.color = HudTurnClock.IsUrgent(TimerEnabled && HumanToAct && !_timerExpired, _turnTimeLeft)
-                ? Theme.Danger : Theme.Text;
+            HudTurnClock.Render(_statusText, Instruction(acting),
+                TimerEnabled && HumanToAct && !_timerExpired, _turnTimeLeft, EnglishUi);
         }
 
         string Instruction(int acting) => acting < 0
