@@ -85,6 +85,7 @@ namespace CityHighways.Presentation
             if (candidate.Validate(config.MaxRoadLength).Count != 0) return Fail("rules", out error);
             if (!Connected(candidate, locations) || !Connected(candidate, open))
                 return Fail("connectivity", out error);
+            if (CityGraphGeometry.Check(candidate).Count != 0) return Fail("geometry", out error);
             map = candidate;
             return true;
         }
