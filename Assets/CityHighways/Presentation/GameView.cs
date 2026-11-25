@@ -20,7 +20,7 @@ namespace CityHighways.Presentation
         static float DrawerWidth => InterfaceLayout.HudDrawerWidth;
         const float ContractCardWidth = 200f;
         const float ContractsSheetWidth = 760f;
-        const float PlayersPanelWidth = 420f;
+        static float PlayersPanelWidth => InterfaceLayout.HudPlayersPanelWidth;
         const float BotDelay = 0.55f;
         /// <summary>Сколько последних записей хранит и показывает журнал (старые уходят).</summary>
         const int LogHistory = 200;
