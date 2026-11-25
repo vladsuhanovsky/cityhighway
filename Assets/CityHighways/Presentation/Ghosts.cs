@@ -161,7 +161,7 @@ namespace CityHighways.Presentation
         {
             // Ensure any social caches from an old Steam account are cleared
             // before reading them into the new game's ghost selection.
-            string account = SocialCloud.CurrentSteamAccount;
+            _ = SocialCloud.CurrentSteamAccount;
             var list = new List<Ghost>();
             if (string.IsNullOrEmpty(mapPath)) return list;
             string me = Profiles.Active?.name ?? "";
