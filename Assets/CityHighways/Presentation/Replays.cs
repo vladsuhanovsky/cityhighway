@@ -111,7 +111,7 @@ namespace CityHighways.Presentation
             try
             {
                 Directory.CreateDirectory(Folder);
-                File.WriteAllText(IndexPath, JsonUtility.ToJson(Load()));
+                ReplayStorageIO.WriteAtomic(IndexPath, JsonUtility.ToJson(Load()));
             }
             catch (Exception e)
             {
