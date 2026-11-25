@@ -449,9 +449,13 @@ namespace CityHighways.Presentation
         {
             EnsureSocialAccount();
             _friendsAt = Time.realtimeSinceStartup;
+            int requestId = _friendRequests.Begin();
             var ids = FriendIds();
             if (ids.Length == 0)
             {
+                // An earlier request may still be in flight, but its reply
+                // must not restore records for friends who are no longer here.
+                _friendsBusy = false;
                 FriendRecords.Clear();
                 Changed?.Invoke();
                 done?.Invoke();
@@ -460,13 +464,22 @@ namespace CityHighways.Presentation
             _friendsBusy = true;
             Send<FriendsResponse>(new Request { action = "friends", ids = ids }, response =>
             {
+                if (!_friendRequests.IsCurrent(requestId)) return;
                 _friendsBusy = false;
-                FriendRecords.Clear();
-                if (response?.records != null) FriendRecords.AddRange(response.records);
-                Changed?.Invoke();
+                // HTTP 200 + {} is not a valid empty friends list.
+                // Keep the last good records until a valid response arrives.
+                if (response?.records != null)
+                {
+                    FriendRecords.Clear();
+                    FriendRecords.AddRange(response.records.Where(r => r != null));
+                    Changed?.Invoke();
+                }
+                else
+                    Debug.LogWarning("Social friends response has no records array; keeping cached data.");
                 done?.Invoke();
             }, _ =>
             {
+                if (!_friendRequests.IsCurrent(requestId)) return;
                 _friendsBusy = false;
                 done?.Invoke();
             });
