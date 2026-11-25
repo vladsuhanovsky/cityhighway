@@ -35,6 +35,27 @@ def read_catalog(language, errors):
     return {entry["key"]: entry["value"] for entry in entries}
 
 
+def dynamic_title_catalog(ru, en, errors):
+    """Recognize the actual Achievement/DailyTask initializers, not arbitrary UI text."""
+    source = (UI / "Achievements.cs").read_text(encoding="utf-8-sig")
+    pattern = re.compile(r'\bnew\s+(Achievement|DailyTask)\s*\{\s*Id\s*=\s*"([^"]+)"')
+    covered = {}
+    for match in pattern.finditer(source):
+        kind, item_id = match.groups()
+        prefix = ("achievement." if kind == "Achievement" else "daily.") + item_id
+        keys = [prefix + ".title"]
+        if kind == "Achievement":
+            keys.append(prefix + ".description")
+        missing = [key for key in keys if not ru.get(key) or not en.get(key)]
+        if missing:
+            errors.append("Missing dynamic title keys: " + ", ".join(missing))
+        else:
+            covered[item_id] = keys
+    if not covered:
+        errors.append("No catalog-backed achievement or daily title initializers found")
+    return covered
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="artifacts/localization-audit.json")
@@ -55,6 +76,7 @@ def main():
         if sorted(FORMAT.findall(ru[key])) != sorted(FORMAT.findall(en[key])):
             errors.append("Different formatting placeholders for " + key)
 
+    catalog_backed = dynamic_title_catalog(ru, en, errors)
     remaining = []
     direct_ui = []
     references = set()
@@ -81,6 +103,16 @@ def main():
     missing = sorted(key for key in references - set(ru) if not (key.endswith(".") and any(actual.startswith(key) for actual in ru)))
     if missing:
         errors.append("Referenced keys missing from catalogs: " + ", ".join(missing))
+    # Retain the raw historical candidate count. Classify only known declarations
+    # in Achievements.cs whose localized getter keys are present in BOTH catalogs.
+    for item in direct_ui:
+        match = re.search(r'\bId\s*=\s*"([^"]+)"', item["source"])
+        if (item["file"].endswith("/Achievements.cs") and match and
+                match.group(1) in catalog_backed):
+            item["classification"] = "catalog-backed-fallback"
+        else:
+            item["classification"] = "needs-context-review"
+    unresolved = [item for item in direct_ui if item["classification"] == "needs-context-review"]
     count = sum(item["literal_lines"] for item in remaining)
     report = {"catalog_keys": len(ru), "referenced_keys": len(references),
               "remaining_cyrillic_literal_lines": count,
@@ -88,13 +120,18 @@ def main():
               "validation_errors": errors,
               "direct_ui_candidates": direct_ui,
               "direct_ui_candidate_count": len(direct_ui),
+              "catalog_backed_title_count": len(catalog_backed),
+              "unresolved_direct_ui_candidates": unresolved,
+              "unresolved_direct_ui_candidate_count": len(unresolved),
               "note": "Cyrillic string-line scan includes intentional Russian branches. Direct UI candidates are heuristic warnings, not proof of missing translations."}
     path = ROOT / args.output
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("Localization keys:", len(ru), "UI lines with Cyrillic literals:", count)
     print("Direct UI translation candidates:", len(direct_ui))
-    for item in direct_ui[:20]:
+    print("Catalog-backed dynamic titles:", len(catalog_backed))
+    print("Candidates needing context review:", len(unresolved))
+    for item in unresolved[:20]:
         print("  UI candidate:", item["file"], ":", item["line"])
     for item in report["files"][:20]:
         print("  ", item["literal_lines"], item["file"])
