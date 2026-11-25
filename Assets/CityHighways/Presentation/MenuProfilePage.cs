@@ -25,7 +25,7 @@ namespace CityHighways.Presentation
         readonly Label _title;
         readonly Dictionary<Tab, (VisualElement button, MenuIcon icon, Label label)> _tabButtons = new Dictionary<Tab, (VisualElement, MenuIcon, Label)>();
         readonly ScrollView _scroll;
-        const float ContentHeight = 664f;
+        static float ContentHeight => InterfaceLayout.ProfileContentHeight;
         readonly VisualElement _content;
         readonly Label _statusLabel;
         readonly UnityEngine.UIElements.Button _idChip;
