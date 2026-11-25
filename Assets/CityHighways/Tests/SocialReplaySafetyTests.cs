@@ -170,6 +170,14 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void RejectsUnknownCloudCommandKind()
+        {
+            var replay = ValidReplay();
+            replay.history[0].kind = "unknown_action";
+            Assert.IsNull(Replays.UnpackCloud(Replays.Pack(replay)));
+        }
+
+        [Test]
         public void ReplayMetadataMustMatchChosenRecord()
         {
             var replay = ValidReplay();
