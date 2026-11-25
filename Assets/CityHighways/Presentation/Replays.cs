@@ -242,7 +242,7 @@ namespace CityHighways.Presentation
         /// <summary>Положить повтор в хранилище (свой или скачанный).</summary>
         public static bool Store(ReplayFile replay)
         {
-            if (replay == null || !ReplayStorageIO.IsSafeId(replay.id)) return false;
+            if (!ReplayLocalSanity.IsReadable(replay)) return false;
             try
             {
                 // Serialize and check actual UTF-8 bytes before any write.
