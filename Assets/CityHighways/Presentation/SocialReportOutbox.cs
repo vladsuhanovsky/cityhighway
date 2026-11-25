@@ -65,6 +65,7 @@ namespace CityHighways.Presentation
         // After loading the backup, the primary may be corrupt. The first
         // repair write must not replace the only known-good backup with it.
         bool _recoveredFromBackup;
+        bool _loadBlocked;
 
         public int Count => _entries.Count;
         public IReadOnlyList<Entry> Entries => _entries;
@@ -182,36 +183,80 @@ namespace CityHighways.Presentation
             return Math.Min(900, 15L << shift);
         }
 
+        // A corrupt primary must not silently discard entries when a
+        // known-good backup is available. Reject the entire snapshot if any
+        // record is invalid rather than loading a misleading partial queue.
+        static bool ValidEntries(List<Entry> entries)
+        {
+            if (entries == null || entries.Count > MaxEntries) return false;
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var entry in entries)
+            {
+                if (entry == null || !ValidOwner(entry.ownerSteamId) ||
+                    string.IsNullOrEmpty(entry.key) || entry.key.Length > 200 ||
+                    string.IsNullOrEmpty(entry.requestJson) ||
+                    Encoding.UTF8.GetByteCount(entry.requestJson) > MaxPayloadBytes ||
+                    entry.createdUtcTicks < DateTime.MinValue.Ticks ||
+                    entry.createdUtcTicks > DateTime.MaxValue.Ticks ||
+                    entry.nextAttemptUtcTicks < DateTime.MinValue.Ticks ||
+                    entry.nextAttemptUtcTicks > DateTime.MaxValue.Ticks ||
+                    entry.attempts < 0 || entry.attempts > 1000 ||
+                    !keys.Add(entry.ownerSteamId + ":" + entry.key))
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// True when neither the primary nor its backup could be read safely.
+        /// Writes are blocked to avoid replacing the only recoverable copy
+        /// with an empty queue; user support can inspect the original files.
+        /// </summary>
+        public bool LoadBlocked => _loadBlocked;
+
         void Load()
         {
+            bool hadSnapshot = false;
             foreach (string candidate in new[] { _path, _path + ".bak" })
             {
                 try
                 {
                     if (!File.Exists(candidate)) continue;
+                    hadSnapshot = true;
                     if (new FileInfo(candidate).Length > MaxFileBytes)
                     {
                         Debug.LogWarning("Social report queue is larger than its disk limit.");
                         continue;
                     }
-                    var state = JsonUtility.FromJson<State>(File.ReadAllText(candidate));
-                    if (state?.entries == null) continue;
-                    _entries.Clear();
-                    foreach (var entry in state.entries)
+
+                    string json = File.ReadAllText(candidate);
+                    var state = JsonUtility.FromJson<State>(json);
+                    List<Entry> validEntries = null;
+                    if (state != null && state.formatVersion == CurrentFormatVersion)
                     {
-                        if (entry != null && ValidOwner(entry.ownerSteamId) &&
-                            !string.IsNullOrEmpty(entry.key) && entry.key.Length <= 200 &&
-                            !string.IsNullOrEmpty(entry.requestJson) &&
-                            Encoding.UTF8.GetByteCount(entry.requestJson) <= MaxPayloadBytes &&
-                            entry.createdUtcTicks >= DateTime.MinValue.Ticks &&
-                            entry.createdUtcTicks <= DateTime.MaxValue.Ticks &&
-                            entry.nextAttemptUtcTicks >= DateTime.MinValue.Ticks &&
-                            entry.nextAttemptUtcTicks <= DateTime.MaxValue.Ticks &&
-                            entry.attempts >= 0 && entry.attempts <= 1000 &&
-                            !_entries.Any(e => e.key == entry.key && e.ownerSteamId == entry.ownerSteamId))
-                            _entries.Add(entry);
-                        if (_entries.Count >= MaxEntries) break;
+                        if (ValidEntries(state.entries) &&
+                            string.Equals(state.checksum, Checksum(state.entries), StringComparison.Ordinal))
+                            validEntries = state.entries;
                     }
+                    else if (state != null && state.formatVersion == 0)
+                    {
+                        // Older versions wrote only {"entries":[...]}, with no
+                        // checksum. Accept exactly that serialized shape; a
+                        // missing "entries" field must never look like an empty
+                        // queue due to JsonUtility's default field values.
+                        var legacy = JsonUtility.FromJson<LegacyState>(json);
+                        if (legacy != null && ValidEntries(legacy.entries) &&
+                            string.Equals(json, JsonUtility.ToJson(legacy), StringComparison.Ordinal))
+                            validEntries = legacy.entries;
+                    }
+
+                    if (validEntries == null)
+                    {
+                        Debug.LogWarning("Social report queue snapshot is malformed or has an invalid checksum.");
+                        continue;
+                    }
+                    _entries.Clear();
+                    _entries.AddRange(validEntries);
                     _recoveredFromBackup = candidate != _path;
                     return;
                 }
@@ -220,16 +265,32 @@ namespace CityHighways.Presentation
                     Debug.LogWarning("Social report queue read failed: " + ex.Message);
                 }
             }
+
+            if (hadSnapshot)
+            {
+                _loadBlocked = true;
+                Debug.LogWarning("Social report queue recovery failed; writes are blocked to preserve original files.");
+            }
         }
 
         bool Save()
         {
+            if (_loadBlocked)
+            {
+                Debug.LogWarning("Social report queue cannot overwrite an unreadable snapshot.");
+                return false;
+            }
             string temp = _path + ".tmp";
             try
             {
                 string folder = Path.GetDirectoryName(_path);
                 if (!string.IsNullOrEmpty(folder)) Directory.CreateDirectory(folder);
-                string json = JsonUtility.ToJson(new State { entries = _entries });
+                string json = JsonUtility.ToJson(new State
+                {
+                    formatVersion = CurrentFormatVersion,
+                    checksum = Checksum(_entries),
+                    entries = _entries
+                });
                 if (Encoding.UTF8.GetByteCount(json) > MaxFileBytes)
                 {
                     Debug.LogWarning("Social report queue exceeds its serialized disk limit.");
