@@ -59,7 +59,14 @@ namespace CityHighways.Presentation
             // Never store a Web API ticket on disk.
             var steam = NetPlatforms.Steam;
             string owner = steam != null ? steam.SteamId : null;
-            if (!SocialReportOutbox.ValidOwner(owner)) return;
+            if (!SocialReportOutbox.ValidOwner(owner))
+            {
+                News.Add(LocalizationService.Language == "en"
+                    ? "Game report not saved: Steam identity is unavailable."
+                    : "Отчёт партии не сохранён: Steam-аккаунт недоступен.");
+                Changed?.Invoke();
+                return;
+            }
 
             request.ticket = null;
             request.claimedId = null;
@@ -68,9 +75,14 @@ namespace CityHighways.Presentation
                 JsonUtility.ToJson(request), DateTime.UtcNow.Ticks);
             if (!queued)
             {
+                bool recoveryBlocked = ReportOutbox.LoadBlocked;
                 News.Add(LocalizationService.Language == "en"
-                    ? "Could not store the game report for later upload (queue is full or disk is unavailable)."
-                    : "Не удалось сохранить отчёт партии для отправки (очередь заполнена или диск недоступен).");
+                    ? (recoveryBlocked
+                        ? "Report queue is damaged. Old files preserved; new report could not be saved."
+                        : "Could not store the game report for later upload (queue is full or disk is unavailable).")
+                    : (recoveryBlocked
+                        ? "Очередь отчётов повреждена. Старые файлы сохранены, новый отчёт не записан."
+                        : "Не удалось сохранить отчёт партии для отправки (очередь заполнена или диск недоступен)."));
                 Changed?.Invoke();
                 return;
             }
@@ -115,12 +127,15 @@ namespace CityHighways.Presentation
             }
             catch (Exception error)
             {
-                Debug.LogWarning("Discarding unreadable social report: " + error.Message);
-                if (!ReportOutbox.Complete(entry))
-                {
-                    _acknowledgedPending = entry;
+                // Do not delete the only copy of an unreadable report. Hold
+                // this entry for an hour and allow other valid games to upload.
+                // A later game patch or manual queue repair may recover it.
+                Debug.LogWarning("Unreadable social report retained for later repair: " + error.Message);
+                if (!ReportOutbox.Reschedule(entry, DateTime.UtcNow.Ticks, 422))
                     DeferAfterDiskError();
-                }
+                News.Add(LocalizationService.Language == "en"
+                    ? "An unsent game report needs repair. It was kept on disk."
+                    : "Неотправленный отчёт требует восстановления. Он сохранён на диске.");
                 Changed?.Invoke();
                 return;
             }
