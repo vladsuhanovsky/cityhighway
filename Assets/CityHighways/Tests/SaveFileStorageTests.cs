@@ -117,6 +117,31 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void ExplicitRecoveryArchivesOriginalAndRestoresBackup()
+        {
+            SaveFileStorage.Write(path, Fixture(10));
+            SaveFileStorage.Write(path, Fixture(20));
+            File.WriteAllText(path, "original damaged bytes");
+            string archive = SaveFileStorage.RestoreBackup(path, null);
+            Assert.AreEqual("original damaged bytes", File.ReadAllText(archive));
+            Assert.AreEqual(10, SaveFileStorage.Read(path, null).playSeconds);
+            Assert.AreEqual(10, SaveFileStorage.Read(SaveFileStorage.BackupPath(path), null).playSeconds);
+        }
+
+        [Test]
+        public void UnsupportedBackupCannotReplacePrimary()
+        {
+            SaveFileStorage.Write(path, Fixture(10));
+            var future = Fixture(20);
+            future.game.version = GameSaveData.CurrentVersion + 1;
+            File.WriteAllText(SaveFileStorage.BackupPath(path), JsonUtility.ToJson(future));
+            string original = File.ReadAllText(path);
+            Assert.Throws<FormatException>(() => SaveFileStorage.RestoreBackup(path, null));
+            Assert.AreEqual(original, File.ReadAllText(path));
+            Assert.AreEqual(2, Directory.GetFiles(folder).Length);
+        }
+
+        [Test]
         public void OversizedWriteLeavesBothSnapshotsUntouched()
         {
             SaveFileStorage.Write(path, Fixture(10));

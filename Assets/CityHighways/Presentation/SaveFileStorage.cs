@@ -62,6 +62,26 @@ namespace CityHighways.Presentation
             ReplayStorageIO.WriteAtomic(path, json);
         }
 
+        /// <summary>Explicit opt-in recovery. Validate the backup against the
+        /// current map before changing anything; archive original bytes first.
+        /// Returns the archive path, or null when no primary existed.</summary>
+        public static string RestoreBackup(string path, string owner)
+        {
+            string raw = ReplayStorageIO.ReadBoundedUtf8(BackupPath(path), MaxSaveBytes);
+            var file = Parse(raw, owner);
+            if (file == null) throw new InvalidDataException("Backup has an invalid save scope or shape.");
+            // Do not publish any replay results or touch profiles: this is a local model load.
+            Game.Load(CityHighwaysApp.LoadMap(file.setup.mapResourcePath), file.game);
+            string archive = null;
+            if (File.Exists(path))
+            {
+                archive = path + ".before-restore-" + Guid.NewGuid().ToString("N");
+                File.Copy(path, archive, false);
+            }
+            ReplayStorageIO.WriteAtomic(path, raw);
+            return archive;
+        }
+
         /// <summary>Explicit discard or normal end-of-game cleanup, never on load failure.</summary>
         public static void Delete(string path)
         {
