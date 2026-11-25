@@ -64,6 +64,33 @@ namespace CityHighways.Presentation
 
         static bool _busy, _started;
         static float _nextAt = -1f, _lastSync;
+        static string _observedSteamId;
+        static int _accountEpoch;
+
+        static string CurrentSteamId()
+        {
+            var steam = NetPlatforms.Steam;
+            return steam != null && steam.Available && SocialReportOutbox.ValidOwner(steam.SteamId)
+                ? steam.SteamId : null;
+        }
+
+        static void EnsureSteamAccount()
+        {
+            string owner = CurrentSteamId();
+            if (string.Equals(_observedSteamId, owner, StringComparison.Ordinal)) return;
+
+            _observedSteamId = owner;
+            unchecked { _accountEpoch++; }
+            // A stale in-flight Steam request must not keep a new account
+            // busy or apply another person's admin actions and sync receipt.
+            _busy = false;
+            ServerId = "";
+            Problem = "";
+            Messages.Clear();
+            _nextAt = Time.realtimeSinceStartup + 1f;
+            _lastSync = Time.realtimeSinceStartup;
+            Changed?.Invoke();
+        }
 
         /// <summary>ID записи на сервере («steam:…»), когда сервер его подтвердил; пусто — ещё не синхронизировано.</summary>
         public static string ServerId { get; private set; } = "";
@@ -94,6 +121,7 @@ namespace CityHighways.Presentation
         /// <summary>Каждый кадр из приложения: отложенная и периодическая синхронизация.</summary>
         public static void Tick()
         {
+            EnsureSteamAccount();
             float now = Time.realtimeSinceStartup;
             if (!_started)
             {
@@ -106,28 +134,34 @@ namespace CityHighways.Presentation
 
         public static void SyncNow()
         {
+            EnsureSteamAccount();
             if (_busy) return;
             _nextAt = -1f;
             _lastSync = Time.realtimeSinceStartup;
             var profile = Target;
             var steam = NetPlatforms.Steam;
             if (profile == null || steam == null) return;
+            string owner = _observedSteamId;
+            int epoch = _accountEpoch;
             _busy = true;
             steam.RequestWebApiTicket(TicketIdentity, ticket =>
             {
+                EnsureSteamAccount();
+                if (_accountEpoch != epoch || CurrentSteamId() != owner) return;
                 try
                 {
-                    Send(profile, steam.SteamId, ticket ?? "");
+                    Send(profile, owner, ticket ?? "", epoch);
                 }
                 catch (Exception e)
                 {
+                    if (_accountEpoch != epoch) return;
                     _busy = false;
                     Problem = e.Message;
                 }
             });
         }
 
-        static void Send(PlayerProfile profile, string steamId, string ticket)
+        static void Send(PlayerProfile profile, string steamId, string ticket, int epoch)
         {
             var request = new SyncRequest
             {
@@ -149,6 +183,12 @@ namespace CityHighways.Presentation
             web.SetRequestHeader("apikey", PublishableKey);
             web.SendWebRequest().completed += _ =>
             {
+                EnsureSteamAccount();
+                if (_accountEpoch != epoch || CurrentSteamId() != steamId)
+                {
+                    web.Dispose();
+                    return;
+                }
                 _busy = false;
                 try
                 {
@@ -159,8 +199,14 @@ namespace CityHighways.Presentation
                         Problem = response?.error ?? web.error ?? "нет ответа";
                         return;
                     }
+                    if (!string.Equals(response.id, "steam:" + steamId, StringComparison.Ordinal) ||
+                        !string.Equals(response.platformUserId, steamId, StringComparison.Ordinal))
+                    {
+                        Problem = "Steam profile sync identity mismatch";
+                        return;
+                    }
                     Problem = "";
-                    ServerId = response.id ?? "";
+                    ServerId = response.id;
                     Apply(profile, response);
                 }
                 catch (Exception e)
