@@ -546,8 +546,7 @@ namespace CityHighways.Presentation
                 UpdatePreview(on ? LocalizationService.Get("menu.settings.detail.103") : LocalizationService.Get("menu.settings.detail.104"));
             })));
             var scales = DisplaySettings.UiScales;
-            int index = Array.FindIndex(scales, x => Mathf.Approximately(x, _display.uiScale));
-            if (index < 0) index = 1;
+            int index = DisplaySettings.UiScaleIndex(_display.uiScale);
             s.Add(Row(LocalizationService.Get("menu.settings.detail.105"), LocalizationService.Get("menu.settings.detail.106"),
                 new Segmented(scales.Select(x => $"{Mathf.RoundToInt(x * 100f)}%").ToList(), index, i =>
                 {
