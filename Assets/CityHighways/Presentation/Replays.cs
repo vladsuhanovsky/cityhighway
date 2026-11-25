@@ -94,9 +94,15 @@ namespace CityHighways.Presentation
             _index = new Index();
             try
             {
-                if (File.Exists(IndexPath)) _index = JsonUtility.FromJson<Index>(File.ReadAllText(IndexPath)) ?? new Index();
-                // Индекс потерян или устарел — убираем записи без файлов.
-                _index.entries.RemoveAll(e => e == null || string.IsNullOrEmpty(e.id) || !File.Exists(FileOf(e.id)));
+                if (File.Exists(IndexPath))
+                {
+                    string json = ReplayStorageIO.ReadBoundedUtf8(IndexPath, ReplayStorageIO.MaxIndexBytes);
+                    _index = JsonUtility.FromJson<Index>(json) ?? new Index();
+                }
+                if (_index.entries == null) _index.entries = new List<Entry>();
+                // Unsafe names must be removed *before* constructing paths.
+                _index.entries.RemoveAll(e => e == null ||
+                    !ReplayStorageIO.IsSafeId(e.id) || !File.Exists(FileOf(e.id)));
             }
             catch (Exception e)
             {
