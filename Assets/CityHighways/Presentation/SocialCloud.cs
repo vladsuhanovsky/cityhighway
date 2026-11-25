@@ -617,12 +617,43 @@ namespace CityHighways.Presentation
 
         static void ClubAction(Request request, Action<string> failed)
         {
+            EnsureSocialAccount();
+            if (_clubActionBusy)
+            {
+                failed?.Invoke(LocalizationService.Language == "en"
+                    ? "Another club change is still in progress."
+                    : "Предыдущее изменение клуба ещё выполняется.");
+                return;
+            }
+
+            // A previously started GET must not overwrite the mutation.
+            // Serialize mutations so their server-side effects and UI state
+            // cannot race each other if the button is clicked repeatedly.
+            int requestId = _clubRequests.Begin();
+            _clubBusy = false;
+            _clubActionBusy = true;
             Send<ClubState>(request, state =>
             {
+                if (!_clubRequests.IsCurrent(requestId)) return;
+                _clubActionBusy = false;
+                if (state == null)
+                {
+                    _clubAt = -999f;
+                    failed?.Invoke(LocalizationService.Language == "en"
+                        ? "The server returned an incomplete club response."
+                        : "Сервер вернул неполные данные клуба.");
+                    return;
+                }
                 Club = state;
                 _clubAt = Time.realtimeSinceStartup;
                 Changed?.Invoke();
-            }, failed);
+            }, error =>
+            {
+                if (!_clubRequests.IsCurrent(requestId)) return;
+                _clubActionBusy = false;
+                _clubAt = -999f; // A failed/unknown result merits a fresh GET.
+                failed?.Invoke(error);
+            });
         }
 
         public static void CreateClub(string name, string tag, string logo, bool open, Action<string> failed) =>
