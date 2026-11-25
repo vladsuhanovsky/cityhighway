@@ -57,7 +57,10 @@ namespace CityHighways.Presentation
                 Integer(r, "score", -100000, 100000) &&
                 Boolean(r, "won") &&
                 Integer(r, "seats", 1, 8) &&
-                Text(r, "date", 64);
+                Text(r, "date", 64) &&
+                SocialReportOutbox.ValidOwner((string)r["playerId"]) &&
+                (string.Equals((string)r["mode"], "classic", StringComparison.Ordinal) ||
+                 string.Equals((string)r["mode"], "coop", StringComparison.Ordinal));
         }
 
         static bool Records(Dictionary<string, object> root, string key, int max)
