@@ -1079,7 +1079,7 @@ namespace CityHighways.Presentation
 
             var gameCard = Ui.Card(20f);
             gameCard.style.backgroundColor = Theme.Panel;
-            gameCard.style.width = 360f;
+            gameCard.style.width = InterfaceLayout.NewGameOptionsCardWidth;
             gameCard.Add(Ui.SectionTitle(LocalizationService.Get("menu.new_game.options")));
 
             var modeRow = SettingRow(LocalizationService.Get("menu.new_game.mode"));
