@@ -39,6 +39,9 @@ namespace CityHighways.Presentation
         readonly UnityEngine.UIElements.Button _timerButton;
         readonly MenuSettingsPage _settings;
         readonly Label _hint;
+        readonly MenuHighwayOverlay _highway;
+        readonly MenuLegibilityVeil _legibility;
+        float _newGameTransition = -1f;
         readonly VisualElement _overlay;
         readonly Label _gamepadGuide;
         bool _gamepadActive;
@@ -77,6 +80,12 @@ namespace CityHighways.Presentation
             };
             Root.Add(_background);
             BuildKeyArt();
+            // These overlays are drawn above both live background and optional
+            // key art, but below all real controls.
+            _highway = new MenuHighwayOverlay();
+            Root.Add(_highway);
+            _legibility = new MenuLegibilityVeil();
+            Root.Add(_legibility);
             Root.RegisterCallback<PointerMoveEvent>(e =>
             {
                 var size = Root.layout.size;
@@ -177,7 +186,15 @@ namespace CityHighways.Presentation
             if (page == Page.Tutorial) RefreshTutorial();
             // На страницах с текстом фон приглушается, верхние значки и уведомления — только на главной.
             _background.Dim = page == Page.Home ? 0f : 1f;
+            Ui.Show(_highway, page == Page.Home);
+            Ui.Show(_legibility, page == Page.Home);
+            if (page != Page.Home) _newGameTransition = -1f;
             if (_topBar != null) Ui.Show(_topBar, page == Page.Home);
+            if (_settingsPopup != null)
+            {
+                _settingsPopupOpen = false;
+                Ui.Show(_settingsPopup, false);
+            }
             if (_bellOpen) ToggleBell();
             if (page == Page.Home)
             {
@@ -200,17 +217,30 @@ namespace CityHighways.Presentation
         /// <summary>Карточка профиля в левом нижнем углу главного меню: клик — полный профиль.</summary>
         VisualElement BuildProfileCorner()
         {
+            var corner = Ui.Column();
+            corner.style.position = Position.Absolute;
+            corner.style.left = 28f;
+            corner.style.bottom = 28f;
+            corner.style.width = 160f;
+            corner.style.alignItems = Align.Center;
             _profileCard = new ProfileCard(() =>
             {
                 _profile.Rebuild();
                 ShowPage(Page.Profile);
             });
-            _profileCard.style.position = Position.Absolute;
-            _profileCard.style.left = 28f;
-            _profileCard.style.bottom = 28f;
-            // Аватар Steam приходит не сразу — подтягиваем, пока не появится.
+            corner.Add(_profileCard);
+
+            // Personal statistics belong next to the active avatar, not to
+            // the global primary navigation. No hard-coded Steam nickname.
+            var stats = Ui.Button(LocalizationService.Get("menu.home.stats"),
+                () => ShowPage(Page.Stats), ButtonKind.Secondary, 13f);
+            stats.style.width = 150f;
+            stats.style.minHeight = 32f;
+            stats.style.marginTop = 7f;
+            stats.style.backgroundColor = new Color(0.085f, 0.13f, 0.20f, 0.94f);
+            corner.Add(stats);
             _profileCard.schedule.Execute(RefreshProfileCorner).Every(1000);
-            return _profileCard;
+            return corner;
         }
 
         void RefreshProfileCorner() => _profileCard?.Set(Profiles.Active);
@@ -314,17 +344,44 @@ namespace CityHighways.Presentation
                 buttons.Add(button);
                 return button;
             }
-            var newGame = Add(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.home.new_game"), () => ShowPage(Page.NewGame), saved == null);
-            // «Быстрый старт» — сразу в партию с последними настройками.
-            var quick = Ui.Button(LocalizationService.Get("menu.home.quick_start"), StartGame, ButtonKind.Secondary, 13f);
-            quick.style.minHeight = 30f;
-            Ui.Padding(quick, 4f, 12f);
-            quick.style.backgroundColor = new Color(1f, 1f, 1f, 0.16f);
-            newGame.Badge.Add(quick);
-            Add(MenuIcon.Glyph.Cap, LocalizationService.Get(AnyTutorialDone ? "menu.home.tutorial" : "menu.home.tutorial_hint"), () => ShowPage(Page.Tutorial), false);
-            _onlineButton = Add(MenuIcon.Glyph.Globe, LocalizationService.Get("menu.home.online"), () =>
+            // Three main entry points, each with its closely related action
+            // immediately below it. Keep the iconic red New Game button.
+            Add(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.home.new_game"),
+                OpenNewGameWithDeparture, true);
+
+            // Quick Start genuinely bypasses game setup. It is a separate
+            // button, never a second control nested inside New Game.
+            var quick = Ui.Button(LocalizationService.Get("menu.home.quick_start"),
+                StartGame, ButtonKind.Secondary, 14f);
+            quick.style.alignSelf = Align.Center;
+            quick.style.width = 244f;
+            quick.style.minHeight = 36f;
+            quick.style.backgroundColor = new Color(0.12f, 0.17f, 0.23f, 0.94f);
+            quick.style.marginBottom = 10f;
+            buttons.Add(quick);
+
+            UnityEngine.UIElements.Button AddSubAction(string key, Action action)
             {
-                // Заблокированному аккаунту сетевая игра закрыта — показываем причину в уведомлениях.
+                var sub = Ui.Button(LocalizationService.Get(key), action,
+                    ButtonKind.Secondary, 14f);
+                sub.style.alignSelf = Align.FlexStart;
+                sub.style.marginLeft = 52f;
+                sub.style.width = 374f;
+                sub.style.minHeight = 33f;
+                sub.style.marginBottom = 10f;
+                sub.style.backgroundColor = new Color(0.075f, 0.12f, 0.18f, 0.96f);
+                buttons.Add(sub);
+                return sub;
+            }
+
+            Add(MenuIcon.Glyph.Cap, LocalizationService.Get(
+                AnyTutorialDone ? "menu.home.tutorial" : "menu.home.tutorial_hint"),
+                () => ShowPage(Page.Tutorial), false);
+            AddSubAction("menu.home.rules", () => OpenRules(null, Page.Home));
+
+            _onlineButton = Add(MenuIcon.Glyph.Globe,
+                LocalizationService.Get("menu.home.online"), () =>
+            {
                 if (Profiles.Active.cloudBanned)
                 {
                     if (!_bellOpen) ToggleBell();
@@ -335,20 +392,10 @@ namespace CityHighways.Presentation
             _onlineBadge = Pill("");
             Ui.Show(_onlineBadge, false);
             _onlineButton.Badge.Add(_onlineBadge);
-            Add(MenuIcon.Glyph.Book, LocalizationService.Get("menu.home.rules"), () => OpenRules(null, Page.Home), false);
-            Add(MenuIcon.Glyph.Chart, LocalizationService.Get("menu.home.stats"), () => ShowPage(Page.Stats), false);
-            Add(MenuIcon.Glyph.Flag, LocalizationService.Get("menu.home.clubs"), () => ShowPage(Page.Club), false);
-            Add(MenuIcon.Glyph.Gear, LocalizationService.Get("menu.home.settings"), () => ShowPage(Page.Settings), false);
+            AddSubAction("menu.home.clubs", () => ShowPage(Page.Club));
 
-            // Первый этап локализации: переключатель на главной странице.
-            // Остальные экраны сохраняют исходные русские строки до их переноса в таблицы.
-            var languageButton = Ui.Button(LocalizationService.Get("menu.home.language_switch"), () =>
-            {
-                LocalizationService.SetLanguage(LocalizationService.Language == "en" ? "ru" : "en");
-                _app.ShowMenu(); // Пересоздаём экран: все текстовые элементы построены в C#.
-            }, ButtonKind.Secondary, 13f);
-            languageButton.style.marginTop = 6f;
-            buttons.Add(languageButton);
+            // Profile-linked Statistics now lives next to the profile card.
+            // Settings and language live together at the top-right gear.
 
             var summary = Ui.Text(StatsLog.Summary(), 14f, Theme.Text);
             summary.style.marginTop = 8f;
@@ -441,6 +488,8 @@ namespace CityHighways.Presentation
         // ------------------------------------------------------------------ Верхняя панель
 
         VisualElement _topBar;
+        VisualElement _settingsPopup;
+        bool _settingsPopupOpen;
         VisualElement _bellPanel;
         VisualElement _bellList;
         Label _bellCount;
@@ -448,11 +497,25 @@ namespace CityHighways.Presentation
         Label _lightCaption;
         VisualElement _moonButton, _sunButton;
 
+        void ToggleSettingsPopup()
+        {
+            if (!_settingsPopupOpen && _bellOpen) ToggleBell();
+            _settingsPopupOpen = !_settingsPopupOpen;
+            if (_settingsPopup != null) Ui.Show(_settingsPopup, _settingsPopupOpen);
+        }
+
+        void SwitchMenuLanguage()
+        {
+            LocalizationService.SetLanguage(LocalizationService.Language == "en" ? "ru" : "en");
+            _app.ShowMenu(); // Rebuild every currently visible translated control.
+        }
+
         /// <summary>Круглая кнопка-значок в верхней панели меню.</summary>
         VisualElement TopIcon(MenuIcon.Glyph glyph, Action onClick)
         {
             var button = Ui.Box();
             button.pickingMode = PickingMode.Position;
+            button.focusable = true;
             button.style.width = 42f;
             button.style.height = 42f;
             button.style.marginRight = 8f;
@@ -474,10 +537,21 @@ namespace CityHighways.Presentation
                 button.style.backgroundColor = Theme.PanelGlass;
                 button.style.translate = new Translate(new Length(0f), new Length(0f));
             });
+            button.RegisterCallback<FocusInEvent>(_ =>
+                button.style.backgroundColor = Theme.PanelHover);
+            button.RegisterCallback<FocusOutEvent>(_ =>
+                button.style.backgroundColor = Theme.PanelGlass);
             button.RegisterCallback<ClickEvent>(_ =>
             {
                 Ui.ButtonClicked?.Invoke();
                 onClick?.Invoke();
+            });
+            button.RegisterCallback<NavigationSubmitEvent>(evt =>
+            {
+                if (evt.target != button) return;
+                Ui.ButtonClicked?.Invoke();
+                onClick?.Invoke();
+                evt.StopPropagation();
             });
             return button;
         }
@@ -523,7 +597,9 @@ namespace CityHighways.Presentation
             Ui.Padding(_bellCount, 0f, 4f);
             bell.Add(_bellCount);
             right.Add(bell);
-            right.Add(TopIcon(MenuIcon.Glyph.Gear, () => ShowPage(Page.Settings)));
+            var gear = TopIcon(MenuIcon.Glyph.Gear, ToggleSettingsPopup);
+            gear.tooltip = LocalizationService.Get("menu.home.settings");
+            right.Add(gear);
             if (Application.platform != RuntimePlatform.WebGLPlayer)
             {
                 var quit = TopIcon(MenuIcon.Glyph.Close, ConfirmQuit);
@@ -531,6 +607,35 @@ namespace CityHighways.Presentation
                 right.Add(quit);
             }
             bar.Add(right);
+
+            // Settings and the language switch share one top-right popover.
+            // Do not duplicate service actions in the primary menu column.
+            _settingsPopup = Ui.Column();
+            _settingsPopup.pickingMode = PickingMode.Position;
+            _settingsPopup.style.position = Position.Absolute;
+            _settingsPopup.style.top = 52f;
+            _settingsPopup.style.right = Application.platform == RuntimePlatform.WebGLPlayer ? 4f : 54f;
+            _settingsPopup.style.width = 218f;
+            _settingsPopup.style.backgroundColor = Theme.Panel;
+            Ui.Radius(_settingsPopup, 12f);
+            Ui.Border(_settingsPopup, 1f, Theme.Line);
+            Ui.Padding(_settingsPopup, 8f, 8f);
+            Ui.Shadow(_settingsPopup, 14f);
+            var settingsAction = Ui.Button(LocalizationService.Get("menu.home.settings"), () =>
+            {
+                ToggleSettingsPopup();
+                ShowPage(Page.Settings);
+            }, ButtonKind.Secondary, 14f);
+            settingsAction.style.minHeight = 38f;
+            _settingsPopup.Add(settingsAction);
+            var languageAction = Ui.Button(LocalizationService.Get("menu.home.language_switch"),
+                SwitchMenuLanguage, ButtonKind.Secondary, 14f);
+            languageAction.style.minHeight = 38f;
+            languageAction.style.marginTop = 5f;
+            _settingsPopup.Add(languageAction);
+            Ui.Show(_settingsPopup, false);
+            bar.Add(_settingsPopup);
+
             RefreshLightButtons();
             return bar;
         }
@@ -670,6 +775,11 @@ namespace CityHighways.Presentation
         void ToggleBell()
         {
             _bellOpen = !_bellOpen;
+            if (_bellOpen && _settingsPopupOpen)
+            {
+                _settingsPopupOpen = false;
+                Ui.Show(_settingsPopup, false);
+            }
             if (_bellOpen) RefreshNotifications();
             Ui.Slide(_bellPanel, _bellOpen, 0f, -6f);
             _app.Sound.Play(_bellOpen ? Sfx.Open : Sfx.Close, 0.45f);
@@ -830,7 +940,10 @@ namespace CityHighways.Presentation
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame &&
                 !GamepadTextEntry.TryExit(Root))
-                Ui.GoBack(Root);
+            {
+                if (_settingsPopupOpen) ToggleSettingsPopup();
+                else Ui.GoBack(Root);
+            }
 
             // A physical mouse/Steam Deck trackpad takes back pointer input
             // on movement, not only on click. Unplugging the pad also releases
@@ -853,7 +966,10 @@ namespace CityHighways.Presentation
                 {
                     _gamepadActive = true;
                     if (!GamepadTextEntry.TryExit(Root))
-                        Ui.GoBack(Root);
+                    {
+                        if (_settingsPopupOpen) ToggleSettingsPopup();
+                        else Ui.GoBack(Root);
+                    }
                 }
             }
             if (_gamepadActive) UiGamepadFocus.EnsureFocus(Root);
@@ -862,6 +978,19 @@ namespace CityHighways.Presentation
                 false, LocalizationService.Language == "en",
                 GamepadControlGuide.TextEntryFocused(Root));
             _background.Tick(dt);
+            if (_page == Page.Home)
+            {
+                _highway.Tick(dt, _display.reducedMotion);
+                if (_newGameTransition >= 0f)
+                {
+                    _newGameTransition -= Mathf.Max(0f, dt);
+                    if (_newGameTransition <= 0f)
+                    {
+                        _newGameTransition = -1f;
+                        ShowPage(Page.NewGame);
+                    }
+                }
+            }
             if (_page == Page.Profile) _profile.Tick(dt);
             if (_page != Page.Home) return;
             foreach (var button in _menuButtons) button.Tick(dt);
@@ -873,6 +1002,23 @@ namespace CityHighways.Presentation
                 _onlineTimer = 0f;
                 RefreshOnlineBadge();
             }
+        }
+
+        /// <summary>
+        /// A short road-to-city transition is deliberately attached to the
+        /// home "New Game" action, not to the already-started Game instance.
+        /// Reduced-motion users navigate immediately with no delay.
+        /// </summary>
+        void OpenNewGameWithDeparture()
+        {
+            if (_page != Page.Home || _newGameTransition >= 0f) return;
+            if (_display.reducedMotion)
+            {
+                ShowPage(Page.NewGame);
+                return;
+            }
+            _newGameTransition = MenuRoadDeparture.DurationSeconds;
+            _highway.BeginDeparture();
         }
 
         // ================================================================== Новая игра

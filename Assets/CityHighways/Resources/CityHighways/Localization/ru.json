@@ -14,7 +14,7 @@
     },
     {
       "key": "menu.home.quick_start",
-      "value": "Быстрый старт"
+      "value": "Играть сразу"
     },
     {
       "key": "menu.home.tutorial",
@@ -34,7 +34,7 @@
     },
     {
       "key": "menu.home.stats",
-      "value": "Счётчик партий"
+      "value": "Статистика"
     },
     {
       "key": "menu.home.clubs",
@@ -46,7 +46,7 @@
     },
     {
       "key": "menu.home.language_switch",
-      "value": "Язык: Русский / Switch to English"
+      "value": "Язык: RU → EN"
     },
     {
       "key": "menu.new_game.title",
@@ -1446,7 +1446,7 @@
     },
     {
       "key": "menu.stats.002",
-      "value": "Счётчик партий"
+      "value": "Статистика"
     },
     {
       "key": "menu.stats.003",
