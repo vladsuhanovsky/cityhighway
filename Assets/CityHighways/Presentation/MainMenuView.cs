@@ -1073,13 +1073,13 @@ namespace CityHighways.Presentation
             characterHint = Ui.Text("", 12f, Theme.TextDim);
             characterHint.style.marginTop = 8f;
             characterHint.style.whiteSpace = WhiteSpace.Normal;
-            characterHint.style.maxWidth = 640f;
+            characterHint.style.maxWidth = InterfaceLayout.NewGameHelpMaxWidth;
             playersCard.Add(characterHint);
             cards.Add(playersCard);
 
             var gameCard = Ui.Card(20f);
             gameCard.style.backgroundColor = Theme.Panel;
-            gameCard.style.width = 360f;
+            gameCard.style.width = InterfaceLayout.NewGameOptionsCardWidth;
             gameCard.Add(Ui.SectionTitle(LocalizationService.Get("menu.new_game.options")));
 
             var modeRow = SettingRow(LocalizationService.Get("menu.new_game.mode"));

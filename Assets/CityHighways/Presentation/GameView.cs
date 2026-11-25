@@ -15,12 +15,12 @@ namespace CityHighways.Presentation
     /// </summary>
     public sealed partial class GameView
     {
-        const float TopBarHeight = 60f;
-        const float BottomBarHeight = 72f;
-        const float DrawerWidth = 380f;
+        static float TopBarHeight => InterfaceLayout.HudTopBarHeight;
+        static float BottomBarHeight => InterfaceLayout.HudBottomBarHeight;
+        static float DrawerWidth => InterfaceLayout.HudDrawerWidth;
         const float ContractCardWidth = 200f;
         const float ContractsSheetWidth = 760f;
-        const float PlayersPanelWidth = 420f;
+        static float PlayersPanelWidth => InterfaceLayout.HudPlayersPanelWidth;
         const float BotDelay = 0.55f;
         /// <summary>Сколько последних записей хранит и показывает журнал (старые уходят).</summary>
         const int LogHistory = 200;

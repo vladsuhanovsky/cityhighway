@@ -152,7 +152,7 @@ namespace CityHighways.Presentation
             // Поиск: значок лупы и поле.
             var searchBox = Ui.Row();
             searchBox.style.alignItems = Align.Center;
-            searchBox.style.width = 560f;
+            searchBox.style.width = InterfaceLayout.RulesSearchWidth;
             searchBox.style.minHeight = 42f;
             searchBox.style.backgroundColor = Theme.PanelLight;
             Ui.Radius(searchBox, 10f);
@@ -188,7 +188,7 @@ namespace CityHighways.Presentation
             Root.Add(body);
 
             _nav = Ui.Column();
-            _nav.style.width = 250f;
+            _nav.style.width = InterfaceLayout.RulesNavigationWidth;
             _nav.style.marginRight = 16f;
             _nav.style.backgroundColor = Theme.Panel;
             Ui.Radius(_nav, 12f);
@@ -207,7 +207,7 @@ namespace CityHighways.Presentation
 
             _content = new ScrollView(ScrollViewMode.Vertical);
             _content.style.flexGrow = 1f;
-            _content.style.height = 570f;
+            _content.style.height = InterfaceLayout.RulesContentHeight;
             Ui.StyleScroller(_content);
             _content.style.backgroundColor = Theme.Panel;
             Ui.Radius(_content, 12f);

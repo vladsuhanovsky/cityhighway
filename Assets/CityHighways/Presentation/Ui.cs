@@ -13,27 +13,34 @@ namespace CityHighways.Presentation
     public static class Theme
     {
         static Color Hex(int rgb, float alpha = 1f) =>
-            new Color(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f, alpha);
+            new Color(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f,
+                (rgb & 0xFF) / 255f, alpha);
 
-        public static readonly Color Background = Hex(0x1B2631);
-        public static readonly Color Panel = Hex(0x2C3E50);
-        public static readonly Color PanelLight = Hex(0x34495E);
-        public static readonly Color PanelHover = Hex(0x3E5871);
-        /// <summary>Плавающие панели поверх карты — тот же основной цвет, чуть прозрачнее.</summary>
-        public static readonly Color PanelGlass = Hex(0x2C3E50, 0.94f);
-        public static readonly Color Line = new Color(1f, 1f, 1f, 0.08f);
-        public static readonly Color Text = Hex(0xECF0F1);
-        public static readonly Color TextDim = Hex(0xAAB7B8);
-        public static readonly Color Accent = Hex(0xE74C3C);
-        public static readonly Color AccentHover = Hex(0xEC7063);
-        public static readonly Color AccentText = Color.white;
-        public static readonly Color Gold = new Color(0.95f, 0.69f, 0.26f);
-        public static readonly Color GoldText = new Color(0.16f, 0.11f, 0.04f);
-        public static readonly Color Danger = Hex(0xE74C3C);
-        public static readonly Color Success = Hex(0x27AE60);
-        public static readonly Color Shade = Hex(0x000000, 0.5f);
-        public static readonly Color ShadeOpaque = new Color(0.07f, 0.09f, 0.12f, 0.97f);
-        /// <summary>Длительность плавных переходов интерфейса.</summary>
+        // Shared colors are editable from Interface Editor. Missing assets
+        // retain the previous hard-coded colors so old scenes still load.
+        static InterfaceTheme Style => InterfaceTheme.Current;
+
+        public static Color Background => Style != null ? Style.background : Hex(0x1B2631);
+        public static Color Panel => Style != null ? Style.panel : Hex(0x2C3E50);
+        public static Color PanelLight => Style != null ? Style.panelLight : Hex(0x34495E);
+        public static Color PanelHover => Style != null ? Style.panelHover : Hex(0x3E5871);
+        public static Color PanelGlass => Style != null
+            ? new Color(Style.panel.r, Style.panel.g, Style.panel.b,
+                Mathf.Clamp(Style.panelGlassOpacity, 0.7f, 1f))
+            : Hex(0x2C3E50, 0.94f);
+        public static Color Line => new Color(1f, 1f, 1f, 0.08f);
+        public static Color Text => Style != null ? Style.text : Hex(0xECF0F1);
+        public static Color TextDim => Style != null ? Style.textDim : Hex(0xAAB7B8);
+        public static Color Accent => Style != null ? Style.accent : Hex(0xE74C3C);
+        public static Color AccentHover => Style != null ? Style.accentHover : Hex(0xEC7063);
+        public static Color AccentText => Color.white;
+        public static Color Gold => Style != null ? Style.gold :
+            new Color(0.95f, 0.69f, 0.26f);
+        public static Color GoldText => new Color(0.16f, 0.11f, 0.04f);
+        public static Color Danger => Hex(0xE74C3C);
+        public static Color Success => Style != null ? Style.success : Hex(0x27AE60);
+        public static Color Shade => Hex(0x000000, 0.5f);
+        public static Color ShadeOpaque => new Color(0.07f, 0.09f, 0.12f, 0.97f);
         public const float TransitionSeconds = 0.3f;
     }
 
@@ -352,7 +359,7 @@ namespace CityHighways.Presentation
         {
             var e = Column();
             e.style.backgroundColor = Theme.PanelLight;
-            Radius(e, 10f);
+            Radius(e, InterfaceLayout.CardRadius);
             Border(e, 1f, Theme.Line);
             Padding(e, padding, padding);
             return e;
@@ -362,7 +369,7 @@ namespace CityHighways.Presentation
         {
             var label = Text(LocalizationService.TranslateLegacy(text).ToUpperInvariant(), 12f, Theme.TextDim, true);
             label.style.letterSpacing = 1.5f;
-            label.style.marginBottom = 8f;
+            label.style.marginBottom = InterfaceLayout.SectionGap;
             return label;
         }
 
@@ -408,8 +415,8 @@ namespace CityHighways.Presentation
             button.style.unityTextAlign = TextAnchor.MiddleCenter;
             button.style.color = textColor;
             button.style.backgroundColor = normal;
-            button.style.minHeight = 38f;
-            Radius(button, 8f);
+            button.style.minHeight = InterfaceLayout.CommonButtonHeight;
+            Radius(button, InterfaceLayout.CommonButtonRadius);
             Border(button, outlined ? 1f : 0f, Theme.Line);
             Padding(button, 8f, 16f);
             Margin(button, 0f);

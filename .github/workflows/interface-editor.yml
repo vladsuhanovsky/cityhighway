@@ -1,0 +1,55 @@
+name: Interface Editor validation
+
+on:
+  pull_request:
+    paths:
+      - "Assets/CityHighways/Editor/InterfaceEditorWindow.cs"
+      - "Assets/CityHighways/Presentation/InterfaceTheme.cs"
+      - "Assets/CityHighways/Presentation/InterfaceLayout.cs"
+      - "Assets/CityHighways/Presentation/Ui.cs"
+      - "Assets/CityHighways/Presentation/MainMenuView.cs"
+      - "Assets/CityHighways/Presentation/MenuOnlinePage.cs"
+      - "Assets/CityHighways/Presentation/MenuRulesPage.cs"
+      - "Assets/CityHighways/Presentation/MenuSettingsPage.cs"
+      - "Assets/CityHighways/Presentation/MenuStatsPage.cs"
+      - "Assets/CityHighways/Presentation/MenuProfilePage.cs"
+      - "Assets/CityHighways/Presentation/GameView.cs"
+      - "Assets/CityHighways/Tests/InterfaceThemeTests.cs"
+      - "Assets/CityHighways/Resources/CityHighways/UI/InterfaceTheme.asset"
+      - "Tools/interface_editor.test.mjs"
+      - ".github/workflows/interface-editor.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Assets/CityHighways/Editor/InterfaceEditorWindow.cs"
+      - "Assets/CityHighways/Presentation/InterfaceTheme.cs"
+      - "Assets/CityHighways/Presentation/InterfaceLayout.cs"
+      - "Assets/CityHighways/Presentation/Ui.cs"
+      - "Assets/CityHighways/Presentation/MainMenuView.cs"
+      - "Assets/CityHighways/Presentation/MenuOnlinePage.cs"
+      - "Assets/CityHighways/Presentation/MenuRulesPage.cs"
+      - "Assets/CityHighways/Presentation/MenuSettingsPage.cs"
+      - "Assets/CityHighways/Presentation/MenuStatsPage.cs"
+      - "Assets/CityHighways/Presentation/MenuProfilePage.cs"
+      - "Assets/CityHighways/Presentation/GameView.cs"
+      - "Assets/CityHighways/Tests/InterfaceThemeTests.cs"
+      - "Assets/CityHighways/Resources/CityHighways/UI/InterfaceTheme.asset"
+      - "Tools/interface_editor.test.mjs"
+      - ".github/workflows/interface-editor.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: Editor assets and screen integrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Check unified Interface Editor and runtime bindings
+        run: node --test Tools/interface_editor.test.mjs

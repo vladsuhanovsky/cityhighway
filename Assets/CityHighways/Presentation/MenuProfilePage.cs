@@ -25,7 +25,7 @@ namespace CityHighways.Presentation
         readonly Label _title;
         readonly Dictionary<Tab, (VisualElement button, MenuIcon icon, Label label)> _tabButtons = new Dictionary<Tab, (VisualElement, MenuIcon, Label)>();
         readonly ScrollView _scroll;
-        const float ContentHeight = 664f;
+        static float ContentHeight => InterfaceLayout.ProfileContentHeight;
         readonly VisualElement _content;
         readonly Label _statusLabel;
         readonly UnityEngine.UIElements.Button _idChip;
@@ -244,7 +244,7 @@ namespace CityHighways.Presentation
             var left = Card(14f);
             left.style.alignItems = Align.Center;
             left.style.marginRight = 14f;
-            left.style.width = 280f;
+            left.style.width = InterfaceLayout.ProfileSidebarWidth;
             left.style.justifyContent = Justify.Center;
             left.Add(Ui.Text(LocalizationService.Get("menu.profile.005"), 18f, Theme.Text, true));
             var hint = Ui.Text(LocalizationService.Get("menu.profile.013"), 12f, Theme.TextDim);

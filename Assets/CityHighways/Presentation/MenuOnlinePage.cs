@@ -60,7 +60,7 @@ namespace CityHighways.Presentation
             nameRow.style.marginBottom = 14f;
             nameRow.Add(Ui.Text(LocalizationService.Get("menu.online.002"), 16f, Theme.TextDim));
             _nameField = Field(DefaultName(), 16);
-            _nameField.style.width = 320f;
+            _nameField.style.width = InterfaceLayout.OnlineNameFieldWidth;
             _nameField.style.marginLeft = 14f;
             nameRow.Add(_nameField);
             _connectView.Add(nameRow);
@@ -573,7 +573,7 @@ namespace CityHighways.Presentation
             var input = field.Q(className: TextField.inputUssClassName) ?? field;
             input.style.backgroundColor = Theme.PanelLight;
             input.style.color = Theme.Text;
-            input.style.minHeight = 38f;
+            input.style.minHeight = InterfaceLayout.OnlineInputMinHeight;
             Ui.Radius(input, 8f);
             Ui.Border(input, 1f, Theme.Line);
             Ui.Padding(input, 6f, 10f);

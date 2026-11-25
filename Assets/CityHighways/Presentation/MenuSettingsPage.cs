@@ -67,7 +67,7 @@ namespace CityHighways.Presentation
             Root.Add(body);
 
             _nav = Ui.Column();
-            _nav.style.width = 210f;
+            _nav.style.width = InterfaceLayout.SettingsNavigationWidth;
             _nav.style.marginRight = 14f;
             _nav.style.backgroundColor = Theme.Panel;
             Ui.Radius(_nav, 12f);
@@ -100,7 +100,7 @@ namespace CityHighways.Presentation
             body.Add(_content);
 
             var previewCard = Ui.Column();
-            previewCard.style.width = 340f;
+            previewCard.style.width = InterfaceLayout.SettingsPreviewWidth;
             previewCard.style.backgroundColor = Theme.Panel;
             Ui.Radius(previewCard, 12f);
             Ui.Padding(previewCard, 14f, 14f);

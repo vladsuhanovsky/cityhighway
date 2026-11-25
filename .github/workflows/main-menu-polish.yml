@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - "Assets/CityHighways/Presentation/MainMenuView.cs"
+      - "Assets/CityHighways/Presentation/InterfaceTheme.cs"
+      - "Assets/CityHighways/Presentation/InterfaceLayout.cs"
+      - "Assets/CityHighways/Resources/CityHighways/UI/InterfaceTheme.asset"
       - "Assets/CityHighways/Presentation/MainMenuStyle.cs"
       - "Assets/CityHighways/Resources/CityHighways/UI/MainMenuStyle.asset"
       - "Assets/CityHighways/Editor/MainMenuStyleEditorMenu.cs"
@@ -24,6 +27,9 @@ on:
     branches: [main]
     paths:
       - "Assets/CityHighways/Presentation/MainMenuView.cs"
+      - "Assets/CityHighways/Presentation/InterfaceTheme.cs"
+      - "Assets/CityHighways/Presentation/InterfaceLayout.cs"
+      - "Assets/CityHighways/Resources/CityHighways/UI/InterfaceTheme.asset"
       - "Assets/CityHighways/Presentation/MainMenuStyle.cs"
       - "Assets/CityHighways/Resources/CityHighways/UI/MainMenuStyle.asset"
       - "Assets/CityHighways/Editor/MainMenuStyleEditorMenu.cs"
