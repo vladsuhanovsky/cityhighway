@@ -10,6 +10,7 @@ using UnityEngine;
 public sealed class CityGeneratorLabWindow : EditorWindow
 {
     int seed = 42, count = 64;
+    bool include3D;
     CitySeedReport current;
     Vector2 scroll;
     string summary = "";
@@ -23,14 +24,15 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         EditorGUILayout.HelpBox("Magnate topology preview and reproducible seed diagnostics. No assets, saves or live game state are modified. Timing includes diagnostic checks, not 3D scene generation.", MessageType.Info);
         seed = EditorGUILayout.IntField("Requested seed", seed);
         count = Mathf.Clamp(EditorGUILayout.IntField("Batch count (1–512)", count), 1, 512);
+        include3D = EditorGUILayout.ToggleLeft("Audit 3D footprints (slower; no meshes)", include3D);
         using (new EditorGUI.DisabledScope(EditorApplication.isPlayingOrWillChangePlaymode))
         {
             if (GUILayout.Button("Generate and validate"))
             {
-                current = CitySeedDiagnostics.Run(seed);
+                current = CitySeedDiagnostics.Run(seed, include3D);
                 failures.Clear();
                 summary = current.Passed ? "Valid topology" : "Validation failed";
-                if (!current.Passed) SaveFailure(current);
+                if (!current.Passed || WarningCount(current) > 0) SaveFailure(current);
             }
             if (GUILayout.Button("Run seed range")) RunBatch();
         }
@@ -44,6 +46,8 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         {
             DrawPreview();
             EditorGUILayout.LabelField("Blue: rivers · gold: bridges · red: hubs · white: public roads");
+            if (current.layout3D != null)
+                EditorGUILayout.HelpBox("Cyan: prepared 3D river line; orange: hub footprint or affected road/junction. Warnings: " + WarningCount(current), MessageType.Info);
         }
         if (GUILayout.Button("Export selected diagnostic JSON"))
         {
@@ -55,6 +59,8 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         scroll = EditorGUILayout.BeginScrollView(scroll);
         foreach (string issue in current.issues ?? Array.Empty<string>())
             EditorGUILayout.HelpBox(issue, MessageType.Warning);
+        foreach (var issue in current.layout3D?.warnings ?? Array.Empty<City3DLayoutIssue>())
+            EditorGUILayout.HelpBox(issue.code + " · " + issue.id + " · " + issue.measured.ToString("0.000") + " / " + issue.limit.ToString("0.000"), MessageType.Warning);
         foreach (string line in failures) EditorGUILayout.LabelField(line, EditorStyles.wordWrappedLabel);
         EditorGUILayout.EndScrollView();
     }
@@ -62,7 +68,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
     void RunBatch()
     {
         failures.Clear();
-        int completed = 0, invalid = 0;
+        int completed = 0, invalid = 0, warned = 0;
         try
         {
             for (int i = 0; i < count; i++)
@@ -71,15 +77,19 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                 if (requested > int.MaxValue) break;
                 if (EditorUtility.DisplayCancelableProgressBar("City Generator Lab",
                     "Seed " + requested, i / (float)count)) break;
-                current = CitySeedDiagnostics.Run((int)requested);
+                current = CitySeedDiagnostics.Run((int)requested, include3D);
                 completed++;
-                if (!current.Passed) { invalid++; SaveFailure(current); }
+                if (!current.Passed) invalid++;
+                if (WarningCount(current) > 0) warned++;
+                if (!current.Passed || WarningCount(current) > 0) SaveFailure(current);
             }
         }
         finally { EditorUtility.ClearProgressBar(); }
         summary = "Completed " + completed + " / " + count + "; failed " + invalid +
-            ". Failure reports: Library/CityHighways/CitySeedDiagnostics.";
+            "; 3D warnings on " + warned + " seed(s). Reports: Library/CityHighways/CitySeedDiagnostics.";
     }
+
+    static int WarningCount(CitySeedReport report) => report.layout3D?.warnings?.Length ?? 0;
 
     void SaveFailure(CitySeedReport report)
     {
@@ -100,6 +110,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         var locations = current.locations.ToDictionary(p => p.id);
         var hubs = new HashSet<string>((current.hubs ?? Array.Empty<string>()).Select(h => h.Split(':')[0]));
         var publicRoads = new HashSet<string>(current.publicRoads ?? Array.Empty<string>());
+        var flagged = new HashSet<string>((current.layout3D?.warnings ?? Array.Empty<City3DLayoutIssue>()).Select(w => w.id));
         Vector3 At(float x, float y) => new Vector3(area.x + x * area.width, area.y + y * area.height, 0);
         Handles.BeginGUI();
         try
@@ -109,12 +120,37 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                 Handles.color = new Color(.22f, .61f, .87f);
                 if (river.points.Length >= 2) Handles.DrawAAPolyLine(3f, river.points.Select(p => At(p.x, p.y)).ToArray());
             }
+            if (current.layout3D != null)
+            {
+                Handles.color = Color.cyan;
+                foreach (var river in current.layout3D.preparedRivers ?? Array.Empty<RiverDto>())
+                    for (int i = 1; i < river.points.Length; i++)
+                    {
+                        Vector2 a = new Vector2(river.points[i - 1].x, river.points[i - 1].y);
+                        Vector2 b = new Vector2(river.points[i].x, river.points[i].y);
+                        if (ClipToMap(ref a, ref b)) Handles.DrawAAPolyLine(2f, At(a.x, a.y), At(b.x, b.y));
+                    }
+            }
             foreach (var road in current.roads ?? Array.Empty<RoadDto>())
             {
                 if (!locations.TryGetValue(road.from, out var a) || !locations.TryGetValue(road.to, out var b)) continue;
                 Handles.color = string.Equals(road.resource, "Steel", StringComparison.OrdinalIgnoreCase) ?
                     new Color(.9f, .7f, .28f) : publicRoads.Contains(road.id) ? Color.white : Color.gray;
-                Handles.DrawAAPolyLine(1.5f, At(a.x, a.y), At(b.x, b.y));
+                if (flagged.Contains(road.id)) Handles.color = new Color(1f, .5f, .1f);
+                Handles.DrawAAPolyLine(flagged.Contains(road.id) ? 3f : 1.5f, At(a.x, a.y), At(b.x, b.y));
+            }
+            if (current.layout3D != null)
+            {
+                foreach (var hub in current.layout3D.hubFootprints ?? Array.Empty<City3DHubFootprint>())
+                {
+                    Handles.color = flagged.Contains(hub.id) ? new Color(1f, .5f, .1f) : new Color(.95f, .65f, .25f);
+                    for (int i = 0; i < hub.corners.Length; i++)
+                    {
+                        var p = hub.corners[i]; var q = hub.corners[(i + 1) % hub.corners.Length];
+                        Vector2 a = new Vector2(p.x, p.y), b = new Vector2(q.x, q.y);
+                        if (ClipToMap(ref a, ref b)) Handles.DrawAAPolyLine(2f, At(a.x, a.y), At(b.x, b.y));
+                    }
+                }
             }
         }
         finally { Handles.EndGUI(); }
@@ -123,7 +159,27 @@ public sealed class CityGeneratorLabWindow : EditorWindow
             var p = At(point.x, point.y);
             float size = hubs.Contains(point.id) ? 7 : 4;
             EditorGUI.DrawRect(new Rect(p.x - size / 2, p.y - size / 2, size, size),
-                hubs.Contains(point.id) ? new Color(.95f, .4f, .3f) : Color.white);
+                flagged.Contains(point.id) ? new Color(1f, .5f, .1f) : hubs.Contains(point.id) ? new Color(.95f, .4f, .3f) : Color.white);
         }
     }
+
+    // Clip horizon extensions and off-board footprints without bending them.
+    static bool ClipToMap(ref Vector2 a, ref Vector2 b)
+    {
+        var start = a; var delta = b - a;
+        float lo = 0f, hi = 1f;
+        bool Bound(float p, float q)
+        {
+            if (Mathf.Abs(p) < 1e-9f) return q >= 0f;
+            float t = q / p;
+            if (p < 0f) lo = Mathf.Max(lo, t); else hi = Mathf.Min(hi, t);
+            return lo <= hi;
+        }
+        if (!Bound(-delta.x, start.x) || !Bound(delta.x, 1f - start.x) ||
+            !Bound(-delta.y, start.y) || !Bound(delta.y, 1f - start.y)) return false;
+        a = start + delta * lo;
+        b = start + delta * hi;
+        return true;
+    }
+
 }

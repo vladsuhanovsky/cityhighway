@@ -13,11 +13,11 @@ Status: proposed product/engineering roadmap, agreed starting point for the stab
 Batch 1, merged PR #134 (1b7c1b6): optional ring fix; geometry preflight; save/replay compatibility audit and version guard; 64-seed stress range plus determinism; reproducible diagnostics and City Generator Lab foundation; localization classifier and HUD audit; isolated Play Mode smoke and CI. Final HEAD 2e6f347: 1,341 Edit Mode tests and 2 Play Mode tests passed; localization audit passed (56 unresolved heuristic candidates). Manual Lab and visual acceptance remain open.
 
 Next gates:
-- [ ] Repair any CI failures, especially new generator coverage. Preserve real failed seeds and regression cases. Capture 3D river/hub/road reproduction.
+- [ ] Batch 4: optional 3D XZ layout audit using renderer-prepared rivers, planned hub footprints, road water clearance and crosswalk envelopes. City Generator Lab overlay and JSON exports; four baseline seeds recorded by CI. Pending final HEAD CI and visual inspection. Promote verified issues to regression gates only after review.
 - [ ] Batch 2: non-destructive load failure, bounded Classic/campaign save I/O, previous snapshot backup and explicit Editor recovery, save-summary localization. PR #135 merged (5a193f8): 1,352 Edit Mode tests, 2 Play Mode tests, Interface Editor and main menu visual guard passed. Manual recovery smoke remains open. Historical golden fixtures, runtime recovery UX, Magnate persistence and map revision identity remain open (see SAVE_RECOVERY.md).
 - [ ] Full standalone boot/menu/game/return tests with isolated data; actual controller and Deck 1280x800.
 - [ ] Resolve real localization defects, review unresolved scanner candidates; RU/EN visual matrix and no clipped text.
-- [ ] Batch 3: split clock-only refresh from full HUD, add three profiler scopes, reuse score string, localize record/raid banner, add policy and runtime label tests. Pending CI and actual profiling; measure payment allocations and map repaint before further optimization.
+- [ ] Batch 3: split clock-only refresh from full HUD, add three profiler scopes, reuse score string, localize record/raid banner, add policy and runtime label tests. PR #136 merged (8fc9127): 1,377 Edit Mode tests, 3 Play Mode tests, Interface Editor and Social replay guard passed; shared license queue added. Actual profiling still pending; measure payment allocations and map repaint before further optimization.
 - [ ] Measure current comparable City3D cold/warm startup, frame P95/P99 and memory across repeated games. Existing performance suite; no speculative speed claims.
 
 ## Stage 7 — City Generator Lab and graphics (P1)

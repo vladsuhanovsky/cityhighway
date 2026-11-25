@@ -22,13 +22,14 @@ namespace CityHighways.Presentation
         public DistrictDto[] districts;
         public RiverDto[] rivers;
         public string[] hubs, publicRoads, issues;
+        public City3DLayoutReport layout3D;
         public bool Passed => generated && issues != null && issues.Length == 0;
     }
 
     /// <summary>Explicit developer diagnostic, never runs automatically during a match.</summary>
     public static class CitySeedDiagnostics
     {
-        public static CitySeedReport Run(int seed)
+        public static CitySeedReport Run(int seed, bool include3D = false)
         {
             var report = new CitySeedReport { requestedSeed = seed, unityVersion = Application.unityVersion,
                 utc = DateTime.UtcNow.ToString("O") };
@@ -62,6 +63,11 @@ namespace CityHighways.Presentation
                     if (map.GetRoad(road) == null) errors.Add("invalid-public-road:" + road);
                 if (city.Hubs.Count == 0) errors.Add("no-hubs");
                 if (!Connected(map)) errors.Add("disconnected-map");
+                if (include3D)
+                {
+                    report.schema = 2;
+                    report.layout3D = City3DLayoutAudit.Capture(map, city.Hubs.Select(h => h.LocationId));
+                }
             }
             catch (Exception ex)
             {

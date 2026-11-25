@@ -27,6 +27,10 @@ namespace CityHighways.Presentation
         const string ResourceFolder = "CityHighways/City3D/";
         /// <summary>Высота воды и набережных (метры сцены). Дороги интерфейса лежат на высоте 0.</summary>
         const float WaterLevel = 0.004f, BankHeight = 0.03f, RiverWidth = 0.26f, BankWidth = 0.025f;
+        public const float RiverWaterHalfWidth = RiverWidth / 2f;
+        public const float RiverBankHalfWidth = RiverWaterHalfWidth + BankWidth;
+        public const float CrosswalkNear = BoardLayout.JunctionArm - 0.036f;
+        public const float CrosswalkFar = BoardLayout.JunctionArm - 0.014f;
         const float DeckTop = 0.05f;
         /// <summary>Декали лежат чуть выше земли (0) и ниже воды (WaterLevel).</summary>
         const float DecalHeight = 0.002f;
@@ -662,13 +666,23 @@ namespace CityHighways.Presentation
         /// Сглаженные русла (до рельефа: высота 0). Конец у края карты уходит за доску до горизонта (окрестности —
         /// 30 м), а конец внутри карты (приток впадает в другую реку) — продлевается чуть-чуть, чтобы вода слилась.
         /// </summary>
-        void PrepareRiverLines()
+        void PrepareRiverLines() => PrepareRiverLines(_map, _riverLines, _riverIsTributary);
+
+        /// <summary>Same XZ centerlines used by the scene; no mesh or scene objects created.</summary>
+        public static List<List<Vector3>> PreparedRiverLines(CityMap map)
         {
-            _riverLines.Clear();
-            _riverIsTributary.Clear();
+            var lines = new List<List<Vector3>>();
+            PrepareRiverLines(map, lines, new List<bool>());
+            return lines;
+        }
+
+        static void PrepareRiverLines(CityMap map, List<List<Vector3>> lines, List<bool> tributaries)
+        {
+            lines.Clear();
+            tributaries.Clear();
             float half = RiverWidth / 2f;
             var inner = new List<(bool start, bool end)>();
-            foreach (var line in _map.Rivers)
+            foreach (var line in map.Rivers)
             {
                 if (line.Count < 2) continue;
                 // Generated Magnate rivers contain the actual Catmull-Rom
@@ -680,7 +694,7 @@ namespace CityHighways.Presentation
                 bool preSmoothed = CityRiverPolyline.IsAlreadySmoothed(line);
                 float minStep = preSmoothed ? 0.00001f : MinRiverStep;
                 var raw = new List<Vector3>();
-                foreach (var point in line.Select(p => BoardLayout.World(p.X, p.Y)))
+                foreach (var point in line.Select(p => new Vector3((p.X - 0.5f) * BoardLayout.WorldWidth, 0f, (0.5f - p.Y) * BoardLayout.WorldDepth)))
                     if (raw.Count == 0 || Flat(point - raw[raw.Count - 1]) > minStep) raw.Add(point);
                     else raw[raw.Count - 1] = point;
                 if (raw.Count < 2) continue;
@@ -694,26 +708,26 @@ namespace CityHighways.Presentation
                 var endDir = FlatDir(raw[raw.Count - 1] - raw[raw.Count - 2]);
                 smooth.Insert(0, smooth[0] + startDir * (startAtEdge ? 30f : half * 0.6f));
                 smooth.Add(smooth[smooth.Count - 1] + endDir * (endAtEdge ? 30f : half * 0.6f));
-                _riverLines.Add(smooth);
+                lines.Add(smooth);
                 inner.Add((!startAtEdge, !endAtEdge));
             }
 
             // Стык: приток доходил до середины главной реки и ещё дальше — почти до противоположного берега, и тот
             // берег вокруг устья вырезался. Теперь внутренний конец обрезается в воде главной реки, на JoinDepth от её
             // середины: устье открыто, дальний берег цел, конец притока спрятан под водой главной (она выше).
-            var originals = _riverLines.Select(l => new List<Vector3>(l)).ToList();
-            for (int r = 0; r < _riverLines.Count; r++)
+            var originals = lines.Select(l => new List<Vector3>(l)).ToList();
+            for (int r = 0; r < lines.Count; r++)
             {
-                if (inner[r].end) _riverLines[r] = TrimAtJoin(_riverLines[r], r, originals, half * JoinDepth);
+                if (inner[r].end) lines[r] = TrimAtJoin(lines[r], r, originals, half * JoinDepth);
                 if (inner[r].start)
                 {
-                    var reversed = new List<Vector3>(_riverLines[r]);
+                    var reversed = new List<Vector3>(lines[r]);
                     reversed.Reverse();
                     reversed = TrimAtJoin(reversed, r, originals, half * JoinDepth);
                     reversed.Reverse();
-                    _riverLines[r] = reversed;
+                    lines[r] = reversed;
                 }
-                _riverIsTributary.Add(inner[r].start || inner[r].end);
+                tributaries.Add(inner[r].start || inner[r].end);
             }
         }
 
@@ -1741,7 +1755,7 @@ namespace CityHighways.Presentation
                         W(center + n * half + d * arm, JunctionTop), W(center - n * half + d * arm, JunctionTop), asphalt);
                     const int stripes = 5;
                     float stripe = RoadWidth / (stripes * 2f - 1f);
-                    float near = arm - 0.036f, far = arm - 0.014f, y = JunctionTop + 0.0004f;
+                    float near = CrosswalkNear, far = CrosswalkFar, y = JunctionTop + 0.0004f;
                     for (int k = 0; k < stripes; k++)
                     {
                         float x0 = -half + stripe * 2f * k, x1 = x0 + stripe;
