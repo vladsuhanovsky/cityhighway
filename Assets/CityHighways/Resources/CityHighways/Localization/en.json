@@ -14,7 +14,7 @@
     },
     {
       "key": "menu.home.quick_start",
-      "value": "Quick Start"
+      "value": "Play Now"
     },
     {
       "key": "menu.home.tutorial",
@@ -34,7 +34,7 @@
     },
     {
       "key": "menu.home.stats",
-      "value": "Game Statistics"
+      "value": "Statistics"
     },
     {
       "key": "menu.home.clubs",
@@ -46,7 +46,7 @@
     },
     {
       "key": "menu.home.language_switch",
-      "value": "Language: English / Switch to Russian"
+      "value": "Language: EN → RU"
     },
     {
       "key": "menu.new_game.title",
@@ -1446,7 +1446,7 @@
     },
     {
       "key": "menu.stats.002",
-      "value": "Game Statistics"
+      "value": "Statistics"
     },
     {
       "key": "menu.stats.003",
