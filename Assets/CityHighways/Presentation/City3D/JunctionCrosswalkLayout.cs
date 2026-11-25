@@ -14,6 +14,7 @@ namespace CityHighways.Presentation
             List<Vector2> result, List<int> scratch, List<int> best)
         {
             result.Clear();
+            scratch.Clear();
             best.Clear();
             for (int start = 0; start < directions.Count; start++)
             {

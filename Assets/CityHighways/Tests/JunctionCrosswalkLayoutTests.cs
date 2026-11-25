@@ -69,6 +69,7 @@ namespace CityHighways.Tests
             JunctionCrosswalkLayout.Select(new List<Vector2>(), .055f, .114f, .136f, result, scratch, best);
             Assert.IsEmpty(result);
             Assert.IsEmpty(best);
+            Assert.IsEmpty(scratch);
         }
 
         [Test]
