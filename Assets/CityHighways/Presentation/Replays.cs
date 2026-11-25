@@ -124,7 +124,12 @@ namespace CityHighways.Presentation
             // index, reconstruct the missing entry on the next startup.
             try
             {
-                if (RecoverOrphans(_index) > 0 || repaired) SaveIndex(_index);
+                int recovered = RecoverOrphans(_index);
+                var removed = Prune(_index);
+                if (recovered > 0 || repaired || removed.Count > 0)
+                {
+                    if (SaveIndex(_index)) DeletePruned(removed);
+                }
             }
             catch (Exception e)
             {
