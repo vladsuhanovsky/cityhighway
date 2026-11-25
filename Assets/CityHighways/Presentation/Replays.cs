@@ -287,25 +287,101 @@ namespace CityHighways.Presentation
             }
         }
 
-        public static ReplayFile Unpack(string packed)
+        // Mirror server-side social/report-validator.mjs limits so a gzip
+        // bomb returned from a compromised or stale endpoint cannot allocate
+        // unbounded memory in the Unity client.
+        public const int MaxCloudReplayBase64 = 700 * 1024;
+        public const int MaxCloudReplayJsonBytes = 4 * 1024 * 1024;
+        public const int MaxCloudReplayActions = 20000;
+
+        static bool ValidReplayBase64(string encoded)
         {
-            if (string.IsNullOrEmpty(packed)) return null;
+            if (string.IsNullOrEmpty(encoded) || encoded.Length > MaxCloudReplayBase64 ||
+                encoded.Length % 4 != 0) return false;
+
+            int paddingAt = encoded.Length;
+            for (int i = 0; i < encoded.Length; i++)
+            {
+                char c = encoded[i];
+                if (c == '=')
+                {
+                    if (paddingAt == encoded.Length) paddingAt = i;
+                    if (i < encoded.Length - 2) return false;
+                }
+                else
+                {
+                    if (paddingAt != encoded.Length) return false;
+                    if ((c < 'A' || c > 'Z') && (c < 'a' || c > 'z') &&
+                        (c < '0' || c > '9') && c != '+' && c != '/')
+                        return false;
+                }
+            }
+            return encoded.Length - paddingAt <= 2;
+        }
+
+        static bool ValidCloudReplay(ReplayFile replay)
+        {
+            if (replay == null || replay.version != ReplayFile.CurrentVersion ||
+                (replay.mode != "classic" && replay.mode != "coop") ||
+                string.IsNullOrEmpty(replay.id) ||
+                string.IsNullOrEmpty(replay.mapPath) ||
+                replay.start == null || replay.start.players == null ||
+                replay.players == null || replay.scores == null || replay.humans == null ||
+                replay.players.Length < 1 || replay.players.Length > 8 ||
+                replay.players.Length != replay.scores.Length ||
+                replay.players.Length != replay.humans.Length ||
+                replay.players.Length != replay.start.players.Length ||
+                replay.authorSeat < 0 || replay.authorSeat >= replay.players.Length ||
+                !replay.humans[replay.authorSeat] ||
+                replay.scores[replay.authorSeat] != replay.authorScore ||
+                replay.history == null || replay.history.Length == 0 ||
+                replay.history.Length > MaxCloudReplayActions ||
+                replay.turns < 0 || replay.turns > 1000000)
+                return false;
+
+            foreach (var command in replay.history)
+                if (command == null || string.IsNullOrEmpty(command.kind) ||
+                    command.player < -1 || command.player >= replay.players.Length)
+                    return false;
+            return true;
+        }
+
+        /// <summary>
+        /// Bounded cloud replay decode. The max decompressed *byte count* is
+        /// enforced while reading the gzip stream, before JSON allocation.
+        /// </summary>
+        public static ReplayFile UnpackCloud(string packed)
+        {
+            if (!ValidReplayBase64(packed)) return null;
             try
             {
                 var bytes = Convert.FromBase64String(packed);
+                if (bytes.Length > MaxCloudReplayBase64) return null;
                 using (var input = new MemoryStream(bytes))
                 using (var gzip = new GZipStream(input, CompressionMode.Decompress))
-                using (var reader = new StreamReader(gzip, Encoding.UTF8))
+                using (var output = new MemoryStream())
                 {
-                    var replay = JsonUtility.FromJson<ReplayFile>(reader.ReadToEnd());
-                    return replay?.start != null ? replay : null;
+                    var buffer = new byte[8192];
+                    int received;
+                    while ((received = gzip.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        if (output.Length > MaxCloudReplayJsonBytes - received)
+                            return null;
+                        output.Write(buffer, 0, received);
+                    }
+                    string json = new UTF8Encoding(false, true).GetString(output.ToArray());
+                    var replay = JsonUtility.FromJson<ReplayFile>(json);
+                    return ValidCloudReplay(replay) ? replay : null;
                 }
             }
             catch (Exception e)
             {
-                Debug.LogWarning("Не удалось распаковать повтор: " + e.Message);
+                Debug.LogWarning("Не удалось распаковать облачный повтор: " + e.Message);
                 return null;
             }
         }
+
+        /// <summary>Legacy callers also use the bounded decoder.</summary>
+        public static ReplayFile Unpack(string packed) => UnpackCloud(packed);
     }
 }
