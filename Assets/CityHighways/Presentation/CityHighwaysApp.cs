@@ -37,6 +37,7 @@ namespace CityHighways.Presentation
 
         /// <summary>Текущая сетевая сессия (лобби или партия); null — сети нет.</summary>
         public NetSession Net { get; private set; }
+        public ReconnectCredentialCache ReconnectCredentials { get; } = new ReconnectCredentialCache();
 
         IEnumerator Start()
         {

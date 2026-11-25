@@ -54,6 +54,8 @@ namespace CityHighways.Net
         public string type;
         public int version;
         public string name;
+        // Private hello credential; never include it in NetSeat or broadcast messages.
+        public string reconnectKey;
         public int seat = -1;
         public int from;
         public GameCommand[] commands;
@@ -75,7 +77,7 @@ namespace CityHighways.Net
     public static class NetCodec
     {
         /// <summary>Меняется при любой несовместимой правке протокола или правил: разные версии не играют вместе.</summary>
-        public const int ProtocolVersion = 8; // 2 — влияние, 3 — аукцион мэрии, 4 — взятки, 5 — профили, 6 — персонаж, 7 — пробки и пропуска, 8 — сценарии и выбор компании
+        public const int ProtocolVersion = 9; // 9 — private reconnect credential instead of nickname recovery
 
         public static byte[] Encode(NetMessage message) => Encoding.UTF8.GetBytes(JsonUtility.ToJson(message));
 

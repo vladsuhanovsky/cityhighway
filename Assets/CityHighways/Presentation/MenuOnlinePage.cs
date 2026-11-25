@@ -233,10 +233,19 @@ namespace CityHighways.Presentation
 
         void HostLan() => Open(new HostSession(TcpTransport.Host(), CityHighwaysApp.LoadMap, PlayerName), LocalizationService.Get("menu.online.026"));
 
+        ClientSession ClientFor(INetTransport transport, string destination)
+        {
+            var profile = Profiles.Active;
+            var steam = NetPlatforms.Steam;
+            string account = steam != null && steam.Available ? steam.SteamId : "";
+            string key = _app.ReconnectCredentials.For(profile, account, destination);
+            return new ClientSession(transport, CityHighwaysApp.LoadMap, PlayerName, reconnectKey: key);
+        }
+
         void JoinLan()
         {
             PlayerPrefs.SetString(AddressKey, _addressField.value);
-            Open(new ClientSession(TcpTransport.Connect(_addressField.value), CityHighwaysApp.LoadMap, PlayerName), LocalizationService.Get("menu.online.027"));
+            Open(ClientFor(TcpTransport.Connect(_addressField.value), "lan:" + (_addressField.value ?? "").Trim().ToLowerInvariant()), LocalizationService.Get("menu.online.027"));
         }
 
         void HostUgs()
@@ -263,7 +272,7 @@ namespace CityHighways.Presentation
                 ShowConnect(LocalizationService.Get("menu.online.028"));
                 return;
             }
-            Open(new ClientSession(transport, CityHighwaysApp.LoadMap, PlayerName), LocalizationService.Get("menu.online.031"));
+            Open(ClientFor(transport, (byCode ? "ugs-code:" : "ugs-id:") + (codeOrId ?? "").Trim()), LocalizationService.Get("menu.online.031"));
         }
 
         void RefreshOpenLobbies()
@@ -320,7 +329,7 @@ namespace CityHighways.Presentation
                 ShowConnect(LocalizationService.Get("menu.online.036"));
                 return;
             }
-            Open(new ClientSession(transport, CityHighwaysApp.LoadMap, PlayerName), LocalizationService.Get("menu.online.038"));
+            Open(ClientFor(transport, "steam:" + lobby), LocalizationService.Get("menu.online.038"));
         }
 
         void Open(NetSession session, string status)

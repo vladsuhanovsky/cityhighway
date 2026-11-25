@@ -109,6 +109,8 @@ namespace CityHighways.Net
     public sealed class HostSession : NetSession
     {
         int _sent;
+        // Host-only credentials keyed by the seat object, unaffected by lobby reindexing.
+        readonly Dictionary<NetSeat, string> _reconnectKeys = new Dictionary<NetSeat, string>();
 
         public HostSession(INetTransport transport, Func<string, CityMap> loadMap, string hostName) : base(transport, loadMap)
         {
@@ -129,7 +131,7 @@ namespace CityHighways.Net
         {
             string key = peer.ToString();
             for (int i = 0; i < Seats.Count; i++)
-                if (Seats[i].peer == key && !Seats[i].isBot) return i;
+                if (Seats[i].peer == key && Seats[i].connected && !Seats[i].isBot) return i;
             return -1;
         }
 
@@ -151,6 +153,7 @@ namespace CityHighways.Net
             if (IsClosed || InGame || seat <= 0 || seat >= Seats.Count) return;
             var removed = Seats[seat];
             Seats.RemoveAt(seat);
+            _reconnectKeys.Remove(removed);
             if (!removed.isBot && removed.PeerId != 0)
                 Send(removed.PeerId, new NetMessage { type = NetMessage.Bye, text = "Хост убрал вас из лобби." });
             BroadcastLobby();
@@ -261,6 +264,7 @@ namespace CityHighways.Net
             if (seat < 0) return;
             if (!InGame)
             {
+                _reconnectKeys.Remove(Seats[seat]);
                 Seats.RemoveAt(seat);
                 BroadcastLobby();
                 return;
@@ -299,16 +303,25 @@ namespace CityHighways.Net
                 Send(peer, new NetMessage { type = NetMessage.Reject, text = "Разные версии игры: обновите City Highways у всех игроков." });
                 return;
             }
+            if (peer == 0 || peer == Transport.LocalId) return;
+            if (SeatOf(peer) >= 0) return;
+            if (!ReconnectCredentialCache.IsValid(message.reconnectKey))
+            {
+                Send(peer, new NetMessage { type = NetMessage.Reject, text = "Не удалось подтвердить ключ подключения." });
+                return;
+            }
             string name = Clean(message.name, "Игрок");
             string key = peer.ToString();
 
             if (InGame)
             {
-                // Вернуться можно на своё место (по сетевому id или по имени), пока за него играет бот.
-                int back = Seats.FindIndex(s => !s.connected && (s.peer == key || s.name == name));
+                // Peer IDs may change on reconnect; names are not credentials.
+                int back = Seats.FindIndex(s => !s.connected && s.isBot &&
+                    _reconnectKeys.TryGetValue(s, out var credential) &&
+                    string.Equals(credential, message.reconnectKey, StringComparison.Ordinal));
                 if (back < 0)
                 {
-                    Send(peer, new NetMessage { type = NetMessage.Reject, text = "Партия уже идёт." });
+                    Send(peer, new NetMessage { type = NetMessage.Reject, text = "Партия уже идёт. Не найдено ваше отключённое место." });
                     return;
                 }
                 Seats[back].peer = key;
@@ -321,11 +334,15 @@ namespace CityHighways.Net
                 Seats[back].clubLogo = message.clubLogo ?? Seats[back].clubLogo;
                 Seats[back].isBot = false;
                 Send(peer, StartMessage(back));
-                RaiseNotice($"{name} вернулся в партию.");
+                RaiseNotice($"{Seats[back].name} вернулся в партию.");
                 BroadcastSeats();
                 return;
             }
-            if (SeatOf(peer) >= 0) return;
+            if (_reconnectKeys.Values.Contains(message.reconnectKey))
+            {
+                Send(peer, new NetMessage { type = NetMessage.Reject, text = "Это место уже занято." });
+                return;
+            }
             if (Seats.Count >= MaxSeats)
             {
                 Send(peer, new NetMessage { type = NetMessage.Reject, text = "За столом уже нет мест." });
@@ -334,11 +351,13 @@ namespace CityHighways.Net
             // Одинаковые имена путают — добавляем номер.
             string unique = name;
             for (int n = 2; Seats.Any(s => s.name == unique); n++) unique = Clean(name, "Игрок") + " " + n;
-            Seats.Add(new NetSeat
+            var joined = new NetSeat
             {
                 name = unique, peer = key, emblem = message.emblem ?? "", title = message.title ?? "", frame = message.frame ?? "", outfit = message.outfit ?? "",
                 clubTag = message.clubTag ?? "", clubLogo = message.clubLogo ?? ""
-            });
+            };
+            _reconnectKeys.Add(joined, message.reconnectKey);
+            Seats.Add(joined);
             BroadcastLobby();
         }
 
@@ -387,14 +406,16 @@ namespace CityHighways.Net
     public sealed class ClientSession : NetSession
     {
         readonly string _name;
+        readonly string _reconnectKey;
         bool _helloSent;
         readonly Func<double> _now;
         readonly ClientRecovery _recovery = new ClientRecovery();
 
         public ClientSession(INetTransport transport, Func<string, CityMap> loadMap, string name,
-            Func<double> now = null) : base(transport, loadMap)
+            Func<double> now = null, string reconnectKey = null) : base(transport, loadMap)
         {
             _name = name;
+            _reconnectKey = ReconnectCredentialCache.IsValid(reconnectKey) ? reconnectKey : ReconnectCredentialCache.NewKey();
             _now = now ?? (() => (double)System.Diagnostics.Stopwatch.GetTimestamp() /
                 System.Diagnostics.Stopwatch.Frequency);
             Transport.Ready += SendHello;
@@ -416,6 +437,7 @@ namespace CityHighways.Net
             Send(Transport.HostId, new NetMessage
             {
                 type = NetMessage.Hello, version = NetCodec.ProtocolVersion, name = _name,
+                reconnectKey = _reconnectKey,
                 emblem = Emblem, title = Title, frame = Frame, outfit = Outfit, clubTag = ClubTag, clubLogo = ClubLogo
             });
         }

@@ -139,7 +139,8 @@ namespace CityHighways.Tests
         {
             var hub = new LoopbackHub();
             var host = new HostSession(hub.CreateHost(), LoadSmall, "Хост");
-            var client = new ClientSession(hub.Connect(), LoadSmall, "Клиент");
+            string key = ReconnectCredentialCache.NewKey();
+            var client = new ClientSession(hub.Connect(), LoadSmall, "Клиент", reconnectKey: key);
             Pump(new NetSession[] { host, client });
             host.StartGame(Start(host, 9), "small", 0);
             Pump(new NetSession[] { host, client });
@@ -149,18 +150,128 @@ namespace CityHighways.Tests
             Assert.IsTrue(host.Seats[1].isBot);
             Assert.IsFalse(host.Seats[1].connected);
 
-            // Хост доигрывает пару ходов, затем игрок возвращается под тем же именем.
+            // Хост доигрывает пару ходов, затем игрок возвращается с ключом места.
             var bots = new IBot[] { new SmartBot(1), new SmartBot(2) };
             for (int i = 0; i < 6; i++)
                 Assert.IsTrue(host.Perform(g => bots[g.ActingPlayerIndex].Act(g)).Success);
             Pump(new NetSession[] { host });
 
-            var back = new ClientSession(hub.Connect(), LoadSmall, "Клиент");
+            var back = new ClientSession(hub.Connect(), LoadSmall, "Новое имя", reconnectKey: key);
             Pump(new NetSession[] { host, back });
             Assert.IsTrue(back.InGame);
             Assert.AreEqual(1, back.LocalSeat);
             Assert.IsFalse(host.Seats[1].isBot, "Место снова у человека");
             Assert.AreEqual(Json(host.Game), Json(back.Game));
+        }
+
+        [Test]
+        public void SameNicknameCannotTakeDisconnectedSeat()
+        {
+            var hub = new LoopbackHub();
+            var host = new HostSession(hub.CreateHost(), LoadSmall, "Host");
+            string key = ReconnectCredentialCache.NewKey();
+            var original = new ClientSession(hub.Connect(), LoadSmall, "Client", reconnectKey: key);
+            Pump(new NetSession[] { host, original });
+            host.StartGame(Start(host, 9), "small", 0);
+            Pump(new NetSession[] { host, original });
+            original.Transport.Dispose();
+            Pump(new NetSession[] { host });
+            var stranger = new ClientSession(hub.Connect(), LoadSmall, "Client");
+            Pump(new NetSession[] { host, stranger });
+            Assert.IsTrue(stranger.IsClosed);
+            Assert.IsFalse(stranger.InGame);
+            Assert.IsTrue(host.Seats[1].isBot);
+            var back = new ClientSession(hub.Connect(), LoadSmall, "Client", reconnectKey: key);
+            Pump(new NetSession[] { host, back });
+            Assert.IsTrue(back.InGame);
+            Assert.AreEqual(1, back.LocalSeat);
+            Assert.IsFalse(host.Seats[1].isBot);
+        }
+
+        [Test]
+        public void ReconnectKeyCannotClaimTwoLiveSeats()
+        {
+            var hub = new LoopbackHub();
+            var host = new HostSession(hub.CreateHost(), LoadSmall, "Host");
+            string key = ReconnectCredentialCache.NewKey();
+            var first = new ClientSession(hub.Connect(), LoadSmall, "First", reconnectKey: key);
+            Pump(new NetSession[] { host, first });
+            var duplicate = new ClientSession(hub.Connect(), LoadSmall, "Second", reconnectKey: key);
+            Pump(new NetSession[] { host, first, duplicate });
+            Assert.IsTrue(duplicate.IsClosed);
+            Assert.AreEqual(2, host.Seats.Count);
+            Assert.IsFalse(first.IsClosed);
+            host.StartGame(Start(host, 9), "small", 0);
+            Pump(new NetSession[] { host, first });
+            var activeClaim = new ClientSession(hub.Connect(), LoadSmall, "Second", reconnectKey: key);
+            Pump(new NetSession[] { host, first, activeClaim });
+            Assert.IsTrue(activeClaim.IsClosed);
+            Assert.IsTrue(first.InGame);
+            Assert.IsTrue(host.Seats[1].connected);
+        }
+
+        [Test]
+        public void DuplicateNamesReconnectToTheirOwnSeatsAndKeysAreNotBroadcast()
+        {
+            var hub = new LoopbackHub();
+            var host = new HostSession(hub.CreateHost(), LoadSmall, "Host");
+            string firstKey = ReconnectCredentialCache.NewKey(), secondKey = ReconnectCredentialCache.NewKey();
+            var first = new ClientSession(hub.Connect(), LoadSmall, "Same", reconnectKey: firstKey);
+            var second = new ClientSession(hub.Connect(), LoadSmall, "Same", reconnectKey: secondKey);
+            var all = new NetSession[] { host, first, second };
+            var observed = new List<string>();
+            first.Transport.Received += (_, data) => observed.Add(System.Text.Encoding.UTF8.GetString(data));
+            Pump(all);
+            Assert.AreNotEqual(host.Seats[1].name, host.Seats[2].name);
+            host.StartGame(Start(host, 9), "small", 0);
+            Pump(all);
+            second.Transport.Dispose();
+            Pump(new NetSession[] { host, first });
+            var back = new ClientSession(hub.Connect(), LoadSmall, "Same", reconnectKey: secondKey);
+            Pump(new NetSession[] { host, first, back });
+            Assert.AreEqual(2, back.LocalSeat);
+            Assert.IsTrue(first.InGame);
+            Assert.AreEqual(Json(host.Game), Json(back.Game));
+            Assert.IsNotEmpty(observed);
+            Assert.IsFalse(observed.Any(x => x.Contains(firstKey) || x.Contains(secondKey)));
+        }
+
+        [Test]
+        public void KickedLobbySeatDoesNotReserveCredential()
+        {
+            var hub = new LoopbackHub();
+            var host = new HostSession(hub.CreateHost(), LoadSmall, "Host");
+            string key = ReconnectCredentialCache.NewKey();
+            var client = new ClientSession(hub.Connect(), LoadSmall, "Client", reconnectKey: key);
+            Pump(new NetSession[] { host, client });
+            host.RemoveSeat(1);
+            Pump(new NetSession[] { host, client });
+            Assert.IsTrue(client.IsClosed);
+            var fresh = new ClientSession(hub.Connect(), LoadSmall, "Client", reconnectKey: key);
+            Pump(new NetSession[] { host, fresh });
+            Assert.IsTrue(fresh.Joined);
+            Assert.AreEqual(2, host.Seats.Count);
+        }
+
+        [Test]
+        public void InvalidHelloAndOldProtocolAreRejectedWithoutCreatingSeat()
+        {
+            var hub = new LoopbackHub();
+            var host = new HostSession(hub.CreateHost(), LoadSmall, "Host");
+            var raw = hub.Connect();
+            string rejection = null;
+            raw.Received += (_, data) => { var packet = NetCodec.Decode(data); if (packet.type == NetMessage.Reject) rejection = packet.text; };
+            raw.Send(raw.HostId, NetCodec.Encode(new NetMessage { type = NetMessage.Hello, version = NetCodec.ProtocolVersion, name = "Client" }));
+            host.Poll();
+            raw.Poll();
+            Assert.IsNotNull(rejection);
+            Assert.AreEqual(1, host.Seats.Count);
+            rejection = null;
+            raw.Send(raw.HostId, NetCodec.Encode(new NetMessage { type = NetMessage.Hello, version = NetCodec.ProtocolVersion - 1, reconnectKey = ReconnectCredentialCache.NewKey() }));
+            host.Poll();
+            raw.Poll();
+            Assert.IsNotNull(rejection);
+            Assert.AreEqual(1, host.Seats.Count);
         }
 
         [Test]
