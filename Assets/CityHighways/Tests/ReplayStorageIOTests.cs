@@ -119,6 +119,31 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void Utf8SizeGuardAcceptsExactByteLimit()
+        {
+            Assert.DoesNotThrow(() => ReplayStorageIO.RequireUtf8Size("hello", 5));
+            Assert.DoesNotThrow(() => ReplayStorageIO.RequireUtf8Size("дом", 6));
+        }
+
+        [Test]
+        public void Utf8SizeGuardRejectsMultibyteOverflow()
+        {
+            Assert.Throws<InvalidDataException>(() =>
+                ReplayStorageIO.RequireUtf8Size("дом", 5));
+            Assert.Throws<InvalidDataException>(() =>
+                ReplayStorageIO.RequireUtf8Size("hello", 4));
+        }
+
+        [Test]
+        public void Utf8SizeGuardRejectsNullAndInvalidLimit()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+                ReplayStorageIO.RequireUtf8Size(null, 100));
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ReplayStorageIO.RequireUtf8Size("", 0));
+        }
+
+        [Test]
         public void BoundedReadRejectsFileOverLimit()
         {
             string folder = TempFolder();
