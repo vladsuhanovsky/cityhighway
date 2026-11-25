@@ -253,13 +253,14 @@ namespace CityHighways.Presentation
                 ReplayStorageIO.WriteAtomic(FileOf(replay.id), payload);
                 next.entries.RemoveAll(e => e.id == replay.id);
                 next.entries.Add(EntryOf(replay));
-                var removed = Prune(next);
-                bool retained = next.entries.Any(e => e.id == replay.id);
+                var transaction = new ReplayIndexTransaction(next.entries, Keep);
+                bool retained = transaction.Contains(replay.id);
                 // On index failure the file is an orphan, recoverable at the
                 // next startup; old metadata and pruned files remain intact.
-                if (!SaveIndex(next)) return false;
-                _index = next;
-                DeletePruned(removed);
+                if (!transaction.Commit(
+                    entries => SaveIndex(new Index { entries = entries }),
+                    ids => DeletePruned(ids))) return false;
+                _index = new Index { entries = transaction.Entries };
                 return retained;
             }
             catch (Exception e)
