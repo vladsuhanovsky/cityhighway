@@ -152,7 +152,7 @@ namespace CityHighways.Presentation
             // Поиск: значок лупы и поле.
             var searchBox = Ui.Row();
             searchBox.style.alignItems = Align.Center;
-            searchBox.style.width = 560f;
+            searchBox.style.width = InterfaceLayout.RulesSearchWidth;
             searchBox.style.minHeight = 42f;
             searchBox.style.backgroundColor = Theme.PanelLight;
             Ui.Radius(searchBox, 10f);
