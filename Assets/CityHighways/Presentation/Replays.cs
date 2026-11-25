@@ -249,9 +249,15 @@ namespace CityHighways.Presentation
         static void Prune(Index index)
         {
             if (index.entries.Count <= Keep) return;
+            // Keep the best for each author/map/mode, but cap the number of
+            // protected groups too. Otherwise >Keep unique groups made the
+            // documented storage limit impossible to enforce.
             var protectedIds = new HashSet<string>(index.entries
                 .GroupBy(e => (e.mode, e.mapPath, (e.author ?? "").ToLowerInvariant()))
-                .Select(g => g.OrderByDescending(e => e.authorScore).First().id));
+                .Select(g => g.OrderByDescending(e => e.authorScore)
+                    .ThenByDescending(e => e.date, StringComparer.Ordinal).First())
+                .OrderByDescending(e => e.date, StringComparer.Ordinal)
+                .Take(Keep).Select(e => e.id));
             foreach (var old in index.entries.OrderBy(e => e.date, StringComparer.Ordinal).ToList())
             {
                 if (index.entries.Count <= Keep) break;
