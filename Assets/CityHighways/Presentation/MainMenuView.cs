@@ -1073,7 +1073,7 @@ namespace CityHighways.Presentation
             characterHint = Ui.Text("", 12f, Theme.TextDim);
             characterHint.style.marginTop = 8f;
             characterHint.style.whiteSpace = WhiteSpace.Normal;
-            characterHint.style.maxWidth = 640f;
+            characterHint.style.maxWidth = InterfaceLayout.NewGameHelpMaxWidth;
             playersCard.Add(characterHint);
             cards.Add(playersCard);
 
