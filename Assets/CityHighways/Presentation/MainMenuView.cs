@@ -584,7 +584,9 @@ namespace CityHighways.Presentation
             Ui.Padding(_bellCount, 0f, 4f);
             bell.Add(_bellCount);
             right.Add(bell);
-            right.Add(TopIcon(MenuIcon.Glyph.Gear, () => ShowPage(Page.Settings)));
+            var gear = TopIcon(MenuIcon.Glyph.Gear, ToggleSettingsPopup);
+            gear.tooltip = LocalizationService.Get("menu.home.settings");
+            right.Add(gear);
             if (Application.platform != RuntimePlatform.WebGLPlayer)
             {
                 var quit = TopIcon(MenuIcon.Glyph.Close, ConfirmQuit);
@@ -592,6 +594,35 @@ namespace CityHighways.Presentation
                 right.Add(quit);
             }
             bar.Add(right);
+
+            // Settings and the language switch share one top-right popover.
+            // Do not duplicate service actions in the primary menu column.
+            _settingsPopup = Ui.Column();
+            _settingsPopup.pickingMode = PickingMode.Position;
+            _settingsPopup.style.position = Position.Absolute;
+            _settingsPopup.style.top = 52f;
+            _settingsPopup.style.right = Application.platform == RuntimePlatform.WebGLPlayer ? 4f : 54f;
+            _settingsPopup.style.width = 218f;
+            _settingsPopup.style.backgroundColor = Theme.Panel;
+            Ui.Radius(_settingsPopup, 12f);
+            Ui.Border(_settingsPopup, 1f, Theme.Line);
+            Ui.Padding(_settingsPopup, 8f, 8f);
+            Ui.Shadow(_settingsPopup, 14f);
+            var settingsAction = Ui.Button(LocalizationService.Get("menu.home.settings"), () =>
+            {
+                ToggleSettingsPopup();
+                ShowPage(Page.Settings);
+            }, ButtonKind.Secondary, 14f);
+            settingsAction.style.minHeight = 38f;
+            _settingsPopup.Add(settingsAction);
+            var languageAction = Ui.Button(LocalizationService.Get("menu.home.language_switch"),
+                SwitchMenuLanguage, ButtonKind.Secondary, 14f);
+            languageAction.style.minHeight = 38f;
+            languageAction.style.marginTop = 5f;
+            _settingsPopup.Add(languageAction);
+            Ui.Show(_settingsPopup, false);
+            bar.Add(_settingsPopup);
+
             RefreshLightButtons();
             return bar;
         }
