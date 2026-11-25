@@ -363,17 +363,12 @@ namespace CityHighways.Presentation
         readonly VisualElement _overlay;
         readonly VisualElement _tooltip;
         readonly Label _tooltipText;
-        readonly VisualElement _toastHolder;
-        readonly Label _toast;
-        int _toastVersion;
+        readonly GameFxNotifications _notifications;
         OverlayKind _overlayKind;
         int _overlayPlayer = -1;
 
         // Состояние экрана
         readonly List<string> _log = new List<string>();
-        string _flash;
-        string _flashPrefixKey;
-        float _flashUntil;
         string _renderedLanguage;
         int _revealedFor = -1;
         float _botTimer;
@@ -1065,23 +1060,7 @@ namespace CityHighways.Presentation
             Ui.Show(_tooltip, false);
             _fx.Add(_tooltip);
 
-            _toastHolder = Ui.Row();
-            _toastHolder.style.position = Position.Absolute;
-            _toastHolder.style.left = 0f;
-            _toastHolder.style.right = 0f;
-            _toastHolder.pickingMode = PickingMode.Ignore;
-            _toastHolder.style.top = TopBarHeight + 120f;
-            _toastHolder.style.justifyContent = Justify.Center;
-            _toast = Ui.Text("", 20f, Theme.Gold, true);
-            _toast.pickingMode = PickingMode.Ignore;
-            _toast.style.backgroundColor = new Color(0.08f, 0.09f, 0.11f, 0.92f);
-            _toast.style.whiteSpace = WhiteSpace.Normal;
-            _toast.style.unityTextAlign = TextAnchor.MiddleCenter;
-            Ui.Radius(_toast, 22f);
-            Ui.Padding(_toast, 10f, 24f);
-            _toastHolder.Add(_toast);
-            Ui.Show(_toastHolder, false);
-            _fx.Add(_toastHolder);
+            _notifications = new GameFxNotifications(_effects, _fx, _eventCard, _eventPill, () => Root.layout.width, TopBarHeight);
 
             _gamepadGuide = GamepadControlGuide.Create();
             _gamepadGuide.style.bottom = BottomBarHeight + 8f;
@@ -1236,8 +1215,6 @@ namespace CityHighways.Presentation
             _selectionKey = null;
             _selectedContracts.Clear();
             _pinnedContracts.Clear();
-            _flash = null;
-            _flashPrefixKey = null;
             HideOverlay();
             _snapshot = TakeSnapshot();
             _dirty = true;
@@ -1303,12 +1280,7 @@ namespace CityHighways.Presentation
             Sync3D(deltaTime);
             if (_game.Phase != GamePhase.GameOver) _playSeconds += deltaTime;
 
-            if (_flash != null && Time.time > _flashUntil)
-            {
-                _flash = null;
-                _flashPrefixKey = null;
-                _dirty = true;
-            }
+            if (_notifications.ExpireFlash(Time.time)) _dirty = true;
 
             string selectedControllerControl = null;
             if (_dirty)
@@ -2248,36 +2220,11 @@ namespace CityHighways.Presentation
         {
             _effects.Reset();
             _pendingStart = null;
-            ++_toastVersion;
-            ++_eventGlowVersion;
-            Ui.Show(_toastHolder, false);
+            _notifications.Reset();
             Ui.Show(_tooltip, false);
-            _eventCard.style.backgroundColor = Theme.PanelLight;
-            _eventPill.style.backgroundColor = Theme.PanelLight;
         }
 
-        void Toast(string text, Color color)
-        {
-            _toast.text = text;
-            _toast.style.color = color;
-            int version = ++_toastVersion;
-            bool reducedMotion = Ui.ReducedMotion;
-            _toastHolder.style.opacity = 0f;
-            _toastHolder.style.top = GameFxTuning.ToastTopAt(0f, reducedMotion)
-                + GameFxTuning.ToastVerticalOffset(Root.layout.width);
-            Ui.Show(_toastHolder, true);
-
-            _effects.Add(2.4f, k =>
-            {
-                if (version != _toastVersion) return;
-                _toastHolder.style.opacity = GameFxTuning.ToastOpacity(k);
-                _toastHolder.style.top = GameFxTuning.ToastTopAt(k, reducedMotion)
-                    + GameFxTuning.ToastVerticalOffset(Root.layout.width);
-            }, () =>
-            {
-                if (version == _toastVersion) Ui.Show(_toastHolder, false);
-            }, 0f, false);
-        }
+        void Toast(string text, Color color) => _notifications.Toast(text, color);
 
         public static Color LuckColor(bool buff) => buff ? Theme.Success : Theme.Danger;
 
@@ -2392,9 +2339,7 @@ namespace CityHighways.Presentation
         {
             // Keep the core error and optional prefix untranslated until rendering.
             // A language change must not leave a previously shown error in the old language.
-            _flash = message;
-            _flashPrefixKey = prefixKey;
-            _flashUntil = Time.time + 3.5f;
+            _notifications.Flash(message, prefixKey, Time.time);
             _app.Sound.Play(Sfx.Error, 0.7f);
             _dirty = true;
         }
@@ -2866,10 +2811,8 @@ namespace CityHighways.Presentation
             _finalRound.text = FinalText();
             _finalRound.style.color = _game.IsFinalRound ? Theme.Gold : Theme.TextDim;
             Ui.Show(_finalRound, _finalRound.text.Length > 0 && _game.Phase != GamePhase.GameOver);
-            _flashLabel.text = _flash == null ? "" :
-                (_flashPrefixKey == null ? "" : LocalizationService.Get(_flashPrefixKey)) +
-                LocalizationService.TranslateGameError(_flash);
-            Ui.Show(_flashLabel, _flash != null);
+            _flashLabel.text = _notifications.FlashText;
+            Ui.Show(_flashLabel, _notifications.HasFlash);
             Ui.Show(_passButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction && !_game.HasAnyLegalAction());
         }
 
@@ -3935,26 +3878,8 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Карточка события в панели мягко окрашивается цветом события и за пару секунд возвращается к обычной.</summary>
-        void GlowEventCard(Color color)
-        {
-            int version = ++_eventGlowVersion;
-            var start = new Color(color.r, color.g, color.b, 1f);
-            _effects.Add(2.0f, k =>
-            {
-                if (version != _eventGlowVersion) return;
-                float s = GameFxTuning.EventGlowStrength(k, Ui.ReducedMotion);
-                var glow = Color.Lerp(Theme.PanelLight, Color.Lerp(Theme.PanelLight, start, 0.28f), s);
-                _eventCard.style.backgroundColor = glow;
-                _eventPill.style.backgroundColor = Color.Lerp(Theme.PanelLight, Color.Lerp(Theme.PanelLight, start, 0.45f), s);
-            }, () =>
-            {
-                if (version != _eventGlowVersion) return;
-                _eventCard.style.backgroundColor = Theme.PanelLight;
-                _eventPill.style.backgroundColor = Theme.PanelLight;
-            }, 0f, false);
-        }
+        void GlowEventCard(Color color) => _notifications.GlowEventCard(color);
 
-        int _eventGlowVersion;
 
         /// <summary>Подписи вкладок, активная вкладка, точки «есть новое» на журнале и меню.</summary>
         void RefreshTabs()
@@ -4078,7 +4003,7 @@ namespace CityHighways.Presentation
             _logSheet.style.maxHeight = Mathf.Max(120f, Root.layout.height - TopBarHeight - BottomBarHeight - 12f);
             _statusBanner.style.maxWidth = GameFxTuning.SheetWidth(width, 760f);
             _statusBanner.style.top = width < 900f ? 58f : 12f;
-            _toast.style.maxWidth = GameFxTuning.ToastMaxWidth(width);
+            _notifications.AdaptWidth(width);
             _drawer.style.width = Mathf.Min(DrawerWidth, width * 0.9f);
         }
 
