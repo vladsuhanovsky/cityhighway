@@ -178,6 +178,19 @@ namespace CityHighways.Presentation
             return replay != null && Store(replay) ? replay.id : null;
         }
 
+        static Entry EntryOf(ReplayFile replay) => new Entry
+        {
+            id = replay.id,
+            date = replay.date,
+            mode = replay.mode,
+            map = replay.map,
+            mapPath = replay.mapPath,
+            author = replay.author,
+            authorScore = replay.authorScore,
+            won = replay.won,
+            actions = replay.Actions
+        };
+
         /// <summary>Положить повтор в хранилище (свой или скачанный).</summary>
         public static bool Store(ReplayFile replay)
         {
@@ -188,18 +201,7 @@ namespace CityHighways.Presentation
                 ReplayStorageIO.WriteAtomic(FileOf(replay.id), JsonUtility.ToJson(replay));
                 var index = Load();
                 index.entries.RemoveAll(e => e.id == replay.id);
-                index.entries.Add(new Entry
-                {
-                    id = replay.id,
-                    date = replay.date,
-                    mode = replay.mode,
-                    map = replay.map,
-                    mapPath = replay.mapPath,
-                    author = replay.author,
-                    authorScore = replay.authorScore,
-                    won = replay.won,
-                    actions = replay.Actions
-                });
+                index.entries.Add(EntryOf(replay));
                 Prune(index);
                 SaveIndex();
                 return true;
