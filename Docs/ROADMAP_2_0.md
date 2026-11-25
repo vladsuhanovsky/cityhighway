@@ -4,7 +4,7 @@ Status: proposed product/engineering roadmap, agreed starting point for the stab
 
 ## Working agreement
 
-- Large coherent batches, separate commits for completed work; one Draft PR at a time. User manually reports tests passed/failed. Verify all required workflows on exact final HEAD; no auto-merge or automatic next batch.
+- Large coherent batches, separate commits for completed work; one Draft PR at a time. Automatically continue after all applicable workflows succeed on the exact final HEAD, including Edit Mode and Play Mode. Verify mergeability and squash merge with expected HEAD; open only one new Draft PR, never merge it before its own green CI. Stop for external or manual acceptance blockers; do not waive them.
 - Preserve compatibility, deterministic game rules, existing menu and Interface Editor. Do not change live Steam/Supabase configuration without separate release setup.
 - CI green is implementation evidence, not runtime acceptance. Distinguish verified code, automated test results, playtest hypotheses and release blockers.
 
@@ -15,7 +15,7 @@ Batch 1, merged PR #134 (1b7c1b6): optional ring fix; geometry preflight; save/r
 Next gates:
 - [ ] Batch 4: optional 3D XZ layout audit using renderer-prepared rivers, planned hub footprints, road water clearance and crosswalk envelopes. City Generator Lab overlay and JSON exports; four baseline seeds recorded by CI. PR #137 merged (c162f93): 1,388 Edit Mode tests and Play Mode / Magnate river checks passed. Four CI reports contain 118 crosswalk-envelope conflict pairs; no other warning types in this sample. Visual inspection remains open.
 - [ ] Batch 5: deterministic non-overlapping 3D crosswalk selection, shared audit counters and adjusted-node overlay, regression checks on original four seeds plus sixteen additional generated maps. PR #138 merged (b1fa164): 1,395 Edit Mode tests, Play Mode and Magnate river checks passed. Visual acceptance still open. Preserve topology and save compatibility.
-- [ ] Batch 6: isolated checkpoint/load/replay continuation across five Classic city/scenario cases, all three co-op difficulties, all twelve campaign missions; four bounded deterministic Magnate matches and attached co-op UI smoke. Pending final HEAD CI; standalone boot and actual full session/manual acceptance remain open.
+- [ ] Batch 6: isolated checkpoint/load/replay continuation across five Classic city/scenario cases, all three co-op difficulties, all twelve campaign missions; four bounded deterministic Magnate matches and attached co-op UI smoke. PR #139 merged (9c366e4): final HEAD f50588e passed Edit Mode and Play Mode; standalone boot and actual full session/manual acceptance remain open.
 - [ ] Batch 2: non-destructive load failure, bounded Classic/campaign save I/O, previous snapshot backup and explicit Editor recovery, save-summary localization. PR #135 merged (5a193f8): 1,352 Edit Mode tests, 2 Play Mode tests, Interface Editor and main menu visual guard passed. Manual recovery smoke remains open. Historical golden fixtures, runtime recovery UX, Magnate persistence and map revision identity remain open (see SAVE_RECOVERY.md).
 - [ ] Full standalone boot/menu/game/return tests with isolated data; actual controller and Deck 1280x800.
 - [ ] Resolve real localization defects, review unresolved scanner candidates; RU/EN visual matrix and no clipped text.
