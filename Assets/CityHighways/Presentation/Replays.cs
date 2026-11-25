@@ -182,7 +182,7 @@ namespace CityHighways.Presentation
             var winners = game.Result != null ? new HashSet<int>(game.Result.Winners.Select(w => w.PlayerIndex)) : new HashSet<int>();
             return new ReplayFile
             {
-                id = DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + UnityEngine.Random.Range(1000, 9999),
+                id = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 16),
                 date = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 mode = game.IsCooperative ? "coop" : "classic",
                 map = game.Map.Name,
