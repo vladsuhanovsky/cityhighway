@@ -499,6 +499,7 @@ namespace CityHighways.Presentation
 
         void ToggleSettingsPopup()
         {
+            if (!_settingsPopupOpen && _bellOpen) ToggleBell();
             _settingsPopupOpen = !_settingsPopupOpen;
             if (_settingsPopup != null) Ui.Show(_settingsPopup, _settingsPopupOpen);
         }
@@ -774,6 +775,11 @@ namespace CityHighways.Presentation
         void ToggleBell()
         {
             _bellOpen = !_bellOpen;
+            if (_bellOpen && _settingsPopupOpen)
+            {
+                _settingsPopupOpen = false;
+                Ui.Show(_settingsPopup, false);
+            }
             if (_bellOpen) RefreshNotifications();
             Ui.Slide(_bellPanel, _bellOpen, 0f, -6f);
             _app.Sound.Play(_bellOpen ? Sfx.Open : Sfx.Close, 0.45f);
