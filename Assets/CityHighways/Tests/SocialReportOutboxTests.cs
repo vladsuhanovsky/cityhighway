@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using CityHighways.Presentation;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace CityHighways.Tests
 {
@@ -283,6 +285,142 @@ namespace CityHighways.Tests
             Assert.IsNull(outbox.Next(SteamA, -1));
             Assert.IsNull(outbox.Next(SteamA, DateTime.MaxValue.Ticks + 1));
             Assert.AreEqual(0, outbox.Count);
+        }
+
+        [Serializable]
+        sealed class LegacyStateFixture
+        {
+            public List<SocialReportOutbox.Entry> entries = new List<SocialReportOutbox.Entry>();
+        }
+
+        [Test]
+        public void NewSnapshotsStoreIntegrityMetadataAndSurviveRestart()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "first", "{}", Now));
+            string json = File.ReadAllText(_path);
+            StringAssert.Contains("\"formatVersion\":1", json);
+            StringAssert.Contains("\"checksum\":", json);
+            var reloaded = new SocialReportOutbox(_path);
+            Assert.IsFalse(reloaded.LoadBlocked);
+            Assert.AreEqual(1, reloaded.Count);
+            Assert.AreEqual("first", reloaded.Next(SteamA, Now).key);
+        }
+
+        [Test]
+        public void ChangedButValidJsonInPrimaryFallsBackToChecksummedBackup()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "first", "{}", Now));
+            Assert.IsTrue(outbox.Enqueue(SteamA, "second", "{}", Now + 1));
+
+            string primary = File.ReadAllText(_path);
+            StringAssert.Contains("\"key\":\"second\"", primary);
+            File.WriteAllText(_path, primary.Replace("\"key\":\"second\"", "\"key\":\"forged\""));
+
+            var restored = new SocialReportOutbox(_path);
+            Assert.IsFalse(restored.LoadBlocked);
+            Assert.AreEqual(1, restored.Count);
+            Assert.AreEqual("first", restored.Next(SteamA, Now).key);
+        }
+
+        [Test]
+        public void InvalidEntryInPrimaryNeverDropsValidBackupRecords()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "first", "{}", Now));
+            Assert.IsTrue(outbox.Enqueue(SteamA, "second", "{}", Now + 1));
+            string primary = File.ReadAllText(_path);
+            StringAssert.Contains("\"ownerSteamId\":\"" + SteamA + "\"", primary);
+            File.WriteAllText(_path,
+                primary.Replace("\"ownerSteamId\":\"" + SteamA + "\"", "\"ownerSteamId\":\"invalid\""));
+            var restored = new SocialReportOutbox(_path);
+            Assert.AreEqual(1, restored.Count);
+            Assert.AreEqual("first", restored.Next(SteamA, Now).key);
+        }
+
+        [Test]
+        public void LegacyQueueIsAcceptedAndUpgradedToVersionedFormat()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path));
+            var legacy = new LegacyStateFixture();
+            legacy.entries.Add(new SocialReportOutbox.Entry
+            {
+                ownerSteamId = SteamA,
+                key = "legacy",
+                requestJson = "{\"action\":\"report\"}",
+                createdUtcTicks = Now,
+                nextAttemptUtcTicks = Now,
+                attempts = 0
+            });
+            File.WriteAllText(_path, JsonUtility.ToJson(legacy));
+
+            var migrated = new SocialReportOutbox(_path);
+            Assert.IsFalse(migrated.LoadBlocked);
+            Assert.AreEqual("legacy", migrated.Next(SteamA, Now).key);
+            Assert.IsTrue(migrated.Enqueue(SteamA, "new", "{}", Now + 1));
+            StringAssert.Contains("\"formatVersion\":1", File.ReadAllText(_path));
+            var afterRestart = new SocialReportOutbox(_path);
+            Assert.IsFalse(afterRestart.LoadBlocked);
+            Assert.AreEqual(2, afterRestart.Count);
+        }
+
+        [Test]
+        public void MissingEntriesFieldCannotTurnCorruptSnapshotIntoBlankQueue()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path));
+            File.WriteAllText(_path, "{}");
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.LoadBlocked);
+            Assert.AreEqual(0, outbox.Count);
+            Assert.IsFalse(outbox.Enqueue(SteamA, "new", "{}", Now));
+            Assert.AreEqual("{}", File.ReadAllText(_path));
+        }
+
+        [Test]
+        public void UnsupportedSnapshotVersionIsNotOverwritten()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "original", "{}", Now));
+            string unknown = File.ReadAllText(_path).Replace("\"formatVersion\":1", "\"formatVersion\":99");
+            File.WriteAllText(_path, unknown);
+            var blocked = new SocialReportOutbox(_path);
+            Assert.IsTrue(blocked.LoadBlocked);
+            Assert.IsFalse(blocked.Enqueue(SteamA, "new", "{}", Now + 1));
+            Assert.AreEqual(unknown, File.ReadAllText(_path));
+        }
+
+        [Test]
+        public void BothCorruptSnapshotsArePreservedUntilManualRecovery()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "first", "{}", Now));
+            Assert.IsTrue(outbox.Enqueue(SteamA, "second", "{}", Now + 1));
+            File.WriteAllText(_path, "broken primary");
+            File.WriteAllText(_path + ".bak", "broken backup");
+
+            var blocked = new SocialReportOutbox(_path);
+            Assert.IsTrue(blocked.LoadBlocked);
+            Assert.IsFalse(blocked.Enqueue(SteamA, "third", "{}", Now + 2));
+            Assert.AreEqual("broken primary", File.ReadAllText(_path));
+            Assert.AreEqual("broken backup", File.ReadAllText(_path + ".bak"));
+        }
+
+        [Test]
+        public void MalformedReportCanBeDeferredWithoutBlockingNewerValidReports()
+        {
+            var outbox = new SocialReportOutbox(_path);
+            Assert.IsTrue(outbox.Enqueue(SteamA, "malformed", "{bad}", Now));
+            Assert.IsTrue(outbox.Enqueue(SteamA, "newer", "{\"action\":\"report\"}", Now + 1));
+            var malformed = outbox.Next(SteamA, Now + 1);
+            Assert.AreEqual("malformed", malformed.key);
+            Assert.IsTrue(outbox.Reschedule(malformed, Now + 1, 422));
+            Assert.AreEqual("newer", outbox.Next(SteamA, Now + 1).key);
+            var reloaded = new SocialReportOutbox(_path);
+            Assert.AreEqual(2, reloaded.Count);
+            Assert.AreEqual("newer", reloaded.Next(SteamA, Now + 1).key);
+            Assert.AreEqual("malformed",
+                reloaded.Next(SteamA, Now + 3601 * TimeSpan.TicksPerSecond).key);
         }
 
     }
