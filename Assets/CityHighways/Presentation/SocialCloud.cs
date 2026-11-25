@@ -603,8 +603,23 @@ namespace CityHighways.Presentation
             Send<ClubListResponse>(new Request { action = "club_list", query = query ?? "" }, r => done?.Invoke(r?.clubs ?? new ClubBrief[0]), failed);
 
         /// <summary>Тег и герб своего клуба — для лобби и карточки профиля (пусто — не в клубе).</summary>
-        public static string ClubTag => Club != null && Club.HasClub ? Club.club.tag : "";
-        public static string ClubLogoId => Club != null && Club.HasClub ? Club.club.logo : "";
+        public static string ClubTag
+        {
+            get
+            {
+                EnsureSocialAccount();
+                return Club != null && Club.HasClub ? Club.club.tag : "";
+            }
+        }
+
+        public static string ClubLogoId
+        {
+            get
+            {
+                EnsureSocialAccount();
+                return Club != null && Club.HasClub ? Club.club.logo : "";
+            }
+        }
 
         // ---------------------------------------------------------------- Тексты целей
 
