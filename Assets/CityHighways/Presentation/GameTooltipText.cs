@@ -44,7 +44,7 @@ namespace CityHighways.Presentation
                 text += EnglishUi ? $"\n<color=#FFCC40>Final City Hall order: +{game.Config.FinalOrderBonus} pts to whoever builds it in the last round</color>" : $"\n<color=#FFCC40>Финальный заказ мэрии: +{game.Config.FinalOrderBonus} очков тому, кто построит её в последнем круге</color>";
             if (owner.HasValue)
             {
-                text += (EnglishUi ? "\nBuilt by: " : "\nПостроил: ") + game.Players[owner.Value].Name;
+                text += (EnglishUi ? "\nBuilt by: " : "\nПостроил: ") + PlayerIdentity.Label(owner.Value, game.Players[owner.Value].Name);
                 if (game.IsRushHourRoad(road.Id))
                     text += EnglishUi ? $"\n<color=#FF9A33>Busy highway (rush hour): toll ×{game.Config.RushHourTollMultiplier}</color>" : $"\n<color=#FF9A33>Загруженная магистраль (час пик): проезд ×{game.Config.RushHourTollMultiplier}</color>";
                 int traffic = game.TrafficOn(road.Id);

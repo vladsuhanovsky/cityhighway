@@ -554,6 +554,21 @@ namespace CityHighways.Presentation
                     Save();
                     UpdatePreview(string.Format(LocalizationService.Get("menu.settings.dynamic.ui_scale"), Mathf.RoundToInt(scales[i] * 100f)));
                 })));
+            bool english = LocalizationService.Language == "en";
+            s.Add(Row(english ? "Alternative player colors" : "Альтернативные цвета игроков",
+                english ? "Use a palette with more distinct hues in the next match or replay." : "Более различимые оттенки в следующей партии или повторе.",
+                new SwitchToggle(_display.accessiblePlayerColors, on =>
+                {
+                    _display.accessiblePlayerColors = on;
+                    Save();
+                })));
+            s.Add(Row(english ? "Road owner markers" : "Метки владельцев дорог",
+                english ? "Player seat numbers match the dots on owned roads. Public roads have no marker." : "Номер игрока соответствует числу точек на его дорогах. Городские дороги без меток.",
+                new SwitchToggle(_display.showOwnerMarkers, on =>
+                {
+                    _display.showOwnerMarkers = on;
+                    Save();
+                })));
             s.Add(Note(LocalizationService.Get("menu.settings.detail.107")));
         }
 

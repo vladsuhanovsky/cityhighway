@@ -2697,6 +2697,12 @@ namespace CityHighways.Presentation
                 Ui.Radius(face, 16f);
                 dot.Add(face);
                 chip.Add(dot);
+                if (PlayerIdentity.MarkersEnabled)
+                {
+                    var seat = Ui.Text(PlayerIdentity.SeatLabel(player.Index), 11f, Theme.Text, true);
+                    seat.style.marginLeft = 3f;
+                    chip.Add(seat);
+                }
                 var chipScore = Ui.Number("0", 15f, Theme.Text, true);
                 chipScore.style.marginLeft = 5f;
                 chip.Add(chipScore);
@@ -2716,7 +2722,8 @@ namespace CityHighways.Presentation
                 var row = _playerRows[player.Index];
                 var data = GameHudReadout.Player(_game, player, BotTag(player.Index));
                 bool active = data.Active;
-                row.Name.text = data.Name;
+                row.Name.text = PlayerIdentity.Label(player.Index, data.Name);
+                row.Name.tooltip = row.Name.text;
                 row.Ability.text = data.Ability;
                 Ui.Show(row.Ability, data.HasAbility);
                 int points = data.Score;
@@ -2745,7 +2752,7 @@ namespace CityHighways.Presentation
             if (acting >= 0)
             {
                 _statusChip.style.backgroundColor = Palette.PlayerColor(acting);
-                _statusName.text = _game.Players[acting].Name + BotTag(acting);
+                _statusName.text = PlayerIdentity.Label(acting, _game.Players[acting].Name + BotTag(acting));
             }
             else
             {
