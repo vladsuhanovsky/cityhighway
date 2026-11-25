@@ -190,6 +190,11 @@ namespace CityHighways.Presentation
             Ui.Show(_legibility, page == Page.Home);
             if (page != Page.Home) _newGameTransition = -1f;
             if (_topBar != null) Ui.Show(_topBar, page == Page.Home);
+            if (_settingsPopup != null)
+            {
+                _settingsPopupOpen = false;
+                Ui.Show(_settingsPopup, false);
+            }
             if (_bellOpen) ToggleBell();
             if (page == Page.Home)
             {
@@ -483,12 +488,26 @@ namespace CityHighways.Presentation
         // ------------------------------------------------------------------ Верхняя панель
 
         VisualElement _topBar;
+        VisualElement _settingsPopup;
+        bool _settingsPopupOpen;
         VisualElement _bellPanel;
         VisualElement _bellList;
         Label _bellCount;
         bool _bellOpen;
         Label _lightCaption;
         VisualElement _moonButton, _sunButton;
+
+        void ToggleSettingsPopup()
+        {
+            _settingsPopupOpen = !_settingsPopupOpen;
+            if (_settingsPopup != null) Ui.Show(_settingsPopup, _settingsPopupOpen);
+        }
+
+        void SwitchMenuLanguage()
+        {
+            LocalizationService.SetLanguage(LocalizationService.Language == "en" ? "ru" : "en");
+            _app.ShowMenu(); // Rebuild every currently visible translated control.
+        }
 
         /// <summary>Круглая кнопка-значок в верхней панели меню.</summary>
         VisualElement TopIcon(MenuIcon.Glyph glyph, Action onClick)
