@@ -62,7 +62,28 @@ namespace CityHighways.Presentation
             return true;
         }
 
-        static bool ReadInt(object value, int min, int max, out int number)
+        /// <summary>Shared bounded parser for other social read endpoints.</summary>
+        internal static bool TryReadRoot(string json, int maxCharacters, out Dictionary<string, object> root)
+        {
+            root = null;
+            if (string.IsNullOrEmpty(json) || json.Length > maxCharacters) return false;
+            var reader = new Reader(json);
+            if (!reader.Read(out var value) || !(value is Dictionary<string, object> fields))
+                return false;
+            root = fields;
+            return true;
+        }
+
+        internal static bool ReadLong(object value, long min, long max, out long number)
+        {
+            number = 0;
+            return value is NumberToken raw &&
+                long.TryParse(raw.Text, NumberStyles.AllowLeadingSign,
+                    CultureInfo.InvariantCulture, out number) &&
+                number >= min && number <= max;
+        }
+
+        internal static bool ReadInt(object value, int min, int max, out int number)
         {
             number = 0;
             return value is NumberToken raw &&
@@ -85,7 +106,7 @@ namespace CityHighways.Presentation
         sealed class Reader
         {
             const int MaxDepth = 12;
-            const int MaxMembers = 128;
+            const int MaxMembers = 256; // friends endpoint can contain 200 records
             readonly string _json;
             int _pos;
 
