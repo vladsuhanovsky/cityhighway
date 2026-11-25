@@ -256,31 +256,26 @@ namespace CityHighways.Presentation
             }
         }
 
-        /// <summary>Лишние повторы — самые старые, кроме лучших по карте и режиму у каждого автора.</summary>
-        static void Prune(Index index)
+        /// <summary>
+        /// Compute retention without deleting anything. Deletions occur only
+        /// after the replacement index has been durably committed.
+        /// </summary>
+        static List<string> Prune(Index index)
         {
-            if (index.entries.Count <= Keep) return;
-            // Keep the best for each author/map/mode, but cap the number of
-            // protected groups too. Otherwise >Keep unique groups made the
-            // documented storage limit impossible to enforce.
-            var protectedIds = new HashSet<string>(index.entries
-                .GroupBy(e => (e.mode, e.mapPath, (e.author ?? "").ToLowerInvariant()))
-                .Select(g => g.OrderByDescending(e => e.authorScore)
-                    .ThenByDescending(e => e.date, StringComparer.Ordinal).First())
-                .OrderByDescending(e => e.date, StringComparer.Ordinal)
-                .Take(Keep).Select(e => e.id));
-            foreach (var old in index.entries.OrderBy(e => e.date, StringComparer.Ordinal).ToList())
+            var before = index.entries.ToList();
+            index.entries = ReplayRetention.Select(before, Keep);
+            return ReplayRetention.Removed(before, index.entries);
+        }
+
+        static void DeletePruned(IEnumerable<string> ids)
+        {
+            foreach (string id in ids)
             {
-                if (index.entries.Count <= Keep) break;
-                if (protectedIds.Contains(old.id)) continue;
-                index.entries.Remove(old);
-                try
+                if (!ReplayStorageIO.IsSafeId(id)) continue;
+                try { File.Delete(FileOf(id)); }
+                catch (Exception e)
                 {
-                    File.Delete(FileOf(old.id));
-                }
-                catch (Exception)
-                {
-                    // Файл занят или уже удалён — уберём в следующий раз.
+                    Debug.LogWarning("Не удалось удалить старый повтор: " + e.Message);
                 }
             }
         }
