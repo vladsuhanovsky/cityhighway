@@ -135,18 +135,14 @@ namespace CityHighways.Presentation
 
         static int RecoverOrphans(Index index)
         {
-            if (!Directory.Exists(Folder)) return 0;
             var known = new HashSet<string>(index.entries.Select(e => e.id), StringComparer.Ordinal);
-            int seen = 0;
             int recovered = 0;
-            // This is one-time startup recovery, not a full filesystem scan.
-            foreach (var path in Directory.EnumerateFiles(Folder, "*.json", SearchOption.TopDirectoryOnly))
+            // Only safe, unindexed candidates are read; the scan is capped.
+            foreach (string id in ReplayStorageIO.UnindexedIds(Folder, known))
             {
-                if (++seen > 300) break;
-                string id = Path.GetFileNameWithoutExtension(path);
-                if (!ReplayStorageIO.IsSafeId(id) || !known.Add(id)) continue;
                 var replay = Read(id);
                 if (replay == null) continue;
+                known.Add(id);
                 index.entries.Add(EntryOf(replay));
                 recovered++;
             }
