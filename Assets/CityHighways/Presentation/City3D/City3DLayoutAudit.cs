@@ -158,19 +158,8 @@ namespace CityHighways.Presentation
             return distance;
         }
 
-        // Rectangular envelopes include gaps between the painted stripes;
-        // intersection is a visual-risk signal, not proof of overlapping paint.
-        public static bool CrosswalkEnvelopesOverlap(Vector2 a, Vector2 b, float halfWidth, float near, float far)
-        {
-            if (a.sqrMagnitude < 1e-8f || b.sqrMagnitude < 1e-8f || near >= far || halfWidth <= 0f) return false;
-            a.Normalize(); b.Normalize();
-            Vector2 an = new Vector2(-a.y, a.x), bn = new Vector2(-b.y, b.x);
-            float center = (near + far) / 2f, halfLength = (far - near) / 2f;
-            Vector2 delta = (a - b) * center;
-            bool Overlap(Vector2 axis) => Mathf.Abs(Vector2.Dot(delta, axis)) <
-                halfLength * (Mathf.Abs(Vector2.Dot(a, axis)) + Mathf.Abs(Vector2.Dot(b, axis))) +
-                halfWidth * (Mathf.Abs(Vector2.Dot(an, axis)) + Mathf.Abs(Vector2.Dot(bn, axis))) - 1e-6f;
-            return Overlap(a) && Overlap(b) && Overlap(an) && Overlap(bn);
-        }
+        public static bool CrosswalkEnvelopesOverlap(Vector2 a, Vector2 b, float halfWidth, float near, float far) =>
+            JunctionCrosswalkLayout.Overlap(a, b, halfWidth, near, far);
+
     }
 }
