@@ -185,7 +185,7 @@ namespace CityHighways.Presentation
             try
             {
                 Directory.CreateDirectory(Folder);
-                File.WriteAllText(FileOf(replay.id), JsonUtility.ToJson(replay));
+                ReplayStorageIO.WriteAtomic(FileOf(replay.id), JsonUtility.ToJson(replay));
                 var index = Load();
                 index.entries.RemoveAll(e => e.id == replay.id);
                 index.entries.Add(new Entry
