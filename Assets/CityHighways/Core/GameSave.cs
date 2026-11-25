@@ -370,7 +370,10 @@ namespace CityHighways.Core
         /// </summary>
         public static Game Load(CityMap map, GameSaveData data)
         {
-            if (data != null && data.version >= 5 && data.start != null && data.start.players != null && data.start.players.Length > 0)
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (data.version < GameSaveData.OldestSupportedVersion || data.version > GameSaveData.CurrentVersion)
+                throw new FormatException($"Сохранение версии {data.version} не поддерживается.");
+            if (data.version >= 5 && data.start != null && data.start.players != null && data.start.players.Length > 0)
             {
                 try
                 {
