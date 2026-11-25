@@ -208,6 +208,17 @@ namespace CityHighways.Presentation
             get { EnsureSocialAccount(); return _accountScope.Owner; }
         }
 
+        public static int CurrentAccountGeneration
+        {
+            get { EnsureSocialAccount(); return _accountScope.Generation; }
+        }
+
+        public static bool BelongsToCurrentSession(string owner, int generation)
+        {
+            EnsureSocialAccount();
+            return _accountScope.Matches(owner, generation);
+        }
+
         static void EnsureSocialAccount()
         {
             var steam = NetPlatforms.Steam;
