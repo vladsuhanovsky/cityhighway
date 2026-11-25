@@ -179,7 +179,16 @@ namespace CityHighways.Core
         public static List<string> CheckWater(CityMap map)
         {
             var issues = new List<string>();
-            var lines = map.Rivers.Where(r => r.Count >= 2).Select(r => Smooth(r.Select(q => new P(q.X * W, q.Y * H)).ToList())).ToList();
+            // Logistics maps already store the very dense Catmull-Rom output.
+            // Smoothing these points *again* changes the clearance geometry
+            // seen by validation relative to the actual saved polyline.
+            // Keep the legacy smoothing for sparse, hand-authored maps.
+            var lines = map.Rivers.Where(r => r.Count >= 2)
+                .Select(r =>
+                {
+                    var points = r.Select(q => new P(q.X * W, q.Y * H)).ToList();
+                    return CityRiverPolyline.IsAlreadySmoothed(r) ? points : Smooth(points);
+                }).ToList();
             if (lines.Count == 0) return issues;
             float RiverDist(P p)
             {

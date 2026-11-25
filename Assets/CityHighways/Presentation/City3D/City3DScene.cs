@@ -671,20 +671,24 @@ namespace CityHighways.Presentation
             foreach (var line in _map.Rivers)
             {
                 if (line.Count < 2) continue;
-                // Почти совпадающие точки убираем: сплайн на крошечном отрезке после длинного «перехлёстывает» назад,
-                // и продолжение реки за край карты разворачивалось внутрь (в Амстердаме 30-метровый хвост канала
-                // прошёл через весь город — по станциям NDSM и Вестерпарк).
+                // Generated Magnate rivers contain the actual Catmull-Rom
+                // samples (20+ closely-spaced points). A second spline plus
+                // the legacy 15 cm decimator could bend the visible 3D river
+                // into a station that the generator had placed on dry ground.
+                // Keep those samples exactly. Sparse authored rivers retain
+                // their previous smoothing and endpoint protection.
+                bool preSmoothed = CityRiverPolyline.IsAlreadySmoothed(line);
+                float minStep = preSmoothed ? 0.00001f : MinRiverStep;
                 var raw = new List<Vector3>();
                 foreach (var point in line.Select(p => BoardLayout.World(p.X, p.Y)))
-                    if (raw.Count == 0 || Flat(point - raw[raw.Count - 1]) > MinRiverStep) raw.Add(point);
-                    else raw[raw.Count - 1] = point;                       // крайняя точка важнее (она у края карты)
+                    if (raw.Count == 0 || Flat(point - raw[raw.Count - 1]) > minStep) raw.Add(point);
+                    else raw[raw.Count - 1] = point;
                 if (raw.Count < 2) continue;
                 bool startAtEdge = AtMapEdge(line[0].X, line[0].Y), endAtEdge = AtMapEdge(line[line.Count - 1].X, line[line.Count - 1].Y);
-                // Сначала сглаживаем само русло, и только потом достраиваем прямые продолжения. Раньше 30-метровый
-                // хвост входил в сплайн: рядом с коротким отрезком у края касательная становилась огромной, и кривая
-                // уходила от края внутрь карты почти на 2 м прямым «языком» — вода ложилась на дома (их ставят
-                // по настоящему руслу), а у края получался кривой излом.
-                var smooth = Smooth(raw, 5);
+                // Sparse map rivers still use Catmull-Rom. Extend *after*
+                // smoothing, otherwise the 30 m horizon tail distorts the
+                // curve and can sweep water back across the city.
+                var smooth = preSmoothed ? raw : Smooth(raw, 5);
                 // Направление продолжения — по исходным точкам (по горизонтали): у сплайна последний шаг может смотреть назад.
                 var startDir = FlatDir(raw[0] - raw[1]);
                 var endDir = FlatDir(raw[raw.Count - 1] - raw[raw.Count - 2]);

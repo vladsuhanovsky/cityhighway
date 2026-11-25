@@ -102,6 +102,7 @@ namespace CityHighways.Presentation
             float gap = WidestGap(map, location, center);
             Site best = default;
             float bestScore = float.MinValue;
+            bool bestIsDry = false;
             const int Directions = 48;
             foreach (float distance in Distances)
             for (int k = 0; k < Directions; k++)
@@ -109,7 +110,17 @@ namespace CityHighways.Presentation
                 float direction = gap + Mathf.PI * 2f * k / Directions;
                 var site = new Site { Direction = direction };
                 site.Origin = center + site.Forward * distance;
-                float clearance = Clearance(site, map, location, roads, river, riverHalf, others);
+                float clearance = Clearance(site, map, location, roads, river, riverHalf, others, out float riverGap);
+                // Dry sites always beat partly submerged hub footprints.
+                // When no dry option exists, retain the least-bad previous
+                // behavior rather than returning an uninitialized site.
+                bool dry = riverGap >= 0.015f;
+                if (bestIsDry && !dry) continue;
+                if (dry && !bestIsDry)
+                {
+                    bestIsDry = true;
+                    bestScore = float.MinValue;
+                }
                 // Запас важнее всего (до нужного), потом — ближе к станции и ближе к самому широкому промежутку.
                 float turn = Mathf.Abs(Mathf.DeltaAngle(0f, (direction - gap) * Mathf.Rad2Deg)) / 180f;
                 float score = Mathf.Min(clearance, RoadClearance) * 100f - (distance - Distances[0]) * 6f - turn * 0.6f;
@@ -124,11 +135,17 @@ namespace CityHighways.Presentation
 
         /// <summary>Наименьший запас до препятствий (отрицательный — пятно на препятствии).</summary>
         static float Clearance(Site site, CityMap map, Location own, List<(Vector2 a, Vector2 b)> roads,
-            List<(Vector2 a, Vector2 b)> river, float riverHalf, List<Site> others)
+            List<(Vector2 a, Vector2 b)> river, float riverHalf, List<Site> others, out float riverGap)
         {
             float worst = float.MaxValue;
+            riverGap = float.MaxValue;
             foreach (var (a, b) in roads) worst = Mathf.Min(worst, SegmentDistance(site, a, b));
-            foreach (var (a, b) in river) worst = Mathf.Min(worst, SegmentDistance(site, a, b) - riverHalf + RoadClearance - 0.05f);
+            foreach (var (a, b) in river)
+            {
+                float gap = SegmentDistance(site, a, b) - riverHalf;
+                riverGap = Mathf.Min(riverGap, gap);
+                worst = Mathf.Min(worst, gap + RoadClearance - 0.05f);
+            }
             foreach (var location in map.Locations)
             {
                 if (location.Id == own.Id) continue;

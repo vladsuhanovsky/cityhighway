@@ -1,0 +1,47 @@
+name: Magnate river geometry validation
+
+on:
+  pull_request:
+    paths:
+      - "Assets/CityHighways/Core/CityRiverPolyline.cs"
+      - "Assets/CityHighways/Core/Logistics/CityGenerator.cs"
+      - "Assets/CityHighways/Presentation/City3D/City3DScene.cs"
+      - "Assets/CityHighways/Presentation/City3D/HubPlacement.cs"
+      - "Assets/CityHighways/Presentation/City3D/Relief.cs"
+      - "Assets/CityHighways/Presentation/City3D/CityPlanner.cs"
+      - "Assets/CityHighways/Tests/CityRiverPolylineTests.cs"
+      - "Assets/CityHighways/Tests/Magnate3DRiverAlignmentTests.cs"
+      - "Assets/CityHighways/Tests/MagnateGeneratorTests.cs"
+      - "Tools/magnate_river_geometry.test.mjs"
+      - ".github/workflows/magnate-river-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Assets/CityHighways/Core/CityRiverPolyline.cs"
+      - "Assets/CityHighways/Core/Logistics/CityGenerator.cs"
+      - "Assets/CityHighways/Presentation/City3D/City3DScene.cs"
+      - "Assets/CityHighways/Presentation/City3D/HubPlacement.cs"
+      - "Assets/CityHighways/Presentation/City3D/Relief.cs"
+      - "Assets/CityHighways/Presentation/City3D/CityPlanner.cs"
+      - "Assets/CityHighways/Tests/CityRiverPolylineTests.cs"
+      - "Assets/CityHighways/Tests/Magnate3DRiverAlignmentTests.cs"
+      - "Assets/CityHighways/Tests/MagnateGeneratorTests.cs"
+      - "Tools/magnate_river_geometry.test.mjs"
+      - ".github/workflows/magnate-river-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  river-contracts:
+    name: Consistent generator and 3D river geometry
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Verify river sampling and water-safety wiring
+        run: node --test Tools/magnate_river_geometry.test.mjs
