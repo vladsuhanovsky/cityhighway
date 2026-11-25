@@ -168,3 +168,17 @@ test("two languages expose the same menu action keys without duplicate entries",
     }
   }
 });
+
+test("notification bell and settings cannot cover one another", () => {
+  assert.match(view, /if \(!_settingsPopupOpen && _bellOpen\) ToggleBell\(\)/);
+  assert.match(view, /if \(_bellOpen && _settingsPopupOpen\)/);
+  assert.match(view, /Ui\.Show\(_settingsPopup, false\)/);
+});
+
+test("Escape and Steam Deck back dismiss a visible settings popover first", () => {
+  const tick = view.slice(view.indexOf("public void Tick(float dt)"),
+    view.indexOf("// ================================================================== Новая игра"));
+  assert.match(tick, /if \(_settingsPopupOpen\) ToggleSettingsPopup\(\);\s*else Ui\.GoBack\(Root\)/);
+  assert.match(tick, /keyboard\.escapeKey\.wasPressedThisFrame/);
+  assert.match(tick, /pad\.buttonEast\.wasPressedThisFrame/);
+});
