@@ -110,7 +110,7 @@ test("report ACK validation requires typed best, improved and explicit null or c
   assert.match(ack, /root\.TryGetValue\("improved"/);
   assert.match(ack, /root\.TryGetValue\("best"/);
   assert.match(ack, /root\.TryGetValue\("club"/);
-  assert.match(ack, /ReadInt\(rawBest, -100, 1000, out _\)/);
+  assert.match(ack, /ReadInt\(rawBest, -100, 1000, out int best\)/);
   assert.match(ack, /club\.TryGetValue\("amount"/);
   assert.match(ack, /club\.TryGetValue\("closed"/);
   assert.match(ack, /club\.TryGetValue\("logo"/);
