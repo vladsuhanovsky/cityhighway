@@ -91,6 +91,32 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void EmptyShapeCannotRotateIntoBackup()
+        {
+            SaveFileStorage.Write(path, Fixture(10));
+            SaveFileStorage.Write(path, Fixture(20));
+            File.WriteAllText(path, "{}");
+            Assert.IsNull(SaveFileStorage.Read(path, null));
+            SaveFileStorage.Write(path, Fixture(30));
+            Assert.AreEqual(10, SaveFileStorage.Read(SaveFileStorage.BackupPath(path), null).playSeconds);
+        }
+
+        [Test]
+        public void CampaignBackupRemainsScopedToOwner()
+        {
+            const string owner = "local:abcdefabcdefabcdefabcdefabcdefab";
+            const string other = "local:12345678901234567890123456789012";
+            var file = Fixture(10);
+            file.setup = CampaignCatalog.All[0].CreateSetup("A", owner, false);
+            SaveFileStorage.Write(path, file);
+            file.playSeconds = 20;
+            SaveFileStorage.Write(path, file);
+            Assert.IsNull(SaveFileStorage.Read(path, null));
+            Assert.IsNull(SaveFileStorage.Read(SaveFileStorage.BackupPath(path), other));
+            Assert.AreEqual(10, SaveFileStorage.Read(SaveFileStorage.BackupPath(path), owner).playSeconds);
+        }
+
+        [Test]
         public void OversizedWriteLeavesBothSnapshotsUntouched()
         {
             SaveFileStorage.Write(path, Fixture(10));

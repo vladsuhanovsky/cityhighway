@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using CityHighways.Core;
 using UnityEngine;
 
@@ -21,7 +22,10 @@ namespace CityHighways.Presentation
         static SaveFile Parse(string json, string owner)
         {
             var file = JsonUtility.FromJson<SaveFile>(json);
-            if (file == null || file.game == null || file.setup == null || file.setup.players == null)
+            if (file == null || file.game == null || file.setup == null || file.setup.players == null ||
+                file.game.players == null || file.game.players.Length < 2 ||
+                file.setup.players.Count != file.game.players.Length ||
+                file.setup.players.Any(p => p == null) || file.game.players.Any(p => p == null))
                 return null;
             if (owner == null ? file.setup.IsCampaign :
                 !CampaignStorage.ValidOwner(owner) || !file.setup.IsCampaign ||
