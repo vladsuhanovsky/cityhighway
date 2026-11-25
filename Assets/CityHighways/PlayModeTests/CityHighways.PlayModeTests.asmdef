@@ -1,0 +1,22 @@
+{
+    "name": "CityHighways.PlayModeTests",
+    "rootNamespace": "CityHighways.PlayModeTests",
+    "references": [
+        "CityHighways.Core",
+        "CityHighways.Presentation",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
