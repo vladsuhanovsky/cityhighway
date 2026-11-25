@@ -86,7 +86,9 @@ namespace CityHighways.Presentation
         static string IndexPath => Path.Combine(Folder, "index.json");
         static string FileOf(string id) => ReplayStorageIO.PathFor(Folder, id);
 
-        public static IReadOnlyList<Entry> Entries => Load().entries;
+        // A snapshot prevents menu callers from casting IReadOnlyList back
+        // to List<Entry> and mutating the committed catalog in memory.
+        public static IReadOnlyList<Entry> Entries => Load().entries.ToArray();
 
         static Index Load()
         {
