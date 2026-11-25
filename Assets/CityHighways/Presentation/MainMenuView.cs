@@ -1196,7 +1196,9 @@ namespace CityHighways.Presentation
             texts.Add(Ui.Text(LocalizationService.Get("menu.main.legacy.061"), 18f, Theme.Gold, true));
             var names = string.Join(", ", saved.setup.PlayerNames());
             int turn = saved.game != null ? saved.game.turnNumber : 0;
-            texts.Add(Ui.Text($"{names} · ход {turn} · сохранена {saved.savedAt}", 14f, Theme.Text));
+            texts.Add(Ui.Text(LocalizationService.Language == "en"
+                ? $"{names} · turn {turn} · saved {saved.savedAt}"
+                : $"{names} · ход {turn} · сохранена {saved.savedAt}", 14f, Theme.Text));
             card.Add(texts);
 
             var resume = Ui.Button(LocalizationService.Get("menu.main.legacy.062"), () => _app.ContinueGame(saved), ButtonKind.Primary, 18f);
