@@ -146,7 +146,6 @@ namespace CityHighways.Presentation
                 index.entries.Add(EntryOf(replay));
                 recovered++;
             }
-            if (recovered > 0) Prune(index);
             return recovered;
         }
 
