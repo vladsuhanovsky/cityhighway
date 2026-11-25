@@ -326,17 +326,44 @@ namespace CityHighways.Presentation
                 buttons.Add(button);
                 return button;
             }
-            var newGame = Add(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.home.new_game"), () => ShowPage(Page.NewGame), saved == null);
-            // «Быстрый старт» — сразу в партию с последними настройками.
-            var quick = Ui.Button(LocalizationService.Get("menu.home.quick_start"), StartGame, ButtonKind.Secondary, 13f);
-            quick.style.minHeight = 30f;
-            Ui.Padding(quick, 4f, 12f);
-            quick.style.backgroundColor = new Color(1f, 1f, 1f, 0.16f);
-            newGame.Badge.Add(quick);
-            Add(MenuIcon.Glyph.Cap, LocalizationService.Get(AnyTutorialDone ? "menu.home.tutorial" : "menu.home.tutorial_hint"), () => ShowPage(Page.Tutorial), false);
-            _onlineButton = Add(MenuIcon.Glyph.Globe, LocalizationService.Get("menu.home.online"), () =>
+            // Three main entry points, each with its closely related action
+            // immediately below it. Keep the iconic red New Game button.
+            Add(MenuIcon.Glyph.Gamepad, LocalizationService.Get("menu.home.new_game"),
+                OpenNewGameWithDeparture, true);
+
+            // Quick Start genuinely bypasses game setup. It is a separate
+            // button, never a second control nested inside New Game.
+            var quick = Ui.Button(LocalizationService.Get("menu.home.quick_start"),
+                StartGame, ButtonKind.Secondary, 14f);
+            quick.style.alignSelf = Align.Center;
+            quick.style.width = 244f;
+            quick.style.minHeight = 36f;
+            quick.style.backgroundColor = new Color(0.12f, 0.17f, 0.23f, 0.94f);
+            quick.style.marginBottom = 10f;
+            buttons.Add(quick);
+
+            UnityEngine.UIElements.Button AddSubAction(string key, Action action)
             {
-                // Заблокированному аккаунту сетевая игра закрыта — показываем причину в уведомлениях.
+                var sub = Ui.Button(LocalizationService.Get(key), action,
+                    ButtonKind.Secondary, 14f);
+                sub.style.alignSelf = Align.FlexStart;
+                sub.style.marginLeft = 52f;
+                sub.style.width = 374f;
+                sub.style.minHeight = 33f;
+                sub.style.marginBottom = 10f;
+                sub.style.backgroundColor = new Color(0.075f, 0.12f, 0.18f, 0.96f);
+                buttons.Add(sub);
+                return sub;
+            }
+
+            Add(MenuIcon.Glyph.Cap, LocalizationService.Get(
+                AnyTutorialDone ? "menu.home.tutorial" : "menu.home.tutorial_hint"),
+                () => ShowPage(Page.Tutorial), false);
+            AddSubAction("menu.home.rules", () => OpenRules(null, Page.Home));
+
+            _onlineButton = Add(MenuIcon.Glyph.Globe,
+                LocalizationService.Get("menu.home.online"), () =>
+            {
                 if (Profiles.Active.cloudBanned)
                 {
                     if (!_bellOpen) ToggleBell();
@@ -347,20 +374,10 @@ namespace CityHighways.Presentation
             _onlineBadge = Pill("");
             Ui.Show(_onlineBadge, false);
             _onlineButton.Badge.Add(_onlineBadge);
-            Add(MenuIcon.Glyph.Book, LocalizationService.Get("menu.home.rules"), () => OpenRules(null, Page.Home), false);
-            Add(MenuIcon.Glyph.Chart, LocalizationService.Get("menu.home.stats"), () => ShowPage(Page.Stats), false);
-            Add(MenuIcon.Glyph.Flag, LocalizationService.Get("menu.home.clubs"), () => ShowPage(Page.Club), false);
-            Add(MenuIcon.Glyph.Gear, LocalizationService.Get("menu.home.settings"), () => ShowPage(Page.Settings), false);
+            AddSubAction("menu.home.clubs", () => ShowPage(Page.Club));
 
-            // Первый этап локализации: переключатель на главной странице.
-            // Остальные экраны сохраняют исходные русские строки до их переноса в таблицы.
-            var languageButton = Ui.Button(LocalizationService.Get("menu.home.language_switch"), () =>
-            {
-                LocalizationService.SetLanguage(LocalizationService.Language == "en" ? "ru" : "en");
-                _app.ShowMenu(); // Пересоздаём экран: все текстовые элементы построены в C#.
-            }, ButtonKind.Secondary, 13f);
-            languageButton.style.marginTop = 6f;
-            buttons.Add(languageButton);
+            // Profile-linked Statistics now lives next to the profile card.
+            // Settings and language live together at the top-right gear.
 
             var summary = Ui.Text(StatsLog.Summary(), 14f, Theme.Text);
             summary.style.marginTop = 8f;
