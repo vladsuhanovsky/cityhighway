@@ -11,6 +11,7 @@ The Core layer remains the authority for validation and game state transitions.
 | Module | Responsibility |
 | --- | --- |
 | `GameView.cs` | Gameplay screen composition, input coordination, turn state and animation orchestration |
+| `GameTooltipText.cs` | Read-only Classic road, location, player, resource and pieces tooltips; shared contract titles | 
 | `GameView.Contracts.cs` | Contract selection and cards, pinned paths, route highlighting |
 | `GameView.Panels.cs` | Sheets, player drawer, modal windows and settings controls |
 | `GameView.Journal.cs` | Journal entries, translations of historic messages and scroll position |
@@ -38,9 +39,13 @@ these files is a source organization change, not a runtime or API boundary.
 
 - Separate remaining gameplay animation construction from screen coordination.
 - Move HUD and status-bar rendering into reusable widgets with explicit inputs.
-- Separate map tooltip calculations and text formatting from event handlers.
+- Map tooltip text and read-only queries extracted to `GameTooltipText`; keep event positioning and viewer/handoff decisions in the screen. Next: extract reusable tooltip positioning and HUD refresh logic.
 - Replace direct, cross-panel field access gradually with explicit interfaces
   once the behavior is protected by regression tests.
 
 Avoid splitting files just for a smaller line count. Future components should
 have coherent responsibilities, explicit dependencies and focused tests.
+
+## Tooltip boundary (roadmap continuation)
+
+`GameTooltipText` has no VisualElement, callback, or GameView dependency. The screen passes the current viewer, bot status, handoff and action eligibility; the formatter reads existing Core methods and localization. Contract titles share the same formatter. Six RU/EN test cases cover read-only road state transitions, hidden handoff information, and player/pieces values. Manual smoke checks: hover road/location/player/resources before and after building, during hotseat handoff, in RU/EN, and at narrow/wide viewport sizes. No claims about manual QA or performance measurements are made by this extraction.
