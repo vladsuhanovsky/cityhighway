@@ -1241,7 +1241,7 @@ namespace CityHighways.Presentation
                        : "A large city with 66 locations, the Moskva River crossing the map and three outlying districts.")
                     : map.Hint;
                 _modeButton.text = LocalizationService.Get(_setup.magnate ? "menu.new_game.mode_magnate" : _setup.cooperative ? "menu.new_game.mode_coop" : "menu.new_game.mode_competitive");
-                var rules = new GameConfig();
+                var rules = _setup.CreateConfig();
                 var magnateRules = new MagnateConfig();
                 if (_setup.magnate)
                 {
@@ -1252,6 +1252,7 @@ namespace CityHighways.Presentation
                     ? string.Format(LocalizationService.Get("menu.new_game.magnate_mode_help"), magnateRules.Rounds)
                     : _setup.cooperative
                     ? string.Format(LocalizationService.Get("menu.new_game.coop_mode_help"), rules.CoopOrdersToWin(_setup.players.Count), rules.CoopCrisisMax)
+                      + " " + CoopDifficultyText.Hint(_setup.coopDifficulty)
                     : LocalizationService.Get("menu.new_game.competitive_hint");
             }
             if (_scenarioButton != null)
@@ -1276,10 +1277,12 @@ namespace CityHighways.Presentation
             Ui.Show(_piecesRow, classic);
             Ui.Show(_hideRow, classic);
             Ui.Show(_timerRow, classic);
-            Ui.Show(_difficultyRow, !classic);
+            Ui.Show(_difficultyRow, !classic || _setup.cooperative);
             Ui.Show(_difficultyHint, !classic);
             var difficulty = (MagnateDifficulty)Mathf.Clamp(_setup.magnateDifficulty, 0, 3);
-            if (_difficultyButton != null) _difficultyButton.text = LocalizationService.Language == "en"
+            if (_difficultyButton != null) _difficultyButton.text = classic && _setup.cooperative
+                ? CoopDifficultyText.Title(_setup.coopDifficulty)
+                : LocalizationService.Language == "en"
                 ? (difficulty == MagnateDifficulty.Easy ? "Easy" : difficulty == MagnateDifficulty.Normal ? "Normal" : difficulty == MagnateDifficulty.Hard ? "Hard" : "Expert")
                 : MagnateConfig.Title(difficulty);
             if (_difficultyHint != null) _difficultyHint.text = DifficultyHint(difficulty);
@@ -1434,7 +1437,10 @@ namespace CityHighways.Presentation
 
         void NextDifficulty()
         {
-            _setup.magnateDifficulty = (Mathf.Clamp(_setup.magnateDifficulty, 0, 3) + 1) % 4;
+            if (_setup.cooperative && !_setup.magnate)
+                _setup.coopDifficulty = (int)CooperativeDifficulty.Next(_setup.coopDifficulty);
+            else
+                _setup.magnateDifficulty = (Mathf.Clamp(_setup.magnateDifficulty, 0, 3) + 1) % 4;
             _setup.Save();
             Refresh();
         }

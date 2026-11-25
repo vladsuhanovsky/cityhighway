@@ -198,8 +198,14 @@ namespace CityHighways.Presentation
             _scenarioButton = Ui.Button("", CycleScenario, ButtonKind.Secondary, 15f);
             _mapButton = Ui.Button("", CycleMap, ButtonKind.Secondary, 15f);
             _modeButton = Ui.Button("", () => { _setup.cooperative = !_setup.cooperative; _setup.Save(); RefreshLobby(); }, ButtonKind.Secondary, 15f);
+            _coopDifficultyButton = Ui.Button("", () =>
+            {
+                _setup.coopDifficulty = (int)CooperativeDifficulty.Next(_setup.coopDifficulty);
+                _setup.Save();
+                RefreshLobby();
+            }, ButtonKind.Secondary, 15f);
             _startButton = Ui.Button(LocalizationService.Get("menu.online.023"), StartGame, ButtonKind.Primary, 17f);
-            foreach (var b in new[] { _inviteButton, _addBotButton, _timerButton, _scenarioButton, _mapButton, _modeButton })
+            foreach (var b in new[] { _inviteButton, _addBotButton, _timerButton, _scenarioButton, _mapButton, _modeButton, _coopDifficultyButton })
             {
                 b.style.marginRight = 10f;
                 _hostControls.Add(b);
@@ -491,6 +497,9 @@ namespace CityHighways.Presentation
                 _scenarioButton.text = LocalizationService.Get("menu.online.047") + Scenarios.Title((ScenarioKind)Mathf.Clamp(_setup.scenario, 0, Scenarios.All.Count - 1));
                 _mapButton.text = LocalizationService.Get("menu.online.048") + GameSetup.MapOf(_setup.mapResourcePath).Title;
                 _modeButton.text = _setup.cooperative ? LocalizationService.Get("menu.online.049") : LocalizationService.Get("menu.online.050");
+                Ui.Show(_coopDifficultyButton, _setup.cooperative);
+                _coopDifficultyButton.text = CoopDifficultyText.Title(_setup.coopDifficulty);
+                _coopDifficultyButton.tooltip = CoopDifficultyText.Hint(_setup.coopDifficulty);
                 Ui.SetEnabled(_startButton, session.Seats.Count >= 2);
             }
         }
@@ -498,6 +507,7 @@ namespace CityHighways.Presentation
         readonly UnityEngine.UIElements.Button _scenarioButton;
         readonly UnityEngine.UIElements.Button _mapButton;
         readonly UnityEngine.UIElements.Button _modeButton;
+        readonly UnityEngine.UIElements.Button _coopDifficultyButton;
 
         void CycleMap()
         {
@@ -526,7 +536,7 @@ namespace CityHighways.Presentation
         {
             if (!(_session is HostSession host) || host.Seats.Count < 2) return;
             // Те же правила раздачи персонажей и участков, что и в обычной партии.
-            var setup = new GameSetup { roadPieces = _setup.roadPieces, scenario = _setup.scenario, cooperative = _setup.cooperative };
+            var setup = new GameSetup { roadPieces = _setup.roadPieces, scenario = _setup.scenario, cooperative = _setup.cooperative, coopDifficulty = _setup.coopDifficulty };
             // В сети персонажа в лобби не выбирают: каждый выберет из двух в начале партии.
             foreach (var seat in host.Seats)
                 setup.players.Add(new PlayerSlot(seat.name, seat.isBot, seat.botLevel == 1 ? BotLevel.Random : BotLevel.Smart)

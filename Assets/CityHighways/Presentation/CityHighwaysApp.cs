@@ -214,7 +214,11 @@ namespace CityHighways.Presentation
                 sound = local.sound,
                 hideCardsBetweenTurns = false,
                 turnSeconds = Net.TurnSeconds,
-                mapResourcePath = Net.MapPath
+                mapResourcePath = Net.MapPath,
+                magnate = false,
+                cooperative = Net.Game.Config.Cooperative,
+                coopDifficulty = Net.Game.Config.CoopDifficulty,
+                scenario = Net.Game.Config.Scenario
             };
             foreach (var seat in Net.Seats)
                 setup.players.Add(new PlayerSlot(seat.name, seat.isBot, seat.botLevel == 1 ? BotLevel.Random : BotLevel.Smart));
@@ -244,6 +248,7 @@ namespace CityHighways.Presentation
             var setup = GameSetup.Load();
             setup.magnate = false;
             setup.cooperative = replay.IsCoop;
+            setup.coopDifficulty = replay.start.config?.CoopDifficulty ?? 0;
             setup.mapResourcePath = replay.mapPath;
             setup.tutorial = false;
             setup.players = new List<PlayerSlot>();

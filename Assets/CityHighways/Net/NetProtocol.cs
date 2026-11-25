@@ -77,7 +77,7 @@ namespace CityHighways.Net
     public static class NetCodec
     {
         /// <summary>Меняется при любой несовместимой правке протокола или правил: разные версии не играют вместе.</summary>
-        public const int ProtocolVersion = 9; // 9 — private reconnect credential instead of nickname recovery
+        public const int ProtocolVersion = 10; // 10 — cooperative difficulty metadata and ranked eligibility
 
         public static byte[] Encode(NetMessage message) => Encoding.UTF8.GetBytes(JsonUtility.ToJson(message));
 

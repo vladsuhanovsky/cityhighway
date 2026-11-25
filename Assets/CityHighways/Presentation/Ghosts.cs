@@ -189,7 +189,7 @@ namespace CityHighways.Presentation
     public static class Ghosts
     {
         /// <summary>Все призраки на карте в режиме — лучший результат каждого автора, от большего счёта к меньшему.</summary>
-        public static List<Ghost> For(string mode, string mapPath)
+        public static List<Ghost> For(string mode, string mapPath, int coopDifficulty = 0)
         {
             // Ensure any social caches from an old Steam account are cleared
             // before reading them into the new game's ghost selection.
@@ -199,11 +199,13 @@ namespace CityHighways.Presentation
             string me = Profiles.Active?.name ?? "";
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+            bool cloudRanked = mode != "coop" || CooperativeDifficulty.Normalize(coopDifficulty) == CoopDifficultyKind.Normal;
+            if (cloudRanked)
             foreach (var record in SocialCloud.FriendRecords.Where(r => r.mode == mode && r.mapPath == mapPath).OrderByDescending(r => r.score))
                 if (seen.Add("f:" + record.playerId)) list.Add(Ghost.FromRecord(record, "friend"));
 
             var club = SocialCloud.Club;
-            if (club != null && club.HasClub && club.records != null)
+            if (cloudRanked && club != null && club.HasClub && club.records != null)
             {
                 var mine = club.members?.FirstOrDefault(m => m.me)?.name ?? me;
                 foreach (var record in club.records.Where(r => r.mode == mode && r.mapPath == mapPath).OrderByDescending(r => r.score))
@@ -214,7 +216,8 @@ namespace CityHighways.Presentation
             }
 
             // Другие профили на этом компьютере (горячий стул) — по сохранённым повторам.
-            foreach (var group in Replays.Entries.Where(e => e.mode == mode && e.mapPath == mapPath && !string.IsNullOrEmpty(e.author))
+            foreach (var group in Replays.Entries.Where(e => e.mode == mode && e.mapPath == mapPath && !string.IsNullOrEmpty(e.author) &&
+                         (mode != "coop" || CooperativeDifficulty.Normalize(e.coopDifficulty) == CooperativeDifficulty.Normalize(coopDifficulty)))
                          .GroupBy(e => e.author, StringComparer.OrdinalIgnoreCase))
             {
                 var best = group.OrderByDescending(e => e.authorScore).First();
@@ -225,7 +228,7 @@ namespace CityHighways.Presentation
 
             list = list.OrderByDescending(g => g.Score).ToList();
             // Свой рекорд — в конце: им можно бросить вызов самому себе, если других нет.
-            var own = Replays.Best(me, mode, mapPath);
+            var own = Replays.Best(me, mode, mapPath, coopDifficulty);
             if (own != null) list.Add(Ghost.FromEntry(own, true));
             return list;
         }

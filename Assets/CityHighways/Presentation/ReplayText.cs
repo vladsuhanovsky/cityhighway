@@ -17,6 +17,7 @@ namespace CityHighways.Presentation
         public static string Facts(ReplayFile file, string date)
         {
             var facts = new List<string> { file.IsCoop ? T("Co-op", "Кооператив") : T("Competitive", "Соревнование"), date };
+            if (file.IsCoop) facts.Add(CoopDifficultyText.Title((int)file.Difficulty));
             if (!string.IsNullOrEmpty(file.scenario) && file.scenario != Scenarios.Title(ScenarioKind.Standard))
             {
                 string scenario = file.scenario;

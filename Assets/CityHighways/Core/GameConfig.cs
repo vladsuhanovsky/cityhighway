@@ -213,6 +213,8 @@ namespace CityHighways.Core
         /// поражение — кризис дошёл до предела или участки кончились раньше. Взяток, аукциона и пропусков нет.
         /// </summary>
         public bool Cooperative;
+        /// <summary>0 = normal (legacy), 1 = easy, 2 = hard; concrete rules are saved with the game.</summary>
+        public int CoopDifficulty;
         /// <summary>
         /// Сколько заказов города открыто одновременно (по числу игроков). Вдвоём за круг всего 2 хода —
         /// три заказа сразу команда не тянет, поэтому на двоих и троих — два.
