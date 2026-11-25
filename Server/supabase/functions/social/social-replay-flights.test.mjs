@@ -95,3 +95,21 @@ test("cloud response still validates and decodes replay prior to fan-out", () =>
   assert.match(fetch, /if \(replay == null\)/);
   assert.match(fetch, /_replayFlights\.Complete\(recordId, token, replay,/);
 });
+
+test("repeated clicks on a record row launch only one replay screen", () => {
+  const open = cloud.slice(cloud.indexOf("public static void OpenRecordReplay("),
+    cloud.indexOf("public static void FetchReplay("));
+  assert.match(open, /if \(!_openingReplays\.Add\(recordId\)\) return;/);
+  assert.match(open, /_openingReplays\.Remove\(recordId\);[\s\S]*?Replays\.Play\?\.Invoke\(replay\)/);
+  assert.match(open, /_openingReplays\.Remove\(recordId\);[\s\S]*?failed\?\.Invoke\(error\)/);
+});
+
+test("repeated clicks on one ghost do not start multiple raid activations", () => {
+  const load = ghosts.slice(ghosts.indexOf("public void LoadReplay("),
+    ghosts.indexOf("public void BuildTimeline("));
+  assert.match(load, /if \(_replayLoading\) return;/);
+  assert.match(load, /_replayLoading = true;/);
+  assert.match(load, /_replayLoading = false;/);
+  assert.match(load, /Steam account changed; raid cancelled/);
+  assert.match(load, /failed\?\.Invoke\(error\)/);
+});
