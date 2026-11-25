@@ -340,14 +340,22 @@ namespace CityHighways.Presentation
             return many;
         }
 
+        public void ShowCampaign()
+        {
+            ShowMenu();
+            _menu?.OpenPage("campaign");
+        }
+
         public void StartGame(GameSetup setup)
         {
+            if (setup == null) return;
+            if (setup.IsCampaign && !CampaignStorage.CanEnter(setup)) return;
             if (setup.magnate)
             {
                 StartMagnate(setup);
                 return;
             }
-            if (!setup.practice) setup.Save();
+            if (!setup.practice && !setup.IsCampaign) setup.Save();
             Sound.Enabled = setup.sound;
             CloseNet();
             Tweener.Clear();
@@ -463,7 +471,7 @@ namespace CityHighways.Presentation
 
         public void ContinueGame(SaveFile file)
         {
-            if (file == null) return;
+            if (file?.setup == null || (file.setup.IsCampaign && !CampaignStorage.CanEnter(file.setup))) return;
             Sound.Enabled = file.setup.sound;
             CloseNet();
             Tweener.Clear();

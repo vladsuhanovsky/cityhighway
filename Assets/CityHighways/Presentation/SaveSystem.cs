@@ -24,6 +24,9 @@ namespace CityHighways.Presentation
 
         public static bool HasSave => File.Exists(SavePath);
 
+        static string PathFor(GameSetup setup) => setup != null && setup.IsCampaign
+            ? CampaignStorage.CheckpointPath(setup.campaignOwner) : SavePath;
+
         public static void Save(GameSetup setup, Game game, float playSeconds)
         {
             if (game == null || game.Phase == GamePhase.GameOver) return;
@@ -38,10 +41,7 @@ namespace CityHighways.Presentation
                 };
 
                 // Пишем во временный файл и подменяем: если игру закроют посреди записи, старое сохранение уцелеет.
-                string temp = SavePath + ".tmp";
-                File.WriteAllText(temp, JsonUtility.ToJson(file));
-                if (File.Exists(SavePath)) File.Delete(SavePath);
-                File.Move(temp, SavePath);
+                ReplayStorageIO.WriteAtomic(PathFor(setup), JsonUtility.ToJson(file));
             }
             catch (Exception e)
             {
@@ -49,13 +49,22 @@ namespace CityHighways.Presentation
             }
         }
 
-        public static SaveFile Load()
+        public static SaveFile Load() => Read(SavePath, null);
+
+        public static SaveFile LoadCampaign(string owner)
+        {
+            if (!CampaignStorage.ValidOwner(owner)) return null;
+            return Read(CampaignStorage.CheckpointPath(owner), owner);
+        }
+
+        static SaveFile Read(string path, string owner)
         {
             try
             {
-                if (!HasSave) return null;
-                var file = JsonUtility.FromJson<SaveFile>(File.ReadAllText(SavePath));
+                if (!File.Exists(path)) return null;
+                var file = JsonUtility.FromJson<SaveFile>(File.ReadAllText(path));
                 if (file == null || file.game == null || file.setup == null || file.setup.players == null) return null;
+                if (owner == null ? file.setup.IsCampaign : !file.setup.IsCampaign || file.setup.campaignOwner != owner || CampaignCatalog.Find(file.setup.campaignMission) == null) return null;
                 return file;
             }
             catch (Exception e)
@@ -65,11 +74,12 @@ namespace CityHighways.Presentation
             }
         }
 
-        public static void Delete()
+        public static void Delete(GameSetup setup = null)
         {
             try
             {
-                if (HasSave) File.Delete(SavePath);
+                string path = PathFor(setup);
+                if (File.Exists(path)) File.Delete(path);
             }
             catch (Exception e)
             {

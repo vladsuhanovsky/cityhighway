@@ -46,7 +46,7 @@ namespace CityHighways.Presentation
         readonly Label _gamepadGuide;
         bool _gamepadActive;
 
-        enum Page { Home, NewGame, Online, Profile, Rules, Stats, Settings, Tutorial, Club }
+        enum Page { Home, NewGame, Online, Profile, Rules, Stats, Settings, Tutorial, Club, Campaign }
         readonly Dictionary<Page, VisualElement> _pages = new Dictionary<Page, VisualElement>();
         readonly VisualElement _pageHost;
         readonly MenuOnlinePage _online;
@@ -123,6 +123,7 @@ namespace CityHighways.Presentation
             _rules = MenuRulesPage.Create(new GameConfig(), () => ShowPage(_rulesReturn));
             _pages[Page.Rules] = _rules.Root;
             _pages[Page.Tutorial] = BuildTutorial();
+            _pages[Page.Campaign] = BuildCampaign();
             _pages[Page.Stats] = MenuStatsPage.Build(() => ShowPage(Page.Home), () => ShowPage(Page.Stats), RebuildStats);
             _settings = new MenuSettingsPage(app, _setup, _display, () => ShowPage(Page.Home), ApplyBackgroundSettings);
             _pages[Page.Settings] = _settings.Root;
@@ -185,6 +186,7 @@ namespace CityHighways.Presentation
             if (page == Page.Club) _club.Rebuild();
             if (page == Page.NewGame) RefreshGhostBanner();
             if (page == Page.Tutorial) RefreshTutorial();
+            if (page == Page.Campaign) RefreshCampaign();
             // На страницах с текстом фон приглушается, верхние значки и уведомления — только на главной.
             _background.Dim = page == Page.Home ? 0f : 1f;
             Ui.Show(_highway, page == Page.Home);
@@ -1051,6 +1053,10 @@ namespace CityHighways.Presentation
         {
             var page = Ui.Column();
             page.Add(PageTitle(LocalizationService.Get("menu.new_game.title"), () => ShowPage(Page.Home)));
+            var campaign = Ui.Button(CampaignText.Title, () => ShowPage(Page.Campaign), ButtonKind.Secondary, 15f);
+            campaign.style.alignSelf = Align.FlexEnd;
+            campaign.style.marginBottom = 8f;
+            page.Add(campaign);
 
             // Высота карточек постоянная (по самому длинному режиму — соревнованию): при смене режима и числа
             // игроков страница не прыгает вверх-вниз (она отцентрована по высоте экрана).
