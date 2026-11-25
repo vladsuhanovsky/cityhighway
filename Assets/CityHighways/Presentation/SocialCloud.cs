@@ -204,8 +204,10 @@ namespace CityHighways.Presentation
         public static readonly List<string> News = new List<string>();
 
         static float _friendsAt = -999f, _clubAt = -999f;
-        static bool _friendsBusy, _clubBusy;
+        static bool _friendsBusy, _clubBusy, _clubActionBusy;
         static readonly SocialAccountScope _accountScope = new SocialAccountScope();
+        static readonly SocialRequestGate _friendRequests = new SocialRequestGate();
+        static readonly SocialRequestGate _clubRequests = new SocialRequestGate();
 
         /// <summary>The signed-in Steam identity for cloud-derived UI state.</summary>
         public static string CurrentSteamAccount
@@ -236,8 +238,11 @@ namespace CityHighways.Presentation
             Club = null;
             News.Clear();
             Problem = "";
+            _friendRequests.Invalidate();
+            _clubRequests.Invalidate();
             _friendsBusy = false;
             _clubBusy = false;
+            _clubActionBusy = false;
             _friendsAt = -999f;
             _clubAt = -999f;
             Changed?.Invoke();
@@ -279,7 +284,7 @@ namespace CityHighways.Presentation
             if (!Available) return;
             float now = Time.realtimeSinceStartup;
             if (!_friendsBusy && now - _friendsAt > FriendsPeriod) RefreshFriends();
-            if (!_clubBusy && now - _clubAt > ClubPeriod) RefreshClub();
+            if (!_clubBusy && !_clubActionBusy && now - _clubAt > ClubPeriod) RefreshClub();
             TrySendQueuedReport();
         }
 
