@@ -59,6 +59,11 @@ namespace CityHighways.Tests
             Assert.AreEqual(2, report.schema);
             Assert.IsNotNull(report.layout3D);
             Assert.AreEqual(report.hubs.Length, report.layout3D.hubFootprints.Length);
+            Assert.IsFalse(report.layout3D.warnings.Any(w => w.code == "crosswalk-envelope-overlap"));
+            Assert.Greater(report.layout3D.crosswalksDrawn, 0);
+            Assert.Greater(report.layout3D.legacyOverlapPairs, 0);
+            Assert.Greater(report.layout3D.crosswalksSuppressed, 0);
+            Assert.AreEqual(report.layout3D.crosswalkCandidates, report.layout3D.crosswalksDrawn + report.layout3D.crosswalksSuppressed);
             Assert.IsNotEmpty(report.layout3D.preparedRivers);
             foreach (var hub in report.layout3D.hubFootprints)
                 Assert.AreEqual(4, hub.corners.Length);
