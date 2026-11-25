@@ -45,7 +45,7 @@ namespace CityHighways.Presentation
 
         static readonly string[] MagnateTipsEnglish =
         {
-            "Perishable cargo scores highly, but loses value for every extra round in transit.",
+            "Perishable cargo scores highly, but loses 2 points for every extra round in transit.",
             "Heavy cargo can only use wide roads: concrete roads, bridges and highways.",
             "Hazardous cargo in the Centre requires an influence bribe or it will be confiscated.",
             "When too many trucks enter a road in one round, they all get stuck and lose points.",
@@ -54,7 +54,7 @@ namespace CityHighways.Presentation
             "Plan routes secretly; trucks move together. Predict where traffic jams will form.",
             "The opening round is for construction: inspect cargo locations and build toward them.",
             "The company investing the most construction points owns the hub, which can change hands.",
-            "Trailing companies act and load first; the lowest-scoring company gets a construction bonus.",
+            "Trailing companies act and load first; the lowest-scoring company gets 1 extra construction point.",
             "Your trucks travel faster on your own roads that are two or more segments long.",
             "If a rival takes a shipment, your truck tries another shipment at the same hub.",
             "The second company to finish a city order earns half the reward.",
@@ -134,8 +134,16 @@ namespace CityHighways.Presentation
                 LocalizationService.Language == "en" ? MagnateTipsEnglish : MagnateTips,
                 GeneratedArt.MagnateLoading, GameColors.Accent, LocalizationService.Language == "en" ? "Could not generate the city: " : "Не удалось построить город: ");
 
+        public static string CompetitionTitle(string title, bool english)
+        {
+            if (!english) return title;
+            if (title == "Соревнование") return "Competitive";
+            if (title == "Рейд на рекорд") return "Record raid";
+            return title;
+        }
+
         public static LoadingScreen Competition(string title = "Соревнование") =>
-            new LoadingScreen(LocalizationService.Language == "en" && title == "Соревнование" ? "Competitive" : title,
+            new LoadingScreen(CompetitionTitle(title, LocalizationService.Language == "en"),
                 LocalizationService.Language == "en" ? "Preparing the game" : "Готовим партию",
                 LocalizationService.Language == "en" ? CompetitionTipsEnglish : CompetitionTips,
                 GeneratedArt.CompetitionLoading, GameColors.Accent, LocalizationService.Language == "en" ? "Could not start the game: " : "Не удалось начать партию: ");
