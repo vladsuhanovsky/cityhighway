@@ -54,6 +54,13 @@ namespace CityHighways.Tests
             Assert.AreEqual(style.hudTopBarHeight, InterfaceLayout.HudTopBarHeight);
             Assert.AreEqual(style.hudBottomBarHeight, InterfaceLayout.HudBottomBarHeight);
             Assert.AreEqual(style.hudDrawerWidth, InterfaceLayout.HudDrawerWidth);
+            Assert.AreEqual(style.newGameOptionsCardWidth, InterfaceLayout.NewGameOptionsCardWidth);
+            Assert.AreEqual(style.onlineInputMinHeight, InterfaceLayout.OnlineInputMinHeight);
+            Assert.AreEqual(style.rulesSearchWidth, InterfaceLayout.RulesSearchWidth);
+            Assert.AreEqual(style.settingsPreviewWidth, InterfaceLayout.SettingsPreviewWidth);
+            Assert.AreEqual(style.statsCharactersWidth, InterfaceLayout.StatsCharactersWidth);
+            Assert.AreEqual(style.profileSidebarWidth, InterfaceLayout.ProfileSidebarWidth);
+            Assert.AreEqual(style.hudPlayersPanelWidth, InterfaceLayout.HudPlayersPanelWidth);
         }
 
         [Test]
