@@ -34,6 +34,19 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void EmptyOptionalRingIsAbsentButMalformedRingIsRejected()
+        {
+            var dto = Draft();
+            dto.ring = new RingDto();
+            Assert.IsTrue(WorkshopMapValidator.TryRead(JsonUtility.ToJson(dto), out var map, out var error), error);
+            Assert.IsNull(map.Ring);
+            dto.ring.rx = 0.2f;
+            Assert.IsFalse(WorkshopMapValidator.TryRead(JsonUtility.ToJson(dto), out map, out error));
+            Assert.AreEqual("ring", error);
+            Assert.IsNull(map);
+        }
+
+        [Test]
         public void BoundsUtf8Payload()
         {
             string json = new string('я', WorkshopMapValidator.MaxUtf8Bytes / 2 + 1);

@@ -73,7 +73,10 @@ namespace CityHighways.Presentation
                         return Fail("river", out error);
             if (dto.piecesScale != 0 && !(dto.piecesScale > 0.2f && dto.piecesScale <= 2f))
                 return Fail("scale", out error);
-            if (dto.ring != null && (!Label(dto.ring.name) || !Unit(dto.ring.cx) || !Unit(dto.ring.cy) ||
+            // JsonUtility may materialize an absent nested DTO with default fields.
+            bool noRing = dto.ring == null || (string.IsNullOrEmpty(dto.ring.name) &&
+                dto.ring.cx == 0 && dto.ring.cy == 0 && dto.ring.rx == 0 && dto.ring.ry == 0);
+            if (!noRing && (!Label(dto.ring.name) || !Unit(dto.ring.cx) || !Unit(dto.ring.cy) ||
                 !Unit(dto.ring.rx) || !Unit(dto.ring.ry) || dto.ring.rx == 0 || dto.ring.ry == 0))
                 return Fail("ring", out error);
             CityMap candidate;
