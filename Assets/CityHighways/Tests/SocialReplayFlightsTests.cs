@@ -166,7 +166,8 @@ namespace CityHighways.Tests
             int second = 0;
             queue.Begin(Record(), _ =>
             {
-                Assert.IsTrue(queue.Begin(Record(), r => second++, _ => { }, out _));
+                Assert.IsTrue(queue.Begin(Record(), r => second++, _ => { }, out int newToken));
+                Assert.AreNotEqual(0, newToken);
             }, _ => Assert.Fail(), out int oldToken);
             Assert.IsTrue(queue.Complete(42, oldToken, Replay(), "mismatch"));
             Assert.AreEqual(1, queue.Count);
