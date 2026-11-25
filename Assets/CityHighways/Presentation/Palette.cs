@@ -46,10 +46,29 @@ namespace CityHighways.Presentation
 
         public static Color RoadColor(Road road) => road.Resource.HasValue ? Card(road.Resource.Value) : AnyRoad;
 
+        // Relative luminance of opaque sRGB colors, not gamma-space brightness.
+        static float LinearChannel(float channel)
+        {
+            channel = Mathf.Clamp01(channel);
+            return channel <= 0.04045f ? channel / 12.92f
+                : Mathf.Pow((channel + 0.055f) / 1.055f, 2.4f);
+        }
+
+        public static float RelativeLuminance(Color color) =>
+            0.2126f * LinearChannel(color.r) + 0.7152f * LinearChannel(color.g) + 0.0722f * LinearChannel(color.b);
+
+        public static float ContrastRatio(Color first, Color second)
+        {
+            float a = RelativeLuminance(first), b = RelativeLuminance(second);
+            return (Mathf.Max(a, b) + 0.05f) / (Mathf.Min(a, b) + 0.05f);
+        }
+
         public static Color TextOn(Color background)
         {
-            float luminance = 0.299f * background.r + 0.587f * background.g + 0.114f * background.b;
-            return luminance > 0.6f ? new Color(0.1f, 0.1f, 0.1f) : Color.white;
+            var dark = new Color(0.1f, 0.1f, 0.1f);
+            if (ContrastRatio(background, Color.white) >= ContrastRatio(background, Color.black))
+                return Color.white;
+            return ContrastRatio(background, dark) >= 4.5f ? dark : Color.black;
         }
 
         public static string CardTitle(Resource resource)

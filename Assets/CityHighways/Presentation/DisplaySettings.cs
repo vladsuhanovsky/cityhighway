@@ -50,6 +50,19 @@ namespace CityHighways.Presentation
 
         public static readonly float[] UiScales = { 0.9f, 1f, 1.1f, 1.2f, 1.3f };
 
+        public static int UiScaleIndex(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value) || value <= 0f) return 1;
+            if (value <= UiScales[0]) return 0;
+            if (value >= UiScales[UiScales.Length - 1]) return UiScales.Length - 1;
+            int best = 0;
+            for (int i = 1; i < UiScales.Length; i++)
+                if (Mathf.Abs(value - UiScales[i]) < Mathf.Abs(value - UiScales[best])) best = i;
+            return best;
+        }
+
+        public static float NormalizeUiScale(float value) => UiScales[UiScaleIndex(value)];
+
         // ---- Управление камерой (Настройки → Управление)
         /// <summary>Скорость поворота и наклона камеры (мышь и клавиши Q/E, R/F): 0 — медленно, 1 — обычно, 2 — быстро.</summary>
         public int cameraSpeed = 1;
@@ -176,14 +189,20 @@ namespace CityHighways.Presentation
             if (!json.Contains("\"musicVolume\""))
                 settings.musicVolume = MusicSoundscape.DefaultVolume;
             settings.musicVolume = MusicSoundscape.SafeVolume(settings.musicVolume);
+            settings.uiScale = NormalizeUiScale(settings.uiScale);
             return settings;
         }
 
         /// <summary>Переписать все поля из other (объект настроек общий у приложения, заменять его нельзя).</summary>
-        public void CopyFrom(DisplaySettings other) => JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(other), this);
+        public void CopyFrom(DisplaySettings other)
+        {
+            JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(other), this);
+            uiScale = NormalizeUiScale(uiScale);
+        }
 
         public void Save()
         {
+            uiScale = NormalizeUiScale(uiScale);
             PlayerPrefs.SetString(PrefsKey, JsonUtility.ToJson(this));
             PlayerPrefs.Save();
         }
@@ -192,7 +211,8 @@ namespace CityHighways.Presentation
         {
             AudioListener.volume = Mathf.Clamp01(volume);
             Ui.ReducedMotion = reducedMotion;
-            if (Panel != null) Panel.scale = Mathf.Clamp(uiScale <= 0f ? 1f : uiScale, 0.8f, 1.4f);
+            uiScale = NormalizeUiScale(uiScale);
+            if (Panel != null) Panel.scale = uiScale;
             if (quality >= 0 && quality < QualitySettings.names.Length && QualitySettings.GetQualityLevel() != quality)
                 QualitySettings.SetQualityLevel(quality, true);
 
