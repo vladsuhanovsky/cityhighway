@@ -32,7 +32,7 @@ test("New Game is always the red highlighted primary tile", () => {
 });
 
 test("Play Now is a separate action and not a nested New Game badge", () => {
-  assert.match(home, /var quick = AddSubAction\(startGroup, "menu\.home\.quick_start", StartGame\)/);
+  assert.match(home, /AddSubAction\(startGroup, "menu\.home\.quick_start", StartGame\)/);
   assert.match(home, /group\.Add\(sub\)/);
   assert.doesNotMatch(home, /newGame\.Badge\.Add\(quick\)/);
   assert.equal(translated(ru, "menu.home.quick_start"), "Играть сразу");
