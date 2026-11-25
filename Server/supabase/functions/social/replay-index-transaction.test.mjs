@@ -87,7 +87,7 @@ test("recovery prunes through transaction after rebuilding orphan catalog", () =
 
 test("failed index writes leave unindexed replay recoverable", () => {
   assert.match(replays, /if \(!transaction\.Commit\([\s\S]*?\)\) return false;/);
-  assert.match(replays, /The file is an orphan, recoverable at the/);
+  assert.match(replays, /On index failure the file is an orphan, recoverable at the/);
   assert.match(transTests, /FailedCommitCanBeRetriedWithoutLosingRemovalPlan/);
 });
 
