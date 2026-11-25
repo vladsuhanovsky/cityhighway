@@ -27,6 +27,8 @@ namespace CityHighways.Presentation
         bool _searching;
         string _query = "";
         SocialCloud.ClubBrief[] _found;
+        string _viewSteamAccount;
+        int _viewSteamGeneration = -1;
         string _newLogo = ClubLogo.Starters[0];
         string _newName = "", _newTag = "", _code = "";
         bool _newOpen = true;
@@ -124,6 +126,21 @@ namespace CityHighways.Presentation
 
         public void Rebuild()
         {
+            string owner = SocialCloud.CurrentSteamAccount;
+            int generation = SocialCloud.CurrentAccountGeneration;
+            if (_viewSteamGeneration != generation || _viewSteamAccount != owner)
+            {
+                // Search results and invite codes are private to the session
+                // that fetched them. A -> B -> A must reset these too.
+                _viewSteamAccount = owner;
+                _viewSteamGeneration = generation;
+                _found = null;
+                _searching = false;
+                _query = "";
+                _code = "";
+                _newName = "";
+                _newTag = "";
+            }
             int pending = SocialCloud.PendingReportsForCurrentAccount;
             _pendingReports.text = pending > 0
                 ? (En ? $"Pending game reports: {pending}. They will retry when Steam is connected."
