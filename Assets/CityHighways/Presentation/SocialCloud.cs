@@ -204,8 +204,10 @@ namespace CityHighways.Presentation
         public static readonly List<string> News = new List<string>();
 
         static float _friendsAt = -999f, _clubAt = -999f;
-        static bool _friendsBusy, _clubBusy;
+        static bool _friendsBusy, _clubBusy, _clubActionBusy;
         static readonly SocialAccountScope _accountScope = new SocialAccountScope();
+        static readonly SocialRequestGate _friendRequests = new SocialRequestGate();
+        static readonly SocialRequestGate _clubRequests = new SocialRequestGate();
 
         /// <summary>The signed-in Steam identity for cloud-derived UI state.</summary>
         public static string CurrentSteamAccount
@@ -236,8 +238,11 @@ namespace CityHighways.Presentation
             Club = null;
             News.Clear();
             Problem = "";
+            _friendRequests.Invalidate();
+            _clubRequests.Invalidate();
             _friendsBusy = false;
             _clubBusy = false;
+            _clubActionBusy = false;
             _friendsAt = -999f;
             _clubAt = -999f;
             Changed?.Invoke();
@@ -279,7 +284,7 @@ namespace CityHighways.Presentation
             if (!Available) return;
             float now = Time.realtimeSinceStartup;
             if (!_friendsBusy && now - _friendsAt > FriendsPeriod) RefreshFriends();
-            if (!_clubBusy && now - _clubAt > ClubPeriod) RefreshClub();
+            if (!_clubBusy && !_clubActionBusy && now - _clubAt > ClubPeriod) RefreshClub();
             TrySendQueuedReport();
         }
 
@@ -444,9 +449,13 @@ namespace CityHighways.Presentation
         {
             EnsureSocialAccount();
             _friendsAt = Time.realtimeSinceStartup;
+            int requestId = _friendRequests.Begin();
             var ids = FriendIds();
             if (ids.Length == 0)
             {
+                // An earlier request may still be in flight, but its reply
+                // must not restore records for friends who are no longer here.
+                _friendsBusy = false;
                 FriendRecords.Clear();
                 Changed?.Invoke();
                 done?.Invoke();
@@ -455,13 +464,22 @@ namespace CityHighways.Presentation
             _friendsBusy = true;
             Send<FriendsResponse>(new Request { action = "friends", ids = ids }, response =>
             {
+                if (!_friendRequests.IsCurrent(requestId)) return;
                 _friendsBusy = false;
-                FriendRecords.Clear();
-                if (response?.records != null) FriendRecords.AddRange(response.records);
-                Changed?.Invoke();
+                // HTTP 200 + {} is not a valid empty friends list.
+                // Keep the last good records until a valid response arrives.
+                if (response?.records != null)
+                {
+                    FriendRecords.Clear();
+                    FriendRecords.AddRange(response.records.Where(r => r != null));
+                    Changed?.Invoke();
+                }
+                else
+                    Debug.LogWarning("Social friends response has no records array; keeping cached data.");
                 done?.Invoke();
             }, _ =>
             {
+                if (!_friendRequests.IsCurrent(requestId)) return;
                 _friendsBusy = false;
                 done?.Invoke();
             });
@@ -566,30 +584,76 @@ namespace CityHighways.Presentation
         public static void RefreshClub(Action done = null)
         {
             EnsureSocialAccount();
+            // An in-flight create/join/leave/logo operation takes priority.
+            // A GET started during mutation could return pre-mutation state.
+            if (_clubActionBusy)
+            {
+                done?.Invoke();
+                return;
+            }
             _clubAt = Time.realtimeSinceStartup;
+            int requestId = _clubRequests.Begin();
             _clubBusy = true;
             Send<ClubState>(new Request { action = "club" }, state =>
             {
+                if (!_clubRequests.IsCurrent(requestId)) return;
                 _clubBusy = false;
-                Club = state;
-                Changed?.Invoke();
+                if (state != null)
+                {
+                    Club = state;
+                    Changed?.Invoke();
+                }
+                else
+                    Debug.LogWarning("Social club response is empty; retaining last good state.");
                 done?.Invoke();
             }, _ =>
             {
+                if (!_clubRequests.IsCurrent(requestId)) return;
                 _clubBusy = false;
-                Changed?.Invoke(); // страница покажет, что не загрузилось
+                Changed?.Invoke();
                 done?.Invoke();
             });
         }
 
         static void ClubAction(Request request, Action<string> failed)
         {
+            EnsureSocialAccount();
+            if (_clubActionBusy)
+            {
+                failed?.Invoke(LocalizationService.Language == "en"
+                    ? "Another club change is still in progress."
+                    : "Предыдущее изменение клуба ещё выполняется.");
+                return;
+            }
+
+            // A previously started GET must not overwrite the mutation.
+            // Serialize mutations so their server-side effects and UI state
+            // cannot race each other if the button is clicked repeatedly.
+            int requestId = _clubRequests.Begin();
+            _clubBusy = false;
+            _clubActionBusy = true;
             Send<ClubState>(request, state =>
             {
+                if (!_clubRequests.IsCurrent(requestId)) return;
+                _clubActionBusy = false;
+                if (state == null)
+                {
+                    _clubAt = -999f;
+                    failed?.Invoke(LocalizationService.Language == "en"
+                        ? "The server returned an incomplete club response."
+                        : "Сервер вернул неполные данные клуба.");
+                    return;
+                }
                 Club = state;
                 _clubAt = Time.realtimeSinceStartup;
                 Changed?.Invoke();
-            }, failed);
+            }, error =>
+            {
+                if (!_clubRequests.IsCurrent(requestId)) return;
+                _clubActionBusy = false;
+                _clubAt = -999f; // A failed/unknown result merits a fresh GET.
+                failed?.Invoke(error);
+            });
         }
 
         public static void CreateClub(string name, string tag, string logo, bool open, Action<string> failed) =>
@@ -604,8 +668,27 @@ namespace CityHighways.Presentation
 
         public static void SetClubOpen(bool open, Action<string> failed) => ClubAction(new Request { action = "club_open", open = open }, failed);
 
-        public static void ListClubs(string query, Action<ClubBrief[]> done, Action<string> failed) =>
-            Send<ClubListResponse>(new Request { action = "club_list", query = query ?? "" }, r => done?.Invoke(r?.clubs ?? new ClubBrief[0]), failed);
+        public static void ListClubs(string query, Action<ClubBrief[]> done, Action<string> failed)
+        {
+            Send<ClubListResponse>(new Request
+            {
+                action = "club_list",
+                query = (query ?? "").Trim()
+            }, response =>
+            {
+                // A successful empty list is {"clubs":[]}, not HTTP 200 {}.
+                if (response?.clubs == null)
+                {
+                    failed?.Invoke(LocalizationService.Language == "en"
+                        ? "The server returned an incomplete club list."
+                        : "Сервер вернул неполный список клубов.");
+                    return;
+                }
+                done?.Invoke(response.clubs.Where(c => c != null &&
+                    !string.IsNullOrEmpty(c.id) && !string.IsNullOrEmpty(c.name))
+                    .Take(30).ToArray());
+            }, failed);
+        }
 
         /// <summary>Тег и герб своего клуба — для лобби и карточки профиля (пусто — не в клубе).</summary>
         public static string ClubTag
