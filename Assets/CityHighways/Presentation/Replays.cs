@@ -84,7 +84,7 @@ namespace CityHighways.Presentation
 
         public static string Folder => Path.Combine(Application.persistentDataPath, "replays");
         static string IndexPath => Path.Combine(Folder, "index.json");
-        static string FileOf(string id) => Path.Combine(Folder, id + ".json");
+        static string FileOf(string id) => ReplayStorageIO.PathFor(Folder, id);
 
         public static IReadOnlyList<Entry> Entries => Load().entries;
 
@@ -175,7 +175,7 @@ namespace CityHighways.Presentation
         /// <summary>Положить повтор в хранилище (свой или скачанный).</summary>
         public static bool Store(ReplayFile replay)
         {
-            if (replay == null || string.IsNullOrEmpty(replay.id)) return false;
+            if (replay == null || !ReplayStorageIO.IsSafeId(replay.id)) return false;
             try
             {
                 Directory.CreateDirectory(Folder);
@@ -228,7 +228,7 @@ namespace CityHighways.Presentation
             }
         }
 
-        public static bool Exists(string id) => !string.IsNullOrEmpty(id) && File.Exists(FileOf(id));
+        public static bool Exists(string id) => ReplayStorageIO.IsSafeId(id) && File.Exists(FileOf(id));
 
         public static ReplayFile Read(string id)
         {
@@ -334,7 +334,7 @@ namespace CityHighways.Presentation
         {
             if (replay == null || replay.version != ReplayFile.CurrentVersion ||
                 (replay.mode != "classic" && replay.mode != "coop") ||
-                string.IsNullOrEmpty(replay.id) ||
+                !ReplayStorageIO.IsSafeId(replay.id) ||
                 string.IsNullOrEmpty(replay.mapPath) ||
                 replay.start == null || replay.start.players == null ||
                 replay.players == null || replay.scores == null || replay.humans == null ||
