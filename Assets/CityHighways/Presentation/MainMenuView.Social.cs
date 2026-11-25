@@ -43,12 +43,12 @@ namespace CityHighways.Presentation
             texts.Add(_ghostOthers);
             _ghostBanner.Add(texts);
 
-            _ghostWatch = Ui.Button("▶ Повтор", () => RequestGhost(false), ButtonKind.Secondary, 14f);
+            _ghostWatch = Ui.Button(GhostBannerText.Watch(LocalizationService.Language == "en"), () => RequestGhost(false), ButtonKind.Secondary, 14f);
             _ghostWatch.style.marginLeft = 10f;
             _ghostBanner.Add(_ghostWatch);
-            _ghostRaid = Ui.Button("Бросить вызов", () => RequestGhost(true), ButtonKind.Primary, 14f);
+            _ghostRaid = Ui.Button(GhostBannerText.Raid(false, LocalizationService.Language == "en"), () => RequestGhost(true), ButtonKind.Primary, 14f);
             _ghostRaid.style.marginLeft = 8f;
-            _ghostRaid.tooltip = "Рейд: те же карта, колода, соперники (боты) и компании, что в партии рекордсмена. Вы садитесь на его место — дальше решают ваши ходы.";
+            _ghostRaid.tooltip = GhostBannerText.Tooltip(LocalizationService.Language == "en");
             _ghostBanner.Add(_ghostRaid);
 
             // Рекорды друзей пришли из облака — обновить баннер, пока меню на экране.
@@ -126,15 +126,15 @@ namespace CityHighways.Presentation
             _ghostWatch.SetEnabled(!_ghostRequest.Pending);
             Ui.Show(_ghostBanner, _bannerGhost != null);
             if (_bannerGhost == null) return;
+            bool english = LocalizationService.Language == "en";
             _ghostText.text = _bannerGhost.Challenge;
+            _ghostWatch.text = GhostBannerText.Watch(english);
+            _ghostRaid.tooltip = GhostBannerText.Tooltip(english);
+            _ghostRaid.text = GhostBannerText.Raid(_bannerGhost.Source == "self", english);
             if (_ghostRequest.Pending) return;
             var others = ghosts.Skip(1).Where(g => g.Source != "self").Take(4).Select(g => $"{g.Name} {g.Score}").ToList();
             var own = ghosts.FirstOrDefault(g => g.Source == "self");
-            string line = others.Count > 0 ? "Ещё рекорды: " + string.Join(", ", others) + "." : "";
-            if (own != null && own != _bannerGhost) line += (line.Length > 0 ? " " : "") + $"Ваш рекорд: {own.Score}.";
-            if (line.Length == 0) line = "Рейд — та же раздача и те же соперники, что у рекордсмена.";
-            _ghostOthers.text = line;
-            _ghostRaid.text = _bannerGhost.Source == "self" ? "Побить свой рекорд" : "Бросить вызов";
+            _ghostOthers.text = GhostBannerText.Records(others, own != null && own != _bannerGhost ? (int?)own.Score : null, english);
         }
     }
 }

@@ -37,13 +37,25 @@ namespace CityHighways.Presentation
         public int[] ScoreByRound;
 
         public bool IsCoop => Mode == "coop";
-        public string ModeTitle => IsCoop ? "в кооперативе" : "в соревновании";
+        public string ModeTitle => LocalizationService.Language == "en"
+            ? (IsCoop ? "in co-op" : "in competitive mode")
+            : (IsCoop ? "в кооперативе" : "в соревновании");
 
         /// <summary>Как назвать автора в баннере.</summary>
         public string Who
         {
             get
             {
+                if (LocalizationService.Language == "en")
+                {
+                    switch (Source)
+                    {
+                        case "friend": return $"Your friend {Name}";
+                        case "club": return $"Club member {Name}";
+                        case "self": return "Your personal best —";
+                        default: return $"{Name} (on this computer)";
+                    }
+                }
                 switch (Source)
                 {
                     case "friend": return $"Твой друг {Name}";
@@ -54,8 +66,11 @@ namespace CityHighways.Presentation
             }
         }
 
-        public string Challenge =>
-            Source == "self"
+        public string Challenge => LocalizationService.Language == "en"
+            ? (Source == "self"
+                ? $"Your personal best on {CityMapText.Name(MapName)} {ModeTitle} is {Score} pts. Can you beat it?"
+                : $"{Who} scored {Score} pts on {CityMapText.Name(MapName)} {ModeTitle}. Can you beat their record?")
+            : Source == "self"
                 ? $"Ваш личный рекорд на карте «{MapName}» {ModeTitle} — {Score} очк. Сможете побить его?"
                 : $"{Who} набрал {Score} очк. на карте «{MapName}» {ModeTitle}. Сможешь побить его рекорд?";
 

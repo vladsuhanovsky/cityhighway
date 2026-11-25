@@ -10,6 +10,13 @@ permissions:
   contents: read
   checks: write
 
+# Both test workflows use the same Unity account/license pool.
+# Queue rather than cancel pending checks, including main and PR runs.
+concurrency:
+  group: cityhighways-unity-license
+  queue: max
+  cancel-in-progress: false
+
 jobs:
   playmode:
     name: Play Mode / Unity 6000.6.8f1

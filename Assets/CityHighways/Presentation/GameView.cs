@@ -5,6 +5,7 @@ using CityHighways.Core;
 using CityHighways.Net;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Unity.Profiling;
 
 namespace CityHighways.Presentation
 {
@@ -390,6 +391,10 @@ namespace CityHighways.Presentation
         UnityEngine.UIElements.Button _logNewButton;
         int[] _seenLog;
         bool _dirty = true;
+        bool _timerStatusDirty;
+        static readonly ProfilerMarker HudRefreshMarker = new ProfilerMarker("CityHighways.HUD.FullRefresh");
+        static readonly ProfilerMarker HudClockMarker = new ProfilerMarker("CityHighways.HUD.ClockRefresh");
+        static readonly ProfilerMarker HudMapMarker = new ProfilerMarker("CityHighways.HUD.MapRefresh");
         readonly HashSet<string> _selectedContracts = new HashSet<string>();
         /// <summary>Закреплённая подсветка: игрок → id контракта. Держится, пока игрок сам её не снимет.</summary>
         readonly Dictionary<int, string> _pinnedContracts = new Dictionary<int, string>();
@@ -1293,13 +1298,20 @@ namespace CityHighways.Presentation
             if (_notifications.ExpireFlash(Time.time)) _dirty = true;
 
             string selectedControllerControl = null;
-            if (_dirty)
+            var refresh = HudTurnClock.SelectRefresh(_dirty, _timerStatusDirty);
+            if (refresh == HudRefreshKind.Full)
             {
                 selectedControllerControl = _gamepadFocusActive && Root.panel != null
                     ? (Root.panel.focusController.focusedElement as VisualElement)?.name
                     : null;
                 _dirty = false;
-                Refresh();
+                _timerStatusDirty = false;
+                using (HudRefreshMarker.Auto()) Refresh();
+            }
+            else if (refresh == HudRefreshKind.ClockOnly)
+            {
+                _timerStatusDirty = false;
+                using (HudClockMarker.Auto()) RefreshStatusClock(_game.ActingPlayerIndex);
             }
 
             // A controller can navigate the existing HUD and dialog buttons
@@ -1402,6 +1414,7 @@ namespace CityHighways.Presentation
                 _timerPhase = _game.Phase;
                 _turnTimeLeft = _setup.turnSeconds;
                 _timerExpired = false;
+                _timerStatusDirty = true;
             }
             if (!HumanToAct || _timerExpired) return;
             if (_overlayKind != OverlayKind.None && _overlayKind != OverlayKind.Payment && _overlayKind != OverlayKind.LuckChoice) return;
@@ -1409,7 +1422,7 @@ namespace CityHighways.Presentation
 
             float before = _turnTimeLeft;
             _turnTimeLeft -= deltaTime;
-            if (Mathf.CeilToInt(before) != Mathf.CeilToInt(_turnTimeLeft)) _dirty = true;
+            if (HudTurnClock.NeedsRefresh(before, _turnTimeLeft)) _timerStatusDirty = true;
             if (before > 10f && _turnTimeLeft <= 10f) _app.Sound.Play(Sfx.Bell, 0.4f);
             if (_turnTimeLeft > 0f) return;
 
@@ -1433,13 +1446,6 @@ namespace CityHighways.Presentation
             });
             Toast(string.Format(LocalizationService.Get("game.notice.turn_timeout"), name), Theme.Danger);
             _dirty = true;
-        }
-
-        string TimerText()
-        {
-            if (!TimerEnabled || !HumanToAct || _timerExpired) return "";
-            int seconds = Mathf.Max(0, Mathf.CeilToInt(_turnTimeLeft));
-            return EnglishUi ? $"  ·  remaining {seconds / 60}:{seconds % 60:00}" : $"  ·  осталось {seconds / 60}:{seconds % 60:00}";
         }
 
         /// <summary>Отметить, что игрок видел журнал до этого места (пока его карты открыты).</summary>
@@ -2340,7 +2346,7 @@ namespace CityHighways.Presentation
             RefreshHand();
             _coach?.Update();
             RefreshOverlays();
-            RefreshMap();
+            using (HudMapMarker.Auto()) RefreshMap();
             RefreshDrawerInfo();
             AutoPanels();
             RefreshTabs();
@@ -2742,8 +2748,8 @@ namespace CityHighways.Presentation
                 row.Name.tooltip = row.Name.text;
                 row.Ability.text = data.Ability;
                 Ui.Show(row.Ability, data.HasAbility);
-                int points = data.Score;
-                row.Score.text = points.ToString();
+                string scoreText = data.Score.ToString();
+                row.Score.text = scoreText;
                 row.Stats.text = data.Stats;
                 row.Pieces.Set(data.PiecesRatio);
                 row.Root.style.backgroundColor = active ? Theme.PanelHover : Theme.PanelLight;
@@ -2756,7 +2762,7 @@ namespace CityHighways.Presentation
                 Ui.Show(row.Title, row.Title.text.Length > 0);
 
                 var chip = _playerChips[player.Index];
-                chip.Score.text = points.ToString();
+                chip.Score.text = scoreText;
                 Ui.Border(chip.Dot, 2f, active ? Color.white : new Color(0f, 0f, 0f, 0f));
                 chip.Dot.style.scale = new Scale(active ? new Vector3(1.15f, 1.15f, 1f) : Vector3.one);
             }
@@ -2776,13 +2782,12 @@ namespace CityHighways.Presentation
                 _statusName.text = LocalizationService.Get("game.ui.091");
             }
 
-            _statusText.text = Instruction(acting) + TimerText();
+            RefreshStatusClock(acting);
             if (_setup.IsCampaign)
             {
                 var mission = CampaignCatalog.Find(_setup.campaignMission);
                 if (mission != null) _statusText.tooltip = CampaignText.MissionTitle(mission) + " · " + CampaignText.Goal(mission);
             }
-            _statusText.style.color = TimerEnabled && HumanToAct && !_timerExpired && _turnTimeLeft <= 10f ? Theme.Danger : Theme.Text;
             MarkLogSeen();
             _finalRound.text = FinalText();
             _finalRound.style.color = _game.IsFinalRound ? Theme.Gold : Theme.TextDim;
@@ -2790,6 +2795,12 @@ namespace CityHighways.Presentation
             _flashLabel.text = _notifications.FlashText;
             Ui.Show(_flashLabel, _notifications.HasFlash);
             Ui.Show(_passButton, HumanToAct && _game.Phase == GamePhase.AwaitingAction && !_game.HasAnyLegalAction());
+        }
+
+        void RefreshStatusClock(int acting)
+        {
+            HudTurnClock.Render(_statusText, Instruction(acting),
+                TimerEnabled && HumanToAct && !_timerExpired, _turnTimeLeft, EnglishUi);
         }
 
         string Instruction(int acting) => acting < 0

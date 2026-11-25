@@ -14,10 +14,10 @@ Batch 1, merged PR #134 (1b7c1b6): optional ring fix; geometry preflight; save/r
 
 Next gates:
 - [ ] Repair any CI failures, especially new generator coverage. Preserve real failed seeds and regression cases. Capture 3D river/hub/road reproduction.
-- [ ] Batch 2: non-destructive load failure, bounded Classic/campaign save I/O, previous snapshot backup and explicit Editor recovery, save-summary localization. Pending CI and manual recovery smoke. Historical golden fixtures, runtime recovery UX, Magnate persistence and map revision identity remain open (see SAVE_RECOVERY.md).
+- [ ] Batch 2: non-destructive load failure, bounded Classic/campaign save I/O, previous snapshot backup and explicit Editor recovery, save-summary localization. PR #135 merged (5a193f8): 1,352 Edit Mode tests, 2 Play Mode tests, Interface Editor and main menu visual guard passed. Manual recovery smoke remains open. Historical golden fixtures, runtime recovery UX, Magnate persistence and map revision identity remain open (see SAVE_RECOVERY.md).
 - [ ] Full standalone boot/menu/game/return tests with isolated data; actual controller and Deck 1280x800.
 - [ ] Resolve real localization defects, review unresolved scanner candidates; RU/EN visual matrix and no clipped text.
-- [ ] Profile timer-only refresh, payment allocations and map repaint; measured targeted changes only.
+- [ ] Batch 3: split clock-only refresh from full HUD, add three profiler scopes, reuse score string, localize record/raid banner, add policy and runtime label tests. Pending CI and actual profiling; measure payment allocations and map repaint before further optimization.
 - [ ] Measure current comparable City3D cold/warm startup, frame P95/P99 and memory across repeated games. Existing performance suite; no speculative speed claims.
 
 ## Stage 7 — City Generator Lab and graphics (P1)

@@ -29,6 +29,52 @@ namespace CityHighways.PlayModeTests
         }
 
         [UnityTest]
+        public IEnumerator ClockOnlyRenderRetainsHudControlsAcrossFrames()
+        {
+            var settings = ScriptableObject.CreateInstance<PanelSettings>();
+            var theme = ScriptableObject.CreateInstance<ThemeStyleSheet>();
+            settings.themeStyleSheet = theme;
+            var owner = new GameObject("CityHighways clock smoke UI");
+            owner.SetActive(false);
+            var doc = owner.AddComponent<UIDocument>();
+            doc.panelSettings = settings;
+            owner.SetActive(true);
+            try
+            {
+                for (int i = 0; i < 5 && doc.rootVisualElement == null; i++) yield return null;
+                Assert.IsNotNull(doc.rootVisualElement);
+                var hud = new VisualElement();
+                var label = new Label();
+                var action = new Button { text = "Build", name = "build" };
+                hud.Add(label);
+                hud.Add(action);
+                doc.rootVisualElement.Add(hud);
+                HudTurnClock.Render(label, "Build", true, 11f, true);
+                yield return null;
+                Assert.IsNotNull(label.panel);
+                Assert.AreEqual("Build  ·  remaining 0:11", label.text);
+                HudTurnClock.Render(label, "Build", true, 10f, true);
+                yield return null;
+                Assert.AreEqual("Build  ·  remaining 0:10", label.text);
+                Assert.AreEqual(Theme.Danger, label.style.color.value);
+                Assert.AreSame(action, hud.Q<Button>("build"));
+                Assert.AreEqual(2, hud.childCount);
+                HudTurnClock.Render(label, "Ход", false, 0f, false);
+                yield return null;
+                Assert.AreEqual("Ход", label.text);
+                Assert.AreEqual(Theme.Text, label.style.color.value);
+                Assert.AreSame(action, hud.Q<Button>("build"));
+            }
+            finally
+            {
+                Object.Destroy(owner);
+                Object.Destroy(settings);
+                Object.Destroy(theme);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator MapViewReplacesCityAndClearsTransientState()
         {
             var settings = ScriptableObject.CreateInstance<PanelSettings>();
