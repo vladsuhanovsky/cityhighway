@@ -27,7 +27,6 @@ namespace CityHighways.Presentation
         public const string PublishableKey = "sb_publishable_uawmnbX-MRpqMCeWBFZdCA_0yXpJ_qK";
         const string Function = "/functions/v1/player-sync";
         const string TicketIdentity = "cityhighways";
-        const float SaveDelay = 8f, Period = 300f;
 
         [Serializable]
         class SyncRequest
@@ -62,10 +61,11 @@ namespace CityHighways.Presentation
             public string error;
         }
 
-        static bool _busy, _started;
-        static float _nextAt = -1f, _lastSync;
+        static bool _started;
+        static readonly CloudProfileSyncSchedule Schedule = new CloudProfileSyncSchedule();
         static string _observedSteamId;
         static int _accountEpoch;
+        static float Now => Time.realtimeSinceStartup;
 
         static string CurrentSteamId()
         {
@@ -83,12 +83,10 @@ namespace CityHighways.Presentation
             unchecked { _accountEpoch++; }
             // A stale in-flight Steam request must not keep a new account
             // busy or apply another person's admin actions and sync receipt.
-            _busy = false;
+            Schedule.Reset(Now);
             ServerId = "";
             Problem = "";
             Messages.Clear();
-            _nextAt = Time.realtimeSinceStartup + 1f;
-            _lastSync = Time.realtimeSinceStartup;
             Changed?.Invoke();
         }
 
@@ -112,56 +110,82 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Профиль изменился — отправить чуть позже (несколько сохранений подряд уйдут одним запросом).</summary>
-        public static void MarkDirty()
-        {
-            float at = Time.realtimeSinceStartup + SaveDelay;
-            if (_nextAt < 0f || at < _nextAt || _nextAt <= Time.realtimeSinceStartup) _nextAt = at;
-        }
+        public static void MarkDirty() => Schedule.MarkDirty(Now);
 
         /// <summary>Каждый кадр из приложения: отложенная и периодическая синхронизация.</summary>
         public static void Tick()
         {
             EnsureSteamAccount();
-            float now = Time.realtimeSinceStartup;
+            float now = Now;
             if (!_started)
             {
                 _started = true;
-                _nextAt = now + 1f; // первая — сразу после запуска (Steam успеет подняться)
+                Schedule.Reset(now);
             }
-            if (_busy) return;
-            if ((_nextAt >= 0f && now >= _nextAt) || now - _lastSync > Period) SyncNow();
+            if (Schedule.TicketExpired(now))
+            {
+                Fail(Schedule.Token, "Steam auth ticket timed out.");
+            }
+            if (Schedule.Due(now)) SyncNow();
+        }
+
+        static bool Current(int epoch, string owner, int token) =>
+            _accountEpoch == epoch && CurrentSteamId() == owner && Schedule.IsCurrent(token);
+
+        static void Fail(int token, string problem)
+        {
+            if (!Schedule.Fail(token, Now)) return;
+            Problem = problem;
+            Changed?.Invoke();
         }
 
         public static void SyncNow()
         {
             EnsureSteamAccount();
-            if (_busy) return;
-            _nextAt = -1f;
-            _lastSync = Time.realtimeSinceStartup;
             var profile = Target;
             var steam = NetPlatforms.Steam;
-            if (profile == null || steam == null) return;
+            if (profile == null || steam == null)
+            {
+                Schedule.Defer(Now);
+                return;
+            }
+            if (!Schedule.TryBegin(Now, out int token)) return;
             string owner = _observedSteamId;
             int epoch = _accountEpoch;
-            _busy = true;
-            steam.RequestWebApiTicket(TicketIdentity, ticket =>
+            try
             {
-                EnsureSteamAccount();
-                if (_accountEpoch != epoch || CurrentSteamId() != owner) return;
-                try
+                steam.RequestWebApiTicket(TicketIdentity, ticket =>
                 {
-                    Send(profile, owner, ticket ?? "", epoch);
-                }
-                catch (Exception e)
-                {
-                    if (_accountEpoch != epoch) return;
-                    _busy = false;
-                    Problem = e.Message;
-                }
-            });
+                    EnsureSteamAccount();
+                    if (!Current(epoch, owner, token) || !Schedule.WaitingForTicket) return;
+                    if (string.IsNullOrWhiteSpace(ticket))
+                    {
+                        Fail(token, "Steam auth ticket unavailable.");
+                        return;
+                    }
+                    if (!ReferenceEquals(Target, profile))
+                    {
+                        Fail(token, "Steam profile changed during sync.");
+                        return;
+                    }
+                    // Persist all pending receipts and progress before sending them.
+                    if (!Profiles.TrySaveLocal())
+                    {
+                        Fail(token, "Local profile could not be saved.");
+                        return;
+                    }
+                    if (!Schedule.BeginHttp(token)) return;
+                    try { Send(profile, owner, ticket, epoch, token); }
+                    catch (Exception e) { Fail(token, e.Message); }
+                });
+            }
+            catch (Exception e)
+            {
+                Fail(token, e.Message);
+            }
         }
 
-        static void Send(PlayerProfile profile, string steamId, string ticket, int epoch)
+        static void Send(PlayerProfile profile, string steamId, string ticket, int epoch, int token)
         {
             var request = new SyncRequest
             {
@@ -181,37 +205,55 @@ namespace CityHighways.Presentation
             };
             web.SetRequestHeader("Content-Type", "application/json");
             web.SetRequestHeader("apikey", PublishableKey);
-            web.SendWebRequest().completed += _ =>
+            UnityWebRequestAsyncOperation operation;
+            try { operation = web.SendWebRequest(); }
+            catch
+            {
+                web.Dispose();
+                throw;
+            }
+            operation.completed += _ =>
             {
                 EnsureSteamAccount();
-                if (_accountEpoch != epoch || CurrentSteamId() != steamId)
+                if (!Current(epoch, steamId, token))
                 {
                     web.Dispose();
                     return;
                 }
-                _busy = false;
                 try
                 {
                     var text = web.downloadHandler?.text ?? "";
                     var response = string.IsNullOrEmpty(text) ? null : JsonUtility.FromJson<SyncResponse>(text);
                     if (web.result != UnityWebRequest.Result.Success || response == null || !string.IsNullOrEmpty(response.error))
                     {
-                        Problem = response?.error ?? web.error ?? "нет ответа";
+                        Fail(token, response?.error ?? web.error ?? "No profile sync response.");
                         return;
                     }
                     if (!string.Equals(response.id, "steam:" + steamId, StringComparison.Ordinal) ||
                         !string.Equals(response.platformUserId, steamId, StringComparison.Ordinal))
                     {
-                        Problem = "Steam profile sync identity mismatch";
+                        Fail(token, "Steam profile sync identity mismatch");
                         return;
                     }
+                    if (!ReferenceEquals(Target, profile))
+                    {
+                        Fail(token, "Steam profile changed during sync.");
+                        return;
+                    }
+                    if (!Apply(profile, response))
+                    {
+                        Fail(token, "Local profile could not be saved.");
+                        return;
+                    }
+                    bool notify = Problem.Length > 0 || ServerId != response.id;
                     Problem = "";
                     ServerId = response.id;
-                    Apply(profile, response);
+                    Schedule.Complete(token, Now);
+                    if (notify) Changed?.Invoke();
                 }
                 catch (Exception e)
                 {
-                    Problem = e.Message;
+                    Fail(token, e.Message);
                 }
                 finally
                 {
@@ -220,15 +262,18 @@ namespace CityHighways.Presentation
             };
         }
 
-        static void Apply(PlayerProfile profile, SyncResponse response)
+        static bool Apply(PlayerProfile profile, SyncResponse response)
         {
+            // Invalid response entries must never clear the pending receipt set.
+            if (response.actions == null || response.actions.Any(a => a == null || a.id <= 0))
+                throw new InvalidOperationException("Invalid admin action response.");
             bool changed = profile.cloudBanned != response.banned || profile.cloudBanReason != (response.banReason ?? "");
             profile.cloudBanned = response.banned;
             profile.cloudBanReason = response.banReason ?? "";
             if (profile.appliedActions == null) profile.appliedActions = new List<long>();
             // Сервер вернул только неприменённые: подтверждённые им номера можно забыть.
             var pending = new HashSet<long>((response.actions ?? Array.Empty<AdminAction>()).Select(a => a.id));
-            profile.appliedActions.RemoveAll(id => !pending.Contains(id));
+            bool receiptsChanged = profile.appliedActions.RemoveAll(id => !pending.Contains(id)) > 0;
             bool appliedNew = false;
             foreach (var action in response.actions ?? Array.Empty<AdminAction>())
             {
@@ -237,13 +282,17 @@ namespace CityHighways.Presentation
                 profile.appliedActions.Add(action.id);
                 appliedNew = true;
             }
-            if (changed || appliedNew)
+            if (changed || appliedNew || receiptsChanged)
             {
-                Profiles.SaveLocal();
+                // Keep in-memory receipts after an I/O error; the next attempt
+                // must persist them before it can acknowledge them to the server.
+                if (!Profiles.TrySaveLocal()) return false;
                 Changed?.Invoke();
             }
-            // Сообщить серверу о применённых — следующей синхронизацией, не откладывая.
-            if (appliedNew) _nextAt = Time.realtimeSinceStartup + 1f;
+            // A failed local save leaves receipts in memory; any outstanding
+            // IDs still need acknowledgement after the next successful attempt.
+            if (profile.appliedActions.Count > 0) Schedule.MarkDirty(Now, 1f);
+            return true;
         }
 
         static void ApplyAction(PlayerProfile profile, AdminAction action)

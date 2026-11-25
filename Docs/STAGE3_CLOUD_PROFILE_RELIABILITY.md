@@ -1,0 +1,10 @@
+# Stage 3 — cloud profile client reliability
+
+Verified client gaps: a lost Steam ticket callback could leave CloudProfiles busy indefinitely; failures had no explicit retry policy; direct File.WriteAllText could truncate an existing profile; receipt removal alone was not persisted; a failed local save did not prevent a later acknowledgement.
+
+- Add a token-fenced single-flight schedule with 15-second Steam ticket deadline, existing 20-second Unity HTTP timeout, retry delays 15/30/60/120/240/300 seconds (capped), 8-second save coalescing, 300-second periodic sync and prompt receipt follow-up. Dirty changes cannot bypass backoff; account reset clears it. A late ticket cannot start a new upload. Missing ticket fails locally instead of sending an empty ticket (including development mode).
+- Persist profile via existing atomic sibling replacement helper. Save before each upload, and persist changed receipts even when no new action or ban is present. On I/O failure keep in-memory receipts and retry local persistence before acknowledging. Validate response action array before modifying profile.
+- No live Supabase or database changes. Server implementation remains client-profile upload + admin actions, not cross-device restore/merge. Server-side idempotency/transactionality, concurrent-device conflicts and live Steam/HTTP behavior still need separate acceptance. Existing server dev ALLOW_UNVERIFIED configuration is not changed. HTTP request timeout does not guarantee the server stopped processing.
+- Seven new Edit Mode cases for scheduling, stale callback, backoff, dirty changes, acknowledgement timing and atomic profile data persistence. No changes to gameplay or profile JSON shape.
+
+Manual QA: simulate offline Steam, lost ticket callback, server error, account switch during request, change profile while uploading, disk write failure, reconnect, receipt retry and profile restart. Verify actual platform/Steam service and filesystem behavior; no runtime or production deployment here.
