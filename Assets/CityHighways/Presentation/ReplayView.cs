@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CityHighways.Core;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace CityHighways.Presentation
@@ -35,6 +36,10 @@ namespace CityHighways.Presentation
         readonly VisualElement _scoreList, _commentList;
         readonly Label _turnLabel, _progressLabel, _errorLabel;
         readonly Button _playButton, _speedButton, _handsButton;
+        readonly Button _firstButton, _previousButton, _nextButton, _lastButton, _backButton;
+        readonly Label _controllerGuide;
+        bool _controllerActive;
+        string _renderedLanguage;
         readonly Slider _slider;
         bool _sliderSync;
         readonly List<(string text, bool important)> _comments = new List<(string, bool)>();
@@ -67,9 +72,10 @@ namespace CityHighways.Presentation
             top.style.backgroundColor = Theme.PanelGlass;
             top.style.borderBottomWidth = 1f;
             top.style.borderBottomColor = Theme.Line;
-            var backButton = Ui.Button("← Назад", () => _back?.Invoke(), ButtonKind.Ghost, 15f);
-            backButton.style.marginRight = 14f;
-            top.Add(backButton);
+            _backButton = Ui.Button("← Назад", () => _back?.Invoke(), ButtonKind.Ghost, 15f);
+            _backButton.name = "gamepad-replay-back";
+            _backButton.style.marginRight = 14f;
+            top.Add(_backButton);
             var icon = new MenuIcon(MenuIcon.Glyph.Play, 22f, Theme.Gold);
             icon.style.marginRight = 10f;
             top.Add(icon);
@@ -84,6 +90,7 @@ namespace CityHighways.Presentation
             titles.Add(Ui.Text(string.Join(" · ", facts), 13f, Theme.TextDim));
             top.Add(titles);
             _handsButton = Ui.Button("Показать руки", ToggleHands, ButtonKind.Secondary, 13f);
+            _handsButton.name = "gamepad-replay-hands";
             _handsButton.style.width = 150f;
             top.Add(_handsButton);
             Root.Add(top);
@@ -137,13 +144,20 @@ namespace CityHighways.Presentation
                 bottom.Add(button);
                 return button;
             }
-            Control("⏮", () => SeekTo(0), 48f);
-            Control("◀", StepBack, 48f);
+            _firstButton = Control("⏮", () => SeekTo(0), 48f);
+            _previousButton = Control("◀", StepBack, 48f);
             _playButton = Control("▶ Смотреть", TogglePlay, 140f);
-            Control("▶|", () => { _playing = false; StepForward(true); }, 48f);
-            Control("⏭", () => SeekTo(_file.Actions), 48f);
+            _nextButton = Control("▶|", () => { _playing = false; _timer = 0f; StepForward(true); }, 48f);
+            _lastButton = Control("⏭", () => SeekTo(_file.Actions), 48f);
             _speedButton = Control("×1", CycleSpeed, 56f);
+            _firstButton.name = "gamepad-replay-first";
+            _previousButton.name = "gamepad-replay-previous";
+            _playButton.name = "gamepad-replay-play";
+            _nextButton.name = "gamepad-replay-next";
+            _lastButton.name = "gamepad-replay-last";
+            _speedButton.name = "gamepad-replay-speed";
             _slider = new Slider(0f, Mathf.Max(1, _file.Actions));
+            _slider.name = "gamepad-replay-seek";
             _slider.style.flexGrow = 1f;
             _slider.style.marginLeft = 12f;
             _slider.style.marginRight = 12f;
@@ -159,6 +173,16 @@ namespace CityHighways.Presentation
             _progressLabel.style.unityTextAlign = TextAnchor.MiddleRight;
             bottom.Add(_progressLabel);
             Root.Add(bottom);
+
+            // A dedicated layout row cannot cover playback buttons or intercept mouse input.
+            _controllerGuide = GamepadControlGuide.Create();
+            _controllerGuide.style.position = Position.Relative;
+            _controllerGuide.style.right = StyleKeyword.Auto;
+            _controllerGuide.style.bottom = StyleKeyword.Auto;
+            _controllerGuide.style.alignSelf = Align.FlexEnd;
+            _controllerGuide.style.marginRight = 18f;
+            _controllerGuide.style.marginBottom = 4f;
+            Root.Add(_controllerGuide);
 
             _errorLabel = Ui.Text("", 15f, Theme.Danger, true);
             _errorLabel.style.position = Position.Absolute;
@@ -230,7 +254,7 @@ namespace CityHighways.Presentation
 
         void StepForward(bool userStep)
         {
-            if (_game == null || _position >= _file.Actions) return;
+            if (_game == null || _error != null || _position >= _file.Actions) return;
             if (Apply(true))
             {
                 if (_comments.Count > 80) _comments.RemoveRange(0, _comments.Count - 80);
@@ -250,8 +274,19 @@ namespace CityHighways.Presentation
         void SeekTo(int target)
         {
             if (_cityMap == null) return;
+            _playing = false;
+            _timer = 0f;
             target = Mathf.Clamp(target, 0, _file.Actions);
-            if (target == _position && _game != null) return;
+            if (target == _position && _game != null)
+            {
+                RefreshPanel();
+                return;
+            }
+            if (_error != null && target > _position)
+            {
+                RefreshPanel();
+                return;
+            }
             if (target > _position && _game != null)
             {
                 // Вперёд — просто доигрываем, без пересборки.
@@ -272,8 +307,9 @@ namespace CityHighways.Presentation
 
         void TogglePlay()
         {
-            if (_game == null) return;
+            if (_game == null || _error != null || _file.Actions <= 0) return;
             if (_position >= _file.Actions) SeekTo(0);
+            if (_game == null || _error != null) return;
             _playing = !_playing;
             _timer = 0f;
             RefreshPanel();
@@ -288,14 +324,26 @@ namespace CityHighways.Presentation
         void ToggleHands()
         {
             _showHands = !_showHands;
-            _handsButton.text = _showHands ? "Скрыть руки" : "Показать руки";
             RefreshPanel();
         }
 
         public void Tick(float deltaTime)
         {
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+            {
+                Ui.GoBack(Root);
+                return;
+            }
+            UiGamepadFocus.MaintainGameplayFocus(Root, ref _controllerActive);
+            // Back may synchronously remove this view from the panel.
+            if (Root.panel == null) return;
+            GamepadControlGuide.Update(_controllerGuide, GamepadControlGuide.Context.Replay,
+                Gamepad.current != null, _controllerActive, false, LocalizationService.Language == "en", false);
+            if (_renderedLanguage != LocalizationService.Language) RefreshPanel();
+
             _map.Tick(deltaTime);
-            if (!_playing || _game == null) return;
+            if (!_playing || _game == null || _error != null) return;
             _timer += deltaTime * _speed;
             // Набор карт — быстро, стройка и события — с паузой, чтобы успеть рассмотреть.
             float interval = BaseInterval;
@@ -321,7 +369,20 @@ namespace CityHighways.Presentation
         {
             _errorLabel.text = _error ?? "";
             Ui.Show(_errorLabel, !string.IsNullOrEmpty(_error));
-            _playButton.text = _playing ? "⏸ Пауза" : _position >= _file.Actions && _file.Actions > 0 ? "↺ Сначала" : "▶ Смотреть";
+            _renderedLanguage = LocalizationService.Language;
+            bool english = _renderedLanguage == "en";
+            _backButton.text = english ? "← Back" : "← Назад";
+            _handsButton.text = ReplayTransportState.HandsLabel(_showHands, english);
+            _playButton.text = ReplayTransportState.PlayLabel(_playing, _position, _file.Actions, english);
+            var transport = ReplayTransportState.Read(_game != null, _error != null, _position, _file.Actions);
+            _firstButton.SetEnabled(transport.CanGoBack);
+            _previousButton.SetEnabled(transport.CanGoBack);
+            _nextButton.SetEnabled(transport.CanGoForward);
+            _lastButton.SetEnabled(transport.CanGoForward);
+            _playButton.SetEnabled(transport.CanPlay);
+            _speedButton.SetEnabled(transport.CanPlay);
+            _slider.SetEnabled(transport.CanSeek);
+            _handsButton.SetEnabled(_game != null);
             _progressLabel.text = $"{_position} / {_file.Actions}";
             _sliderSync = true;
             _slider.SetValueWithoutNotify(_position);
