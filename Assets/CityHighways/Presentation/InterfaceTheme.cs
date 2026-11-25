@@ -58,7 +58,7 @@ namespace CityHighways.Presentation
         [Range(350f, 850f)] public float statsHistoryHeight = 600f;
 
         [Header("Profile")]
-        [Range(350f, 850f)] public float profileContentHeight = 580f;
+        [Range(350f, 850f)] public float profileContentHeight = 664f;
 
         [Header("Game HUD (Classic)")]
         [Range(42f, 110f)] public float hudTopBarHeight = 60f;
