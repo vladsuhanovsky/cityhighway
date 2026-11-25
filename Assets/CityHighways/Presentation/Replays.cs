@@ -109,7 +109,39 @@ namespace CityHighways.Presentation
                 Debug.LogWarning("Не удалось прочитать список повторов: " + e.Message);
                 _index = new Index();
             }
+
+            // If the process stopped after writing a replay but before its
+            // index, reconstruct the missing entry on the next startup.
+            try
+            {
+                if (RecoverOrphans(_index) > 0) SaveIndex();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Не удалось восстановить индекс повторов: " + e.Message);
+            }
             return _index;
+        }
+
+        static int RecoverOrphans(Index index)
+        {
+            if (!Directory.Exists(Folder)) return 0;
+            var known = new HashSet<string>(index.entries.Select(e => e.id), StringComparer.Ordinal);
+            int seen = 0;
+            int recovered = 0;
+            // This is one-time startup recovery, not a full filesystem scan.
+            foreach (var path in Directory.EnumerateFiles(Folder, "*.json", SearchOption.TopDirectoryOnly))
+            {
+                if (++seen > 300) break;
+                string id = Path.GetFileNameWithoutExtension(path);
+                if (!ReplayStorageIO.IsSafeId(id) || !known.Add(id)) continue;
+                var replay = Read(id);
+                if (replay == null) continue;
+                index.entries.Add(EntryOf(replay));
+                recovered++;
+            }
+            if (recovered > 0) Prune(index);
+            return recovered;
         }
 
         static void SaveIndex()
