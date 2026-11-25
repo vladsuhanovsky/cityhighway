@@ -11,6 +11,7 @@ namespace CityHighways.Presentation
     public sealed class MenuHighwayOverlay : VisualElement
     {
         readonly ColorMesh _mesh = new ColorMesh();
+        readonly float _trafficSpeed;
         float _trafficTime;
         float _departureElapsed = MenuRoadDeparture.DurationSeconds;
         bool _departing;
@@ -20,6 +21,8 @@ namespace CityHighways.Presentation
 
         public MenuHighwayOverlay()
         {
+            var style = MainMenuStyle.Current;
+            _trafficSpeed = style != null ? Mathf.Clamp(style.trafficSpeed, 0f, 2f) : 1f;
             pickingMode = PickingMode.Ignore;
             Ui.Fill(this);
             generateVisualContent += Draw;
@@ -35,7 +38,7 @@ namespace CityHighways.Presentation
         public void Tick(float dt, bool reducedMotion)
         {
             if (dt <= 0f) return;
-            if (!reducedMotion) _trafficTime += dt;
+            if (!reducedMotion) _trafficTime += dt * _trafficSpeed;
             if (_departing)
             {
                 _departureElapsed += dt;

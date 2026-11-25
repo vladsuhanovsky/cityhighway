@@ -282,7 +282,7 @@ namespace CityHighways.Presentation
             var leftCity = new MenuIcon(MenuIcon.Glyph.Skyline, 52f, new Color(Theme.Gold.r, Theme.Gold.g, Theme.Gold.b, 0.85f));
             leftCity.style.marginRight = 18f;
             titleRow.Add(leftCity);
-            var title = Ui.Text("City Highways", 72f, Theme.Gold, true);
+            var title = Ui.Text("City Highways", MenuHomeActionLayout.LogoFontSize, Theme.Gold, true);
             Fonts.Apply(title, Fonts.Weight.Logo);
             title.style.unityTextAlign = TextAnchor.MiddleCenter;
             titleRow.Add(title);
@@ -290,7 +290,7 @@ namespace CityHighways.Presentation
             rightCity.style.marginLeft = 18f;
             titleRow.Add(rightCity);
             page.Add(titleRow);
-            var subtitle = Ui.Text(LocalizationService.Get("menu.home.subtitle"), 17f, Theme.Text);
+            var subtitle = Ui.Text(LocalizationService.Get("menu.home.subtitle"), MenuHomeActionLayout.SubtitleFontSize, Theme.Text);
             subtitle.style.unityTextAlign = TextAnchor.MiddleCenter;
             subtitle.style.marginTop = 6f;
             subtitle.style.marginBottom = 18f;
@@ -298,15 +298,15 @@ namespace CityHighways.Presentation
 
             // Новости: что появилось в игре, меняются каждые несколько секунд.
             _newsBox = Ui.Row();
-            _newsBox.style.width = 780f;
+            _newsBox.style.width = MenuHomeActionLayout.NewsWidth;
             _newsBox.style.alignSelf = Align.Center;
             _newsBox.style.alignItems = Align.Center;
-            _newsBox.style.minHeight = 48f;
+            _newsBox.style.minHeight = MenuHomeActionLayout.NewsMinHeight;
             _newsBox.style.backgroundColor = Theme.PanelGlass;
             Ui.Radius(_newsBox, 12f);
             Ui.Border(_newsBox, 1f, Theme.Line);
             Ui.Padding(_newsBox, 10f, 14f);
-            _newsBox.style.marginBottom = 18f;
+            _newsBox.style.marginBottom = MenuHomeActionLayout.NewsBottomGap;
             Ui.Shadow(_newsBox, 12f);
             var newsIcon = new MenuIcon(MenuIcon.Glyph.News, 22f, Theme.Gold);
             newsIcon.style.flexShrink = 0f;
@@ -353,7 +353,7 @@ namespace CityHighways.Presentation
             MenuButton Add(VisualElement group, MenuIcon.Glyph glyph,
                 string text, Action onClick, bool primary)
             {
-                var button = new MenuButton(glyph, text, onClick, primary);
+                var button = new MenuButton(glyph, text, onClick, primary, MainMenuStyle.Current);
                 button.style.width = MenuHomeActionLayout.Width;
                 button.style.height = MenuHomeActionLayout.PrimaryHeight;
                 button.style.minHeight = MenuHomeActionLayout.PrimaryHeight;
@@ -368,8 +368,10 @@ namespace CityHighways.Presentation
                 // Use the color-aware factory so hover and focus restore the
                 // same dark-blue surface rather than a different theme color.
                 var sub = Ui.Button(LocalizationService.Get(key), action,
-                    new Color(0.16f, 0.23f, 0.31f, 0.98f),
-                    new Color(0.25f, 0.35f, 0.45f, 1f),
+                    MainMenuStyle.Current != null ? MainMenuStyle.Current.secondaryNormal :
+                        new Color(0.16f, 0.23f, 0.31f, 0.98f),
+                    MainMenuStyle.Current != null ? MainMenuStyle.Current.secondaryHover :
+                        new Color(0.25f, 0.35f, 0.45f, 1f),
                     Theme.Text, MenuHomeActionLayout.SecondaryFontSize);
                 sub.style.width = MenuHomeActionLayout.Width;
                 sub.style.height = MenuHomeActionLayout.SecondaryHeight;

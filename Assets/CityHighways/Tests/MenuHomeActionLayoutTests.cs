@@ -6,48 +6,53 @@ namespace CityHighways.Tests
     public sealed class MenuHomeActionLayoutTests
     {
         [Test]
-        public void AllSixActionsShareTheWidthOfTheRedNewGameButton()
+        public void AllSixActionsReadOneEditableWidth()
         {
-            // Both primary MenuButton and secondary Unity Button apply
-            // the same Width constant, not ad-hoc per-action widths.
-            Assert.AreEqual(480f, MenuHomeActionLayout.Width);
+            Assert.AreEqual(480f, MenuHomeActionLayout.WidthFor(null));
+            Assert.That(MenuHomeActionLayout.Width, Is.InRange(320f, 640f));
         }
 
         [Test]
-        public void PrimaryActionsRetainTheEstablishedVisualHeight()
+        public void MainButtonsShareAnEditablePrimaryHeight()
         {
-            Assert.AreEqual(58f, MenuHomeActionLayout.PrimaryHeight);
-            Assert.Greater(MenuHomeActionLayout.PrimaryHeight,
-                MenuHomeActionLayout.SecondaryHeight);
+            Assert.AreEqual(58f, MenuHomeActionLayout.PrimaryHeightFor(null));
+            Assert.That(MenuHomeActionLayout.PrimaryHeight, Is.InRange(40f, 85f));
         }
 
         [Test]
-        public void SecondaryActionsUseTheirOwnLegibleHeight()
+        public void SecondaryActionsHaveIndependentEditableHeightAndFontSize()
         {
-            Assert.AreEqual(46f, MenuHomeActionLayout.SecondaryHeight);
-            Assert.GreaterOrEqual(MenuHomeActionLayout.SecondaryFontSize, 17f);
+            Assert.AreEqual(46f, MenuHomeActionLayout.SecondaryHeightFor(null));
+            Assert.AreEqual(17f, MenuHomeActionLayout.SecondaryFontSizeFor(null));
+            Assert.That(MenuHomeActionLayout.SecondaryHeight, Is.InRange(30f, 70f));
+            Assert.That(MenuHomeActionLayout.SecondaryFontSize, Is.InRange(12f, 24f));
         }
 
         [Test]
-        public void PairHasFourPixelInternalSpacing()
+        public void DefaultPairUsesFourPixelGapButUserMayCustomizeIt()
         {
-            Assert.AreEqual(4f, MenuHomeActionLayout.InsidePairGap);
-            Assert.AreEqual(108f, MenuHomeActionLayout.PairHeight);
+            Assert.AreEqual(4f, MenuHomeActionLayout.InsidePairGapFor(null));
+            Assert.AreEqual(
+                MenuHomeActionLayout.PrimaryHeight + MenuHomeActionLayout.InsidePairGap +
+                MenuHomeActionLayout.SecondaryHeight,
+                MenuHomeActionLayout.PairHeight);
         }
 
         [Test]
-        public void ThreeGroupsHaveTwelvePixelSeparation()
+        public void DefaultGroupsHaveTwelvePixelGapButUserMayCustomizeIt()
         {
-            Assert.AreEqual(12f, MenuHomeActionLayout.BetweenGroupsGap);
-            Assert.AreEqual(348f, MenuHomeActionLayout.ThreePairsHeight);
+            Assert.AreEqual(12f, MenuHomeActionLayout.BetweenGroupsGapFor(null));
+            Assert.AreEqual(
+                MenuHomeActionLayout.PairHeight * 3f +
+                MenuHomeActionLayout.BetweenGroupsGap * 2f,
+                MenuHomeActionLayout.ThreePairsHeight);
         }
 
         [Test]
-        public void SixButtonsFitWithinTheExistingHomeMenuColumn()
+        public void GroupAndInnerSpacingRespectInspectorRanges()
         {
-            // This is the vertical budget from the first primary to the
-            // last secondary. Avoid accidentally stacking extra margins.
-            Assert.LessOrEqual(MenuHomeActionLayout.ThreePairsHeight, 350f);
+            Assert.That(MenuHomeActionLayout.InsidePairGap, Is.InRange(0f, 20f));
+            Assert.That(MenuHomeActionLayout.BetweenGroupsGap, Is.InRange(0f, 30f));
         }
     }
 }

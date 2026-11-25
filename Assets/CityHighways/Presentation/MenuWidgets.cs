@@ -422,6 +422,7 @@ namespace CityHighways.Presentation
 
         readonly bool _primary;
         readonly Action _onClick;
+        readonly MainMenuStyle _style;
         readonly ColorMesh _mesh = new ColorMesh();
         readonly MenuIcon _icon;
         readonly Label _title;
@@ -430,10 +431,12 @@ namespace CityHighways.Presentation
         /// <summary>Место у правого края: туда кладут маленькую кнопку или значок-счётчик.</summary>
         public VisualElement Badge { get; }
 
-        public MenuButton(MenuIcon.Glyph glyph, string title, Action onClick, bool primary)
+        public MenuButton(MenuIcon.Glyph glyph, string title, Action onClick, bool primary,
+            MainMenuStyle menuStyle = null)
         {
             _primary = primary;
             _onClick = onClick;
+            _style = menuStyle;
             _phase = UnityEngine.Random.value * 10f;
             pickingMode = PickingMode.Position;
             // Custom tiles are not Buttons: explicitly participate in
@@ -450,7 +453,9 @@ namespace CityHighways.Presentation
             _icon = new MenuIcon(glyph, 26f, Color.white);
             _icon.style.marginRight = 14f;
             Add(_icon);
-            _title = Ui.Text(title, 20f, Color.white, true);
+            _title = Ui.Text(title, _style != null
+                ? Mathf.Clamp(_style.primaryFontSize, 12f, 26f) : 20f,
+                Color.white, true);
             _title.style.flexGrow = 1f;
             _title.style.flexShrink = 1f;
             Add(_title);
@@ -515,8 +520,10 @@ namespace CityHighways.Presentation
             if (float.IsNaN(size.x) || size.x < 10f) return;
             var rect = new Rect(0f, 0f, size.x, size.y);
             // Основная — красный градиент действия, остальные — тёмно-синий.
-            Color a = _primary ? new Color(0.75f, 0.22f, 0.17f) : new Color(0.17f, 0.24f, 0.31f);
-            Color b = _primary ? new Color(0.91f, 0.30f, 0.24f) : new Color(0.24f, 0.35f, 0.44f);
+            Color a = _primary ? (_style != null ? _style.newGameGradientStart :
+                new Color(0.75f, 0.22f, 0.17f)) : new Color(0.17f, 0.24f, 0.31f);
+            Color b = _primary ? (_style != null ? _style.newGameGradientEnd :
+                new Color(0.91f, 0.30f, 0.24f)) : new Color(0.24f, 0.35f, 0.44f);
             float lift = 0.10f * _hover;
             a = new Color(a.r + lift, a.g + lift, a.b + lift, 0.94f);
             b = new Color(b.r + lift, b.g + lift, b.b + lift, 0.94f);
