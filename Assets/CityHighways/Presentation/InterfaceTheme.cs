@@ -43,26 +43,33 @@ namespace CityHighways.Presentation
 
         [Header("New game / configuration")]
         [Range(480f, 900f)] public float newGameHelpMaxWidth = 640f;
+        [Range(260f, 540f)] public float newGameOptionsCardWidth = 360f;
 
         [Header("Online / network lobby")]
         [Range(200f, 540f)] public float onlineNameFieldWidth = 320f;
+        [Range(30f, 64f)] public float onlineInputMinHeight = 38f;
 
         [Header("Tutorial and rules")]
         [Range(160f, 390f)] public float rulesNavigationWidth = 250f;
+        [Range(330f, 820f)] public float rulesSearchWidth = 560f;
         [Range(350f, 850f)] public float rulesContentHeight = 570f;
 
         [Header("Settings")]
         [Range(150f, 340f)] public float settingsNavigationWidth = 210f;
+        [Range(220f, 480f)] public float settingsPreviewWidth = 340f;
 
         [Header("Statistics")]
         [Range(350f, 850f)] public float statsHistoryHeight = 600f;
+        [Range(260f, 560f)] public float statsCharactersWidth = 400f;
 
         [Header("Profile")]
         [Range(350f, 850f)] public float profileContentHeight = 664f;
+        [Range(200f, 380f)] public float profileSidebarWidth = 280f;
 
         [Header("Game HUD (Classic)")]
         [Range(42f, 110f)] public float hudTopBarHeight = 60f;
         [Range(50f, 120f)] public float hudBottomBarHeight = 72f;
         [Range(250f, 560f)] public float hudDrawerWidth = 380f;
+        [Range(280f, 560f)] public float hudPlayersPanelWidth = 420f;
     }
 }
