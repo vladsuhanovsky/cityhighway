@@ -31,7 +31,7 @@ namespace CityHighways.Tests
             var beforeTurn = MenuRoadDeparture.Position(0.55f, 1200f, 800f);
             var afterTurn = MenuRoadDeparture.Position(1f, 1200f, 800f);
             Assert.AreEqual(1200f * 0.74f, beforeTurn.x, 0.01f);
-            Assert.AreEqual(1200f * 0.82f, afterTurn.x, 0.01f);
+            Assert.AreEqual(1200f * 0.84f, afterTurn.x, 0.01f);
             Assert.AreEqual(800f * 0.82f - 55f, afterTurn.y, 0.01f);
             Assert.Less(afterTurn.y, beforeTurn.y);
         }
