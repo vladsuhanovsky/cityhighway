@@ -441,7 +441,8 @@ namespace CityHighways.Presentation
                     }
                     string json = new UTF8Encoding(false, true).GetString(output.ToArray());
                     var replay = JsonUtility.FromJson<ReplayFile>(json);
-                    return ValidCloudReplay(replay) ? replay : null;
+                    return ValidCloudReplay(replay) && ReplayLocalSanity.IsReadable(replay)
+                        ? replay : null;
                 }
             }
             catch (Exception e)
