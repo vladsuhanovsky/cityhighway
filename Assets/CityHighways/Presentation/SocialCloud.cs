@@ -536,12 +536,29 @@ namespace CityHighways.Presentation
 
         public static void FetchReplay(RecordInfo record, Action<ReplayFile> done, Action<string> failed = null)
         {
+            if (record == null || record.id <= 0)
+            {
+                failed?.Invoke(LocalizationService.Language == "en"
+                    ? "The selected social record is unavailable."
+                    : "Выбранный рекорд недоступен.");
+                return;
+            }
+
             Send<ReplayResponse>(new Request { action = "replay", recordId = record.id }, response =>
             {
-                var replay = Replays.Unpack(response?.replay);
+                var replay = Replays.UnpackCloud(response?.replay);
                 if (replay == null)
                 {
-                    failed?.Invoke("Повтор не открылся.");
+                    failed?.Invoke(LocalizationService.Language == "en"
+                        ? "The downloaded replay is invalid or too large."
+                        : "Скачанный повтор повреждён или слишком велик.");
+                    return;
+                }
+                if (!SocialReplayMatch.Matches(record, replay))
+                {
+                    failed?.Invoke(LocalizationService.Language == "en"
+                        ? "The downloaded replay does not match the selected record."
+                        : "Скачанный повтор не соответствует выбранному рекорду.");
                     return;
                 }
                 replay.source = "friend";
