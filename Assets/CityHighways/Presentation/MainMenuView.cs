@@ -514,6 +514,7 @@ namespace CityHighways.Presentation
         {
             var button = Ui.Box();
             button.pickingMode = PickingMode.Position;
+            button.focusable = true;
             button.style.width = 42f;
             button.style.height = 42f;
             button.style.marginRight = 8f;
@@ -535,10 +536,21 @@ namespace CityHighways.Presentation
                 button.style.backgroundColor = Theme.PanelGlass;
                 button.style.translate = new Translate(new Length(0f), new Length(0f));
             });
+            button.RegisterCallback<FocusInEvent>(_ =>
+                button.style.backgroundColor = Theme.PanelHover);
+            button.RegisterCallback<FocusOutEvent>(_ =>
+                button.style.backgroundColor = Theme.PanelGlass);
             button.RegisterCallback<ClickEvent>(_ =>
             {
                 Ui.ButtonClicked?.Invoke();
                 onClick?.Invoke();
+            });
+            button.RegisterCallback<NavigationSubmitEvent>(evt =>
+            {
+                if (evt.target != button) return;
+                Ui.ButtonClicked?.Invoke();
+                onClick?.Invoke();
+                evt.StopPropagation();
             });
             return button;
         }
