@@ -389,8 +389,8 @@ namespace CityHighways.Core
         }
 
         /// <summary>
-        /// Compare two replayed live states by their complete snapshot fields
-        /// already validated by Game.Load; requires the same map instance.
+        /// Compare selected snapshot fields using the same compatibility check
+        /// as Game.Load; requires the same map instance. Not a complete state comparison.
         /// Does not mutate either Game.
         /// </summary>
         public bool SameGameState(Game other) =>

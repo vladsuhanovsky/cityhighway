@@ -29,6 +29,59 @@ namespace CityHighways.PlayModeTests
         }
 
         [UnityTest]
+        public IEnumerator CoopCheckpointCanReplaceAnAttachedMapAcrossFrames()
+        {
+            var setup = GameSetup.CreateCoopPractice(null, "Tester");
+            var map = CityHighwaysApp.LoadMap(setup.mapResourcePath);
+            var game = new Game(map, setup.PlayerNames(), setup.CreateConfig(), 2026);
+            var settings = ScriptableObject.CreateInstance<PanelSettings>();
+            var theme = ScriptableObject.CreateInstance<ThemeStyleSheet>();
+            settings.themeStyleSheet = theme;
+            var owner = new GameObject("CityHighways co-op smoke UI");
+            owner.SetActive(false);
+            var doc = owner.AddComponent<UIDocument>();
+            doc.panelSettings = settings;
+            owner.SetActive(true);
+            try
+            {
+                for (int i = 0; i < 5 && doc.rootVisualElement == null; i++) yield return null;
+                Assert.IsNotNull(doc.rootVisualElement);
+                var view = new MapView();
+                doc.rootVisualElement.Add(view);
+                view.SetGame(game);
+                yield return null;
+                Assert.IsNotNull(view.panel);
+                var bot = new RandomBot(17);
+                for (int i = 0; i < 12 && game.Phase != GamePhase.GameOver; i++)
+                {
+                    var result = bot.Act(game);
+                    Assert.IsTrue(result.Success, result.Error);
+                    yield return null;
+                }
+                Assert.AreNotEqual(GamePhase.GameOver, game.Phase);
+                var snapshot = JsonUtility.FromJson<GameSaveData>(JsonUtility.ToJson(game.CreateSave()));
+                var resumed = Game.Load(map, snapshot);
+                Assert.IsTrue(resumed.IsCooperative);
+                Assert.IsTrue(game.SameGameState(resumed));
+                Assert.AreEqual(game.Crisis, resumed.Crisis);
+                view.SetGame(resumed);
+                yield return null;
+                Assert.IsNotNull(view.panel);
+                Assert.IsEmpty(view.PathRoads);
+                Assert.IsNull(view.SelectedRoadId);
+                view.RemoveFromHierarchy();
+                Assert.IsNull(view.panel);
+            }
+            finally
+            {
+                Object.Destroy(owner);
+                Object.Destroy(settings);
+                Object.Destroy(theme);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator ClockOnlyRenderRetainsHudControlsAcrossFrames()
         {
             var settings = ScriptableObject.CreateInstance<PanelSettings>();
