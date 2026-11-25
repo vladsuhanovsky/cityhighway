@@ -1157,8 +1157,9 @@ namespace CityHighways.Presentation
             catch (Exception e)
             {
                 Debug.LogException(e);
-                SaveSystem.Delete(_setup);
-                ShowError((EnglishUi ? "The save was damaged or did not match the map and was deleted.\n" : "Сохранение повреждено или не подходит к карте, поэтому удалено.\n") + e.Message);
+                // A failed load may be temporary (newer save format, missing map).
+                // Never delete a player file merely because this build cannot read it.
+                ShowError((EnglishUi ? "Could not load the save. The original file was preserved.\n" : "Не удалось загрузить сохранение. Исходный файл сохранён.\n") + e.Message);
                 return;
             }
             Begin(game, file.playSeconds, EnglishUi ? $"Game resumed (saved {file.savedAt})." : $"Партия продолжена (сохранена {file.savedAt}).");
