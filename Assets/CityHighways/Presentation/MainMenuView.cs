@@ -874,6 +874,19 @@ namespace CityHighways.Presentation
                 false, LocalizationService.Language == "en",
                 GamepadControlGuide.TextEntryFocused(Root));
             _background.Tick(dt);
+            if (_page == Page.Home)
+            {
+                _highway.Tick(dt, _display.reducedMotion);
+                if (_newGameTransition >= 0f)
+                {
+                    _newGameTransition -= Mathf.Max(0f, dt);
+                    if (_newGameTransition <= 0f)
+                    {
+                        _newGameTransition = -1f;
+                        ShowPage(Page.NewGame);
+                    }
+                }
+            }
             if (_page == Page.Profile) _profile.Tick(dt);
             if (_page != Page.Home) return;
             foreach (var button in _menuButtons) button.Tick(dt);
@@ -885,6 +898,23 @@ namespace CityHighways.Presentation
                 _onlineTimer = 0f;
                 RefreshOnlineBadge();
             }
+        }
+
+        /// <summary>
+        /// A short road-to-city transition is deliberately attached to the
+        /// home "New Game" action, not to the already-started Game instance.
+        /// Reduced-motion users navigate immediately with no delay.
+        /// </summary>
+        void OpenNewGameWithDeparture()
+        {
+            if (_page != Page.Home || _newGameTransition >= 0f) return;
+            if (_display.reducedMotion)
+            {
+                ShowPage(Page.NewGame);
+                return;
+            }
+            _newGameTransition = MenuRoadDeparture.DurationSeconds;
+            _highway.BeginDeparture();
         }
 
         // ================================================================== Новая игра
