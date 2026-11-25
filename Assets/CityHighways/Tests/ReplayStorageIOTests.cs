@@ -89,6 +89,36 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void RecoveryScansOnlySafeUnindexedReplayNames()
+        {
+            string folder = TempFolder();
+            try
+            {
+                File.WriteAllText(Path.Combine(folder, "index.json"), "{}");
+                File.WriteAllText(Path.Combine(folder, "known.json"), "{}");
+                File.WriteAllText(Path.Combine(folder, "orphan.json"), "{}");
+                File.WriteAllText(Path.Combine(folder, "bad.name.json"), "{}");
+                File.WriteAllText(Path.Combine(folder, "unfinished.json.tmp"), "{}");
+                Directory.CreateDirectory(Path.Combine(folder, "nested"));
+                File.WriteAllText(Path.Combine(folder, "nested", "nested.json"), "{}");
+
+                var known = new System.Collections.Generic.HashSet<string> { "known" };
+                var candidates = ReplayStorageIO.UnindexedIds(folder, known).ToArray();
+                CollectionAssert.AreEquivalent(new[] { "orphan" }, candidates);
+            }
+            finally { Directory.Delete(folder, true); }
+        }
+
+        [Test]
+        public void RecoveryScanHandlesMissingFolder()
+        {
+            string absent = Path.Combine(Path.GetTempPath(),
+                "missing-cityhighways-" + Guid.NewGuid().ToString("N"));
+            CollectionAssert.IsEmpty(ReplayStorageIO.UnindexedIds(absent,
+                new System.Collections.Generic.HashSet<string>()));
+        }
+
+        [Test]
         public void BoundedReadRejectsFileOverLimit()
         {
             string folder = TempFolder();
