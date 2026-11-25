@@ -445,6 +445,9 @@ namespace CityHighways.Presentation
                         output.Write(buffer, 0, received);
                     }
                     string json = new UTF8Encoding(false, true).GetString(output.ToArray());
+                    // JsonUtility can fabricate default GameConfig for absent
+                    // start.config, masking an invalid wire payload.
+                    if (!ReplayJsonStartConfig.HasExplicitConfig(json)) return null;
                     var replay = JsonUtility.FromJson<ReplayFile>(json);
                     return ValidCloudReplay(replay) && ReplayLocalSanity.IsReadable(replay)
                         ? replay : null;
