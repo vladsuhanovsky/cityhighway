@@ -165,6 +165,18 @@ namespace CityHighways.Tests
             }
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ReplayGuideDoesNotAdvertiseUnavailableMapTargeting(bool english)
+        {
+            var text = GamepadControlGuide.Hint(GamepadControlGuide.Context.Replay, english, false,
+                GamepadControlGuide.ControllerLayout.PlayStation);
+            StringAssert.Contains(english ? "playback controls" : "управление повтором", text);
+            StringAssert.Contains(english ? "Cross" : "Крест", text);
+            StringAssert.Contains(english ? "Circle" : "Круг", text);
+            StringAssert.DoesNotContain("R3", text);
+        }
+
         [Test]
         public void ChangingDeviceLayoutRefreshesVisibleControllerHelp()
         {

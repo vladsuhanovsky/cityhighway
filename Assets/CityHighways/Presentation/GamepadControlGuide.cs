@@ -11,7 +11,7 @@ namespace CityHighways.Presentation
     /// </summary>
     public static class GamepadControlGuide
     {
-        public enum Context { Menu, Game, Magnate }
+        public enum Context { Menu, Game, Magnate, Replay }
         public enum ControllerLayout { Xbox, PlayStation, Nintendo }
 
         /// <summary>
@@ -98,6 +98,11 @@ namespace CityHighways.Presentation
             string back = BackLabel(layout, english);
             string shoulders = ShoulderLabel(layout);
             string triggers = TriggerLabel(layout);
+
+            if (context == Context.Replay)
+                return english
+                    ? $"D-pad / left stick: playback controls   {submit}: select   {back}: back"
+                    : $"Крестовина / левый стик: управление повтором   {submit}: выбрать   {back}: назад";
 
             if (context == Context.Menu)
                 return english

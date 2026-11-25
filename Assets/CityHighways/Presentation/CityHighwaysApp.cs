@@ -115,8 +115,10 @@ namespace CityHighways.Presentation
             Tweener.Tick(Time.deltaTime);
             _game?.Tick(Time.deltaTime);
             _magnate?.Tick(Time.deltaTime);
-            _replay?.Tick(Time.deltaTime);
-            _menu?.Tick(Time.deltaTime);
+            // A replay Back action can synchronously construct the menu. Do not
+            // deliver the same B/Escape press to that newly opened page.
+            if (_replay != null) _replay.Tick(Time.deltaTime);
+            else _menu?.Tick(Time.deltaTime);
             SocialCloud.Tick();
         }
 
