@@ -22,11 +22,12 @@ namespace CityHighways.Net
             LoadMap = loadMap;
             Transport.Received += (peer, data) =>
             {
+                if (IsClosed) return;
                 var message = NetCodec.Decode(data);
                 if (message != null) OnMessage(peer, message);
             };
-            Transport.PeerConnected += OnPeerConnected;
-            Transport.PeerDisconnected += OnPeerDisconnected;
+            Transport.PeerConnected += peer => { if (!IsClosed) OnPeerConnected(peer); };
+            Transport.PeerDisconnected += peer => { if (!IsClosed) OnPeerDisconnected(peer); };
             Transport.Failed += text => RaiseClosed(text);
         }
 
@@ -90,8 +91,10 @@ namespace CityHighways.Net
 
         protected Game BuildGame(GameStartInfo start, IEnumerable<GameCommand> history)
         {
-            Map = LoadMap(MapPath);
-            return Game.Replay(Map, start, history);
+            var map = LoadMap(MapPath);
+            var game = Game.Replay(map, start, history);
+            Map = map;
+            return game;
         }
 
         public virtual void Dispose()
@@ -132,7 +135,7 @@ namespace CityHighways.Net
 
         // ---------------------------------------------------------------- Лобби
 
-        public bool CanAddSeat => !InGame && Seats.Count < MaxSeats;
+        public bool CanAddSeat => !IsClosed && !InGame && Seats.Count < MaxSeats;
 
         public void AddBot(int botLevel)
         {
@@ -145,7 +148,7 @@ namespace CityHighways.Net
         /// <summary>Убрать место: бота — просто, человека — с сообщением «вас отключили».</summary>
         public void RemoveSeat(int seat)
         {
-            if (InGame || seat <= 0 || seat >= Seats.Count) return;
+            if (IsClosed || InGame || seat <= 0 || seat >= Seats.Count) return;
             var removed = Seats[seat];
             Seats.RemoveAt(seat);
             if (!removed.isBot && removed.PeerId != 0)
@@ -155,7 +158,7 @@ namespace CityHighways.Net
 
         public void SetCharacter(int seat, int character)
         {
-            if (InGame || seat < 0 || seat >= Seats.Count) return;
+            if (IsClosed || InGame || seat < 0 || seat >= Seats.Count) return;
             Seats[seat].character = character;
             BroadcastLobby();
         }
@@ -187,7 +190,7 @@ namespace CityHighways.Net
         /// </summary>
         public void StartGame(GameStartInfo start, string mapPath, int turnSeconds)
         {
-            if (InGame) return;
+            if (IsClosed || InGame) return;
             MapPath = mapPath;
             TurnSeconds = turnSeconds;
             // Хост строит партию из того же JSON, что получат клиенты: числа правил совпадут до бита.
@@ -218,7 +221,12 @@ namespace CityHighways.Net
 
         // ---------------------------------------------------------------- Ход партии
 
-        public override ActionResult Perform(Func<Game, ActionResult> action) => action(Game);
+        public override ActionResult Perform(Func<Game, ActionResult> action)
+        {
+            if (IsClosed) return ActionResult.Fail("Связь потеряна.");
+            if (Game == null) return ActionResult.Fail("Партия ещё не началась.");
+            return action(Game);
+        }
 
         public override void Poll()
         {
@@ -380,12 +388,15 @@ namespace CityHighways.Net
     {
         readonly string _name;
         bool _helloSent;
-        DateTime _awaitingSince = DateTime.MinValue;
-        const double AwaitTimeoutSeconds = 6.0;
+        readonly Func<double> _now;
+        readonly ClientRecovery _recovery = new ClientRecovery();
 
-        public ClientSession(INetTransport transport, Func<string, CityMap> loadMap, string name) : base(transport, loadMap)
+        public ClientSession(INetTransport transport, Func<string, CityMap> loadMap, string name,
+            Func<double> now = null) : base(transport, loadMap)
         {
             _name = name;
+            _now = now ?? (() => (double)System.Diagnostics.Stopwatch.GetTimestamp() /
+                System.Diagnostics.Stopwatch.Frequency);
             Transport.Ready += SendHello;
         }
 
@@ -395,11 +406,12 @@ namespace CityHighways.Net
         public string Emblem = "", Title = "", Frame = "", Outfit = "";
         /// <summary>Клуб строителей — тег и логотип для лобби.</summary>
         public string ClubTag = "", ClubLogo = "";
-        public override bool AwaitingHost => _awaitingSince != DateTime.MinValue;
+        public override bool AwaitingHost => !IsClosed && _recovery.Pending;
+        public bool Synchronizing => !IsClosed && _recovery.Synchronizing;
 
         void SendHello()
         {
-            if (_helloSent) return;
+            if (IsClosed || _helloSent) return;
             _helloSent = true;
             Send(Transport.HostId, new NetMessage
             {
@@ -421,33 +433,51 @@ namespace CityHighways.Net
         public override void Poll()
         {
             base.Poll();
-            if (AwaitingHost && (DateTime.UtcNow - _awaitingSince).TotalSeconds > AwaitTimeoutSeconds)
+            if (IsClosed) return;
+            switch (_recovery.Tick(_now()))
             {
-                _awaitingSince = DateTime.MinValue;
-                RequestSync();
+                case ClientRecovery.NextAction.RequestSync:
+                    SendSyncRequest();
+                    break;
+                case ClientRecovery.NextAction.Close:
+                    RaiseClosed("Хост не ответил на запрос синхронизации.");
+                    break;
             }
         }
 
-        void RequestSync() => Send(Transport.HostId, new NetMessage { type = NetMessage.SyncRequest });
+        void SendSyncRequest() => Send(Transport.HostId, new NetMessage { type = NetMessage.SyncRequest });
+
+        void RequestSync()
+        {
+            if (IsClosed || !_recovery.BeginSync(_now())) return;
+            SendSyncRequest();
+        }
 
         public override ActionResult Perform(Func<Game, ActionResult> action)
         {
+            if (IsClosed) return ActionResult.Fail("Связь потеряна.");
             if (Game == null) return ActionResult.Fail("Партия ещё не началась.");
             if (AwaitingHost) return ActionResult.Fail("Ждём ответа хоста…");
             // Копия партии по истории: действие проверяется по тем же правилам, но настоящая партия
             // меняется только командами от хоста — так у всех одинаковый порядок ходов.
-            var copy = Game.Replay(Map, Game.StartInfo, Game.History);
+            Game copy;
+            try { copy = Game.Replay(Map, Game.StartInfo, Game.History); }
+            catch (Exception)
+            {
+                RequestSync();
+                return ActionResult.Fail("Не удалось проверить ход. Ждём синхронизации с хостом.");
+            }
             int before = copy.History.Count;
             var result = action(copy);
             if (copy.History.Count > before)
             {
+                _recovery.BeginSubmit(_now());
                 Send(Transport.HostId, new NetMessage
                 {
                     type = NetMessage.Submit,
                     from = Game.History.Count,
                     commands = copy.History.Skip(before).ToArray()
                 });
-                _awaitingSince = DateTime.UtcNow;
             }
             return result;
         }
@@ -458,6 +488,7 @@ namespace CityHighways.Net
             switch (message.type)
             {
                 case NetMessage.Lobby:
+                    if (InGame) break;
                     Seats = (message.seats ?? new NetSeat[0]).ToList();
                     LocalSeat = message.seat;
                     MapPath = message.map ?? MapPath;
@@ -471,34 +502,57 @@ namespace CityHighways.Net
                     RaiseClosed(string.IsNullOrEmpty(message.text) ? "Хост закрыл игру." : message.text);
                     break;
                 case NetMessage.Start:
-                    Seats = (message.seats ?? new NetSeat[0]).ToList();
-                    LocalSeat = message.seat;
-                    MapPath = message.map;
-                    TurnSeconds = message.turnSeconds;
-                    Game = BuildGame(message.start, message.commands);
-                    InGame = true;
-                    _awaitingSince = DateTime.MinValue;
+                    if (InGame) break;
+                    try
+                    {
+                        if (message.start?.players == null || message.seats == null ||
+                            message.seats.Length != message.start.players.Length ||
+                            message.seat < 0 || message.seat >= message.seats.Length ||
+                            message.seats.Any(seat => seat == null) || string.IsNullOrEmpty(message.map))
+                            throw new InvalidOperationException("Некорректные начальные условия.");
+                        MapPath = message.map;
+                        Game = BuildGame(message.start, message.commands);
+                        Seats = message.seats.ToList();
+                        LocalSeat = message.seat;
+                        TurnSeconds = message.turnSeconds;
+                        InGame = true;
+                        _recovery.Complete();
+                    }
+                    catch (Exception e)
+                    {
+                        RaiseClosed("Не удалось начать сетевую партию: " + e.Message);
+                        break;
+                    }
                     RaiseStarted();
                     break;
                 case NetMessage.Seats:
-                    Seats = (message.seats ?? new NetSeat[0]).ToList();
+                    if (!InGame || message.seats == null || message.seats.Length != Seats.Count ||
+                        message.seats.Any(seat => seat == null)) break;
+                    Seats = message.seats.ToList();
                     RaiseSeatsChanged();
                     break;
                 case NetMessage.Commands:
                     Apply(message);
                     break;
                 case NetMessage.Sync:
-                    if (message.seats != null) Seats = message.seats.ToList();
+                    if (!InGame || Game == null) break;
+                    // A delayed snapshot must never roll back commands already accepted locally.
+                    if ((message.commands?.Length ?? 0) < Game.History.Count) break;
                     try
                     {
+                        if (message.start?.players == null || message.start.players.Length != Seats.Count ||
+                            (message.seats != null && (message.seats.Length != Seats.Count ||
+                             message.seats.Any(seat => seat == null))))
+                            throw new InvalidOperationException("Некорректный состав партии.");
                         Game = BuildGame(message.start, message.commands);
+                        if (message.seats != null) Seats = message.seats.ToList();
                     }
                     catch (Exception e)
                     {
                         RaiseClosed("Не удалось восстановить партию: " + e.Message);
                         return;
                     }
-                    _awaitingSince = DateTime.MinValue;
+                    _recovery.Complete();
                     RaiseResynced();
                     break;
             }
@@ -506,24 +560,34 @@ namespace CityHighways.Net
 
         void Apply(NetMessage message)
         {
-            if (Game == null || message.commands == null) return;
+            if (Game == null || _recovery.Synchronizing) return;
             int have = Game.History.Count;
-            if (message.from > have)
+            if (message.from < 0 || message.from > have || message.commands == null)
             {
-                RequestSync(); // пропустили часть ходов
+                RequestSync();
                 return;
             }
-            for (int i = 0; i < message.commands.Length; i++)
+            // Duplicate/empty batches cannot acknowledge a pending move.
+            int skip = have - message.from;
+            if (skip >= message.commands.Length) return;
+            try
             {
-                if (message.from + i < have) continue; // уже применено
-                var result = Game.Execute(message.commands[i]);
-                if (!result.Success)
+                for (int i = skip; i < message.commands.Length; i++)
                 {
-                    RequestSync();
-                    return;
+                    int before = Game.History.Count;
+                    if (!Game.Execute(message.commands[i]).Success || Game.History.Count != before + 1)
+                    {
+                        RequestSync();
+                        return;
+                    }
                 }
             }
-            _awaitingSince = DateTime.MinValue;
+            catch (Exception)
+            {
+                RequestSync();
+                return;
+            }
+            _recovery.Complete();
         }
 
         public override void Dispose()
