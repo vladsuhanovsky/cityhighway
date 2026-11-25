@@ -668,8 +668,27 @@ namespace CityHighways.Presentation
 
         public static void SetClubOpen(bool open, Action<string> failed) => ClubAction(new Request { action = "club_open", open = open }, failed);
 
-        public static void ListClubs(string query, Action<ClubBrief[]> done, Action<string> failed) =>
-            Send<ClubListResponse>(new Request { action = "club_list", query = query ?? "" }, r => done?.Invoke(r?.clubs ?? new ClubBrief[0]), failed);
+        public static void ListClubs(string query, Action<ClubBrief[]> done, Action<string> failed)
+        {
+            Send<ClubListResponse>(new Request
+            {
+                action = "club_list",
+                query = (query ?? "").Trim()
+            }, response =>
+            {
+                // A successful empty list is {"clubs":[]}, not HTTP 200 {}.
+                if (response?.clubs == null)
+                {
+                    failed?.Invoke(LocalizationService.Language == "en"
+                        ? "The server returned an incomplete club list."
+                        : "Сервер вернул неполный список клубов.");
+                    return;
+                }
+                done?.Invoke(response.clubs.Where(c => c != null &&
+                    !string.IsNullOrEmpty(c.id) && !string.IsNullOrEmpty(c.name))
+                    .Take(30).ToArray());
+            }, failed);
+        }
 
         /// <summary>Тег и герб своего клуба — для лобби и карточки профиля (пусто — не в клубе).</summary>
         public static string ClubTag
