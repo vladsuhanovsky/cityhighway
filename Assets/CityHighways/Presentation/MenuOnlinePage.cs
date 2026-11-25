@@ -573,7 +573,7 @@ namespace CityHighways.Presentation
             var input = field.Q(className: TextField.inputUssClassName) ?? field;
             input.style.backgroundColor = Theme.PanelLight;
             input.style.color = Theme.Text;
-            input.style.minHeight = 38f;
+            input.style.minHeight = InterfaceLayout.OnlineInputMinHeight;
             Ui.Radius(input, 8f);
             Ui.Border(input, 1f, Theme.Line);
             Ui.Padding(input, 6f, 10f);
