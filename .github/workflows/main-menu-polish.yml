@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - "Assets/CityHighways/Presentation/MainMenuView.cs"
+      - "Assets/CityHighways/Presentation/MenuHomeActionLayout.cs"
       - "Assets/CityHighways/Presentation/MenuHighwayOverlay.cs"
       - "Assets/CityHighways/Presentation/MenuRoadDeparture.cs"
       - "Assets/CityHighways/Presentation/MenuLegibilityVeil.cs"
       - "Assets/CityHighways/Presentation/MenuWidgets.cs"
       - "Assets/CityHighways/Tests/MenuRoadDepartureTests.cs"
+      - "Assets/CityHighways/Tests/MenuHomeActionLayoutTests.cs"
       - "Assets/CityHighways/Tests/MenuLegibilityVeilTests.cs"
       - "Assets/CityHighways/Resources/CityHighways/Localization/ru.json"
       - "Assets/CityHighways/Resources/CityHighways/Localization/en.json"
@@ -18,11 +20,13 @@ on:
     branches: [main]
     paths:
       - "Assets/CityHighways/Presentation/MainMenuView.cs"
+      - "Assets/CityHighways/Presentation/MenuHomeActionLayout.cs"
       - "Assets/CityHighways/Presentation/MenuHighwayOverlay.cs"
       - "Assets/CityHighways/Presentation/MenuRoadDeparture.cs"
       - "Assets/CityHighways/Presentation/MenuLegibilityVeil.cs"
       - "Assets/CityHighways/Presentation/MenuWidgets.cs"
       - "Assets/CityHighways/Tests/MenuRoadDepartureTests.cs"
+      - "Assets/CityHighways/Tests/MenuHomeActionLayoutTests.cs"
       - "Assets/CityHighways/Tests/MenuLegibilityVeilTests.cs"
       - "Assets/CityHighways/Resources/CityHighways/Localization/ru.json"
       - "Assets/CityHighways/Resources/CityHighways/Localization/en.json"
