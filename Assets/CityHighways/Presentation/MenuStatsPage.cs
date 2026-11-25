@@ -103,7 +103,7 @@ namespace CityHighways.Presentation
             Root.Add(_tabs);
 
             var scroll = new ScrollView(ScrollViewMode.Vertical);
-            scroll.style.height = 600f;
+            scroll.style.height = InterfaceLayout.StatsHistoryHeight;
             Ui.StyleScroller(scroll);
             Root.Add(scroll);
             _body = Ui.Column();
