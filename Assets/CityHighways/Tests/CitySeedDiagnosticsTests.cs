@@ -20,7 +20,7 @@ namespace CityHighways.Tests
                 var report = CitySeedDiagnostics.Run(first + i);
                 if (!report.Passed)
                 {
-                    var path = CitySeedDiagnostics.Write(report, Path.Combine(TestContext.CurrentContext.WorkDirectory, "city-seed-diagnostics"));
+                    var path = CitySeedDiagnostics.Write(report, Path.GetFullPath(Path.Combine(Application.dataPath, "..", "artifacts", "city-seed-diagnostics")));
                     failures.Add("seed " + report.requestedSeed + ": " + string.Join("; ", report.issues) + " | " + path);
                 }
             }
