@@ -127,3 +127,15 @@ test("both GitHub replay guard triggers include new transaction sources", () => 
     assert.equal(workflow.split(name).length - 1, 2, name);
   }
 });
+
+test("menu clients cannot mutate the cached catalog through the published entry list", () => {
+  assert.match(replays, /public static IReadOnlyList<Entry> Entries => Load\(\)\.entries\.ToArray\(\)/);
+});
+
+test("failed clear does not pretend the replay directory was removed", () => {
+  const clear = replays.slice(replays.indexOf("public static void Clear()"),
+    replays.indexOf("// ---------------------------------------------------------------- Для облака"));
+  assert.match(clear, /Directory\.Delete\(Folder, true\)/);
+  assert.match(clear, /_index = null;/);
+  assert.match(clear, /catch \(Exception e\)/);
+});
