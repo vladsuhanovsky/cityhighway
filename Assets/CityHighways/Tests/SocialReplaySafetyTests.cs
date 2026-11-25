@@ -147,9 +147,14 @@ namespace CityHighways.Tests
         [Test]
         public void RejectsCloudReplayWithMissingGameConfiguration()
         {
-            var replay = ValidReplay();
-            replay.start.config = null;
-            Assert.IsNull(Replays.UnpackCloud(Replays.Pack(replay)));
+            // JsonUtility may serialize a null inline class as a default
+            // object. Rename the actual wire key to simulate a *missing*
+            // start.config without changing any other valid replay fields.
+            string json = JsonUtility.ToJson(ValidReplay());
+            StringAssert.Contains("\"config\":", json);
+            string withoutConfig = json.Replace("\"config\":", "\"unknownConfig\":");
+            Assert.AreNotEqual(json, withoutConfig);
+            Assert.IsNull(Replays.UnpackCloud(GzipBase64(withoutConfig)));
         }
 
         [Test]
