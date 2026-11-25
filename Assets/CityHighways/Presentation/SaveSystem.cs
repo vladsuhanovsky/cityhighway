@@ -41,7 +41,7 @@ namespace CityHighways.Presentation
                 };
 
                 // Пишем во временный файл и подменяем: если игру закроют посреди записи, старое сохранение уцелеет.
-                ReplayStorageIO.WriteAtomic(PathFor(setup), JsonUtility.ToJson(file));
+                SaveFileStorage.Write(PathFor(setup), file);
             }
             catch (Exception e)
             {
@@ -61,11 +61,7 @@ namespace CityHighways.Presentation
         {
             try
             {
-                if (!File.Exists(path)) return null;
-                var file = JsonUtility.FromJson<SaveFile>(File.ReadAllText(path));
-                if (file == null || file.game == null || file.setup == null || file.setup.players == null) return null;
-                if (owner == null ? file.setup.IsCampaign : !file.setup.IsCampaign || file.setup.campaignOwner != owner || CampaignCatalog.Find(file.setup.campaignMission) == null) return null;
-                return file;
+                return SaveFileStorage.Read(path, owner);
             }
             catch (Exception e)
             {
@@ -79,7 +75,7 @@ namespace CityHighways.Presentation
             try
             {
                 string path = PathFor(setup);
-                if (File.Exists(path)) File.Delete(path);
+                SaveFileStorage.Delete(path);
             }
             catch (Exception e)
             {
