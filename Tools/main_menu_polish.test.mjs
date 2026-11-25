@@ -8,6 +8,7 @@ const road = get("Assets/CityHighways/Presentation/MenuHighwayOverlay.cs");
 const route = get("Assets/CityHighways/Presentation/MenuRoadDeparture.cs");
 const shade = get("Assets/CityHighways/Presentation/MenuLegibilityVeil.cs");
 const widgets = get("Assets/CityHighways/Presentation/MenuWidgets.cs");
+const rhythm = get("Assets/CityHighways/Presentation/MenuHomeActionLayout.cs");
 const ru = JSON.parse(get("Assets/CityHighways/Resources/CityHighways/Localization/ru.json")).entries;
 const en = JSON.parse(get("Assets/CityHighways/Resources/CityHighways/Localization/en.json")).entries;
 const home = view.slice(view.indexOf("VisualElement BuildHome(SaveFile saved)"),
@@ -26,31 +27,31 @@ test("golden logo and pixel skyline remain the page's visual anchor", () => {
 });
 
 test("New Game is always the red highlighted primary tile", () => {
-  assert.match(home, /Add\(MenuIcon\.Glyph\.Gamepad, LocalizationService\.Get\("menu\.home\.new_game"\),\s*OpenNewGameWithDeparture, true\)/);
+  assert.match(home, /Add\(startGroup, MenuIcon\.Glyph\.Gamepad,\s*LocalizationService\.Get\("menu\.home\.new_game"\),\s*OpenNewGameWithDeparture, true\)/);
   assert.match(widgets, /_primary \? new Color\(0\.75f, 0\.22f, 0\.17f\)/);
 });
 
 test("Play Now is a separate action and not a nested New Game badge", () => {
-  assert.match(home, /var quick = Ui\.Button\(LocalizationService\.Get\("menu\.home\.quick_start"\),\s*StartGame,/);
-  assert.match(home, /buttons\.Add\(quick\)/);
+  assert.match(home, /var quick = AddSubAction\(startGroup, "menu\.home\.quick_start", StartGame\)/);
+  assert.match(home, /group\.Add\(sub\)/);
   assert.doesNotMatch(home, /newGame\.Badge\.Add\(quick\)/);
   assert.equal(translated(ru, "menu.home.quick_start"), "Играть сразу");
   assert.equal(translated(en, "menu.home.quick_start"), "Play Now");
 });
 
 test("main column retains exactly the three top-level play intents", () => {
-  assert.match(home, /Add\(MenuIcon\.Glyph\.Gamepad/);
-  assert.match(home, /Add\(MenuIcon\.Glyph\.Cap/);
-  assert.match(home, /_onlineButton = Add\(MenuIcon\.Glyph\.Globe/);
+  assert.match(home, /Add\(startGroup, MenuIcon\.Glyph\.Gamepad/);
+  assert.match(home, /Add\(learnGroup, MenuIcon\.Glyph\.Cap/);
+  assert.match(home, /_onlineButton = Add\(onlineGroup, MenuIcon\.Glyph\.Globe/);
   assert.doesNotMatch(home, /Add\(MenuIcon\.Glyph\.Gear/);
   assert.doesNotMatch(home, /Add\(MenuIcon\.Glyph\.Chart/);
 });
 
 test("Rules is adjacent to Tutorial and Clubs is adjacent to Online", () => {
   const tutorial = home.indexOf("MenuIcon.Glyph.Cap");
-  const rules = home.indexOf('AddSubAction("menu.home.rules"');
+  const rules = home.indexOf('AddSubAction(learnGroup, "menu.home.rules"');
   const online = home.indexOf("MenuIcon.Glyph.Globe");
-  const clubs = home.indexOf('AddSubAction("menu.home.clubs"');
+  const clubs = home.indexOf('AddSubAction(onlineGroup, "menu.home.clubs"');
   assert.ok(tutorial > 0 && rules > tutorial && online > rules && clubs > online);
 });
 
