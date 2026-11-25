@@ -183,3 +183,76 @@ test("Escape and Steam Deck back dismiss a visible settings popover first", () =
   assert.match(tick, /keyboard\.escapeKey\.wasPressedThisFrame/);
   assert.match(tick, /pad\.buttonEast\.wasPressedThisFrame/);
 });
+
+
+test("all six home actions share the primary New Game width", () => {
+  assert.match(rhythm, /public const float Width = 480f;/);
+  assert.match(home, /buttons\.style\.width = MenuHomeActionLayout\.Width;/);
+  assert.match(home, /group\.style\.width = MenuHomeActionLayout\.Width;/);
+  assert.match(home, /button\.style\.width = MenuHomeActionLayout\.Width;/);
+  assert.match(home, /sub\.style\.width = MenuHomeActionLayout\.Width;/);
+  assert.match(home, /buttons\.style\.alignItems = Align\.Stretch;/);
+  assert.match(home, /group\.style\.alignItems = Align\.Stretch;/);
+  assert.match(home, /sub\.style\.alignSelf = Align\.Stretch;/);
+});
+
+test("the three main actions and three secondary actions use different but consistent heights", () => {
+  assert.match(rhythm, /public const float PrimaryHeight = 58f;/);
+  assert.match(rhythm, /public const float SecondaryHeight = 46f;/);
+  assert.match(home, /button\.style\.height = MenuHomeActionLayout\.PrimaryHeight;/);
+  assert.match(home, /button\.style\.minHeight = MenuHomeActionLayout\.PrimaryHeight;/);
+  assert.match(home, /sub\.style\.height = MenuHomeActionLayout\.SecondaryHeight;/);
+  assert.match(home, /sub\.style\.minHeight = MenuHomeActionLayout\.SecondaryHeight;/);
+});
+
+test("secondary labels are bigger and visibly clickable", () => {
+  assert.match(rhythm, /public const float SecondaryFontSize = 17f;/);
+  assert.match(home, /Theme\.Text, MenuHomeActionLayout\.SecondaryFontSize/);
+  assert.match(home, /new Color\(0\.16f, 0\.23f, 0\.31f, 0\.98f\)/);
+  assert.match(home, /new Color\(0\.25f, 0\.35f, 0\.45f, 1f\)/);
+  assert.match(home, /group\.Add\(sub\)/);
+  assert.doesNotMatch(home, /sub\.style\.marginLeft = 52f/);
+});
+
+test("exact 4px within a pair and 12px between pairs", () => {
+  assert.match(rhythm, /public const float InsidePairGap = 4f;/);
+  assert.match(rhythm, /public const float BetweenGroupsGap = 12f;/);
+  assert.match(home, /button\.style\.marginBottom = MenuHomeActionLayout\.InsidePairGap;/);
+  assert.match(home, /group\.style\.marginBottom = last \? 0f : MenuHomeActionLayout\.BetweenGroupsGap;/);
+  assert.match(home, /sub\.style\.marginBottom = 0f;/);
+});
+
+test("three actual action pairs, not six unrelated buttons", () => {
+  assert.match(home, /var startGroup = AddGroup\(false\)/);
+  assert.match(home, /var learnGroup = AddGroup\(false\)/);
+  assert.match(home, /var onlineGroup = AddGroup\(true\)/);
+  assert.match(home, /AddSubAction\(startGroup, "menu\.home\.quick_start", StartGame\)/);
+  assert.match(home, /AddSubAction\(learnGroup, "menu\.home\.rules"/);
+  assert.match(home, /AddSubAction\(onlineGroup, "menu\.home\.clubs"/);
+  assert.equal((home.match(/var (?:start|learn|online)Group = AddGroup\(/g) || []).length, 3);
+});
+
+test("regression: no narrow quick-start or offset Rules and Clubs buttons", () => {
+  assert.doesNotMatch(home, /quick\.style\.width = 244f/);
+  assert.doesNotMatch(home, /sub\.style\.width = 374f/);
+  assert.doesNotMatch(home, /sub\.style\.marginLeft = 52f/);
+  assert.doesNotMatch(home, /newGame\.Badge\.Add\(quick\)/);
+});
+
+test("all six menu labels still come from existing RU and EN translation keys", () => {
+  const keys = ["menu.home.new_game", "menu.home.quick_start", "menu.home.tutorial",
+    "menu.home.rules", "menu.home.online", "menu.home.clubs"];
+  for (const translations of [ru, en]) {
+    for (const key of keys) {
+      const matches = translations.filter(e => e.key === key);
+      assert.equal(matches.length, 1, key);
+      assert.ok(matches[0].value.length > 0, key);
+    }
+  }
+  assert.match(home, /AnyTutorialDone \? "menu\.home\.tutorial" : "menu\.home\.tutorial_hint"/);
+});
+
+test("home action layout exposes a bounded three-group height for smaller screens", () => {
+  assert.match(rhythm, /public static float PairHeight => PrimaryHeight \+ InsidePairGap \+ SecondaryHeight;/);
+  assert.match(rhythm, /public static float ThreePairsHeight => PairHeight \* 3f \+ BetweenGroupsGap \* 2f;/);
+});
