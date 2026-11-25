@@ -92,6 +92,7 @@ namespace CityHighways.Presentation
         {
             if (_index != null) return _index;
             _index = new Index();
+            bool repaired = false;
             try
             {
                 if (File.Exists(IndexPath))
@@ -99,22 +100,31 @@ namespace CityHighways.Presentation
                     string json = ReplayStorageIO.ReadBoundedUtf8(IndexPath, ReplayStorageIO.MaxIndexBytes);
                     _index = JsonUtility.FromJson<Index>(json) ?? new Index();
                 }
-                if (_index.entries == null) _index.entries = new List<Entry>();
-                // Unsafe names must be removed *before* constructing paths.
-                _index.entries.RemoveAll(e => e == null ||
-                    !ReplayStorageIO.IsSafeId(e.id) || !File.Exists(FileOf(e.id)));
+                if (_index.entries == null)
+                {
+                    _index.entries = new List<Entry>();
+                    repaired = true;
+                }
+                // Duplicate and unsafe index keys must not shadow files or
+                // cause the UI to render the same replay multiple times.
+                var unique = new HashSet<string>(StringComparer.Ordinal);
+                if (_index.entries.RemoveAll(e => e == null ||
+                    !ReplayStorageIO.IsSafeId(e.id) || !unique.Add(e.id) ||
+                    !File.Exists(FileOf(e.id))) > 0)
+                    repaired = true;
             }
             catch (Exception e)
             {
                 Debug.LogWarning("Не удалось прочитать список повторов: " + e.Message);
                 _index = new Index();
+                repaired = true;
             }
 
             // If the process stopped after writing a replay but before its
             // index, reconstruct the missing entry on the next startup.
             try
             {
-                if (RecoverOrphans(_index) > 0) SaveIndex();
+                if (RecoverOrphans(_index) > 0 || repaired) SaveIndex();
             }
             catch (Exception e)
             {
