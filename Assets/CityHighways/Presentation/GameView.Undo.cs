@@ -234,7 +234,7 @@ namespace CityHighways.Presentation
         /// </summary>
         void ReplaceGameFromHistory(Game restored, List<string> journal, string noticeKey, Sfx cue)
         {
-            _app.Tweener.Clear();
+            // Begin cancels this screen's pending effects without clearing unrelated tweens.
             _map.StopGamepadTargeting(false);
             _game.Log -= AddLog;
             _game.StateChanged -= OnStateChanged;

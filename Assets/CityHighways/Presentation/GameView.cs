@@ -359,6 +359,7 @@ namespace CityHighways.Presentation
 
         // Слои поверх всего
         readonly VisualElement _fx;
+        readonly GameFxLifetime _effects;
         readonly VisualElement _overlay;
         readonly VisualElement _tooltip;
         readonly Label _tooltipText;
@@ -1049,6 +1050,7 @@ namespace CityHighways.Presentation
             _fx = Ui.Box();
             Ui.Fill(_fx);
             Root.Add(_fx);
+            _effects = new GameFxLifetime(_app.Tweener, _fx);
 
             _tooltip = Ui.Column();
             _tooltip.pickingMode = PickingMode.Ignore;
@@ -1177,6 +1179,7 @@ namespace CityHighways.Presentation
         void Begin(Game game, float playSeconds, string firstLogLine,
             bool skipTutorialPrompt = false, bool preserveRedoHistory = false)
         {
+            ResetGameEffects();
             ClearUndoConfirmation();
             if (!preserveRedoHistory)
             {
@@ -1247,8 +1250,8 @@ namespace CityHighways.Presentation
                 HumanCount > 0 && PlayerPrefs.GetInt(TutorialPrefsKey, 0) == 0;
             Action start = () =>
             {
-                if (showTutorial) _app.Tweener.After(0.5f, () => ShowTutorialStep(0));
-                else _app.Tweener.After(0.4f, OnTurnStarted);
+                if (showTutorial) _effects.After(0.5f, () => ShowTutorialStep(0));
+                else _effects.After(0.4f, OnTurnStarted);
             };
             // Под экраном загрузки первый ход ждёт, пока экран не уберут (ReleaseStart): боты не ходят, таймер не идёт.
             if (deferred) _pendingStart = start;
@@ -1782,7 +1785,7 @@ namespace CityHighways.Presentation
             if (now.EventNumber > before.EventNumber && _game.CurrentEvent != null)
             {
                 var cityEvent = _game.CurrentEvent;
-                _app.Tweener.After(claimDuration + 0.3f, () =>
+                _effects.After(claimDuration + 0.3f, () =>
                 {
                     // Спокойная подача: тост, тихий звук, мягкое свечение краёв карты и плавная подсветка карточки события.
                     var color = EventColor(cityEvent.Kind);
@@ -1880,7 +1883,7 @@ namespace CityHighways.Presentation
                 if (before.GoalOwners.ContainsKey(pair.Key)) continue;
                 var goal = _game.Map.GetGoal(pair.Key);
                 string who = _game.Players[pair.Value].Name;
-                _app.Tweener.After(claimDuration + 0.15f, () =>
+                _effects.After(claimDuration + 0.15f, () =>
                 {
                     Toast(string.Format(LocalizationService.Get("game.notice.goal_claimed"), MayorGoalName(goal), who, goal.Points), Theme.Gold);
                     // Салют над серединой карты — цветом компании, взявшей цель.
@@ -1900,7 +1903,7 @@ namespace CityHighways.Presentation
                 && !IsBot(me) && now.Earned[me] > before.Earned[me])
             {
                 int gain = now.Earned[me] - before.Earned[me];
-                _app.Tweener.After(claimDuration + 0.3f, () =>
+                _effects.After(claimDuration + 0.3f, () =>
                     Toast(string.Format(LocalizationService.Get("game.notice.toll_earned"), gain), Theme.Gold));
             }
             int newJamIndex = 0;
@@ -1918,7 +1921,7 @@ namespace CityHighways.Presentation
                     string text = string.Format(LocalizationService.Get("game.notice.traffic_jam"), LocationName(jammedRoad.A), LocationName(jammedRoad.B)) +
                                   (mine ? LocalizationService.Get("game.notice.jam_upgrade") : string.Format(LocalizationService.Get("game.notice.jam_fee"), _game.Config.JamFee));
                     string alertRoad = roadId;
-                    _app.Tweener.After(claimDuration + 0.5f + jamIndex * 1.8f, () =>
+                    _effects.After(claimDuration + 0.5f + jamIndex * 1.8f, () =>
                     {
                         Toast(text, Theme.Danger);
                         int sparks = GameFxTuning.JamSparks(jamIndex, Ui.ReducedMotion);
@@ -1935,7 +1938,7 @@ namespace CityHighways.Presentation
                     int diff = now.Points[i] - before.Points[i];
                     if (diff == 0 || i >= _playerRows.Length) continue;
                     var row = PlayerAnchor(i);
-                    _app.Tweener.After(claimDuration * 0.8f, () => FloatText(row, diff > 0 ? $"+{diff}" : $"{diff}", diff > 0 ? Theme.Success : Theme.Danger));
+                    _effects.After(claimDuration * 0.8f, () => FloatText(row, diff > 0 ? $"+{diff}" : $"{diff}", diff > 0 ? Theme.Success : Theme.Danger));
                 }
 
             // Оплаченные маршруты: свет по пути и монетки владельцам дорог. Свой маршрут виден всегда, чужой —
@@ -1974,7 +1977,7 @@ namespace CityHighways.Presentation
                 var paidCheck = _game.CheckContract(playerIndex, contract);
                 int contractToll = paidCheck.Toll + paidCheck.JamFee;
                 float noticeDelay = claimDuration + shownContracts++ * 2.0f;
-                _app.Tweener.After(noticeDelay, () =>
+                _effects.After(noticeDelay, () =>
                 {
                     string toll = contractToll > 0 ? string.Format(LocalizationService.Get("game.notice.contract_toll"), contractToll, paidCheck.JamFee > 0 ? LocalizationService.Get("game.notice.contract_toll_jam") : "") : "";
                     Toast(string.Format(LocalizationService.Get("game.notice.contract_completed"), ContractTitle(contract), contract.Points, toll), Theme.Success);
@@ -1989,13 +1992,13 @@ namespace CityHighways.Presentation
 
             if (now.Phase == GamePhase.GameOver && before.Phase != GamePhase.GameOver)
             {
-                _app.Tweener.After(claimDuration + 0.4f, () => _app.Sound.Play(Sfx.Fanfare));
+                _effects.After(claimDuration + 0.4f, () => _app.Sound.Play(Sfx.Fanfare));
                 return;
             }
 
             bool turnChanged = now.Acting != before.Acting
                                || (before.Phase == GamePhase.SetupContracts && now.Phase != GamePhase.SetupContracts);
-            if (turnChanged) _app.Tweener.After(claimDuration + 0.1f, OnTurnStarted);
+            if (turnChanged) _effects.After(claimDuration + 0.1f, OnTurnStarted);
         }
 
         void OnTurnStarted()
@@ -2024,7 +2027,7 @@ namespace CityHighways.Presentation
             int segments = route.Length;
             int played = 0;
 
-            _app.Tweener.Add(ClaimDuration(route), k =>
+            _effects.Add(ClaimDuration(route), k =>
             {
                 _map.BuildProgress[route.Id] = Ui.ReducedMotion ? 1f : k;
                 int shown = Mathf.FloorToInt(k * segments + 0.001f);
@@ -2055,7 +2058,7 @@ namespace CityHighways.Presentation
             _map.RoadSweeps[roadId] = 0f;
             if (upgrade) _map.UpgradeSweeps.Add(roadId);
             else _map.UpgradeSweeps.Remove(roadId);
-            _app.Tweener.Add(0.65f, k =>
+            _effects.Add(0.65f, k =>
             {
                 if (_game != sourceGame || Ui.ReducedMotion) return;
                 _map.RoadSweeps[roadId] = k;
@@ -2091,11 +2094,11 @@ namespace CityHighways.Presentation
             card.style.left = start.x;
             card.style.top = start.y;
             card.style.opacity = 0f;
-            _fx.Add(card);
+            _effects.Attach(card);
 
-            _app.Tweener.After(delay, () => _app.Sound.Play(Sfx.Card));
+            _effects.After(delay, () => _app.Sound.Play(Sfx.Card));
             bool reducedMotion = Ui.ReducedMotion;
-            _app.Tweener.Add(GameFxTuning.CardFlightDuration(reducedMotion), k =>
+            _effects.Add(GameFxTuning.CardFlightDuration(reducedMotion), k =>
             {
                 float eased = Ui.EaseInOutCubic(k);
                 var position = Vector2.Lerp(start, end, eased);
@@ -2105,7 +2108,7 @@ namespace CityHighways.Presentation
                 card.style.opacity = Mathf.Clamp01(k * 8f) * (k > 0.85f ? (1f - k) / 0.15f : 1f);
             }, () =>
             {
-                card.RemoveFromHierarchy();
+                _effects.Remove(card);
                 if (to is ResourceChip chip) chip.Pulse();
             }, delay);
         }
@@ -2115,7 +2118,7 @@ namespace CityHighways.Presentation
         {
             if (path == null || path.Count == 0) return;
             var ids = path.ToList();
-            _app.Tweener.Add(1.8f, k =>
+            _effects.Add(1.8f, k =>
             {
                 _map.RoutePath = ids;
                 _map.RouteProgress = k;
@@ -2142,13 +2145,13 @@ namespace CityHighways.Presentation
                 {
                     var target = PlayerAnchor(owner.Key);
                     int earned = owner.Sum(p => p.Toll);
-                    _app.Tweener.After(delay, () => FloatText(target, $"+{earned}", Theme.Gold));
+                    _effects.After(delay, () => FloatText(target, $"+{earned}", Theme.Gold));
                 }
                 if (payer >= 0 && payer < _playerRows.Length)
                 {
                     var payerRow = PlayerAnchor(payer);
                     int total = route.Toll + route.JamFee;
-                    _app.Tweener.After(delay, () => FloatText(payerRow, $"−{total}", Theme.Danger));
+                    _effects.After(delay, () => FloatText(payerRow, $"−{total}", Theme.Danger));
                 }
                 return;
             }
@@ -2161,7 +2164,7 @@ namespace CityHighways.Presentation
                 if (passage.JamFee > 0)
                 {
                     var burnt = from;
-                    _app.Tweener.After(start, () => FloatAt(burnt, $"−{passage.JamFee}", Theme.Danger));
+                    _effects.After(start, () => FloatAt(burnt, $"−{passage.JamFee}", Theme.Danger));
                 }
                 if (passage.Toll <= 0 || passage.Owner < 0 || passage.Owner >= _playerRows.Length) continue;
                 var target = PlayerAnchor(passage.Owner);
@@ -2183,10 +2186,10 @@ namespace CityHighways.Presentation
                 label.style.unityTextAlign = TextAnchor.MiddleCenter;
                 coin.Add(label);
                 coin.style.opacity = 0f;
-                _fx.Add(coin);
+                _effects.Attach(coin);
 
-                _app.Tweener.After(start, () => _app.Sound.Play(Sfx.Coin, 0.7f));
-                _app.Tweener.Add(1.0f, k =>
+                _effects.After(start, () => _app.Sound.Play(Sfx.Coin, 0.7f));
+                _effects.Add(1.0f, k =>
                 {
                     // Сначала монетка выпрыгивает над дорогой, потом по дуге летит к владельцу.
                     float pop = Mathf.Clamp01(k / 0.25f);
@@ -2200,7 +2203,7 @@ namespace CityHighways.Presentation
                     coin.style.opacity = k > 0.9f ? (1f - k) / 0.1f : 1f;
                 }, () =>
                 {
-                    coin.RemoveFromHierarchy();
+                    _effects.Remove(coin);
                     FloatText(target, $"+{passage.Toll}", Theme.Gold);
                 }, start, false);
             }
@@ -2208,7 +2211,7 @@ namespace CityHighways.Presentation
             {
                 int total = route.Toll + route.JamFee;
                 var payerRow = PlayerAnchor(payer);
-                _app.Tweener.After(delay, () => FloatText(payerRow, $"−{total}", Theme.Danger));
+                _effects.After(delay, () => FloatText(payerRow, $"−{total}", Theme.Danger));
             }
         }
 
@@ -2230,16 +2233,28 @@ namespace CityHighways.Presentation
             label.style.unityTextOutlineWidth = 0.25f;
             label.style.left = at.x - 14f;
             label.style.top = at.y - 12f;
-            _fx.Add(label);
-            _app.Tweener.Add(1.3f, k =>
+            _effects.Attach(label);
+            _effects.Add(1.3f, k =>
             {
                 label.style.top = at.y - 12f - 34f * Ui.EaseOutCubic(k);
                 label.style.opacity = k < 0.1f ? k / 0.1f : k > 0.7f ? (1f - k) / 0.3f : 1f;
-            }, label.RemoveFromHierarchy, 0f, false);
+            }, () => _effects.Remove(label), 0f, false);
         }
 
         static bool IsLaidOut(VisualElement e) =>
             e != null && e.panel != null && !float.IsNaN(e.worldBound.width) && e.worldBound.width > 1f;
+
+        void ResetGameEffects()
+        {
+            _effects.Reset();
+            _pendingStart = null;
+            ++_toastVersion;
+            ++_eventGlowVersion;
+            Ui.Show(_toastHolder, false);
+            Ui.Show(_tooltip, false);
+            _eventCard.style.backgroundColor = Theme.PanelLight;
+            _eventPill.style.backgroundColor = Theme.PanelLight;
+        }
 
         void Toast(string text, Color color)
         {
@@ -2252,7 +2267,7 @@ namespace CityHighways.Presentation
                 + GameFxTuning.ToastVerticalOffset(Root.layout.width);
             Ui.Show(_toastHolder, true);
 
-            _app.Tweener.Add(2.4f, k =>
+            _effects.Add(2.4f, k =>
             {
                 if (version != _toastVersion) return;
                 _toastHolder.style.opacity = GameFxTuning.ToastOpacity(k);
@@ -2331,14 +2346,14 @@ namespace CityHighways.Presentation
             }
             void SetFlip(float scaleX) => card.style.scale = new Scale(new Vector3(Mathf.Max(0.001f, scaleX), 1f, 1f));
             SetLook(false);
-            _fx.Add(card);
+            _effects.Attach(card);
 
             bool bot = IsBot(playerIndex);
             float hold = bot ? 1.0f : 1.8f;
 
             // 1. Из колоды в центр.
             _app.Sound.Play(Sfx.Swish, 0.6f);
-            _app.Tweener.Add(0.35f, k =>
+            _effects.Add(0.35f, k =>
             {
                 float e = Ui.EaseOutCubic(k);
                 var p = Vector2.Lerp(deck, center, e);
@@ -2348,7 +2363,7 @@ namespace CityHighways.Presentation
                 SetFlip(0.4f + 0.6f * e);
             });
             // 2. Переворот: рубашка сжимается, лицо раскрывается.
-            _app.Tweener.Add(0.4f, k =>
+            _effects.Add(0.4f, k =>
             {
                 if (k < 0.5f) SetFlip(1f - k * 2f);
                 else
@@ -2362,7 +2377,7 @@ namespace CityHighways.Presentation
                 _app.Sound.Play(buff ? Sfx.Bell : Sfx.Error, 0.7f);
             }, 0.35f);
             // 3. Пауза и обратно в колоду.
-            _app.Tweener.Add(0.4f, k =>
+            _effects.Add(0.4f, k =>
             {
                 float e = Ui.EaseInOutCubic(k);
                 var p = Vector2.Lerp(center, deck, e);
@@ -2370,7 +2385,7 @@ namespace CityHighways.Presentation
                 card.style.top = p.y;
                 card.style.opacity = 1f - e;
                 SetFlip(1f - 0.6f * e);
-            }, () => card.RemoveFromHierarchy(), 0.75f + hold);
+            }, () => _effects.Remove(card), 0.75f + hold);
         }
 
         void Flash(string message, string prefixKey = null)
@@ -2904,7 +2919,7 @@ namespace CityHighways.Presentation
                 {
                     // Даём доиграть последнюю анимацию, потом показываем итоги.
                     _overlayKind = OverlayKind.GameOver;
-                    _app.Tweener.After(1.2f, ShowGameOver);
+                    _effects.After(1.2f, ShowGameOver);
                 }
                 return;
             }
@@ -3924,7 +3939,7 @@ namespace CityHighways.Presentation
         {
             int version = ++_eventGlowVersion;
             var start = new Color(color.r, color.g, color.b, 1f);
-            _app.Tweener.Add(2.0f, k =>
+            _effects.Add(2.0f, k =>
             {
                 if (version != _eventGlowVersion) return;
                 float s = GameFxTuning.EventGlowStrength(k, Ui.ReducedMotion);

@@ -15,6 +15,8 @@ namespace CityHighways.Presentation
             public bool Blocking;
             public Action<float> Update;
             public Action Done;
+            public object Scope;
+            public bool Cancelled;
         }
 
         readonly List<Tween> _tweens = new List<Tween>();
@@ -31,7 +33,7 @@ namespace CityHighways.Presentation
             }
         }
 
-        public void Add(float duration, Action<float> update, Action done = null, float delay = 0f, bool blocking = true)
+        public void Add(float duration, Action<float> update, Action done = null, float delay = 0f, bool blocking = true, object scope = null)
         {
             _tweens.Add(new Tween
             {
@@ -39,13 +41,14 @@ namespace CityHighways.Presentation
                 Delay = delay,
                 Update = update,
                 Done = done,
-                Blocking = blocking
+                Blocking = blocking,
+                Scope = scope
             });
         }
 
         /// <summary>Выполнить действие через delay секунд.</summary>
-        public void After(float delay, Action action, bool blocking = false) =>
-            Add(0f, null, action, delay, blocking);
+        public void After(float delay, Action action, bool blocking = false, object scope = null) =>
+            Add(0f, null, action, delay, blocking, scope);
 
         public void Tick(float deltaTime)
         {
@@ -55,6 +58,7 @@ namespace CityHighways.Presentation
             var current = _tweens.ToArray();
             foreach (var tween in current)
             {
+                if (tween.Cancelled) continue;
                 tween.Elapsed += deltaTime;
                 if (tween.Elapsed < tween.Delay) continue;
 
@@ -65,7 +69,7 @@ namespace CityHighways.Presentation
                 try
                 {
                     tween.Update?.Invoke(progress);
-                    if (progress >= 1f)
+                    if (!tween.Cancelled && progress >= 1f)
                     {
                         _tweens.Remove(tween);
                         tween.Done?.Invoke();
@@ -79,6 +83,24 @@ namespace CityHighways.Presentation
             }
         }
 
-        public void Clear() => _tweens.Clear();
+        /// <summary>Cancel only one owner's pending work, without calling completion callbacks.</summary>
+        public void CancelScope(object scope)
+        {
+            if (scope == null) return;
+            for (int i = _tweens.Count - 1; i >= 0; i--)
+            {
+                var tween = _tweens[i];
+                if (!ReferenceEquals(tween.Scope, scope)) continue;
+                tween.Cancelled = true;
+                _tweens.RemoveAt(i);
+            }
+        }
+
+        public void Clear()
+        {
+            // A callback may clear the queue while Tick is iterating its snapshot.
+            foreach (var tween in _tweens) tween.Cancelled = true;
+            _tweens.Clear();
+        }
     }
 }
