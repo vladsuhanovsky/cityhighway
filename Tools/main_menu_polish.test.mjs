@@ -21,14 +21,14 @@ const corner = view.slice(view.indexOf("VisualElement BuildProfileCorner()"),
 const translated = (entries, key) => entries.find(e => e.key === key)?.value;
 
 test("golden logo and pixel skyline remain the page's visual anchor", () => {
-  assert.match(home, /Ui\.Text\("City Highways", 72f, Theme\.Gold, true\)/);
+  assert.match(home, /Ui\.Text\("City Highways", MenuHomeActionLayout\.LogoFontSize, Theme\.Gold, true\)/);
   assert.match(home, /Fonts\.Weight\.Logo/);
   assert.equal((home.match(/MenuIcon\.Glyph\.Skyline/g) || []).length, 2);
 });
 
 test("New Game is always the red highlighted primary tile", () => {
   assert.match(home, /Add\(startGroup, MenuIcon\.Glyph\.Gamepad,\s*LocalizationService\.Get\("menu\.home\.new_game"\),\s*OpenNewGameWithDeparture, true\)/);
-  assert.match(widgets, /_primary \? new Color\(0\.75f, 0\.22f, 0\.17f\)/);
+  assert.match(widgets, /_style != null \? _style\.newGameGradientStart/);
 });
 
 test("Play Now is a separate action and not a nested New Game badge", () => {
@@ -120,7 +120,7 @@ test("decorative overlays never intercept gameplay or menu input", () => {
 test("gradient falls off horizontally and before the highway", () => {
   assert.match(shade, /float horizontal = Mathf\.Clamp01\(1f - Mathf\.Abs\(x - 0\.5f\) \/ 0\.38f\)/);
   assert.match(shade, /0\.81f - y/);
-  assert.match(shade, /0\.50f \* ease \* vertical/);
+  assert.match(shade, /Mathf\.Clamp\(strength, 0f, 0\.8f\) \* ease \* vertical/);
 });
 
 test("pixel vehicles replace ambiguous headlight dots on the new signature road", () => {
@@ -155,7 +155,7 @@ test("reduced motion skips delays and avoids animating unrelated pages", () => {
   assert.match(view, /if \(_display\.reducedMotion\)\s*\{\s*ShowPage\(Page\.NewGame\);\s*return;/);
   assert.match(view, /_highway\.Tick\(dt, _display\.reducedMotion\)/);
   assert.match(view, /if \(page != Page\.Home\) _newGameTransition = -1f/);
-  assert.match(road, /if \(!reducedMotion\) _trafficTime \+= dt;/);
+  assert.match(road, /if \(!reducedMotion\) _trafficTime \+= dt \* _trafficSpeed;/);
 });
 
 test("two languages expose the same menu action keys without duplicate entries", () => {
@@ -186,7 +186,7 @@ test("Escape and Steam Deck back dismiss a visible settings popover first", () =
 
 
 test("all six home actions share the primary New Game width", () => {
-  assert.match(rhythm, /public const float Width = 480f;/);
+  assert.match(rhythm, /public const float DefaultWidth = 480f;/);
   assert.match(home, /buttons\.style\.width = MenuHomeActionLayout\.Width;/);
   assert.match(home, /group\.style\.width = MenuHomeActionLayout\.Width;/);
   assert.match(home, /button\.style\.width = MenuHomeActionLayout\.Width;/);
@@ -197,8 +197,8 @@ test("all six home actions share the primary New Game width", () => {
 });
 
 test("the three main actions and three secondary actions use different but consistent heights", () => {
-  assert.match(rhythm, /public const float PrimaryHeight = 58f;/);
-  assert.match(rhythm, /public const float SecondaryHeight = 46f;/);
+  assert.match(rhythm, /public const float DefaultPrimaryHeight = 58f;/);
+  assert.match(rhythm, /public const float DefaultSecondaryHeight = 46f;/);
   assert.match(home, /button\.style\.height = MenuHomeActionLayout\.PrimaryHeight;/);
   assert.match(home, /button\.style\.minHeight = MenuHomeActionLayout\.PrimaryHeight;/);
   assert.match(home, /sub\.style\.height = MenuHomeActionLayout\.SecondaryHeight;/);
@@ -206,7 +206,7 @@ test("the three main actions and three secondary actions use different but consi
 });
 
 test("secondary labels are bigger and visibly clickable", () => {
-  assert.match(rhythm, /public const float SecondaryFontSize = 17f;/);
+  assert.match(rhythm, /public const float DefaultSecondaryFontSize = 17f;/);
   assert.match(home, /Theme\.Text, MenuHomeActionLayout\.SecondaryFontSize/);
   assert.match(home, /new Color\(0\.16f, 0\.23f, 0\.31f, 0\.98f\)/);
   assert.match(home, /new Color\(0\.25f, 0\.35f, 0\.45f, 1f\)/);
@@ -215,8 +215,8 @@ test("secondary labels are bigger and visibly clickable", () => {
 });
 
 test("exact 4px within a pair and 12px between pairs", () => {
-  assert.match(rhythm, /public const float InsidePairGap = 4f;/);
-  assert.match(rhythm, /public const float BetweenGroupsGap = 12f;/);
+  assert.match(rhythm, /public const float DefaultInsidePairGap = 4f;/);
+  assert.match(rhythm, /public const float DefaultBetweenGroupsGap = 12f;/);
   assert.match(home, /button\.style\.marginBottom = MenuHomeActionLayout\.InsidePairGap;/);
   assert.match(home, /group\.style\.marginBottom = last \? 0f : MenuHomeActionLayout\.BetweenGroupsGap;/);
   assert.match(home, /sub\.style\.marginBottom = 0f;/);
