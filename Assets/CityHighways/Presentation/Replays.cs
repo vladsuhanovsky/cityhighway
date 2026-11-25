@@ -325,12 +325,15 @@ namespace CityHighways.Presentation
             try
             {
                 if (Directory.Exists(Folder)) Directory.Delete(Folder, true);
+                _index = new Index();
             }
             catch (Exception e)
             {
                 Debug.LogWarning("Не удалось удалить повторы: " + e.Message);
+                // If deleting files failed, re-read the directory on next
+                // access rather than showing a permanently empty catalog.
+                _index = null;
             }
-            _index = new Index();
         }
 
         // ---------------------------------------------------------------- Для облака: сжатие
