@@ -368,6 +368,41 @@ namespace CityHighways.Presentation
                                 done?.Invoke(ack as T);
                                 return;
                             }
+                            // Every social read is subject to the same bounded
+                            // schema checks as the report acknowledgement.
+                            // JsonUtility alone accepts {} as an object filled
+                            // with defaults and treats JSON null inconsistently.
+                            if (request.action == "friends" &&
+                                !SocialReadContracts.ValidateFriends(text))
+                            {
+                                Problem = "Invalid friends response";
+                                failed?.Invoke(Problem);
+                                return;
+                            }
+                            if (request.action == "club_list" &&
+                                !SocialReadContracts.ValidateClubList(text))
+                            {
+                                Problem = "Invalid club list response";
+                                failed?.Invoke(Problem);
+                                return;
+                            }
+                            if (request.action == "club" ||
+                                request.action == "club_create" ||
+                                request.action == "club_join" ||
+                                request.action == "club_leave" ||
+                                request.action == "club_logo" ||
+                                request.action == "club_open")
+                            {
+                                if (!SocialReadContracts.TryParseClub(text, out var state))
+                                {
+                                    Problem = "Invalid club state response";
+                                    failed?.Invoke(Problem);
+                                    return;
+                                }
+                                Problem = "";
+                                done?.Invoke(state as T);
+                                return;
+                            }
                             Problem = "";
                             done?.Invoke(JsonUtility.FromJson<T>(text));
                         }
