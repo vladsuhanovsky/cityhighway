@@ -39,6 +39,9 @@ namespace CityHighways.Presentation
         readonly UnityEngine.UIElements.Button _timerButton;
         readonly MenuSettingsPage _settings;
         readonly Label _hint;
+        readonly MenuHighwayOverlay _highway;
+        readonly MenuLegibilityVeil _legibility;
+        float _newGameTransition = -1f;
         readonly VisualElement _overlay;
         readonly Label _gamepadGuide;
         bool _gamepadActive;
@@ -77,6 +80,12 @@ namespace CityHighways.Presentation
             };
             Root.Add(_background);
             BuildKeyArt();
+            // These overlays are drawn above both live background and optional
+            // key art, but below all real controls.
+            _highway = new MenuHighwayOverlay();
+            Root.Add(_highway);
+            _legibility = new MenuLegibilityVeil();
+            Root.Add(_legibility);
             Root.RegisterCallback<PointerMoveEvent>(e =>
             {
                 var size = Root.layout.size;
@@ -177,6 +186,9 @@ namespace CityHighways.Presentation
             if (page == Page.Tutorial) RefreshTutorial();
             // На страницах с текстом фон приглушается, верхние значки и уведомления — только на главной.
             _background.Dim = page == Page.Home ? 0f : 1f;
+            Ui.Show(_highway, page == Page.Home);
+            Ui.Show(_legibility, page == Page.Home);
+            if (page != Page.Home) _newGameTransition = -1f;
             if (_topBar != null) Ui.Show(_topBar, page == Page.Home);
             if (_bellOpen) ToggleBell();
             if (page == Page.Home)
