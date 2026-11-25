@@ -115,7 +115,7 @@ namespace CityHighways.Presentation
                 return;
             }
             string mode = _setup.cooperative ? "coop" : "classic";
-            var ghosts = Ghosts.For(mode, _setup.mapResourcePath);
+            var ghosts = Ghosts.For(mode, _setup.mapResourcePath, _setup.coopDifficulty);
             var next = ghosts.FirstOrDefault();
             if (!GhostBannerRequest.SameRecord(_bannerGhost, next))
             {

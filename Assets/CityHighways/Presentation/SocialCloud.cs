@@ -599,6 +599,8 @@ namespace CityHighways.Presentation
         {
             if (game?.Result == null || setup == null || setup.tutorial || setup.practice ||
                 replay == null || string.IsNullOrEmpty(replay.id)) return;
+            // The current server keys records only by mode/map; do not mix difficulty tiers.
+            if (game.IsCooperative && CooperativeDifficulty.Normalize(game.Config.CoopDifficulty) != CoopDifficultyKind.Normal) return;
             int seat = replay.authorSeat;
             if (seat < 0 || seat >= game.Players.Count || replay.humans == null || !replay.humans[seat]) return;
             var player = game.Players[seat];

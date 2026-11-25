@@ -58,6 +58,7 @@ namespace CityHighways.Presentation
         public int scenario;
         /// <summary>Кооператив «Город против всех»: все компании — одна команда против города.</summary>
         public bool cooperative;
+        public int coopDifficulty;
         /// <summary>«Логистический магнат» — основной режим: город генерируется заново, компании возят грузы.</summary>
         public bool magnate = true;
         /// <summary>Сложность магната (MagnateDifficulty как int): 0 лёгкая, 1 обычная, 2 сложная, 3 эксперт.</summary>
@@ -142,7 +143,7 @@ namespace CityHighways.Presentation
         {
             var config = Scenarios.Apply(new GameConfig { RoadPiecesOverride = roadPieces },
                 scenario >= 0 && scenario < Scenarios.All.Count ? (ScenarioKind)scenario : ScenarioKind.Standard);
-            return cooperative ? config.MakeCooperative() : config;
+            return cooperative ? CooperativeDifficulty.Apply(config, CooperativeDifficulty.Normalize(coopDifficulty)) : config;
         }
 
         public static readonly string[] DefaultNames = { "Аня", "Борис", "Вера", "Глеб", "Даша" };

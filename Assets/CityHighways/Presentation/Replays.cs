@@ -45,6 +45,7 @@ namespace CityHighways.Presentation
         public GameCommand[] history;
 
         public bool IsCoop => mode == "coop";
+        public CoopDifficultyKind Difficulty => IsCoop ? CooperativeDifficulty.Normalize(start?.config?.CoopDifficulty ?? 0) : CoopDifficultyKind.Normal;
         public int Actions => history?.Length ?? 0;
         public string ModeTitle => IsCoop ? "Кооператив" : "Соревнование";
     }
@@ -63,6 +64,7 @@ namespace CityHighways.Presentation
             public string id;
             public string date;
             public string mode;
+            public int coopDifficulty;
             public string map;
             public string mapPath;
             public string author;
@@ -233,6 +235,7 @@ namespace CityHighways.Presentation
             id = replay.id,
             date = replay.date,
             mode = replay.mode,
+            coopDifficulty = (int)replay.Difficulty,
             map = replay.map,
             mapPath = replay.mapPath,
             author = replay.author,
@@ -307,9 +310,9 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Лучший сохранённый повтор автора в режиме (и на карте, если задана).</summary>
-        public static Entry Best(string author, string mode, string mapPath = null) =>
+        public static Entry Best(string author, string mode, string mapPath = null, int coopDifficulty = 0) =>
             Load().entries
-                .Where(e => e.mode == mode && (mapPath == null || e.mapPath == mapPath)
+                .Where(e => e.mode == mode && (mode != "coop" || CooperativeDifficulty.Normalize(e.coopDifficulty) == CooperativeDifficulty.Normalize(coopDifficulty)) && (mapPath == null || e.mapPath == mapPath)
                             && string.Equals(e.author, author, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(e => e.authorScore).ThenByDescending(e => e.date, StringComparer.Ordinal)
                 .FirstOrDefault();

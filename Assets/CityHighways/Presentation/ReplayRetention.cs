@@ -24,7 +24,7 @@ namespace CityHighways.Presentation
             // A winning score from each author/mode/map is protected, but
             // the protection itself must not exceed the finite quota.
             var best = entries
-                .GroupBy(e => (e.mode ?? "", e.mapPath ?? "", (e.author ?? "").ToLowerInvariant()))
+                .GroupBy(e => (e.mode ?? "", e.mapPath ?? "", (e.author ?? "").ToLowerInvariant(), e.mode == "coop" ? (int)CityHighways.Core.CooperativeDifficulty.Normalize(e.coopDifficulty) : 0))
                 .Select(g => g.OrderByDescending(e => e.authorScore)
                     .ThenByDescending(e => e.date ?? "", StringComparer.Ordinal)
                     .ThenBy(e => e.id, StringComparer.Ordinal).First())
