@@ -1298,7 +1298,8 @@ namespace CityHighways.Presentation
             if (_notifications.ExpireFlash(Time.time)) _dirty = true;
 
             string selectedControllerControl = null;
-            if (_dirty)
+            var refresh = HudTurnClock.SelectRefresh(_dirty, _timerStatusDirty);
+            if (refresh == HudRefreshKind.Full)
             {
                 selectedControllerControl = _gamepadFocusActive && Root.panel != null
                     ? (Root.panel.focusController.focusedElement as VisualElement)?.name
@@ -1307,7 +1308,7 @@ namespace CityHighways.Presentation
                 _timerStatusDirty = false;
                 using (HudRefreshMarker.Auto()) Refresh();
             }
-            else if (_timerStatusDirty)
+            else if (refresh == HudRefreshKind.ClockOnly)
             {
                 _timerStatusDirty = false;
                 using (HudClockMarker.Auto()) RefreshStatusClock(_game.ActingPlayerIndex);
@@ -2753,8 +2754,8 @@ namespace CityHighways.Presentation
                 row.Name.tooltip = row.Name.text;
                 row.Ability.text = data.Ability;
                 Ui.Show(row.Ability, data.HasAbility);
-                int points = data.Score;
-                row.Score.text = points.ToString();
+                string scoreText = data.Score.ToString();
+                row.Score.text = scoreText;
                 row.Stats.text = data.Stats;
                 row.Pieces.Set(data.PiecesRatio);
                 row.Root.style.backgroundColor = active ? Theme.PanelHover : Theme.PanelLight;
@@ -2767,7 +2768,7 @@ namespace CityHighways.Presentation
                 Ui.Show(row.Title, row.Title.text.Length > 0);
 
                 var chip = _playerChips[player.Index];
-                chip.Score.text = points.ToString();
+                chip.Score.text = scoreText;
                 Ui.Border(chip.Dot, 2f, active ? Color.white : new Color(0f, 0f, 0f, 0f));
                 chip.Dot.style.scale = new Scale(active ? new Vector3(1.15f, 1.15f, 1f) : Vector3.one);
             }

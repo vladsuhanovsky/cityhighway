@@ -5,6 +5,13 @@ namespace CityHighways.Tests
 {
     public class HudTurnClockTests
     {
+        [TestCase(false, false, HudRefreshKind.None)]
+        [TestCase(false, true, HudRefreshKind.ClockOnly)]
+        [TestCase(true, false, HudRefreshKind.Full)]
+        [TestCase(true, true, HudRefreshKind.Full)]
+        public void StateChangesAlwaysWinOverClockRepaint(bool full, bool clock, HudRefreshKind expected) =>
+            Assert.AreEqual(expected, HudTurnClock.SelectRefresh(full, clock));
+
         [TestCase(60f, 59.9f, false)]
         [TestCase(60f, 59f, true)]
         [TestCase(10.01f, 10f, true)]
