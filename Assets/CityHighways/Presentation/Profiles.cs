@@ -255,15 +255,21 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Только на диск (после изменений, пришедших с сервера).</summary>
-        public static void SaveLocal()
+        public static void SaveLocal() => TrySaveLocal();
+
+        // Cloud acknowledgements must not be sent before the corresponding
+        // local progress and receipt have been persisted successfully.
+        public static bool TrySaveLocal()
         {
             try
             {
-                File.WriteAllText(FilePath, JsonUtility.ToJson(Book, true));
+                ReplayStorageIO.WriteAtomic(FilePath, JsonUtility.ToJson(Book, true));
+                return true;
             }
             catch (Exception e)
             {
                 Debug.LogWarning("City Highways: профили не сохранились. " + e.Message);
+                return false;
             }
         }
 
