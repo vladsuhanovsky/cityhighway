@@ -101,12 +101,19 @@ namespace CityHighways.Presentation
         public bool Complete(long id, int token, ReplayFile replay, string mismatchError)
         {
             if (!Take(id, token, out var subscribers)) return false;
-            foreach (var subscriber in subscribers)
+
+            // Validate *all* subscriber snapshots before invoking any UI
+            // callback. A viewer may mutate replay.source or other metadata;
+            // that must never influence another viewer's acceptance decision.
+            var matches = new bool[subscribers.Count];
+            for (int i = 0; i < subscribers.Count; i++)
+                matches[i] = SocialReplayMatch.Matches(subscribers[i].Record, replay);
+            for (int i = 0; i < subscribers.Count; i++)
             {
-                if (SocialReplayMatch.Matches(subscriber.Record, replay))
-                    NotifySuccess(subscriber, replay);
+                if (matches[i])
+                    NotifySuccess(subscribers[i], replay);
                 else
-                    NotifyFailure(subscriber, mismatchError);
+                    NotifyFailure(subscribers[i], mismatchError);
             }
             return true;
         }
