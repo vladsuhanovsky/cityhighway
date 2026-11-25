@@ -72,9 +72,11 @@ test("damaged indexes are repaired with safe deduplication", () => {
 
 test("valid orphan replay files are recovered after interrupted index writes", () => {
   assert.match(replays, /static int RecoverOrphans\(Index index\)/);
-  assert.match(replays, /Directory\.EnumerateFiles\(Folder, "\*\.json", SearchOption\.TopDirectoryOnly\)/);
-  assert.match(replays, /if \(\+\+seen > 300\) break;/);
-  assert.match(replays, /if \(!ReplayStorageIO\.IsSafeId\(id\) \|\| !known\.Add\(id\)\) continue;/);
+  assert.match(replays, /ReplayStorageIO\.UnindexedIds\(Folder, known\)/);
+  assert.match(io, /Directory\.EnumerateFiles\(folder, "\*\.json", SearchOption\.TopDirectoryOnly\)/);
+  assert.match(io, /MaxRecoveryScan = 300/);
+  assert.match(io, /if \(\+\+scanned > MaxRecoveryScan\) yield break;/);
+  assert.match(io, /IsSafeId\(id\) && !indexedIds\.Contains\(id\)/);
   assert.match(replays, /index\.entries\.Add\(EntryOf\(replay\)\)/);
 });
 
@@ -101,4 +103,10 @@ test("NUnit coverage and social CI include disk persistence and recovery wiring"
   assert.match(unit, /ValidIdStaysInsideFolder/);
   assert.match(workflow, /ReplayStorageIO\.cs/);
   assert.match(workflow, /ReplayStorageIOTests\.cs/);
+});
+
+test("actual recovery candidate NUnit tests use isolated temporary files", () => {
+  assert.match(unit, /RecoveryScansOnlySafeUnindexedReplayNames/);
+  assert.match(unit, /RecoveryScanHandlesMissingFolder/);
+  assert.match(unit, /CollectionAssert\.AreEquivalent\(new\[\] \{ "orphan" \}, candidates\)/);
 });
