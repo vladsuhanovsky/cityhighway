@@ -940,7 +940,10 @@ namespace CityHighways.Presentation
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame &&
                 !GamepadTextEntry.TryExit(Root))
-                Ui.GoBack(Root);
+            {
+                if (_settingsPopupOpen) ToggleSettingsPopup();
+                else Ui.GoBack(Root);
+            }
 
             // A physical mouse/Steam Deck trackpad takes back pointer input
             // on movement, not only on click. Unplugging the pad also releases
@@ -963,7 +966,10 @@ namespace CityHighways.Presentation
                 {
                     _gamepadActive = true;
                     if (!GamepadTextEntry.TryExit(Root))
-                        Ui.GoBack(Root);
+                    {
+                        if (_settingsPopupOpen) ToggleSettingsPopup();
+                        else Ui.GoBack(Root);
+                    }
                 }
             }
             if (_gamepadActive) UiGamepadFocus.EnsureFocus(Root);
