@@ -29,6 +29,7 @@ namespace CityHighways.Presentation
         public string ReplayId;
         /// <summary>Повтор, загруженный для рейда.</summary>
         public ReplayFile Replay;
+        bool _replayLoading;
         /// <summary>Cloud replay must not be reused after a Steam session switch.</summary>
         public string SteamOwner;
         public int SteamGeneration;
@@ -113,6 +114,10 @@ namespace CityHighways.Presentation
             }
             if (RecordId > 0)
             {
+                // One raid activation per ghost, even when the player clicks
+                // the banner repeatedly before the HTTP request completes.
+                if (_replayLoading) return;
+                _replayLoading = true;
                 SocialCloud.FetchReplay(new SocialCloud.RecordInfo
                 {
                     id = RecordId,
@@ -125,12 +130,22 @@ namespace CityHighways.Presentation
                     seats = Seats
                 }, replay =>
                 {
+                    _replayLoading = false;
                     if (!SocialCloud.BelongsToCurrentSession(SteamOwner, SteamGeneration))
+                    {
+                        failed?.Invoke(LocalizationService.Language == "en"
+                            ? "Steam account changed; raid cancelled."
+                            : "Steam-аккаунт изменился, рейд отменён.");
                         return;
+                    }
                     replay.source = Source == "club" ? "club" : "friend";
                     Replay = replay;
                     done?.Invoke(replay);
-                }, failed);
+                }, error =>
+                {
+                    _replayLoading = false;
+                    failed?.Invoke(error);
+                });
                 return;
             }
             failed?.Invoke("У этого рекорда нет повтора.");

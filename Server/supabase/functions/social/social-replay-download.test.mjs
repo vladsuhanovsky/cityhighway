@@ -59,10 +59,9 @@ test("client envelope matches current backend response shape", () => {
   assert.match(backend, /return \{ replay: data\.replay, author: \(data as any\)\.players\?\.name \?\? "" \};/);
 });
 
-test("cloud replay is checked against selected record before display", () => {
+test("cloud replay is checked against each clicked record before display", () => {
   assert.match(cloud, /var replay = Replays\.UnpackCloud\(response\?\.replay\)/);
-  assert.match(cloud, /if \(!SocialReplayMatch\.Matches\(record, replay\)\)/);
-  assert.match(cloud, /done\?\.Invoke\(replay\)/);
+  assert.match(cloud, /_replayFlights\.Complete\(recordId, token, replay,/);
   assert.match(match, /record\.score != replay\.authorScore/);
   assert.match(match, /record\.won != replay\.won/);
   assert.match(match, /record\.seats > 0 && replay\.players\?\.Length != record\.seats/);
