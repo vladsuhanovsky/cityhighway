@@ -34,7 +34,10 @@ namespace CityHighways.Presentation
 
         readonly MapView _map;
         readonly VisualElement _scoreList, _commentList;
-        readonly Label _turnLabel, _progressLabel, _errorLabel;
+        readonly Label _turnLabel, _progressLabel, _errorLabel, _titleLabel, _factsLabel, _commentTitle;
+        readonly VisualElement _side, _bottom, _transportRow, _timelineRow;
+        string _errorKey, _errorDetail;
+        int _errorAction;
         readonly Button _playButton, _speedButton, _handsButton;
         readonly Button _firstButton, _previousButton, _nextButton, _lastButton, _backButton;
         readonly Label _controllerGuide;
@@ -42,7 +45,7 @@ namespace CityHighways.Presentation
         string _renderedLanguage;
         readonly Slider _slider;
         bool _sliderSync;
-        readonly List<(string text, bool important)> _comments = new List<(string, bool)>();
+        readonly List<(Func<string> render, bool important)> _comments = new List<(Func<string>, bool)>();
 
         public VisualElement Root { get; }
 
@@ -61,7 +64,7 @@ namespace CityHighways.Presentation
             }
             catch (Exception e)
             {
-                _error = "Карта повтора не найдена: " + e.Message;
+                SetError("map", e.Message);
             }
 
             // Верхняя строка: назад, заголовок, факты.
@@ -81,13 +84,17 @@ namespace CityHighways.Presentation
             top.Add(icon);
             var titles = Ui.Column();
             titles.style.flexGrow = 1f;
-            string who = file.source == "local" ? "Повтор партии" : $"Повтор: {file.author}";
-            titles.Add(Ui.Text($"{who} · {file.map}", 20f, Theme.Gold, true));
-            var facts = new List<string> { file.ModeTitle, ShortDate(file.date) };
-            if (!string.IsNullOrEmpty(file.scenario) && file.scenario != Scenarios.Title(ScenarioKind.Standard)) facts.Add(file.scenario);
-            if (file.authorSeat >= 0) facts.Add($"{file.author}: {file.authorScore} очк.{(file.won ? ", победа" : "")}");
-            if (file.online) facts.Add("сетевая");
-            titles.Add(Ui.Text(string.Join(" · ", facts), 13f, Theme.TextDim));
+            titles.style.minWidth = 0f;
+            _titleLabel = Ui.Text("", 20f, Theme.Gold, true);
+            _titleLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            _titleLabel.style.overflow = Overflow.Hidden;
+            _titleLabel.style.textOverflow = TextOverflow.Ellipsis;
+            _factsLabel = Ui.Text("", 13f, Theme.TextDim);
+            _factsLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            _factsLabel.style.overflow = Overflow.Hidden;
+            _factsLabel.style.textOverflow = TextOverflow.Ellipsis;
+            titles.Add(_titleLabel);
+            titles.Add(_factsLabel);
             top.Add(titles);
             _handsButton = Ui.Button("Показать руки", ToggleHands, ButtonKind.Secondary, 13f);
             _handsButton.name = "gamepad-replay-hands";
@@ -104,24 +111,27 @@ namespace CityHighways.Presentation
             _map.style.flexGrow = 1f;
             middle.Add(_map);
 
-            var side = Ui.Column();
+            _side = Ui.Column();
+            var side = _side;
             side.style.width = 360f;
             side.style.flexShrink = 0f;
             side.style.backgroundColor = Theme.Panel;
             side.style.borderLeftWidth = 1f;
             side.style.borderLeftColor = Theme.Line;
             Ui.Padding(side, 14f, 14f);
-            _turnLabel = Ui.Text("", 16f, Theme.Text, true);
-            _turnLabel.style.marginBottom = 8f;
-            side.Add(_turnLabel);
-            _scoreList = Ui.Column();
-            side.Add(_scoreList);
-            var commentTitle = Ui.SectionTitle("Что происходит");
-            commentTitle.style.marginTop = 12f;
-            side.Add(commentTitle);
             var scroll = new ScrollView(ScrollViewMode.Vertical);
             scroll.style.flexGrow = 1f;
+            scroll.style.minHeight = 0f;
             Ui.StyleScroller(scroll);
+            _turnLabel = Ui.Text("", 16f, Theme.Text, true);
+            _turnLabel.style.whiteSpace = WhiteSpace.Normal;
+            _turnLabel.style.marginBottom = 8f;
+            scroll.Add(_turnLabel);
+            _scoreList = Ui.Column();
+            scroll.Add(_scoreList);
+            _commentTitle = Ui.SectionTitle("Что происходит");
+            _commentTitle.style.marginTop = 12f;
+            scroll.Add(_commentTitle);
             _commentList = Ui.Column();
             scroll.Add(_commentList);
             side.Add(scroll);
@@ -129,19 +139,30 @@ namespace CityHighways.Presentation
             Root.Add(middle);
 
             // Низ: управление.
-            var bottom = Ui.Row();
+            _bottom = Ui.Row();
+            var bottom = _bottom;
             bottom.style.alignItems = Align.Center;
             bottom.style.height = 68f;
             Ui.Padding(bottom, 10f, 18f);
             bottom.style.backgroundColor = Theme.PanelGlass;
             bottom.style.borderTopWidth = 1f;
             bottom.style.borderTopColor = Theme.Line;
+            _transportRow = Ui.Row();
+            _transportRow.style.alignItems = Align.Center;
+            _transportRow.style.flexShrink = 0f;
+            _timelineRow = Ui.Row();
+            _timelineRow.style.alignItems = Align.Center;
+            _timelineRow.style.flexGrow = 1f;
+            _timelineRow.style.minWidth = 0f;
+            bottom.Add(_transportRow);
+            bottom.Add(_timelineRow);
             Button Control(string text, Action action, float width)
             {
                 var button = Ui.Button(text, action, ButtonKind.Secondary, 15f);
                 button.style.width = width;
                 button.style.marginRight = 6f;
-                bottom.Add(button);
+                button.style.flexShrink = 0f;
+                _transportRow.Add(button);
                 return button;
             }
             _firstButton = Control("⏮", () => SeekTo(0), 48f);
@@ -167,11 +188,12 @@ namespace CityHighways.Presentation
                 _playing = false;
                 SeekTo(Mathf.RoundToInt(e.newValue));
             });
-            bottom.Add(_slider);
+            _slider.style.minWidth = 0f;
+            _timelineRow.Add(_slider);
             _progressLabel = Ui.Number("", 13f, Theme.TextDim);
             _progressLabel.style.width = 150f;
             _progressLabel.style.unityTextAlign = TextAnchor.MiddleRight;
-            bottom.Add(_progressLabel);
+            _timelineRow.Add(_progressLabel);
             Root.Add(bottom);
 
             // A dedicated layout row cannot cover playback buttons or intercept mouse input.
@@ -191,6 +213,8 @@ namespace CityHighways.Presentation
             _errorLabel.style.whiteSpace = WhiteSpace.Normal;
             _errorLabel.style.maxWidth = 700f;
             Root.Add(_errorLabel);
+            Root.RegisterCallback<GeometryChangedEvent>(e => AdaptLayout(e.newRect.width));
+            AdaptLayout(1280f);
 
             if (_error == null) Rebuild(0);
             if (_game != null) _map.SetGame(_game);
@@ -204,7 +228,7 @@ namespace CityHighways.Presentation
             var start = _file.start;
             var characters = (start.characters ?? new int[start.players.Length]).Select(c => (CharacterKind)c).ToList();
             var game = new Game(_cityMap, start.players, start.config, start.seed, characters);
-            game.Log += line => _comments.Add((line, true));
+            game.Log += line => _comments.Add((() => GameView.FormatJournalMessage(game, line), true));
             return game;
         }
 
@@ -226,7 +250,7 @@ namespace CityHighways.Presentation
             }
             catch (Exception e)
             {
-                _error = "Повтор не открылся: " + e.Message;
+                SetError("open", e.Message);
                 _game = null;
             }
         }
@@ -235,12 +259,12 @@ namespace CityHighways.Presentation
         bool Apply(bool comment)
         {
             var command = _file.history[_position];
-            string text = comment ? Describe(command) : null;
+            Func<string> text = comment ? ReplayText.Describe(_game, command) : null;
             int before = _comments.Count;
             var result = _game.Execute(command);
             if (!result.Success)
             {
-                _error = $"Повтор остановился на действии {_position + 1}: «{result.Error}». Скорее всего, партия сыграна по правилам другой версии игры.";
+                SetError("command", result.Error, _position + 1);
                 _playing = false;
                 return false;
             }
@@ -296,7 +320,7 @@ namespace CityHighways.Presentation
             }
             else
             {
-                _error = null;
+                _error = _errorKey = _errorDetail = null;
                 Rebuild(target);
                 if (_game != null) _map.SwapGame(_game);
             }
@@ -367,10 +391,15 @@ namespace CityHighways.Presentation
 
         void RefreshPanel()
         {
-            _errorLabel.text = _error ?? "";
+            _errorLabel.text = _error == null ? "" : ReplayText.Error(_errorKey, _errorDetail, _errorAction);
             Ui.Show(_errorLabel, !string.IsNullOrEmpty(_error));
             _renderedLanguage = LocalizationService.Language;
             bool english = _renderedLanguage == "en";
+            _titleLabel.text = ReplayText.Title(_file);
+            _titleLabel.tooltip = _titleLabel.text;
+            _factsLabel.text = ReplayText.Facts(_file, ShortDate(_file.date));
+            _factsLabel.tooltip = _factsLabel.text;
+            _commentTitle.text = english ? "What is happening" : "Что происходит";
             _backButton.text = english ? "← Back" : "← Назад";
             _handsButton.text = ReplayTransportState.HandsLabel(_showHands, english);
             _playButton.text = ReplayTransportState.PlayLabel(_playing, _position, _file.Actions, english);
@@ -392,13 +421,7 @@ namespace CityHighways.Presentation
             _commentList.Clear();
             if (_game == null) return;
 
-            int players = _game.Players.Count;
-            int round = players > 0 ? (_game.TurnNumber - 1) / players + 1 : 1;
-            _turnLabel.text = _game.Phase == GamePhase.GameOver
-                ? "Партия окончена"
-                : _game.Phase == GamePhase.SetupContracts
-                    ? "Подготовка: компании и стартовые контракты"
-                    : $"Круг {round} · ходит {_game.CurrentPlayer.Name}";
+            _turnLabel.text = ReplayText.Turn(_game);
 
             foreach (var player in _game.Players)
             {
@@ -423,9 +446,9 @@ namespace CityHighways.Presentation
                 int score = _game.Result != null
                     ? _game.Result.Ranking.FirstOrDefault(s => s.PlayerIndex == player.Index)?.Total ?? 0
                     : player.RoadPoints + player.GoalPoints + player.LuckPoints;
-                head.Add(Ui.Number($"{score} очк.", 14f, Theme.Gold, true));
+                head.Add(Ui.Number(ReplayText.Points(score), 14f, Theme.Gold, true));
                 row.Add(head);
-                string details = $"Карт: {player.HandSize} · участков: {player.RoadPieces} · дорог: {player.Roads.Count}";
+                string details = ReplayText.PlayerDetails(player.HandSize, player.RoadPieces, player.Roads.Count);
                 if (player.Character != CharacterKind.None) details = Characters.Title(player.Character) + " · " + details;
                 var info = Ui.Text(details, 11f, Theme.TextDim);
                 info.style.whiteSpace = WhiteSpace.Normal;
@@ -436,15 +459,15 @@ namespace CityHighways.Presentation
                     for (int r = 0; r < ResourceInfo.Count; r++)
                     {
                         int count = player.CardCount((Resource)r);
-                        if (count > 0) hand.Add($"{ResourceInfo.RussianName((Resource)r)} ×{count}");
+                        if (count > 0) hand.Add($"{Palette.CardTitle((Resource)r)} ×{count}");
                     }
-                    var handLabel = Ui.Text("Рука: " + string.Join(", ", hand), 11f, new Color(0.62f, 0.85f, 1f));
+                    var handLabel = Ui.Text((english ? "Hand: " : "Рука: ") + string.Join(", ", hand), 11f, new Color(0.62f, 0.85f, 1f));
                     handLabel.style.whiteSpace = WhiteSpace.Normal;
                     row.Add(handLabel);
                     if (player.Contracts.Count > 0)
                     {
-                        var contracts = Ui.Text("Контракты: " + string.Join(", ", player.Contracts.Select(c =>
-                            $"{_game.Map.DistrictName(c.DistrictA)} — {_game.Map.DistrictName(c.DistrictB)} ({c.Points})")), 11f, Theme.TextDim);
+                        var contracts = Ui.Text((english ? "Contracts: " : "Контракты: ") + string.Join(", ", player.Contracts.Select(c =>
+                            $"{MagnateLocationText.Name(_game.Map.DistrictName(c.DistrictA))} — {MagnateLocationText.Name(_game.Map.DistrictName(c.DistrictB))} ({c.Points})")), 11f, Theme.TextDim);
                         contracts.style.whiteSpace = WhiteSpace.Normal;
                         row.Add(contracts);
                     }
@@ -454,7 +477,7 @@ namespace CityHighways.Presentation
 
             if (_game.IsCooperative)
             {
-                var coop = Ui.Text($"Заказы: {_game.OrdersDone} из {_game.OrdersTarget} · кризис {_game.Crisis} из {_game.CrisisMax}", 13f,
+                var coop = Ui.Text(ReplayText.Coop(_game.OrdersDone, _game.OrdersTarget, _game.Crisis, _game.CrisisMax), 13f,
                     _game.Crisis >= _game.CrisisMax - 2 ? Theme.Danger : Theme.Text, true);
                 coop.style.marginTop = 2f;
                 _scoreList.Add(coop);
@@ -463,8 +486,8 @@ namespace CityHighways.Presentation
             // Свежие комментарии — сверху.
             for (int i = _comments.Count - 1; i >= 0 && i >= _comments.Count - 40; i--)
             {
-                var (text, important) = _comments[i];
-                var line = Ui.Text(text, 12f, important ? Theme.Text : Theme.TextDim);
+                var (render, important) = _comments[i];
+                var line = Ui.Text(render(), 12f, important ? Theme.Text : Theme.TextDim);
                 line.style.whiteSpace = WhiteSpace.Normal;
                 line.style.marginBottom = 4f;
                 if (important)
@@ -478,46 +501,26 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Комментарий к действию по состоянию до него.</summary>
-        string Describe(GameCommand command)
+        void SetError(string key, string detail, int action = 0)
         {
-            string Name(int index) => index >= 0 && index < _game.Players.Count ? _game.Players[index].Name : "Игрок";
-            string who = Name(command.player);
-            string RoadText(string id)
-            {
-                var road = _game.Map.GetRoad(id);
-                return road == null ? id : $"{_game.Map.LocationName(road.A)} — {_game.Map.LocationName(road.B)} ({road.Length} уч.)";
-            }
-            string ResourceName(int value) => value >= 0 && value < ResourceInfo.Count ? ResourceInfo.RussianName((Resource)value) : "карты";
-            switch (command.kind)
-            {
-                case GameCommand.KeepInitial: return $"{who} оставляет стартовые контракты ({command.contracts?.Length ?? 0}).";
-                case GameCommand.ChooseCharacterKind: return $"{who} выбирает компанию «{Characters.Title((CharacterKind)command.option)}».";
-                case GameCommand.DrawDeck: return $"{who} берёт карту из колоды.";
-                case GameCommand.DrawFaceUp:
-                {
-                    var cards = _game.FaceUpCards;
-                    var card = command.slot >= 0 && command.slot < cards.Count ? cards[command.slot] : null;
-                    return card.HasValue ? $"{who} берёт открытую карту: {ResourceInfo.RussianName(card.Value)}." : $"{who} берёт открытую карту.";
-                }
-                case GameCommand.Build:
-                    return $"{who} строит дорогу {RoadText(command.road)} за {ResourceName(command.resource)}" +
-                           (command.machinery > 0 ? $" и технику ×{command.machinery}." : ".");
-                case GameCommand.BuildFree: return $"{who} строит дорогу {RoadText(command.road)} бесплатно.";
-                case GameCommand.Upgrade: return $"{who} улучшает дорогу {RoadText(command.road)} до магистрали.";
-                case GameCommand.DrawContractsKind: return $"{who} берёт новые контракты.";
-                case GameCommand.KeepContractsKind: return $"{who} оставляет контракты: {command.contracts?.Length ?? 0}.";
-                case GameCommand.PassKind: return $"{who} пропускает ход.";
-                case GameCommand.DrawLuck: return $"{who} тянет карту удачи.";
-                case GameCommand.ChooseLuck: return $"{who} выбирает карту удачи.";
-                case GameCommand.ProposeTradeKind:
-                    return $"{who} предлагает сделку игроку {Name(command.to)}: {command.giveCount} × {ResourceName(command.giveResource)} за {command.getCount} × {ResourceName(command.getResource)}.";
-                case GameCommand.RespondTradeKind: return command.accept ? $"{who} принимает сделку." : $"{who} отказывается от сделки.";
-                case GameCommand.InfluenceKind: return $"{who} тратит влияние.";
-                case GameCommand.BidKind: return command.bid > 0 ? $"{who} ставит {command.bid} на аукционе мэрии." : $"{who} пасует на аукционе.";
-                case GameCommand.BribeKindName: return $"{who} тайком договаривается с чиновником.";
-                case GameCommand.AccuseKind: return $"{who} обвиняет {Name(command.to)} во взятке.";
-                default: return null;
-            }
+            _error = _errorKey = key;
+            _errorDetail = detail;
+            _errorAction = action;
+        }
+
+        void AdaptLayout(float width)
+        {
+            if (float.IsNaN(width) || width <= 0f) return;
+            bool compact = ReplayLayout.Compact(width);
+            _side.style.width = ReplayLayout.SideWidth(width);
+            _bottom.style.flexDirection = compact ? FlexDirection.Column : FlexDirection.Row;
+            _bottom.style.height = compact ? 104f : 68f;
+            _bottom.style.alignItems = compact ? Align.Stretch : Align.Center;
+            _transportRow.style.justifyContent = compact ? Justify.Center : Justify.FlexStart;
+            _timelineRow.style.flexGrow = 1f;
+            _progressLabel.style.width = compact ? 100f : 150f;
+            _controllerGuide.style.maxWidth = Mathf.Max(120f, Mathf.Min(580f, width - 32f));
+            _errorLabel.style.maxWidth = Mathf.Max(100f, Mathf.Min(700f, width - 48f));
         }
 
         static string ShortDate(string date) =>
