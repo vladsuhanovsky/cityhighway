@@ -27,6 +27,8 @@ namespace CityHighways.Presentation
         public RiverDto[] preparedRivers;
         public City3DHubFootprint[] hubFootprints;
         public City3DLayoutIssue[] warnings;
+        public int crosswalkCandidates, crosswalksDrawn, crosswalksSuppressed, legacyOverlapPairs;
+        public string[] crosswalkAdjustedJunctions;
     }
 
     /// <summary>XZ footprint diagnostics, not a mesh or rendered-image assertion.
@@ -94,6 +96,11 @@ namespace CityHighways.Presentation
 
             var neighbors = new List<Vector2>();
             var directions = new List<Vector2>();
+            var selected = new List<Vector2>();
+            var scratch = new List<int>();
+            var best = new List<int>();
+            var adjusted = new List<string>();
+            int candidates = 0, drawn = 0, legacyPairs = 0;
             foreach (var location in map.Locations)
             {
                 Vector2 center = HubPlacement.World(location.X, location.Y);
@@ -108,12 +115,24 @@ namespace CityHighways.Presentation
                     for (int j = i + 1; j < directions.Count; j++)
                         if (CrosswalkEnvelopesOverlap(directions[i], directions[j], halfRoad,
                             City3DScene.CrosswalkNear, City3DScene.CrosswalkFar))
-                            Warn("crosswalk-envelope-overlap", location.Id, Vector2.Angle(directions[i], directions[j]), 0f);
+                            legacyPairs++;
+                JunctionCrosswalkLayout.Select(directions, halfRoad, City3DScene.CrosswalkNear,
+                    City3DScene.CrosswalkFar, selected, scratch, best);
+                candidates += directions.Count;
+                drawn += selected.Count;
+                if (selected.Count < directions.Count) adjusted.Add(location.Id);
+                for (int i = 0; i < selected.Count; i++)
+                    for (int j = i + 1; j < selected.Count; j++)
+                        if (CrosswalkEnvelopesOverlap(selected[i], selected[j], halfRoad,
+                            City3DScene.CrosswalkNear, City3DScene.CrosswalkFar))
+                            Warn("crosswalk-envelope-overlap", location.Id, Vector2.Angle(selected[i], selected[j]), 0f);
             }
 
             return new City3DLayoutReport { waterHalfWidth = water, bankHalfWidth = bank, roadHalfWidth = halfRoad,
                 preparedRivers = lines.Select(l => new RiverDto { points = l.Select(p => MapPoint(Xz(p))).ToArray() }).ToArray(),
-                hubFootprints = footprints.ToArray(), warnings = warnings.ToArray() };
+                hubFootprints = footprints.ToArray(), warnings = warnings.ToArray(),
+                crosswalkCandidates = candidates, crosswalksDrawn = drawn, crosswalksSuppressed = candidates - drawn,
+                legacyOverlapPairs = legacyPairs, crosswalkAdjustedJunctions = adjusted.ToArray() };
         }
 
         public static float PointSegmentDistance(Vector2 p, Vector2 a, Vector2 b)
@@ -158,19 +177,8 @@ namespace CityHighways.Presentation
             return distance;
         }
 
-        // Rectangular envelopes include gaps between the painted stripes;
-        // intersection is a visual-risk signal, not proof of overlapping paint.
-        public static bool CrosswalkEnvelopesOverlap(Vector2 a, Vector2 b, float halfWidth, float near, float far)
-        {
-            if (a.sqrMagnitude < 1e-8f || b.sqrMagnitude < 1e-8f || near >= far || halfWidth <= 0f) return false;
-            a.Normalize(); b.Normalize();
-            Vector2 an = new Vector2(-a.y, a.x), bn = new Vector2(-b.y, b.x);
-            float center = (near + far) / 2f, halfLength = (far - near) / 2f;
-            Vector2 delta = (a - b) * center;
-            bool Overlap(Vector2 axis) => Mathf.Abs(Vector2.Dot(delta, axis)) <
-                halfLength * (Mathf.Abs(Vector2.Dot(a, axis)) + Mathf.Abs(Vector2.Dot(b, axis))) +
-                halfWidth * (Mathf.Abs(Vector2.Dot(an, axis)) + Mathf.Abs(Vector2.Dot(bn, axis))) - 1e-6f;
-            return Overlap(a) && Overlap(b) && Overlap(an) && Overlap(bn);
-        }
+        public static bool CrosswalkEnvelopesOverlap(Vector2 a, Vector2 b, float halfWidth, float near, float far) =>
+            JunctionCrosswalkLayout.Overlap(a, b, halfWidth, near, far);
+
     }
 }

@@ -1711,6 +1711,9 @@ namespace CityHighways.Presentation
             var neighbours = new List<Vector2>();
             var dirs = new List<Vector2>();
             var corners = new List<JunctionGeometry.Corner>();
+            var crosswalks = new List<Vector2>();
+            var crosswalkScratch = new List<int>();
+            var crosswalkBest = new List<int>();
             float half = RoadWidth / 2f, arm = BoardLayout.JunctionArm;
             Vector3 W(Vector2 p, float y) => new Vector3(p.x, y, p.y);
             var lightBuilders = new Dictionary<string, MeshBuilder>();
@@ -1747,12 +1750,18 @@ namespace CityHighways.Presentation
                     TriUp(b, W(center, JunctionTop), W(center + new Vector2(Mathf.Cos(a0), Mathf.Sin(a0)) * half, JunctionTop),
                         W(center + new Vector2(Mathf.Cos(a1), Mathf.Sin(a1)) * half, JunctionTop), asphalt);
                 }
-                // Рукава и «зебра» на краю каждого рукава (полосы вдоль дороги, поперёк — пять штук).
+                // All arms remain. Only non-overlapping crosswalk envelopes receive paint.
+                JunctionCrosswalkLayout.Select(dirs, half, CrosswalkNear, CrosswalkFar,
+                    crosswalks, crosswalkScratch, crosswalkBest);
                 foreach (var d in dirs)
                 {
                     var n = new Vector2(-d.y, d.x);
                     QuadUp(b, W(center - n * half, JunctionTop), W(center + n * half, JunctionTop),
                         W(center + n * half + d * arm, JunctionTop), W(center - n * half + d * arm, JunctionTop), asphalt);
+                }
+                foreach (var d in crosswalks)
+                {
+                    var n = new Vector2(-d.y, d.x);
                     const int stripes = 5;
                     float stripe = RoadWidth / (stripes * 2f - 1f);
                     float near = CrosswalkNear, far = CrosswalkFar, y = JunctionTop + 0.0004f;

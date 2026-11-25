@@ -47,7 +47,9 @@ public sealed class CityGeneratorLabWindow : EditorWindow
             DrawPreview();
             EditorGUILayout.LabelField("Blue: rivers · gold: bridges · red: hubs · white: public roads");
             if (current.layout3D != null)
-                EditorGUILayout.HelpBox("Cyan: prepared 3D river line; orange: hub footprint or affected road/junction. Warnings: " + WarningCount(current), MessageType.Info);
+                EditorGUILayout.HelpBox("Cyan: prepared 3D river line; orange: hub footprint or warned road/junction; purple: adjusted crosswalk junction. Warnings: " + WarningCount(current) +
+                    " | Crosswalks drawn: " + current.layout3D.crosswalksDrawn + "/" + current.layout3D.crosswalkCandidates +
+                    " | Legacy overlap pairs: " + current.layout3D.legacyOverlapPairs, MessageType.Info);
         }
         if (GUILayout.Button("Export selected diagnostic JSON"))
         {
@@ -111,6 +113,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         var hubs = new HashSet<string>((current.hubs ?? Array.Empty<string>()).Select(h => h.Split(':')[0]));
         var publicRoads = new HashSet<string>(current.publicRoads ?? Array.Empty<string>());
         var flagged = new HashSet<string>((current.layout3D?.warnings ?? Array.Empty<City3DLayoutIssue>()).Select(w => w.id));
+        var adjusted = new HashSet<string>(current.layout3D?.crosswalkAdjustedJunctions ?? Array.Empty<string>());
         Vector3 At(float x, float y) => new Vector3(area.x + x * area.width, area.y + y * area.height, 0);
         Handles.BeginGUI();
         try
@@ -159,7 +162,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
             var p = At(point.x, point.y);
             float size = hubs.Contains(point.id) ? 7 : 4;
             EditorGUI.DrawRect(new Rect(p.x - size / 2, p.y - size / 2, size, size),
-                flagged.Contains(point.id) ? new Color(1f, .5f, .1f) : hubs.Contains(point.id) ? new Color(.95f, .4f, .3f) : Color.white);
+                flagged.Contains(point.id) ? new Color(1f, .5f, .1f) : adjusted.Contains(point.id) ? new Color(.75f, .45f, 1f) : hubs.Contains(point.id) ? new Color(.95f, .4f, .3f) : Color.white);
         }
     }
 
