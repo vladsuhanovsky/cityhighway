@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CityHighways.Core;
 
 namespace CityHighways.Presentation
 {
@@ -9,15 +10,8 @@ namespace CityHighways.Presentation
         {
             { "Париж", "Paris" },
             { "Сена", "Seine" },
-            { "Центр", "Centre" },
-            { "Запад", "West" },
-            { "Север", "North" },
-            { "Восток", "East" },
-            { "Юг", "South" },
             { "Латинский квартал", "Latin Quarter" },
-            { "Музейный квартал", "Museum Quarter" },
             { "Дефанс", "La Défense" },
-            { "Аэропорты", "Airports" },
             { "Берси", "Bercy" },
             { "Парки", "Parks" },
             { "Версаль", "Versailles" },

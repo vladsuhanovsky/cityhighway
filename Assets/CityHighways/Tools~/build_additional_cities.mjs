@@ -750,9 +750,13 @@ function build(spec) {
  if(roads.filter(r=>r.resource==="steel").length<5||contracts.length<40)throw Error("insufficient content "+spec.key);
  return {name:spec.name,districts:spec.districts.map(([id,name,en,expansion])=>({id,name,...(expansion?{expansion:true}:{})})),locations:locs,roads,contracts,river,rivers:[{name:spec.river,points:river}],goals,piecesScale:spec.scale};
 }
-const folder=process.argv[2] || path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../Resources/CityHighways/Maps");
+const check=process.argv.includes("--check");
+const folder=process.argv.slice(2).find(x=>x!=="--check") || path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../Resources/CityHighways/Maps");
 for (const spec of specs) {
  const data=build(spec);
- fs.writeFileSync(path.join(folder,spec.key+".json"),JSON.stringify(data,null,1)+"\n");
+ const filename=path.join(folder,spec.key+".json");
+ const content=JSON.stringify(data,null,1)+"\n";
+ if(check) { if(fs.readFileSync(filename,"utf8")!==content) throw Error("Generated map differs: "+filename); }
+ else fs.writeFileSync(filename,content);
  console.log(spec.key,data.locations.length,data.roads.length,data.contracts.length);
 }

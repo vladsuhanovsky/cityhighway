@@ -32,6 +32,7 @@ namespace CityHighways.Tests
                 LocalizationService.SetLanguage("en");
                 Assert.AreEqual(english, choice.DisplayTitle);
                 Assert.AreEqual(english, CityMapText.Name(map.Name));
+                Assert.AreEqual(MagnateLocationText.Name("Центр"), CityMapText.Name("Центр"));
                 Assert.IsTrue(map.Locations.All(l => !System.Text.RegularExpressions.Regex.IsMatch(CityMapText.Name(l.Name), "[а-яё]", System.Text.RegularExpressions.RegexOptions.IgnoreCase)));
                 LocalizationService.SetLanguage("ru");
                 Assert.AreEqual(russian, choice.DisplayTitle);
