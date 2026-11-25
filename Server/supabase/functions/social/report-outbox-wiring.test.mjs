@@ -132,3 +132,11 @@ test("existing server sends expected ACK fields even for report without club mem
   assert.match(server, /return \{ improved, best, club \};/);
   assert.match(server, /club = \{ kind, amount: accepted \? amount : 0, closed, logo \};/);
 });
+
+
+test("null club acknowledgement is reconstructed as null instead of Unity JsonUtility phantom object", () => {
+  assert.match(ack, /SocialCloud\.ReportClub clubAck = null/);
+  assert.match(ack, /if \(rawClub != null\)[\s\S]*?clubAck = new SocialCloud\.ReportClub/);
+  assert.match(ack, /response = new SocialCloud\.ReportResponse[\s\S]*?club = clubAck/);
+  assert.doesNotMatch(ack, /JsonUtility\.FromJson<SocialCloud\.ReportResponse>/);
+});
