@@ -360,6 +360,7 @@ namespace CityHighways.Presentation
         // Слои поверх всего
         readonly VisualElement _fx;
         readonly GameFxLifetime _effects;
+        readonly GameFxVisuals _visualEffects;
         readonly VisualElement _overlay;
         readonly VisualElement _tooltip;
         readonly Label _tooltipText;
@@ -1046,6 +1047,7 @@ namespace CityHighways.Presentation
             Ui.Fill(_fx);
             Root.Add(_fx);
             _effects = new GameFxLifetime(_app.Tweener, _fx);
+            _visualEffects = new GameFxVisuals(_effects);
 
             _tooltip = Ui.Column();
             _tooltip.pickingMode = PickingMode.Ignore;
@@ -2058,31 +2060,11 @@ namespace CityHighways.Presentation
             var start = _fx.WorldToLocal(from.worldBound.center) - new Vector2(width / 2f, height / 2f);
             var end = _fx.WorldToLocal(to.worldBound.center) - new Vector2(width / 2f, height / 2f);
 
-            var card = new CardView(width, height, false);
-            card.pickingMode = PickingMode.Ignore;
-            if (reveal) card.Set(color);
-            else card.ShowBack();
-            card.style.position = Position.Absolute;
-            card.style.left = start.x;
-            card.style.top = start.y;
-            card.style.opacity = 0f;
-            _effects.Attach(card);
-
-            _effects.After(delay, () => _app.Sound.Play(Sfx.Card));
-            bool reducedMotion = Ui.ReducedMotion;
-            _effects.Add(GameFxTuning.CardFlightDuration(reducedMotion), k =>
-            {
-                float eased = Ui.EaseInOutCubic(k);
-                var position = Vector2.Lerp(start, end, eased);
-                position.y -= Mathf.Sin(k * Mathf.PI) * GameFxTuning.CardArcHeight(reducedMotion);
-                card.style.left = position.x;
-                card.style.top = position.y;
-                card.style.opacity = Mathf.Clamp01(k * 8f) * (k > 0.85f ? (1f - k) / 0.15f : 1f);
-            }, () =>
-            {
-                _effects.Remove(card);
-                if (to is ResourceChip chip) chip.Pulse();
-            }, delay);
+            _visualEffects.FlyCard(start, end, width, height, color, reveal, delay,
+                () => _app.Sound.Play(Sfx.Card), () =>
+                {
+                    if (to is ResourceChip chip) chip.Pulse();
+                });
         }
 
         /// <summary>Свет по маршруту контракта на карте (волна от начала к концу, затем гаснет).</summary>
@@ -2143,41 +2125,9 @@ namespace CityHighways.Presentation
                 if (!IsLaidOut(target)) continue;
                 var to = _fx.WorldToLocal(target.worldBound.center);
 
-                const float size = 30f;
-                var coin = Ui.Box();
-                coin.pickingMode = PickingMode.Ignore;
-                coin.style.position = Position.Absolute;
-                coin.style.width = size;
-                coin.style.height = size;
-                coin.style.backgroundColor = new Color(1f, 0.80f, 0.25f);
-                Ui.Radius(coin, size / 2f);
-                Ui.Border(coin, 2f, new Color(0.72f, 0.50f, 0.08f));
-                coin.style.justifyContent = Justify.Center;
-                coin.style.alignItems = Align.Center;
-                var label = Ui.Text($"+{passage.Toll}", 12f, new Color(0.30f, 0.20f, 0.02f), true);
-                label.style.unityTextAlign = TextAnchor.MiddleCenter;
-                coin.Add(label);
-                coin.style.opacity = 0f;
-                _effects.Attach(coin);
-
-                _effects.After(start, () => _app.Sound.Play(Sfx.Coin, 0.7f));
-                _effects.Add(1.0f, k =>
-                {
-                    // Сначала монетка выпрыгивает над дорогой, потом по дуге летит к владельцу.
-                    float pop = Mathf.Clamp01(k / 0.25f);
-                    float fly = Ui.EaseInOutCubic(Mathf.Clamp01((k - 0.25f) / 0.75f));
-                    var position = Vector2.Lerp(from + new Vector2(0f, -26f * Ui.EaseOutCubic(pop)), to, fly);
-                    position.y -= Mathf.Sin(fly * Mathf.PI) * 60f;
-                    coin.style.left = position.x - size / 2f;
-                    coin.style.top = position.y - size / 2f;
-                    float scale = GameFxTuning.CoinScale(k);
-                    coin.style.scale = new Scale(new Vector3(scale, scale, 1f));
-                    coin.style.opacity = k > 0.9f ? (1f - k) / 0.1f : 1f;
-                }, () =>
-                {
-                    _effects.Remove(coin);
-                    FloatText(target, $"+{passage.Toll}", Theme.Gold);
-                }, start, false);
+                _visualEffects.FlyCoin(from, to, passage.Toll, start,
+                    () => _app.Sound.Play(Sfx.Coin, 0.7f),
+                    () => FloatText(target, $"+{passage.Toll}", Theme.Gold));
             }
             if (payer >= 0 && payer < _playerRows.Length)
             {
@@ -2196,22 +2146,7 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Всплывающая надпись в точке слоя эффектов.</summary>
-        void FloatAt(Vector2 at, string text, Color color)
-        {
-            var label = Ui.Text(text, 20f, color, true);
-            label.pickingMode = PickingMode.Ignore;
-            label.style.position = Position.Absolute;
-            label.style.unityTextOutlineColor = new Color(0f, 0f, 0f, 0.8f);
-            label.style.unityTextOutlineWidth = 0.25f;
-            label.style.left = at.x - 14f;
-            label.style.top = at.y - 12f;
-            _effects.Attach(label);
-            _effects.Add(1.3f, k =>
-            {
-                label.style.top = at.y - 12f - 34f * Ui.EaseOutCubic(k);
-                label.style.opacity = k < 0.1f ? k / 0.1f : k > 0.7f ? (1f - k) / 0.3f : 1f;
-            }, () => _effects.Remove(label), 0f, false);
-        }
+        void FloatAt(Vector2 at, string text, Color color) => _visualEffects.FloatAt(at, text, color);
 
         static bool IsLaidOut(VisualElement e) =>
             e != null && e.panel != null && !float.IsNaN(e.worldBound.width) && e.worldBound.width > 1f;

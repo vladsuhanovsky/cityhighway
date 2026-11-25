@@ -12,6 +12,7 @@ The Core layer remains the authority for validation and game state transitions.
 | --- | --- |
 | `GameView.cs` | Gameplay screen composition, input coordination, turn state and animation orchestration |
 | `GameFxSnapshot.cs` | Detached presentation state capture and deterministic card-flight planning |
+| `GameFxVisuals.cs` | Temporary card, coin and floating-text UI construction and animation |
 | `GameFxNotifications.cs` | Toast, localized transient errors, event glow and notification reset |
 | `GameFxLifetime.cs` | Scope-owned effect scheduling and temporary UI element cleanup |
 | `GameHudReadout.cs` | Classic player/status/final-round display data without VisualElements |
@@ -41,7 +42,7 @@ these files is a source organization change, not a runtime or API boundary.
 
 ## Next decomposition targets
 
-- Snapshot capture and card-flight planning extracted to `GameFxSnapshot`; remaining effects and tween construction are still coordinated by GameView.
+- Snapshot capture and card-flight planning extracted to `GameFxSnapshot`; card, coin and floating-text construction is in GameFxVisuals; remaining map/luck effects and event orchestration are still coordinated by GameView.
 - Player HUD readout, turn instruction and final-round text extracted to `GameHudReadout`; widget composition and binding remain in GameView.
 - Map tooltip text and read-only queries extracted to `GameTooltipText`; keep event positioning and viewer/handoff decisions in the screen. Next: extract reusable tooltip positioning and HUD refresh logic.
 - Replace direct, cross-panel field access gradually with explicit interfaces
@@ -65,3 +66,7 @@ Classic GameView now schedules its effects via GameFxLifetime. Beginning or repl
 ## Notification boundary
 
 `GameFxNotifications` owns toast creation and replacement, transient error lifetime and live RU/EN rendering, and event glow. GameView still chooses when to notify and plays audio. Notification timing, existing styles and reset behavior are preserved. Four Edit Mode cases cover overlapping toasts, reset, expiry and live language changes. Manual UI confirmation remains required.
+
+## Temporary visual construction boundary
+
+`GameFxVisuals` constructs cards, coins and floating numbers using the existing GameFxLifetime scope. The screen still chooses destinations, card reveal/privacy, sound and completion actions. The original motion formulas, durations and blocking flags are retained. Three Edit Mode cases cover visual cleanup, normal coin completion, nonblocking effects and cancellation. Card visibility and effects still require manual Unity QA. No performance measurements or release readiness claims.
