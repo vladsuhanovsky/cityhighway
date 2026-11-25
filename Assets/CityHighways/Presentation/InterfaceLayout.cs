@@ -10,8 +10,15 @@ namespace CityHighways.Presentation
     public static class InterfaceLayout
     {
         static InterfaceTheme Style => InterfaceTheme.Current;
+        public static float Resolve(float? value, float fallback, float min, float max)
+        {
+            if (!value.HasValue || float.IsNaN(value.Value) ||
+                float.IsInfinity(value.Value)) return fallback;
+            return Mathf.Clamp(value.Value, min, max);
+        }
+
         static float Value(float? value, float fallback, float min, float max) =>
-            value.HasValue ? Mathf.Clamp(value.Value, min, max) : fallback;
+            Resolve(value, fallback, min, max);
 
         public static float CommonButtonHeight => Value(Style != null ? (float?)Style.commonButtonMinHeight : null, 38f, 24f, 64f);
         public static float CommonButtonRadius => Value(Style != null ? (float?)Style.commonButtonCornerRadius : null, 8f, 0f, 20f);
