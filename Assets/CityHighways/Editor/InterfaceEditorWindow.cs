@@ -259,18 +259,61 @@ public sealed class InterfaceEditorWindow : EditorWindow
         }
         else
         {
-            float nav = _tab == 4 ? _theme.rulesNavigationWidth :
-                _tab == 5 ? _theme.settingsNavigationWidth : 210f;
-            float navWidth = Mathf.Clamp(nav * 0.34f, 65f, panel.width * 0.45f);
-            var navBox = new Rect(panel.x + 12f, panel.y + 60f, navWidth, 190f);
+            // Only a schematic, but changing dimensions in each screen's
+            // editor tab visibly changes the corresponding preview element.
+            float nav = _tab == 2 ? _theme.newGameOptionsCardWidth :
+                _tab == 3 ? _theme.onlineNameFieldWidth :
+                _tab == 4 ? _theme.rulesNavigationWidth :
+                _tab == 5 ? _theme.settingsNavigationWidth :
+                _tab == 6 ? _theme.profileSidebarWidth : 210f;
+            float navWidth = Mathf.Clamp(nav * 0.34f, 65f, panel.width * 0.48f);
+            float h = _tab == 4 ? _theme.rulesContentHeight :
+                _tab == 6 ? _theme.statsHistoryHeight :
+                _tab == 2 ? _theme.newGameHelpMaxWidth :
+                _tab == 5 ? _theme.settingsPreviewWidth : 580f;
+            float viewportHeight = Mathf.Clamp(h * 0.32f, 115f, 220f);
+            var navBox = new Rect(panel.x + 12f, panel.y + 60f,
+                navWidth, viewportHeight);
             Rect(navBox, _theme.panelHover);
+            string navLabel = _tab == 2 ? "OPTIONS" :
+                _tab == 3 ? "PLAYER INPUT" : _tab == 6 ? "PROFILE" : "NAV";
             Text(new Rect(navBox.x, navBox.y + 10f, navBox.width, 32f),
-                "NAV", _theme.text, 11, true);
+                navLabel, _theme.text, 11, true);
             var content = new Rect(navBox.xMax + 8f, navBox.y,
-                Mathf.Max(25f, panel.xMax - navBox.xMax - 20f), 190f);
+                Mathf.Max(25f, panel.xMax - navBox.xMax - 20f),
+                viewportHeight);
             Rect(content, _theme.panelLight);
             Text(new Rect(content.x + 2f, content.y + 10f,
                 content.width - 4f, 36f), "CONTENT", _theme.text, 12, true);
+
+            if (_tab == 3)
+            {
+                float inputHeight = Mathf.Clamp(_theme.onlineInputMinHeight * 0.9f,
+                    20f, 56f);
+                Rect(new Rect(navBox.x + 6f, navBox.y + 50f,
+                    navBox.width - 12f, inputHeight), _theme.panelLight);
+            }
+            if (_tab == 4)
+            {
+                float searchWidth = Mathf.Min(content.width - 12f,
+                    _theme.rulesSearchWidth * 0.2f);
+                Rect(new Rect(content.x + 6f, content.y + 50f,
+                    Mathf.Max(12f, searchWidth), 16f), _theme.panel);
+            }
+            if (_tab == 5)
+            {
+                float previewWidth = Mathf.Min(content.width - 12f,
+                    _theme.settingsPreviewWidth * 0.19f);
+                Rect(new Rect(content.x + 6f, content.y + 50f,
+                    Mathf.Max(12f, previewWidth), 45f), _theme.panel);
+            }
+            if (_tab == 6)
+            {
+                float chartWidth = Mathf.Min(content.width - 12f,
+                    _theme.statsCharactersWidth * 0.19f);
+                Rect(new Rect(content.x + 6f, content.y + 50f,
+                    Mathf.Max(12f, chartWidth), 36f), _theme.panel);
+            }
             var action = new Rect(content.x + 10f, content.yMax - 55f,
                 Mathf.Max(15f, content.width - 20f),
                 Mathf.Clamp(_theme.commonButtonMinHeight * 0.9f, 22f, 52f));
