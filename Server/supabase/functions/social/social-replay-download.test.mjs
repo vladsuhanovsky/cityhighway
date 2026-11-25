@@ -88,3 +88,15 @@ test("NUnit cases cover decode bomb, invalid gzip, types and selected-record mis
   assert.match(safetyTests, /ReplayMetadataMustMatchChosenRecord/);
   assert.match(safetyTests, /ValidReplayEnvelopeRequiresTypedAuthorAndBase64Field/);
 });
+
+test("Unity command allowlist equals the server replay validator command allowlist", () => {
+  const clientBlock = replays.slice(
+    replays.indexOf("static readonly HashSet<string> AllowedCloudReplayActions"),
+    replays.indexOf("static bool ValidCloudReplay("));
+  const serverBlock = validator.slice(
+    validator.indexOf("const VALID_COMMAND_KINDS = new Set(["),
+    validator.indexOf("]);", validator.indexOf("const VALID_COMMAND_KINDS = new Set([")));
+  const values = (text) => [...new Set([...text.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]))].sort();
+  assert.deepEqual(values(clientBlock), values(serverBlock));
+  assert.match(replays, /AllowedCloudReplayActions\.Contains\(command\.kind\)/);
+});
