@@ -90,6 +90,18 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>
+        /// Verify serialized UTF-8 bytes before any filesystem mutation.
+        /// String length is not a byte-size bound for non-ASCII players.
+        /// </summary>
+        public static void RequireUtf8Size(string content, int maxBytes)
+        {
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (maxBytes < 1) throw new ArgumentOutOfRangeException(nameof(maxBytes));
+            if (new UTF8Encoding(false, true).GetByteCount(content) > maxBytes)
+                throw new InvalidDataException("Replay JSON exceeds permitted byte size.");
+        }
+
+        /// <summary>
         /// Write a new temporary sibling and atomically move/replace it.
         /// If replacement is unavailable, fail without truncating the old file.
         /// </summary>
