@@ -386,7 +386,7 @@ namespace CityHighways.Presentation
                 LocalizationService.Get("menu.home.new_game"),
                 OpenNewGameWithDeparture, true);
             // This invokes StartGame directly and never opens New Game setup.
-            var quick = AddSubAction(startGroup, "menu.home.quick_start", StartGame);
+            AddSubAction(startGroup, "menu.home.quick_start", StartGame);
 
             // Group 2: tutorial plus a closely related rules shortcut.
             var learnGroup = AddGroup(false);
