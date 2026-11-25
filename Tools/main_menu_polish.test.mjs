@@ -124,7 +124,7 @@ test("gradient falls off horizontally and before the highway", () => {
 
 test("pixel vehicles replace ambiguous headlight dots on the new signature road", () => {
   assert.match(road, /static void PixelCar\(/);
-  assert.match(road, /_mesh\.Rect\(new Rect\(x - w \* 0\.5f/);
+  assert.match(road, /mesh\.Rect\(new Rect\(x - w \* 0\.5f/);
   assert.match(road, /PixelCar\(_mesh, x, cy, paint, right\)/);
   assert.match(road, /new Color\(0\.94f, 0\.38f, 0\.31f\)/);
   assert.match(road, /new Color\(0\.22f, 0\.69f, 0\.76f\)/);
