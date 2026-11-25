@@ -55,7 +55,7 @@ namespace CityHighways.Tests
             var bytes = Encoding.UTF8.GetBytes(raw);
             using (var output = new MemoryStream())
             {
-                using (var gzip = new GZipStream(output, CompressionLevel.Optimal, true))
+                using (var gzip = new GZipStream(output, System.IO.Compression.CompressionLevel.Optimal, true))
                     gzip.Write(bytes, 0, bytes.Length);
                 return Convert.ToBase64String(output.ToArray());
             }
@@ -113,7 +113,7 @@ namespace CityHighways.Tests
             var invalidUtf8 = new byte[] { 0xff, 0xfe, 0xfd };
             using (var output = new MemoryStream())
             {
-                using (var gzip = new GZipStream(output, CompressionLevel.Optimal, true))
+                using (var gzip = new GZipStream(output, System.IO.Compression.CompressionLevel.Optimal, true))
                     gzip.Write(invalidUtf8, 0, invalidUtf8.Length);
                 Assert.IsNull(Replays.UnpackCloud(Convert.ToBase64String(output.ToArray())));
             }
