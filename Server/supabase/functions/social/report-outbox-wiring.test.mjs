@@ -96,3 +96,39 @@ test("failed retry persistence has an in-memory delay instead of a per-frame HTT
 test("null report response is not acknowledged as an uploaded game", () => {
   assert.match(delivery, /if \(response == null\)[\s\S]*?ReportOutbox\.Reschedule\(entry, DateTime\.UtcNow\.Ticks, 0\)/);
 });
+
+
+const ack = source("Assets/CityHighways/Presentation/SocialReportAck.cs");
+
+test("report ACK validation runs before the generic JSON deserializer can supply default primitives", () => {
+  assert.match(client, /if \(request\.action == "report"\)[\s\S]*?SocialReportAck\.TryParse\(text, out var ack\)/);
+  assert.match(client, /if \(!SocialReportAck\.TryParse\(text, out var ack\)\)[\s\S]*?reportFailure\?\.Invoke\(Problem, 0\);[\s\S]*?return;/);
+  assert.match(client, /done\?\.Invoke\(ack as T\)/);
+});
+
+test("report ACK validation requires typed best, improved and explicit null or club details", () => {
+  assert.match(ack, /root\.TryGetValue\("improved"/);
+  assert.match(ack, /root\.TryGetValue\("best"/);
+  assert.match(ack, /root\.TryGetValue\("club"/);
+  assert.match(ack, /ReadInt\(rawBest, -100, 1000, out _\)/);
+  assert.match(ack, /club\.TryGetValue\("amount"/);
+  assert.match(ack, /club\.TryGetValue\("closed"/);
+  assert.match(ack, /club\.TryGetValue\("logo"/);
+});
+
+test("ACK reader rejects duplicate keys, oversized payloads and nested depth bombs", () => {
+  assert.match(ack, /json\.Length > MaxCharacters/);
+  assert.match(ack, /const int MaxDepth = 12/);
+  assert.match(ack, /fields\.ContainsKey\(key\)/);
+  assert.match(ack, /ReadValue\(depth, out var item\)/);
+});
+
+test("Steam account switches during HTTP report upload do not show another user's result", () => {
+  assert.match(delivery, /if \(NetPlatforms\.Steam\?\.SteamId == entry\.ownerSteamId\)[\s\S]*?AfterReport\(response\)/);
+  assert.match(delivery, /if \(!ReportOutbox\.Complete\(entry\)\)/);
+});
+
+test("existing server sends expected ACK fields even for report without club membership", () => {
+  assert.match(server, /return \{ improved, best, club \};/);
+  assert.match(server, /club = \{ kind, amount: accepted \? amount : 0, closed, logo \};/);
+});
