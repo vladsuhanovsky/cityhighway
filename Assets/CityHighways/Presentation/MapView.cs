@@ -855,7 +855,16 @@ namespace CityHighways.Presentation
 
         public void EndCharacterObservation(bool restore)
         {
-            if (!_characterObservation.End(restore, out var zoom, out var pan)) return;
+            if (!IsObservingCharacter) return;
+            bool returning = _characterObservation.End(restore, out var zoom, out var pan);
+            if (!returning)
+            {
+                // Manual takeover starts from the actual displayed camera, not an
+                // unfinished observation zoom or follow target.
+                _zoomTarget = _zoom;
+                _panTarget = _pan;
+                return;
+            }
             _zoomTarget = Mathf.Clamp(zoom, 1f, MaxZoom);
             _panTarget = _layout != null ? _layout.ClampPan(pan, _zoomTarget) : Vector2.zero;
             ViewChanged?.Invoke();

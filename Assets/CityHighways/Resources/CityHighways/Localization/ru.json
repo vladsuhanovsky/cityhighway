@@ -6471,6 +6471,22 @@
     {
       "key": "profile.garage.saved",
       "value": "Расцветка техники сохранена локально."
+    },
+    {
+      "key": "character.observation.find",
+      "value": "Найти персонажа"
+    },
+    {
+      "key": "character.observation.return",
+      "value": "Вернуться к карте"
+    },
+    {
+      "key": "character.observation.find_hint",
+      "value": "Приблизить камеру и следовать за персонажем. Ручное управление отключает слежение."
+    },
+    {
+      "key": "character.observation.return_hint",
+      "value": "Вернуть прежний масштаб и положение карты."
     }
   ]
 }
