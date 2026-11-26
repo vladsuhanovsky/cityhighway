@@ -13,6 +13,8 @@ namespace CityHighways.Presentation
         const int Layer = 31;
         public const string MaleResource = "CityHighways/Profile3D/Male";
         public const string FemaleResource = "CityHighways/Profile3D/Female";
+        static int nextStage;
+        readonly Vector3 origin = new Vector3(-8000f - 30f * (nextStage++ % 128), -8000f, -8000f);
         readonly VisualElement fallback, surface;
         readonly Func<string, ProfileAvatarRig> load;
         ProfileAppearance appearance;
@@ -120,11 +122,11 @@ namespace CityHighways.Presentation
             try
             {
                 var prefab = load(path);
-                if (prefab == null || !prefab.TryValidate(out _) || prefab.Gender != appearance.Gender) return;
+                if (prefab == null || !prefab.gameObject.activeSelf || !prefab.TryValidate(out _) || prefab.Gender != appearance.Gender) return;
                 root = new GameObject("Local profile 3D preview") { hideFlags = HideFlags.HideAndDontSave };
                 root.SetActive(false);
                 // Separate from the existing role-avatar stages, with a short camera frustum.
-                root.transform.position = new Vector3(-8000f, -8000f, -8000f);
+                root.transform.position = origin;
                 pivot = new GameObject("Pivot");
                 pivot.transform.SetParent(root.transform, false);
                 var rig = Object.Instantiate(prefab, pivot.transform, false);
@@ -145,7 +147,7 @@ namespace CityHighways.Presentation
                     else bounds.Encapsulate(renderer.bounds);
                 }
                 float extent = bounds.size.magnitude;
-                if (!hasBounds || !(!float.IsNaN(extent) && !float.IsInfinity(extent)) || extent < .001f || extent > 10000f) { Release(); return; }
+                if (!hasBounds || float.IsNaN(extent) || float.IsInfinity(extent) || extent < .001f || extent > 10000f) { Release(); return; }
                 float scale = 1.8f / extent;
                 Vector3 centerOffset = bounds.center - rig.transform.position;
                 rig.transform.localScale *= scale;
@@ -160,6 +162,7 @@ namespace CityHighways.Presentation
                 camera.clearFlags = CameraClearFlags.SolidColor;
                 camera.backgroundColor = new Color(.10f, .15f, .20f, 1f);
                 camera.orthographic = true;
+                camera.aspect = 460f / 690f;
                 camera.cullingMask = 1 << Layer;
                 camera.nearClipPlane = .05f;
                 camera.farClipPlane = 12f;
