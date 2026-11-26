@@ -98,6 +98,8 @@ namespace CityHighways.Presentation
             if (rig == null || rig.Gender != gender) throw new InvalidOperationException("Missing or mismatched avatar rig.");
             if (!rig.TryValidate(out var error)) throw new InvalidOperationException(error);
             if (rig.MissingCatalogIds().Length != 0) throw new InvalidOperationException("Missing catalog variants.");
+            var motion = prefab.GetComponent<ProfileAvatarMotion>();
+            if (motion != null && !motion.IsValid()) throw new InvalidOperationException("Invalid optional articulation.");
             foreach (string slot in CharacterCatalog.Slots)
                 foreach (var item in CharacterCatalog.ItemsIn(slot, gender))
                 {
