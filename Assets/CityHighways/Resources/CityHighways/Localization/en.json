@@ -6419,6 +6419,58 @@
     {
       "key": "profile.company.color.graphite",
       "value": "Graphite"
+    },
+    {
+      "key": "profile.garage.title",
+      "value": "Construction garage"
+    },
+    {
+      "key": "profile.garage.hint",
+      "value": "Customize the paint of your fleet. All four preview vehicles are free; these settings do not affect gameplay."
+    },
+    {
+      "key": "profile.garage.edit_company",
+      "value": "Edit company colors"
+    },
+    {
+      "key": "profile.garage.vehicle.paver",
+      "value": "Asphalt paver"
+    },
+    {
+      "key": "profile.garage.vehicle.mixer",
+      "value": "Concrete mixer"
+    },
+    {
+      "key": "profile.garage.vehicle.grader",
+      "value": "Grader"
+    },
+    {
+      "key": "profile.garage.vehicle.crane",
+      "value": "Crane"
+    },
+    {
+      "key": "profile.garage.scheme.company",
+      "value": "Company colors"
+    },
+    {
+      "key": "profile.garage.scheme.reverse",
+      "value": "Reversed colors"
+    },
+    {
+      "key": "profile.garage.scheme.solid",
+      "value": "Solid primary"
+    },
+    {
+      "key": "profile.garage.show_emblem",
+      "value": "Show company emblem"
+    },
+    {
+      "key": "profile.garage.save",
+      "value": "Save livery"
+    },
+    {
+      "key": "profile.garage.saved",
+      "value": "Vehicle livery saved locally."
     }
   ]
 }

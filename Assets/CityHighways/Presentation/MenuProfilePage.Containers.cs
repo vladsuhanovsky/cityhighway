@@ -52,6 +52,7 @@ namespace CityHighways.Presentation
             if (_spinItems != null) _content.Add(SpinWindow(profile));
             if (!_spinActive && _lastResult != null) _content.Add(ResultCard(profile, _lastResult));
             _content.Add(CollectionCard(profile));
+            _content.Add(GarageCard(profile));
         }
 
         VisualElement ContainerCard(PlayerProfile profile, ContainerKind kind)
