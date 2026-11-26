@@ -26,6 +26,8 @@ Next gates:
 
 Extend the Lab with bounded validated layout presets, river/hub/bridge/road clearance, 3D footprint checks, failed attempt trace and seed archive. Shared geometry between generator and renderer; retain generation reproducibility and save compatibility. Visual differentiation of city architecture and optional atmospheric effects only after measured budgets. Acceptance: agreed seed corpus and actual 2D/3D inspection, no invalid crossings or inaccessible required hubs.
 
+Batch 1 (implementation pending CI): bounded diagnostic seed ranges (1–512, no Int32 overflow), quick/standard topology and 3D audit presets, fallback seed counts and boundary tests. These presets control diagnostic workload only, not map generation parameters. Failed-attempt tracing, seed archive browsing and visual acceptance remain open.
+
 ## Stage 8 — interface and accessibility (P1)
 
 Improve gameplay dashboards, map search and contextual action previews; preserve existing layers, controls and Interface Editor. Editable hotkeys and component scale, theme import/export and multi-resolution preview after UX review. Acceptance: mouse/keyboard/controller, localization, compact layout, reduced motion and color-independent ownership.
