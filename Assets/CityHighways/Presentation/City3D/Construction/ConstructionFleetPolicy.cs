@@ -17,7 +17,7 @@ namespace CityHighways.Presentation
             }
         }
 
-        static PlayerProfile ForLocalSeat(ProfileBook book, GameSetup setup, int owner, string playerName, bool online)
+        public static PlayerProfile ForLocalSeat(ProfileBook book, GameSetup setup, int owner, string playerName, bool online)
         {
             if (online || setup == null || setup.practice || setup.tutorial || setup.IsCampaign ||
                 setup.players == null || owner < 0 || owner >= setup.players.Count ||
@@ -43,6 +43,14 @@ namespace CityHighways.Presentation
         {
             var profile = ForLocalSeat(book, setup, owner, playerName, online);
             return profile == null ? null : FleetLivery.ForActionOwner(book, profile, VehicleFor(resource));
+        }
+
+        public static ProfileAppearance ResolveWalker(ProfileBook book, GameSetup setup, int owner,
+            string playerName, bool online, bool isBot)
+        {
+            if (isBot || setup == null || setup.forceMagnateTutorial || setup.magnateTutorialMap) return null;
+            var profile = ForLocalSeat(book, setup, owner, playerName, online);
+            return profile == null ? null : ProfileAppearance.FromProfile(profile);
         }
 
         public static FleetLivery ResolveMagnate(ProfileBook book, GameSetup setup, int owner,
