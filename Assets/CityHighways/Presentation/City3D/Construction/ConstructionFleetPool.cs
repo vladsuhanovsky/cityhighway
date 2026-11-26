@@ -1,0 +1,68 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
+namespace CityHighways.Presentation
+{
+    /// <summary>Small scene-owned lazy pool. No unbounded creation on consecutive constructions.
+    /// The material is borrowed; caller disposes it after clearing this pool.</summary>
+    public sealed class ConstructionFleetPool
+    {
+        public const int MaxPerType = 2;
+        readonly Transform root;
+        readonly Material material;
+        readonly List<FleetVehicleVisual> models = new List<FleetVehicleVisual>();
+        readonly HashSet<FleetVehicleVisual> active = new HashSet<FleetVehicleVisual>();
+        public int Count => models.Count;
+        public int ActiveCount => active.Count;
+
+        public ConstructionFleetPool(Transform root, Material material)
+        {
+            this.root = root;
+            this.material = material;
+        }
+
+        public FleetVehicleVisual Acquire(FleetLivery value)
+        {
+            if (value == null || root == null || material == null) return null;
+            int count = 0;
+            foreach (var model in models)
+            {
+                if (model.Vehicle != value.Vehicle || model.Root == null) continue;
+                count++;
+                if (active.Contains(model)) continue;
+                if (!model.Apply(value)) return null;
+                model.Root.SetActive(true);
+                active.Add(model);
+                return model;
+            }
+            if (count >= MaxPerType) return null;
+            var created = FleetVehicleVisual.Build(value, material, root);
+            if (created == null) return null;
+            models.Add(created);
+            active.Add(created);
+            return created;
+        }
+
+        public void Release(FleetVehicleVisual model)
+        {
+            if (model == null || !active.Remove(model) || model.Root == null) return;
+            model.Root.SetActive(false);
+            model.Root.transform.SetParent(root, false);
+        }
+
+        public void Clear()
+        {
+            foreach (var model in models)
+            {
+                if (model.Root == null) continue;
+                model.Root.SetActive(false);
+                if (Application.isPlaying) Object.Destroy(model.Root);
+                else Object.DestroyImmediate(model.Root);
+            }
+            models.Clear();
+            active.Clear();
+        }
+    }
+}
