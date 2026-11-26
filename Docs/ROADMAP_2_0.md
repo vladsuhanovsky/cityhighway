@@ -28,6 +28,10 @@ Extend the Lab with bounded validated layout presets, river/hub/bridge/road clea
 
 Batch 1 (implementation pending CI): bounded diagnostic seed ranges (1–512, no Int32 overflow), quick/standard topology and 3D audit presets, fallback seed counts and boundary tests. These presets control diagnostic workload only, not map generation parameters. Failed-attempt tracing, seed archive browsing and visual acceptance remain open.
 
+## Approved priority interlude — Profile 2.0 + Living City (P0/P1)
+
+User approved [#145](https://github.com/vladsuhanovsky/cityhighway/issues/145) on 2026-11-26. After #144 merged (2f01c37; exact HEAD 12adad5: 1,461 Edit Mode tests, Play Mode, river geometry, Interface Editor passed; no C# warnings in Edit Mode log), temporarily defer configurable City Generator Lab layouts. See [Profile 2.0 + Living City](PROFILE_2_0_LIVING_CITY.md) for the detailed thirteen packages and acceptance gates. Begin with five primary routes, overview, canonical statistics, wallet header and legacy feature retention. Character/wardrobe assets, company/garage, cosmetic construction vehicles and avatars, observation camera and collection follow. Do not mark earlier manual acceptance or deferred Stage 7 tasks complete. Manual test confirmation stays in force.
+
 ## Stage 8 — interface and accessibility (P1)
 
 Improve gameplay dashboards, map search and contextual action previews; preserve existing layers, controls and Interface Editor. Editable hotkeys and component scale, theme import/export and multi-resolution preview after UX review. Acceptance: mouse/keyboard/controller, localization, compact layout, reduced motion and color-independent ownership.
