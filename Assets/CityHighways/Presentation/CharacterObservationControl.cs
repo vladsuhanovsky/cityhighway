@@ -62,7 +62,7 @@ namespace CityHighways.Presentation
             portrait.Add(photoStatus);
             Add(portrait);
             Ui.Show(portrait, false);
-            RegisterCallback<DetachFromPanelEvent>(_ => ClosePortrait());
+            RegisterCallback<DetachFromPanelEvent>(_ => Sync(null));
             Ui.Show(this, false);
         }
 
@@ -127,7 +127,7 @@ namespace CityHighways.Presentation
                 ClosePortrait();
                 currentCity = city;
             }
-            available = city != null && map.CanObserveCharacter &&
+            available = city != null && ProfileRenderVisibility.IsParentVisible(this) && map.CanObserveCharacter &&
                 city.TryGetProfilePedestrianPosition(out position);
             if (!available) map.EndCharacterObservation(true);
             else if (map.IsObservingCharacter) map.UpdateCharacterObservation(position);

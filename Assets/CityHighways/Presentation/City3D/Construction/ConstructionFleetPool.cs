@@ -27,6 +27,13 @@ namespace CityHighways.Presentation
         public FleetVehicleVisual Acquire(FleetLivery value)
         {
             if (value == null || root == null || material == null) return null;
+            // Prune externally destroyed roots before counting or creating replacements.
+            for (int i = models.Count - 1; i >= 0; i--)
+            {
+                if (models[i].Root != null) continue;
+                active.Remove(models[i]);
+                models.RemoveAt(i);
+            }
             int count = 0;
             foreach (var model in models)
             {

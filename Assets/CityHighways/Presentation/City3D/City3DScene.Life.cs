@@ -617,7 +617,13 @@ namespace CityHighways.Presentation
             }
             if (_walkerAppearance != null && !Ui.ReducedMotion)
             {
-                if (_profileRoute != null && !game.IsLocationOpen(_profileRoute.Location)) RestoreProfileRoute();
+                if (_profileRoute != null && (_profileRoute.Go == null || _profileWalker?.Root == null ||
+                    !game.IsLocationOpen(_profileRoute.Location))) RestoreProfileRoute();
+                if (_profileWalker != null && _profileWalker.Root == null)
+                {
+                    _profileWalker = null;
+                    _profileWalkerAttempted = false;
+                }
                 if (_profileRoute == null)
                 {
                     // Prefer an existing hub-pad route, then a station route. Do not invent
@@ -657,6 +663,7 @@ namespace CityHighways.Presentation
             else RestoreProfileRoute();
             foreach (var walker in _walkers)
             {
+                if (walker.Go == null) continue;
                 bool open = game.IsLocationOpen(walker.Location);
                 if (walker.Go.activeSelf != open) walker.Go.SetActive(open);
                 if (!open) continue;

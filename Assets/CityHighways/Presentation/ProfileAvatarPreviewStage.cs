@@ -102,10 +102,17 @@ namespace CityHighways.Presentation
             {
                 if (camera != null)
                 {
-                    bool visible = attached;
-                    for (VisualElement el = this; el != null && visible; el = el.parent)
-                        visible = el.resolvedStyle.display != DisplayStyle.None && el.resolvedStyle.visibility == Visibility.Visible;
+                    if (texture == null || !texture.IsCreated()) { Release(); return; }
+                    bool visible = attached && ProfileRenderVisibility.IsVisible(this);
                     camera.enabled = visible;
+                    motionButton.SetEnabled(!Ui.ReducedMotion);
+                    if (Ui.ReducedMotion && motion != null && motionMode != ProfileAvatarMotionMode.Still)
+                    {
+                        motionMode = ProfileAvatarMotionMode.Still;
+                        phase = 0f;
+                        motion.SampleValidated(motionMode, phase);
+                        UpdateMotionLabel();
+                    }
                     float now = Time.realtimeSinceStartup;
                     if (visible && motion != null && motionMode != ProfileAvatarMotionMode.Still)
                     {
@@ -218,7 +225,7 @@ namespace CityHighways.Presentation
 
         void CycleMotion()
         {
-            if (motion == null) return;
+            if (motion == null || Ui.ReducedMotion) return;
             motionMode = motionMode == ProfileAvatarMotionMode.Still ? ProfileAvatarMotionMode.Idle :
                 motionMode == ProfileAvatarMotionMode.Idle ? ProfileAvatarMotionMode.Walk : ProfileAvatarMotionMode.Still;
             phase = 0f;
