@@ -155,6 +155,53 @@ namespace CityHighways.Tests
             return visuals;
         }
 
+        [TestCase("m")]
+        [TestCase("f")]
+        public void CompatibilityAdapterUsesCanonicalSnapshotForEveryCatalogItem(string gender)
+        {
+            foreach (var slot in CharacterCatalog.Slots)
+                foreach (var item in CharacterCatalog.ItemsIn(slot, gender))
+                {
+                    var outfit = Outfit.DefaultFor(gender).With(slot, item.id);
+                    var canonical = ProfileAppearance.FromOutfit(outfit);
+                    var adapter = ProfileCharacterAppearance.FromLook(outfit.Serialize());
+                    Assert.AreEqual(canonical.Serialized, adapter.Serialized);
+                    Assert.AreEqual(item.id, canonical.EquippedId(slot));
+                    foreach (var s in CharacterCatalog.Slots)
+                    {
+                        Assert.AreEqual(canonical.EquippedId(s), adapter.Equipped(s));
+                        Assert.AreEqual(canonical.VisibleId(s), adapter.Visible(s));
+                    }
+                }
+        }
+
+        [Test]
+        public void CanonicalProfileSnapshotSeparatesTryOnAndOwnership()
+        {
+            var paid = CharacterCatalog.ItemsIn("hat", "m").First(i => i.price > 0);
+            var profile = new PlayerProfile { outfit = Outfit.Default.With("hat", paid.id).Serialize(), wallet = 25 };
+            Assert.AreEqual(paid.id, ProfileAppearance.FromSerialized(profile.outfit).EquippedId("hat"));
+            Assert.AreEqual("", ProfileAppearance.FromProfile(profile).EquippedId("hat"));
+            profile.owned.Add(paid.id);
+            var snapshot = ProfileAppearance.FromProfile(profile);
+            Assert.AreEqual(paid.id, snapshot.EquippedId("hat"));
+            Assert.AreEqual(snapshot.Serialized, ProfileCharacterAppearance.FromProfile(profile).Serialized);
+            profile.owned.Clear();
+            Assert.AreEqual(paid.id, snapshot.EquippedId("hat"));
+            Assert.AreEqual(25, profile.wallet);
+            Assert.IsEmpty(profile.history);
+        }
+
+        [Test]
+        public void CanonicalSnapshotHandlesNullAndUnknownSlots()
+        {
+            var snapshot = ProfileAppearance.FromProfile(null);
+            Assert.AreEqual(Outfit.Default.Serialize(), snapshot.Serialized);
+            Assert.AreEqual("", snapshot.EquippedId(null));
+            Assert.AreEqual("", snapshot.VisibleId("unknown"));
+            Assert.AreEqual("", snapshot.EquippedId("unknown"));
+        }
+
         [Test]
         public void ItemCropClampsAndFallsBackForInvalidBounds()
         {

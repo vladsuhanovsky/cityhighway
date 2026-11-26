@@ -63,7 +63,10 @@ namespace CityHighways.Presentation
             return issues.ToArray();
         }
 
-        public bool TryResolve(ProfileCharacterAppearance look, out ProfileCharacterRig rig, out ItemBinding[] bindings)
+        public bool TryResolve(ProfileCharacterAppearance look, out ProfileCharacterRig rig, out ItemBinding[] bindings) =>
+            TryResolveAppearance(look?.Snapshot, out rig, out bindings);
+
+        public bool TryResolveAppearance(ProfileAppearance look, out ProfileCharacterRig rig, out ItemBinding[] bindings)
         {
             rig = look == null ? null : Rig(look.Gender);
             bindings = Array.Empty<ItemBinding>();
@@ -71,7 +74,7 @@ namespace CityHighways.Presentation
             var result = new List<ItemBinding>();
             foreach (var slot in CharacterCatalog.Slots)
             {
-                string id = look.Visible(slot);
+                string id = look.VisibleId(slot);
                 if (string.IsNullOrEmpty(id)) continue;
                 var matches = (items ?? Array.Empty<ItemBinding>()).Where(i => i != null && i.itemId == id).ToArray();
                 if (matches.Length != 1 || matches[0].prefab == null ||
@@ -85,9 +88,12 @@ namespace CityHighways.Presentation
         // Only authored prefab references are resolved. No arbitrary resource path from player data.
         // The caller owns the returned instance; missing/ambiguous binding returns null for legacy fallback.
         // Item prefabs must be authored as static/socket-local visuals; skinned clothing retargeting is future work.
-        public GameObject InstantiateLook(ProfileCharacterAppearance look, Transform parent = null)
+        public GameObject InstantiateLook(ProfileCharacterAppearance look, Transform parent = null) =>
+            InstantiateAppearance(look?.Snapshot, parent);
+
+        public GameObject InstantiateAppearance(ProfileAppearance look, Transform parent = null)
         {
-            if (!TryResolve(look, out var rig, out var bindings)) return null;
+            if (!TryResolveAppearance(look, out var rig, out var bindings)) return null;
             var instance = Instantiate(rig, parent, false);
             try
             {
