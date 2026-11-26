@@ -20,6 +20,7 @@ namespace CityHighways.Presentation
         Camera camera;
         RenderTexture texture;
         Material material;
+        readonly FleetEmblemCache emblems = new FleetEmblemCache();
         bool attached, working;
         float yaw = 35f, zoom = 1f, time, last, lastX;
         int pointer = -1;
@@ -113,12 +114,13 @@ namespace CityHighways.Presentation
                 root.transform.position = new Vector3(-8000f,-8100f,-8000f);
                 pivot = new GameObject("Vehicle pivot") { layer = Layer };
                 pivot.transform.SetParent(root.transform, false);
-                model = FleetVehicleVisual.Build(current, material, pivot.transform);
+                model = FleetVehicleVisual.Build(current, material, pivot.transform, emblems);
                 if (model == null) { Release(); return; }
                 Bounds bounds = default;
                 bool first = true;
                 foreach (var renderer in model.Root.GetComponentsInChildren<Renderer>())
                 {
+                    if (!renderer.enabled) continue;
                     if (first) { bounds = renderer.bounds; first = false; }
                     else bounds.Encapsulate(renderer.bounds);
                 }
@@ -216,6 +218,7 @@ namespace CityHighways.Presentation
             if (root != null) { root.SetActive(false); DestroyOwned(root); }
             if (texture != null) { texture.Release(); DestroyOwned(texture); }
             if (material != null) DestroyOwned(material);
+            emblems.Clear();
             camera = null; root = pivot = null; texture = null; material = null; model = null;
         }
 

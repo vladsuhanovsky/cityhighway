@@ -85,6 +85,44 @@ namespace CityHighways.Presentation
                 }
         }
 
+        readonly List<Renderer> badges = new List<Renderer>(2);
+        FleetEmblemCache emblemCache;
+        static readonly int BaseMap = Shader.PropertyToID("_BaseMap");
+        static readonly int MainTex = Shader.PropertyToID("_MainTex");
+        public string AppliedEmblem { get; private set; } = "";
+
+        public void ClearBranding()
+        {
+            AppliedEmblem = "";
+            foreach (var badge in badges)
+                if (badge != null)
+                {
+                    badge.enabled = false;
+                    badge.SetPropertyBlock(null);
+                }
+        }
+
+        void ApplyBranding(FleetLivery value)
+        {
+            ClearBranding();
+            if (emblemCache == null || badges.Count == 0 || value.HideEmblem) return;
+            var texture = emblemCache.Get(value.Emblem);
+            if (texture == null) return;
+            foreach (var badge in badges)
+            {
+                if (badge == null) continue;
+                block.Clear();
+                block.SetColor(BaseColor, Color.white);
+                block.SetColor(ColorId, Color.white);
+                if (badge.sharedMaterial.HasProperty(BaseMap)) block.SetTexture(BaseMap, texture);
+                if (badge.sharedMaterial.HasProperty(MainTex)) block.SetTexture(MainTex, texture);
+                badge.SetPropertyBlock(block);
+                block.Clear();
+                badge.enabled = true;
+            }
+            AppliedEmblem = value.Emblem;
+        }
+
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
         static readonly int ColorId = Shader.PropertyToID("_Color");
 
@@ -95,6 +133,7 @@ namespace CityHighways.Presentation
             if (Root == null || value == null || value.Vehicle != Vehicle) return false;
             foreach (var renderer in main) if (renderer != null) SetColor(renderer, value.Primary);
             foreach (var renderer in accent) if (renderer != null) SetColor(renderer, value.Secondary);
+            ApplyBranding(value);
             return true;
         }
 
@@ -109,14 +148,14 @@ namespace CityHighways.Presentation
 
         /// <summary>Local +Z is forward, Y=0 is ground. Caller chooses scale, layer and lifetime.
         /// Material must support BaseColor or Color and use a neutral base texture.</summary>
-        public static FleetVehicleVisual Build(FleetLivery livery, Material sharedMaterial, Transform parent = null)
+        public static FleetVehicleVisual Build(FleetLivery livery, Material sharedMaterial, Transform parent = null, FleetEmblemCache emblemCache = null)
         {
             if (livery == null || sharedMaterial == null ||
                 (!sharedMaterial.HasProperty(BaseColor) && !sharedMaterial.HasProperty(ColorId))) return null;
             var root = new GameObject("Fleet " + livery.Vehicle);
             root.transform.SetParent(parent, false);
             if (parent != null) root.layer = parent.gameObject.layer;
-            var visual = new FleetVehicleVisual(root, livery.Vehicle);
+            var visual = new FleetVehicleVisual(root, livery.Vehicle) { emblemCache = emblemCache };
             try
             {
                 visual.BuildParts(sharedMaterial);
@@ -161,6 +200,7 @@ namespace CityHighways.Presentation
                 renderer.receiveShadows = false;
                 if (paint == 1) main.Add(renderer);
                 else if (paint == 2) accent.Add(renderer);
+                else if (paint == 3) { badges.Add(renderer); renderer.enabled = false; }
                 else SetColor(renderer, fixedColor);
             }
             void Box(string n,float x,float y,float z,float w,float h,float d,Color c,int paint=0,Vector3 r=default) =>
@@ -181,6 +221,11 @@ namespace CityHighways.Presentation
                     Box("Side window",side*.391f,y+.12f,z,.025f,.28f,.42f,glass);
                     Box("Door stripe",side*.398f,y-.14f,z,.025f,.10f,.50f,black,2);
                     Box("Headlamp",side*.25f,y-.24f,z+.32f,.14f,.09f,.025f,lamp);
+                    // Quad faces local -Z; orient outward on both cab doors.
+                    if (emblemCache != null && (material.HasProperty(BaseMap) || material.HasProperty(MainTex)))
+                        Part("Company badge " + (side < 0 ? "left" : "right"), PrimitiveType.Quad,
+                            new Vector3(side*.417f,y-.225f,z+.08f), new Vector3(.14f,.14f,1f),
+                            Color.white, 3, new Vector3(0f,-side*90f,0f));
                 }
                 Box("Roof",0,y+.34f,z,.82f,.06f,.64f,black,2);
             }

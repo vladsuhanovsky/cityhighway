@@ -107,3 +107,5 @@ Profile 2.0 batch 5a: #158 merged (5c486e9); one local profile avatar reuses exi
 Profile 2.0 batch 5b: #159 merged (91c22a2); shared Classic/Magnate find/follow/return control, existing board projection and x8 zoom cap, manual takeover and lost-target restore, four RU/EN keys and seven Edit Mode cases. CI and runtime/manual acceptance pending. Cinematic camera, marker, full navigation and final art remain open.
 
 Profile 2.0 batch 6a: #160 merged (29aad63); shared garage 3D inspection stand and absolute procedural working motion for four vehicles, reset on pool reuse, two localization keys and six Edit Mode cases. CI pending. 3D body emblems and manual rendering/performance acceptance remain open; finish technical scope before visual phase.
+
+Profile 2.0 batch 6b: #161 merged (e3cc650); eight existing company emblems supported as cab-door badge plaques in garage and construction, bounded scene-owned texture cache, hide/revoke/reuse cleanup and six Edit Mode cases. CI pending. Actual graphics/performance acceptance and final art remain open.
