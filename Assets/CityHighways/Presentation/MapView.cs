@@ -419,19 +419,17 @@ namespace CityHighways.Presentation
                 if (!_gamepadCursor.Active) return;
                 // UI D-pad navigation must not move the focused element out
                 // of the virtual-cursor surface while map targeting is active.
-                evt.PreventDefault();
                 evt.StopPropagation();
+                focusController?.IgnoreEvent(evt);
             });
             RegisterCallback<NavigationSubmitEvent>(evt =>
             {
                 if (!_gamepadCursor.Active) return;
-                evt.PreventDefault();
                 evt.StopPropagation();
             });
             RegisterCallback<NavigationCancelEvent>(evt =>
             {
                 if (!_gamepadCursor.Active) return;
-                evt.PreventDefault();
                 evt.StopPropagation();
             });
 
