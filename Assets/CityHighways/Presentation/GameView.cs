@@ -1358,6 +1358,17 @@ namespace CityHighways.Presentation
             bool on = _city3D != null;
             _map.Use3D = on;
             var city = _city3D;
+            if (on && (display == null || display.city3DQuality > 0) && !Online)
+            {
+                for (int i = 0; i < _game.Players.Count; i++)
+                {
+                    var appearance = ConstructionFleetPolicy.ResolveWalker(Profiles.Book, _setup, i,
+                        _game.Players[i].Name, Online, IsRealBot(i));
+                    if (appearance == null) continue;
+                    city.SetProfilePedestrian(appearance);
+                    break;
+                }
+            }
             _map.RoadHidden = null;
             if (on) _map.RoadHidden = id => city.IsUnderConstruction(id);
             Root.style.backgroundColor = on ? Color.clear : Theme.Background;

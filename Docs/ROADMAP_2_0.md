@@ -101,3 +101,5 @@ Profile 2.0 batch 4c: #155 merged (7ccc0c6); four reusable procedural 3D fleet v
 Profile 2.0 batch 4d: #156 merged (5438737); local GameView construction slice, road owner seat resolution, resource-to-machine mapping and capped per-scene reusable fleet pool. Eight Edit Mode cases; CI and runtime/manual acceptance pending. Magnate/bridge integration, actual committed-action semantics, decals and performance remain open.
 
 Profile 2.0 batch 4e: #157 merged (ff898a2); local Magnate resolver and non-mutating cosmetic crane on newly claimed prebuilt bridges, owner transition baseline, safe deck placement, four Edit Mode cases. CI and runtime visual acceptance pending.
+
+Profile 2.0 batch 5a: #158 merged (5c486e9); one local profile avatar reuses existing open pedestrian route in Classic/Magnate, optional articulation, city-scale bounds, safe fallback and observation position API. Four Edit Mode cases; CI and runtime/manual visual acceptance pending. Observation camera, full navigation and production art remain open.

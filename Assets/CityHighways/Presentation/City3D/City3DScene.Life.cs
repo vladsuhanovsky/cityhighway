@@ -557,6 +557,38 @@ namespace CityHighways.Presentation
         int _walkersHubCount = -1;
         Mesh[] _personMeshes;
         GameObject _peopleRoot;
+        ProfileAppearance _walkerAppearance;
+        CityProfileWalker _profileWalker;
+        Walker _profileRoute;
+        Renderer _replacedWalkerRenderer;
+        bool _profileWalkerAttempted;
+
+        public void SetProfilePedestrian(ProfileAppearance appearance)
+        {
+            RestoreProfileRoute();
+            _profileWalker?.Release();
+            _profileWalker = null;
+            _profileWalkerAttempted = false;
+            _walkerAppearance = appearance;
+        }
+
+        // Read-only observation anchor for a later camera/UI feature. No focus changes.
+        public bool TryGetProfilePedestrianPosition(out Vector3 position)
+        {
+            position = default;
+            if (_profileRoute == null || _profileWalker?.Root == null ||
+                !_profileWalker.Root.activeInHierarchy) return false;
+            position = _profileWalker.Root.transform.position;
+            return true;
+        }
+
+        void RestoreProfileRoute()
+        {
+            if (_replacedWalkerRenderer != null) _replacedWalkerRenderer.enabled = true;
+            _replacedWalkerRenderer = null;
+            _profileRoute = null;
+            _profileWalker?.Hide();
+        }
 
         /// <summary>
         /// Пешеходы: у каждого павильона станции двое-трое ходят вдоль входа, у хабов — по полдюжины перед
@@ -571,14 +603,46 @@ namespace CityHighways.Presentation
                 _peopleRoot.transform.SetParent(_root.transform, false);
             }
             if (_peopleRoot.activeSelf != ShowPeople) _peopleRoot.SetActive(ShowPeople);
-            if (!ShowPeople) return;
+            if (!ShowPeople) { RestoreProfileRoute(); return; }
             if (_walkersHubCount != _hubSpots.Count)
             {
+                RestoreProfileRoute();
                 foreach (var walker in _walkers) if (walker.Go != null) Destroy(walker.Go);
                 _walkers.Clear();
                 BuildWalkers();
                 _walkersHubCount = _hubSpots.Count;
             }
+            if (_walkerAppearance != null && !Ui.ReducedMotion)
+            {
+                if (_profileRoute != null && !game.IsLocationOpen(_profileRoute.Location)) RestoreProfileRoute();
+                if (_profileRoute == null)
+                {
+                    // Prefer an existing hub-pad route, then a station route. Do not invent
+                    // a cross-city route or alter the ordinary pedestrian simulation.
+                    Walker candidate = null;
+                    foreach (var walker in _walkers)
+                    {
+                        if (walker.Go == null || !game.IsLocationOpen(walker.Location)) continue;
+                        if (candidate == null || (!candidate.OnPad && walker.OnPad)) candidate = walker;
+                        if (candidate.OnPad) break;
+                    }
+                    if (candidate != null)
+                    {
+                        if (!_profileWalkerAttempted)
+                        {
+                            _profileWalkerAttempted = true;
+                            _profileWalker = CityProfileWalker.TryCreate(_walkerAppearance, _peopleRoot.transform);
+                        }
+                        if (_profileWalker != null && _profileWalker.Root != null)
+                        {
+                            _profileRoute = candidate;
+                            _replacedWalkerRenderer = candidate.Go.GetComponent<Renderer>();
+                            if (_replacedWalkerRenderer != null) _replacedWalkerRenderer.enabled = false;
+                        }
+                    }
+                }
+            }
+            else RestoreProfileRoute();
             foreach (var walker in _walkers)
             {
                 bool open = game.IsLocationOpen(walker.Location);
@@ -591,7 +655,9 @@ namespace CityHighways.Presentation
                 if (!walker.OnPad) p.y = Relief.At(p.x, p.z);
                 var heading = there ? walker.B - walker.A : walker.A - walker.B;
                 heading.y = 0f;
-                walker.Go.transform.SetPositionAndRotation(p, heading.sqrMagnitude > 1e-8f ? Quaternion.LookRotation(heading, Vector3.up) : Quaternion.identity);
+                var rotation = heading.sqrMagnitude > 1e-8f ? Quaternion.LookRotation(heading, Vector3.up) : Quaternion.identity;
+                walker.Go.transform.SetPositionAndRotation(p, rotation);
+                if (walker == _profileRoute) _profileWalker?.SetPose(p, rotation, time * 1.1f);
             }
         }
 
@@ -660,6 +726,7 @@ namespace CityHighways.Presentation
         /// <summary>Очистить живые объекты (вызывается из Dispose вместе со сценой).</summary>
         void ClearLife()
         {
+            SetProfilePedestrian(null);
             _stopSpots.Clear();
             _hubSpots.Clear();
             _walkers.Clear();
