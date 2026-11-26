@@ -65,3 +65,5 @@ Real registered AppID rather than 480, package dependency and native callbacks, 
 60 FPS desktop and stable 30 FPS Deck at agreed hardware/settings; target P95 frame <=16.7ms for a 60 FPS configuration; ordinary map <=3s, complex generation <=5s, action response <=100ms; no sustained memory growth over repeated matches. Validate feasibility on actual hardware and define the workload before using these as gates.
 
 No fixed delivery dates or unsupported completion percentages. Reprioritize after each measured acceptance batch.
+
+Stage 7 progress: PR #141 merged (9d09bc8), 1,431 Edit Mode tests and Play Mode passed; the menu, Interface Editor, social replay and river guard path filters did not match its changed files. Next batch adds per-seed summary rows, independent counts, cancelled batch exports, paging, problem filtering and reproduction of requested seeds. CI and Editor UI acceptance pending. Layout parameter presets and attempt-by-attempt trace remain separate work.
