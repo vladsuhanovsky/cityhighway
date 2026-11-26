@@ -229,6 +229,41 @@ namespace CityHighways.Tests
             Assert.AreEqual(1f, fallback.style.opacity.value);
         }
 
+        [TestCase("m")]
+        [TestCase("f")]
+        public void ProceduralPrototypeCoversAllCatalogItemsWithVisibleGeometry(string gender)
+        {
+            var root = ProfileAvatarPrototype.Build(gender, _ => null);
+            try
+            {
+                var rig = root.GetComponent<ProfileAvatarRig>();
+                Assert.IsTrue(rig.TryValidate(out var error), error);
+                Assert.IsEmpty(rig.MissingCatalogIds());
+                Assert.IsEmpty(root.GetComponentsInChildren<Collider>(true));
+                foreach (var slot in CharacterCatalog.Slots)
+                    foreach (var item in CharacterCatalog.ItemsIn(slot, gender))
+                    {
+                        var variant = root.transform.Find(item.id);
+                        Assert.IsNotNull(variant, item.id);
+                        Assert.IsNotEmpty(variant.GetComponentsInChildren<MeshRenderer>(true), item.id);
+                        var snapshot = ProfileAppearance.FromOutfit(Outfit.DefaultFor(gender).With(slot, item.id));
+                        Assert.IsTrue(rig.TryApply(snapshot, out error), error);
+                        foreach (var s in CharacterCatalog.Slots)
+                            foreach (var other in CharacterCatalog.ItemsIn(s, gender))
+                                Assert.AreEqual(snapshot.VisibleId(s) == other.id,
+                                    root.transform.Find(other.id).gameObject.activeSelf, other.id);
+                    }
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
+        public void ProceduralPrototypeRejectsUnsupportedGenderAndMissingMaterialResolver()
+        {
+            Assert.Throws<ArgumentException>(() => ProfileAvatarPrototype.Build("unknown", _ => null));
+            Assert.Throws<ArgumentNullException>(() => ProfileAvatarPrototype.Build("m", null));
+        }
+
         [Test]
         public void ItemCropClampsAndFallsBackForInvalidBounds()
         {
