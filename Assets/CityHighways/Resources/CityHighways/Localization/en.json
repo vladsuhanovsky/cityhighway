@@ -6347,6 +6347,78 @@
     {
       "key": "profile.v2.full_stats",
       "value": "Detailed statistics"
+    },
+    {
+      "key": "profile.company.title",
+      "value": "Company identity"
+    },
+    {
+      "key": "profile.company.hint",
+      "value": "Local cosmetic settings only. Road ownership colors are unchanged."
+    },
+    {
+      "key": "profile.company.name",
+      "value": "Company name"
+    },
+    {
+      "key": "profile.company.primary",
+      "value": "Primary paint"
+    },
+    {
+      "key": "profile.company.secondary",
+      "value": "Secondary paint"
+    },
+    {
+      "key": "profile.company.emblem",
+      "value": "Company emblem"
+    },
+    {
+      "key": "profile.company.none",
+      "value": "No emblem"
+    },
+    {
+      "key": "profile.company.save",
+      "value": "Save company identity"
+    },
+    {
+      "key": "profile.company.saved",
+      "value": "Company identity saved locally."
+    },
+    {
+      "key": "profile.company.failed",
+      "value": "Could not save company identity."
+    },
+    {
+      "key": "profile.company.color.navy",
+      "value": "Navy"
+    },
+    {
+      "key": "profile.company.color.orange",
+      "value": "Orange"
+    },
+    {
+      "key": "profile.company.color.steel",
+      "value": "Steel"
+    },
+    {
+      "key": "profile.company.color.white",
+      "value": "White"
+    },
+    {
+      "key": "profile.company.color.green",
+      "value": "Green"
+    },
+    {
+      "key": "profile.company.color.red",
+      "value": "Red"
+    },
+    {
+      "key": "profile.company.color.blue",
+      "value": "Blue"
+    },
+    {
+      "key": "profile.company.color.graphite",
+      "value": "Graphite"
     }
   ]
 }
