@@ -44,6 +44,8 @@ namespace CityHighways.Presentation
             public Action<BuiltRoad> Done;
             public GameObject Excavator, Roller;
             public FleetVehicleVisual Fleet;
+            public bool CosmeticBridge;
+            public Vector3 BridgePosition;
             public ConstructionMachine Digger, Compactor;
             public Vector3 RollerScale, ExcavatorScale;
             public float RollerDistance;   // где каток был в прошлом кадре — для вращения вальца
@@ -104,7 +106,7 @@ namespace CityHighways.Presentation
         public bool IsBuilding(BuiltRoad road)
         {
             foreach (var site in _sites)
-                if (site.Road == road) return true;
+                if (site.Road == road && !site.CosmeticBridge) return true;
             return false;
         }
 
@@ -156,6 +158,24 @@ namespace CityHighways.Presentation
             _sites.Add(site);
             UpdateSite(site, 0f);
             return road;
+        }
+
+        /// <summary>Short cosmetic crane display on an existing bridge. Never reveals,
+        /// rebuilds, owns or hides bridge geometry and never emits construction completion.</summary>
+        public bool PlayBridgeFleet(BuiltRoad road, FleetLivery livery)
+        {
+            if (settings == null || road?.Root == null || !road.Root.activeInHierarchy ||
+                livery == null || livery.Vehicle != "crane" ||
+                !BridgeFleetClaims.TryDeckPosition(road, out var position)) return false;
+            foreach (var existing in _sites)
+                if (existing.Road == road) return false;
+            var fleet = AcquireFleet(livery);
+            if (fleet == null) return false;
+            var site = new Site { Road = road, Duration = 1.4f, Fleet = fleet,
+                CosmeticBridge = true, BridgePosition = position };
+            _sites.Add(site);
+            UpdateSite(site, 0f);
+            return true;
         }
 
         Runner SpawnWorker(Site site, int index, System.Random random)
@@ -223,7 +243,7 @@ namespace CityHighways.Presentation
             for (int i = _sites.Count - 1; i >= 0; i--)
             {
                 var site = _sites[i];
-                if (site.Road.Root == null) { Abort(site); _sites.RemoveAt(i); continue; } // дорогу убрали посреди стройки
+                if (site.Road.Root == null || (site.CosmeticBridge && !site.Road.Root.activeInHierarchy)) { Abort(site); _sites.RemoveAt(i); continue; }
                 site.Time += dt;
                 UpdateSite(site, dt);
                 if (site.Time >= site.Duration + settings.linger + settings.popOut)
@@ -240,7 +260,7 @@ namespace CityHighways.Presentation
             var road = site.Road;
             float front = Front(site, site.Time);
             // Постепенное появление: куски вытягиваются до фронта, опоры поднимаются, когда фронт над ними.
-            RoadAppearAnimator.Reveal(road, front);
+            if (!site.CosmeticBridge) RoadAppearAnimator.Reveal(road, front);
 
             // Появление (пружинкой) и исчезновение (схлопывание) техники и рабочих.
             float appear = OutBack(Mathf.Clamp01(site.Time / Mathf.Max(0.01f, settings.popIn)));
@@ -252,7 +272,7 @@ namespace CityHighways.Presentation
             if (site.Fleet != null && site.Fleet.Root != null)
             {
                 var t = site.Fleet.Root.transform;
-                t.SetPositionAndRotation(RollerPosition(site, site.Time), Quaternion.LookRotation(Forward(road), Vector3.up));
+                t.SetPositionAndRotation(site.CosmeticBridge ? site.BridgePosition : RollerPosition(site, site.Time), Quaternion.LookRotation(Forward(road), Vector3.up));
                 // Original fleet geometry is ~2 units long; the existing machinery is ~0.08.
                 t.localScale = Vector3.one * (.032f * scale);
             }
@@ -365,6 +385,7 @@ namespace CityHighways.Presentation
 
         void Finish(Site site)
         {
+            if (site.CosmeticBridge) { ReleaseAll(site); return; }
             RoadAppearAnimator.Reveal(site.Road, float.MaxValue); // дорога целиком, в конечном размере
             ReleaseAll(site);
             site.Done?.Invoke(site.Road);

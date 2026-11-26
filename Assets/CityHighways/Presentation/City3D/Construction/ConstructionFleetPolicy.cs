@@ -45,6 +45,14 @@ namespace CityHighways.Presentation
             return profile == null ? null : FleetLivery.ForActionOwner(book, profile, VehicleFor(resource));
         }
 
+        public static FleetLivery ResolveMagnate(ProfileBook book, GameSetup setup, int owner,
+            string playerName, int publicOwner, bool isBot, Resource? resource)
+        {
+            if (isBot || owner == publicOwner || setup == null || setup.forceMagnateTutorial ||
+                setup.magnateTutorialMap) return null;
+            return Resolve(book, setup, owner, playerName, false, resource);
+        }
+
         static bool SameName(string a, string b) =>
             string.Equals(a?.Trim(), b?.Trim(), StringComparison.OrdinalIgnoreCase);
     }
