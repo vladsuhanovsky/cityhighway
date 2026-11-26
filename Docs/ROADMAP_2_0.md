@@ -95,3 +95,5 @@ Profile 2.0 batch 3e: #152 merged (77a3137); optional rigid-part prototype artic
 Profile 2.0 batch 4a: #153 merged (062b23d); local company identity in Overview with bounded name, eight cosmetic paint colors, owned emblem selection, local ProfileBook persistence and six Edit Mode cases. CI pending. Actual fleet livery, city agents and character visual acceptance remain open.
 
 Profile 2.0 batch 4b: #154 merged (695a1fe); Collection garage, four free vehicle categories, per-vehicle paint scheme and emblem visibility, live schematic preview, local persistence and nine Edit Mode cases. CI pending. Actual world vehicle models and construction FX not yet connected.
+
+Profile 2.0 batch 4c: #155 merged (7ccc0c6); four reusable procedural 3D fleet visual types, per-renderer shared-material paint, explicit local-owner resolution contract and seven Edit Mode cases. CI pending. Actual garage 3D display, world construction event integration, emblem decals and performance acceptance remain open.
