@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace CityHighways.Presentation
 {
-    /// <summary>Original procedural static visual study for testing the runtime preview.
+    /// <summary>Original procedural rigid-part visual study for testing the runtime preview.
     /// No external assets, no skinned animation and no automatic use in player builds.</summary>
     public static class ProfileAvatarPrototype
     {
@@ -20,17 +20,22 @@ namespace CityHighways.Presentation
             {
                 var rig = root.AddComponent<ProfileAvatarRig>();
                 var bindings = new List<ProfileAvatarRig.Binding>();
+                var joints = new List<ProfileAvatarMotion.Joint>();
                 foreach (string slot in CharacterCatalog.Slots)
                     foreach (var item in CharacterCatalog.ItemsIn(slot, gender))
                     {
                         var variant = new GameObject(item.id);
                         variant.transform.SetParent(root.transform, false);
                         BuildVariant(variant.transform, item, gender == CharacterCatalog.Female, material);
+                        AttachJoints(variant.transform, item, gender == CharacterCatalog.Female, joints);
                         if (variant.transform.childCount == 0)
                             throw new InvalidOperationException("Empty prototype variant: " + item.id);
                         bindings.Add(new ProfileAvatarRig.Binding { itemId = item.id, visual = variant });
                     }
                 rig.ConfigurePrototype(gender, bindings.ToArray());
+                var motion = root.AddComponent<ProfileAvatarMotion>();
+                motion.ConfigurePrototype(joints.ToArray());
+                if (!motion.IsValid()) throw new InvalidOperationException("Prototype articulation is incomplete.");
                 if (!rig.TryApply(ProfileAppearance.FromOutfit(Outfit.DefaultFor(gender)), out var error))
                     throw new InvalidOperationException(error);
                 if (rig.MissingCatalogIds().Length != 0)
@@ -38,6 +43,58 @@ namespace CityHighways.Presentation
                 return root;
             }
             catch { Object.DestroyImmediate(root); throw; }
+        }
+
+        // Each variant owns its own rigid pivots. All pivots for a given joint share
+        // the same local origin and phase, so sleeves, hands and held props move together.
+        static void AttachJoints(Transform variant, CharacterItem item, bool female,
+            List<ProfileAvatarMotion.Joint> joints)
+        {
+            var parts = new List<Transform>();
+            foreach (Transform child in variant) parts.Add(child);
+            var pivots = new Dictionary<ProfileAvatarJoint, Transform>();
+            float shoulder = female ? .45f : .52f;
+            foreach (var part in parts)
+            {
+                float x = part.localPosition.x;
+                bool left = x < 0f;
+                ProfileAvatarJoint? kind = null;
+                if (item.slot == "body")
+                {
+                    if (part.name == "Hand" || part.name == "Forearm")
+                        kind = left ? ProfileAvatarJoint.LeftArm : ProfileAvatarJoint.RightArm;
+                    else if (part.name != "Neck") kind = ProfileAvatarJoint.Head;
+                }
+                else if (item.slot == "hair" || item.slot == "hat") kind = ProfileAvatarJoint.Head;
+                else if (item.slot == "top" && part.name == "Sleeve")
+                    kind = left ? ProfileAvatarJoint.LeftArm : ProfileAvatarJoint.RightArm;
+                else if (item.slot == "shoes" || (item.slot == "bottom" &&
+                    (part.name == "Trouser leg" || part.name == "Legging")))
+                    kind = left ? ProfileAvatarJoint.LeftLeg : ProfileAvatarJoint.RightLeg;
+                else if (item.slot == "accessory")
+                {
+                    if (item.id.Contains("glasses")) kind = ProfileAvatarJoint.Head;
+                    else if (item.id.Contains("radio") || item.id.Contains("tablet") || item.id.Contains("blueprint"))
+                        kind = ProfileAvatarJoint.RightArm;
+                }
+                if (!kind.HasValue) continue;
+                if (!pivots.TryGetValue(kind.Value, out var pivot))
+                {
+                    pivot = new GameObject("Joint_" + kind.Value).transform;
+                    pivot.SetParent(variant, false);
+                    switch (kind.Value)
+                    {
+                        case ProfileAvatarJoint.Head: pivot.localPosition = new Vector3(0,1.43f,0); break;
+                        case ProfileAvatarJoint.LeftArm: pivot.localPosition = new Vector3(-shoulder*.5f-.045f,1.33f,0); break;
+                        case ProfileAvatarJoint.RightArm: pivot.localPosition = new Vector3(shoulder*.5f+.045f,1.33f,0); break;
+                        case ProfileAvatarJoint.LeftLeg: pivot.localPosition = new Vector3(-.12f,.85f,0); break;
+                        case ProfileAvatarJoint.RightLeg: pivot.localPosition = new Vector3(.12f,.85f,0); break;
+                    }
+                    pivots.Add(kind.Value, pivot);
+                    joints.Add(new ProfileAvatarMotion.Joint { kind = kind.Value, pivot = pivot, rest = pivot.localRotation });
+                }
+                part.SetParent(pivot, true);
+            }
         }
 
         static readonly Color Navy = new Color(.15f,.23f,.32f);
