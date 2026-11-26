@@ -16,6 +16,12 @@ public sealed class CityGeneratorLabWindow : EditorWindow
     string batchExportPath;
     int batchPage;
     bool onlyProblems;
+    bool archiveOpen;
+    string[] archivePaths = Array.Empty<string>();
+    int archiveIndex;
+    CitySeedBatchReport baseline;
+    string archiveMessage;
+    Vector2 windowScroll;
     Vector2 scroll;
     string summary = "";
     readonly List<string> failures = new List<string>();
@@ -24,6 +30,13 @@ public sealed class CityGeneratorLabWindow : EditorWindow
     static void Open() => GetWindow<CityGeneratorLabWindow>("City Generator Lab");
 
     void OnGUI()
+    {
+        windowScroll = EditorGUILayout.BeginScrollView(windowScroll);
+        try { DrawContents(); }
+        finally { EditorGUILayout.EndScrollView(); }
+    }
+
+    void DrawContents()
     {
         EditorGUILayout.HelpBox("Magnate topology preview and reproducible seed diagnostics. No assets, saves or live game state are modified. Timing includes diagnostic checks, not 3D scene generation.", MessageType.Info);
         seed = EditorGUILayout.IntField("Requested seed", seed);
@@ -50,6 +63,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                 if (GUILayout.Button("Run seed range")) RunBatch();
         }
         if (!string.IsNullOrEmpty(summary)) EditorGUILayout.HelpBox(summary, MessageType.None);
+        DrawArchive();
         DrawBatchSummary();
         if (current == null) return;
         EditorGUILayout.LabelField("Actual seed", current.generated ? current.actualSeed.ToString() : "Unavailable");
@@ -72,7 +86,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                 try { summary = CitySeedDiagnostics.Write(current, dir); }
                 catch (Exception ex) { summary = "Export failed: " + ex.Message; }
         }
-        scroll = EditorGUILayout.BeginScrollView(scroll);
+        scroll = EditorGUILayout.BeginScrollView(scroll, GUILayout.MaxHeight(220));
         foreach (string issue in current.issues ?? Array.Empty<string>())
             EditorGUILayout.HelpBox(issue, MessageType.Warning);
         foreach (var issue in current.layout3D?.warnings ?? Array.Empty<City3DLayoutIssue>())
@@ -105,15 +119,91 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         summary = "Completed " + lastBatch.Completed + " / " + lastBatch.requestedCount + "; failed " + lastBatch.Failed +
             "; 3D warnings on " + lastBatch.Warned + " seed(s); fallback seeds " + lastBatch.Fallback + "." +
             (!lastBatch.Complete ? " Cancelled before completion." : "");
-        try { batchExportPath = lastBatch.Write(ReportDirectory()); }
+        try { batchExportPath = lastBatch.Write(ReportDirectory()); RefreshArchive(); }
         catch (Exception ex) { summary += " Batch export failed: " + ex.Message; }
+    }
+
+    void RefreshArchive()
+    {
+        try
+        {
+            archivePaths = CitySeedBatchArchive.List(ReportDirectory());
+            archiveIndex = 0;
+            archiveMessage = archivePaths.Length + " recent summaries from a bounded local scan.";
+        }
+        catch (Exception ex) { archiveMessage = "Archive scan failed: " + ex.Message; }
+    }
+
+    void ImportBatch(string path, bool asBaseline)
+    {
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            var loaded = CitySeedBatchArchive.Read(path);
+            if (asBaseline) baseline = loaded;
+            else
+            {
+                lastBatch = loaded;
+                batchExportPath = path;
+                batchPage = 0;
+                current = null;
+                failures.Clear();
+                summary = "Imported batch summary; reproduce a seed to preview the current generator.";
+            }
+            archiveMessage = "Loaded " + Path.GetFileName(path);
+        }
+        catch (Exception ex) { archiveMessage = "Import failed: " + ex.Message; }
+    }
+
+    void DrawArchive()
+    {
+        archiveOpen = EditorGUILayout.Foldout(archiveOpen, "Diagnostic archive and comparison", true);
+        if (!archiveOpen) return;
+        if (GUILayout.Button("Refresh local archive")) RefreshArchive();
+        if (archivePaths.Length > 0)
+        {
+            archiveIndex = Mathf.Clamp(archiveIndex, 0, archivePaths.Length - 1);
+            archiveIndex = EditorGUILayout.Popup("Local summary", archiveIndex, archivePaths.Select(Path.GetFileName).ToArray());
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("View summary")) ImportBatch(archivePaths[archiveIndex], false);
+            if (GUILayout.Button("Use as baseline")) ImportBatch(archivePaths[archiveIndex], true);
+            EditorGUILayout.EndHorizontal();
+        }
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Import summary JSON"))
+            ImportBatch(EditorUtility.OpenFilePanel("Import batch summary", "", "json"), false);
+        if (GUILayout.Button("Import baseline JSON"))
+            ImportBatch(EditorUtility.OpenFilePanel("Import comparison baseline", "", "json"), true);
+        EditorGUILayout.EndHorizontal();
+        if (!string.IsNullOrEmpty(archiveMessage))
+            EditorGUILayout.HelpBox(archiveMessage, MessageType.Info);
+        if (baseline == null) return;
+        EditorGUILayout.LabelField("Baseline", baseline.utc + " · " + baseline.Completed + "/" + baseline.requestedCount +
+            (baseline.include3D ? " · 3D" : " · topology"));
+        if (GUILayout.Button("Clear baseline")) { baseline = null; return; }
+        if (lastBatch == null) return;
+        if (baseline.include3D != lastBatch.include3D)
+        {
+            EditorGUILayout.HelpBox("Compare the same diagnostic mode (topology or 3D).", MessageType.Warning);
+            return;
+        }
+        var diff = CitySeedBatchComparison.Compare(baseline, lastBatch);
+        EditorGUILayout.LabelField("Shared / baseline only / current only", diff.Shared + " / " + diff.OnlyBaseline + " / " + diff.OnlyCurrent);
+        if (diff.Shared == 0) { EditorGUILayout.HelpBox("No shared completed seeds.", MessageType.Info); return; }
+        EditorGUILayout.LabelField("New / resolved failures", diff.NewFailures + " / " + diff.ResolvedFailures);
+        EditorGUILayout.LabelField("Passed in both (geometry comparison)", diff.GeneratedInBoth.ToString());
+        EditorGUILayout.LabelField("New / resolved warned seeds", diff.NewWarnings + " / " + diff.ResolvedWarnings);
+        EditorGUILayout.LabelField("Warning count delta (shared seeds)", diff.WarningDelta.ToString());
+        EditorGUILayout.LabelField("Changed actual seed / city counts", diff.ActualSeedChanged + " / " + diff.SizeChanged);
+        EditorGUILayout.HelpBox("Counts and status only; not a topology hash or performance comparison.", MessageType.Info);
     }
 
     void DrawBatchSummary()
     {
         if (lastBatch == null) return;
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Last batch", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Selected batch", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Diagnostic mode", lastBatch.include3D ? "3D audit" : "Topology");
         EditorGUILayout.LabelField("Completed / requested", lastBatch.Completed + " / " + lastBatch.requestedCount);
         EditorGUILayout.LabelField("Failures / warned / fallback", lastBatch.Failed + " / " + lastBatch.Warned + " / " + lastBatch.Fallback);
         if (!string.IsNullOrEmpty(batchExportPath))
