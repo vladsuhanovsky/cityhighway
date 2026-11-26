@@ -12,6 +12,10 @@ public sealed class CityGeneratorLabWindow : EditorWindow
     int seed = 42, count = 64;
     bool include3D;
     CitySeedReport current;
+    CitySeedBatchReport lastBatch;
+    string batchExportPath;
+    int batchPage;
+    bool onlyProblems;
     Vector2 scroll;
     string summary = "";
     readonly List<string> failures = new List<string>();
@@ -46,6 +50,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                 if (GUILayout.Button("Run seed range")) RunBatch();
         }
         if (!string.IsNullOrEmpty(summary)) EditorGUILayout.HelpBox(summary, MessageType.None);
+        DrawBatchSummary();
         if (current == null) return;
         EditorGUILayout.LabelField("Actual seed", current.generated ? current.actualSeed.ToString() : "Unavailable");
         EditorGUILayout.LabelField("Duration", current.milliseconds + " ms");
@@ -80,7 +85,10 @@ public sealed class CityGeneratorLabWindow : EditorWindow
     {
         var seeds = CitySeedBatch.Seeds(seed, count);
         failures.Clear();
-        int completed = 0, invalid = 0, warned = 0, fallback = 0;
+        lastBatch = CitySeedBatchReport.Begin(seed, count, include3D);
+        batchPage = 0;
+        batchExportPath = null;
+        current = null;
         try
         {
             for (int i = 0; i < seeds.Length; i++)
@@ -89,30 +97,82 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                 if (EditorUtility.DisplayCancelableProgressBar("City Generator Lab",
                     "Seed " + requested, i / (float)count)) break;
                 current = CitySeedDiagnostics.Run(requested, include3D);
-                completed++;
-                if (current.generated && current.actualSeed != requested) fallback++;
-                if (!current.Passed) invalid++;
-                if (WarningCount(current) > 0) warned++;
-                if (!current.Passed || WarningCount(current) > 0) SaveFailure(current);
+                string path = !current.Passed || WarningCount(current) > 0 ? SaveFailure(current) : null;
+                lastBatch.Add(current, path);
             }
         }
         finally { EditorUtility.ClearProgressBar(); }
-        summary = "Completed " + completed + " / " + count + "; failed " + invalid +
-            "; 3D warnings on " + warned + " seed(s); fallback seeds " + fallback + "." +
-            (completed < count ? " Cancelled before completion." : "") + " Reports: Library/CityHighways/CitySeedDiagnostics.";
+        summary = "Completed " + lastBatch.Completed + " / " + lastBatch.requestedCount + "; failed " + lastBatch.Failed +
+            "; 3D warnings on " + lastBatch.Warned + " seed(s); fallback seeds " + lastBatch.Fallback + "." +
+            (!lastBatch.Complete ? " Cancelled before completion." : "");
+        try { batchExportPath = lastBatch.Write(ReportDirectory()); }
+        catch (Exception ex) { summary += " Batch export failed: " + ex.Message; }
+    }
+
+    void DrawBatchSummary()
+    {
+        if (lastBatch == null) return;
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Last batch", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Completed / requested", lastBatch.Completed + " / " + lastBatch.requestedCount);
+        EditorGUILayout.LabelField("Failures / warned / fallback", lastBatch.Failed + " / " + lastBatch.Warned + " / " + lastBatch.Fallback);
+        if (!string.IsNullOrEmpty(batchExportPath))
+            EditorGUILayout.SelectableLabel(batchExportPath, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+        if (GUILayout.Button("Export batch summary JSON"))
+        {
+            string dir = EditorUtility.OpenFolderPanel("Export batch summary", "", "");
+            if (!string.IsNullOrEmpty(dir))
+                try { batchExportPath = lastBatch.Write(dir); }
+                catch (Exception ex) { summary = "Batch export failed: " + ex.Message; }
+        }
+
+        bool filter = EditorGUILayout.ToggleLeft("Only failures, warnings or fallback seeds", onlyProblems);
+        if (filter != onlyProblems) { onlyProblems = filter; batchPage = 0; }
+        var rows = lastBatch.rows.Where(r => !onlyProblems || !r.passed || r.warnings > 0 ||
+            (r.generated && r.requestedSeed != r.actualSeed)).ToArray();
+        const int pageSize = 12;
+        int pages = Math.Max(1, (rows.Length + pageSize - 1) / pageSize);
+        batchPage = Mathf.Clamp(batchPage, 0, pages - 1);
+        EditorGUILayout.BeginHorizontal();
+        using (new EditorGUI.DisabledScope(batchPage == 0))
+            if (GUILayout.Button("Previous")) batchPage--;
+        GUILayout.Label((batchPage + 1) + " / " + pages + " (" + rows.Length + " seeds)");
+        using (new EditorGUI.DisabledScope(batchPage + 1 >= pages))
+            if (GUILayout.Button("Next")) batchPage++;
+        EditorGUILayout.EndHorizontal();
+        foreach (var row in rows.Skip(batchPage * pageSize).Take(pageSize))
+        {
+            EditorGUILayout.BeginHorizontal();
+            string actual = row.generated ? row.actualSeed.ToString() : "n/a";
+            string status = !row.passed ? "FAIL" : row.warnings > 0 ? "WARN" : "OK";
+            GUILayout.Label(row.requestedSeed + " → " + actual + " · " + status + " · " + row.warnings + " warnings · " + row.milliseconds + " ms");
+            using (new EditorGUI.DisabledScope(EditorApplication.isPlayingOrWillChangePlaymode))
+                if (GUILayout.Button("Reproduce", GUILayout.Width(90)))
+                {
+                    seed = row.requestedSeed;
+                    include3D = lastBatch.include3D;
+                    current = CitySeedDiagnostics.Run(seed, include3D);
+                    summary = "Reproduced requested seed " + seed + "; actual " +
+                        (current.generated ? current.actualSeed.ToString() : "n/a");
+                    if (!current.Passed || WarningCount(current) > 0) SaveFailure(current);
+                }
+            EditorGUILayout.EndHorizontal();
+        }
     }
 
     static int WarningCount(CitySeedReport report) => report.layout3D?.warnings?.Length ?? 0;
 
-    void SaveFailure(CitySeedReport report)
+    static string ReportDirectory() => Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Library", "CityHighways", "CitySeedDiagnostics"));
+
+    string SaveFailure(CitySeedReport report)
     {
         try
         {
-            string dir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Library", "CityHighways", "CitySeedDiagnostics"));
-            string path = CitySeedDiagnostics.Write(report, dir);
+            string path = CitySeedDiagnostics.Write(report, ReportDirectory());
             failures.Add("Seed " + report.requestedSeed + ": " + path);
+            return path;
         }
-        catch (Exception ex) { failures.Add("Seed " + report.requestedSeed + ": could not export: " + ex.Message); }
+        catch (Exception ex) { failures.Add("Seed " + report.requestedSeed + ": could not export: " + ex.Message); return null; }
     }
 
     void DrawPreview()
