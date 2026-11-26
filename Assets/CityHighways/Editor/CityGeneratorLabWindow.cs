@@ -191,6 +191,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         EditorGUILayout.LabelField("Shared / baseline only / current only", diff.Shared + " / " + diff.OnlyBaseline + " / " + diff.OnlyCurrent);
         if (diff.Shared == 0) { EditorGUILayout.HelpBox("No shared completed seeds.", MessageType.Info); return; }
         EditorGUILayout.LabelField("New / resolved failures", diff.NewFailures + " / " + diff.ResolvedFailures);
+        EditorGUILayout.LabelField("Passed in both (geometry comparison)", diff.GeneratedInBoth.ToString());
         EditorGUILayout.LabelField("New / resolved warned seeds", diff.NewWarnings + " / " + diff.ResolvedWarnings);
         EditorGUILayout.LabelField("Warning count delta (shared seeds)", diff.WarningDelta.ToString());
         EditorGUILayout.LabelField("Changed actual seed / city counts", diff.ActualSeedChanged + " / " + diff.SizeChanged);

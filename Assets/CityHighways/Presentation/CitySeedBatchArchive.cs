@@ -29,7 +29,7 @@ namespace CityHighways.Presentation
         {
             if (batch == null || batch.schema != 1 || !CitySeedBatch.IsValid(batch.firstSeed, batch.requestedCount) ||
                 batch.rows == null || batch.rows.Count > batch.requestedCount ||
-                !DateTimeOffset.TryParseExact(batch.utc, "O", CultureInfo.InvariantCulture, DateTimeStyles.None, out _) ||
+                !DateTime.TryParseExact(batch.utc, "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out _) ||
                 string.IsNullOrWhiteSpace(batch.unityVersion))
                 throw new InvalidDataException("Invalid or unsupported batch summary.");
             for (int i = 0; i < batch.rows.Count; i++)
@@ -64,7 +64,7 @@ namespace CityHighways.Presentation
     {
         public int Shared, OnlyBaseline, OnlyCurrent, NewFailures, ResolvedFailures,
             NewWarnings, ResolvedWarnings, ActualSeedChanged, SizeChanged;
-        public int WarningDelta;
+        public int WarningDelta, GeneratedInBoth;
 
         public static CitySeedBatchComparison Compare(CitySeedBatchReport baseline, CitySeedBatchReport current)
         {
@@ -81,15 +81,16 @@ namespace CityHighways.Presentation
                 result.Shared++;
                 if (old.passed && !after.passed) result.NewFailures++;
                 if (!old.passed && after.passed) result.ResolvedFailures++;
-                if (old.warnings == 0 && after.warnings > 0) result.NewWarnings++;
-                if (old.warnings > 0 && after.warnings == 0) result.ResolvedWarnings++;
-                if (old.generated && after.generated)
+                if (old.generated && after.generated && old.passed && after.passed)
                 {
+                    result.GeneratedInBoth++;
+                    if (old.warnings == 0 && after.warnings > 0) result.NewWarnings++;
+                    if (old.warnings > 0 && after.warnings == 0) result.ResolvedWarnings++;
                     if (old.actualSeed != after.actualSeed) result.ActualSeedChanged++;
                     if (old.locations != after.locations || old.roads != after.roads || old.hubs != after.hubs)
                         result.SizeChanged++;
+                    result.WarningDelta += after.warnings - old.warnings;
                 }
-                result.WarningDelta += after.warnings - old.warnings;
             }
             result.OnlyBaseline = baseline.Completed - result.Shared;
             return result;
