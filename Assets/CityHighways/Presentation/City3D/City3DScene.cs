@@ -108,6 +108,7 @@ namespace CityHighways.Presentation
         bool _roadsSynced;
         RoadConstructionPlayer _construction;
         readonly HashSet<string> _constructing = new HashSet<string>();
+        readonly BridgeFleetClaims _bridgeFleetClaims = new BridgeFleetClaims();
 
         public int BuildingCount { get; private set; }
         public int TreeCount { get; private set; }
@@ -1922,8 +1923,21 @@ namespace CityHighways.Presentation
             _roadsSynced = true;
             foreach (var road in game.Map.Roads)
             {
-                if (road.IsBridge) continue;
                 int? owner = game.GetRoadOwner(road.Id);
+                if (road.IsBridge)
+                {
+                    bool claim = _bridgeFleetClaims.Observe(road.Id, owner, animated, out bool changed);
+                    if (_construction != null && _builtRoads.TryGetValue(road.Id, out var bridge))
+                    {
+                        if (changed || !ShowTraffic || Ui.ReducedMotion) _construction.Cancel(bridge);
+                        if (claim && ShowTraffic && !Ui.ReducedMotion && fleetForOwner != null)
+                        {
+                            try { _construction.PlayBridgeFleet(bridge, fleetForOwner(owner.Value, Resource.Steel)); }
+                            catch (Exception ex) { Debug.LogWarning("Bridge fleet unavailable: " + ex.Message); }
+                        }
+                    }
+                    continue;
+                }
                 bool owned = owner.HasValue;
                 bool has = _builtRoads.TryGetValue(road.Id, out var built);
                 if (owned && !has)
@@ -2122,6 +2136,7 @@ namespace CityHighways.Presentation
             _treeChunks.Clear();
             _builtRoads.Clear();
             _constructing.Clear();
+            _bridgeFleetClaims.Clear();
             _hubs.Clear();
             ClearLife();
             Relief.Release(_relief);

@@ -99,3 +99,5 @@ Profile 2.0 batch 4b: #154 merged (695a1fe); Collection garage, four free vehicl
 Profile 2.0 batch 4c: #155 merged (7ccc0c6); four reusable procedural 3D fleet visual types, per-renderer shared-material paint, explicit local-owner resolution contract and seven Edit Mode cases. CI pending. Actual garage 3D display, world construction event integration, emblem decals and performance acceptance remain open.
 
 Profile 2.0 batch 4d: #156 merged (5438737); local GameView construction slice, road owner seat resolution, resource-to-machine mapping and capped per-scene reusable fleet pool. Eight Edit Mode cases; CI and runtime/manual acceptance pending. Magnate/bridge integration, actual committed-action semantics, decals and performance remain open.
+
+Profile 2.0 batch 4e: #157 merged (ff898a2); local Magnate resolver and non-mutating cosmetic crane on newly claimed prebuilt bridges, owner transition baseline, safe deck placement, four Edit Mode cases. CI and runtime visual acceptance pending.

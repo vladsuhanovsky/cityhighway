@@ -1298,12 +1298,21 @@ namespace CityHighways.Presentation
             if (float.IsNaN(panelSize.x) || panelSize.x < 10f) return;
             var board = _game.Board;
             _city3D.Sync(_map.Layout, panelSize, _map.worldBound.position, _map.Light, id => board.IsDistrictOpen(id), deltaTime);
-            _city3D.SyncRoads(board);
+            _city3D.SyncRoads(board, ResolveConstructionFleet);
             // Этап 2 полноценного 3D: бордюры, разметка, машины и фуры — в сцене.
             _city3D.SyncRoadDetails(board, Palette.PlayerColor, _game.PublicOwner);
             _city3D.SyncTraffic(board, _map.PulseTime);
             _city3D.SyncPeople(board, _map.PulseTime);
             SyncTrucks3D();
+        }
+
+        FleetLivery ResolveConstructionFleet(int owner, Resource? resource)
+        {
+            if (_game == null || owner < 0 || owner >= _game.Players.Count ||
+                owner == _game.PublicOwner || _game.Players[owner].IsBot ||
+                (_app.Display != null && _app.Display.city3DQuality == 0)) return null;
+            return ConstructionFleetPolicy.ResolveMagnate(Profiles.Book, _setup, owner,
+                _game.Players[owner].Name, _game.PublicOwner, _game.Players[owner].IsBot, resource);
         }
 
         readonly List<City3DScene.TruckView> _truckViews3D = new List<City3DScene.TruckView>();
