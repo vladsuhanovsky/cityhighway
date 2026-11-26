@@ -14,6 +14,7 @@ public sealed class ProfileCharacterLabWindow : EditorWindow
     readonly List<Material> materials = new List<Material>();
     Outfit outfit;
     float yaw = 25f;
+    float zoom = 1f;
     bool prototype = true;
     string status = "";
     Vector2 scroll;
@@ -40,9 +41,9 @@ public sealed class ProfileCharacterLabWindow : EditorWindow
         if (EditorApplication.isPlayingOrWillChangePlaymode) return;
         try
         {
-            var look = ProfileCharacterAppearance.FromLook(outfit.Serialize());
+            var look = ProfileAppearance.FromOutfit(outfit);
             preview = new PreviewRenderUtility();
-            if (!prototype && library != null) model = library.InstantiateLook(look);
+            if (!prototype && library != null) model = library.InstantiateAppearance(look);
             else if (prototype) model = BuildPrototype(look);
             if (model == null)
             {
@@ -95,6 +96,8 @@ public sealed class ProfileCharacterLabWindow : EditorWindow
         }
         if (GUILayout.Button("Refresh preview")) Refresh();
         yaw = EditorGUILayout.Slider("Rotation", yaw, -180f, 180f);
+        zoom = EditorGUILayout.Slider("Zoom", zoom, .75f, 1.5f);
+        if (GUILayout.Button("Reset camera")) { yaw = 25f; zoom = 1f; }
         if (preview == null && string.IsNullOrEmpty(status)) Refresh();
         if (!string.IsNullOrEmpty(status)) EditorGUILayout.HelpBox(status, MessageType.Info);
         Rect rect = GUILayoutUtility.GetRect(240f, 380f, GUILayout.ExpandWidth(true));
@@ -106,7 +109,7 @@ public sealed class ProfileCharacterLabWindow : EditorWindow
                 Bounds bounds = renderers[0].bounds;
                 foreach (var r in renderers) bounds.Encapsulate(r.bounds);
                 float size = Mathf.Max(.1f, bounds.size.magnitude);
-                preview.camera.orthographicSize = size * .57f / Mathf.Min(1f, rect.width / Mathf.Max(1f, rect.height));
+                preview.camera.orthographicSize = size * .57f / (zoom * Mathf.Max(.01f, Mathf.Min(1f, rect.width / Mathf.Max(1f, rect.height))));
                 preview.camera.transform.position = bounds.center + Quaternion.Euler(8f, yaw, 0f) * new Vector3(0, 0, size * 2f);
                 preview.camera.transform.LookAt(bounds.center);
                 preview.camera.nearClipPlane = .01f;
@@ -142,7 +145,7 @@ public sealed class ProfileCharacterLabWindow : EditorWindow
         EditorGUILayout.EndScrollView();
     }
 
-    GameObject BuildPrototype(ProfileCharacterAppearance look)
+    GameObject BuildPrototype(ProfileAppearance look)
     {
         var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
         if (shader == null) throw new InvalidOperationException("No preview shader available.");
@@ -172,7 +175,7 @@ public sealed class ProfileCharacterLabWindow : EditorWindow
             Color navy = new Color(.13f,.22f,.31f), orange = new Color(.96f,.48f,.12f);
             Color dark = new Color(.12f,.10f,.09f), white = new Color(.91f,.91f,.84f);
             bool female = look.Gender == CharacterCatalog.Female;
-            string top = look.Visible("top"), bottom = look.Visible("bottom"), hat = look.Visible("hat"), hair = look.Visible("hair"), acc = look.Visible("accessory");
+            string top = look.VisibleId("top"), bottom = look.VisibleId("bottom"), hat = look.VisibleId("hat"), hair = look.VisibleId("hair"), acc = look.VisibleId("accessory");
             Color shirt = top.Contains("vest") ? orange : top.Contains("jacket") || top.Contains("blazer") ? navy :
                 top.Contains("sweater") || top.Contains("cardigan") ? new Color(.34f,.48f,.40f) : white;
             Color trousers = bottom.Contains("jeans") ? new Color(.25f,.39f,.58f) :
@@ -187,7 +190,7 @@ public sealed class ProfileCharacterLabWindow : EditorWindow
                 float x = side * .13f, arm = side * (shoulders * .5f + .06f);
                 Part("Leg", PrimitiveType.Capsule,new Vector3(x,.48f,0),new Vector3(.20f,.34f,.22f),trousers);
                 Part("Boot", PrimitiveType.Cube,new Vector3(x,.12f,.045f),new Vector3(.21f,.19f,.32f),
-                    look.Visible("shoes").Contains("sneakers") ? white : dark);
+                    look.VisibleId("shoes").Contains("sneakers") ? white : dark);
                 Part("Sleeve",PrimitiveType.Capsule,new Vector3(arm,1.16f,0),new Vector3(.17f,.19f,.19f),shirt);
                 Part("Arm",PrimitiveType.Capsule,new Vector3(arm,.94f,0),new Vector3(.14f,.17f,.15f),skin);
                 Part("Eye",PrimitiveType.Sphere,new Vector3(side*.076f,1.65f,.173f),new Vector3(.038f,.044f,.025f),dark);

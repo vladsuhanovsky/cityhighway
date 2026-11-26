@@ -78,7 +78,12 @@ namespace CityHighways.Tests
                 Assert.IsTrue(library.TryResolve(look, out var found, out var bindings));
                 Assert.AreSame(rig, found);
                 Assert.AreEqual(library.items.Length, bindings.Length);
-                assembled = library.InstantiateLook(look);
+                Assert.IsTrue(library.TryResolveAppearance(look.Snapshot, out var canonicalRig, out var canonicalBindings));
+                Assert.AreSame(found, canonicalRig);
+                CollectionAssert.AreEqual(bindings, canonicalBindings);
+                Assert.IsFalse(library.TryResolveAppearance(null, out _, out var emptyBindings));
+                Assert.IsEmpty(emptyBindings);
+                assembled = library.InstantiateAppearance(look.Snapshot);
                 Assert.IsNotNull(assembled);
                 var instance = assembled.GetComponent<ProfileCharacterRig>();
                 Assert.AreNotSame(rig, instance);
