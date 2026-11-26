@@ -13,7 +13,7 @@ namespace CityHighways.Presentation
         bool _characterCloseupRendered;
         public bool CanCaptureCharacterPhoto => _characterCloseupRendered && _characterCloseupCamera != null &&
             _characterCloseupCamera.enabled && _characterCloseupTexture != null && _characterCloseupTexture.IsCreated() &&
-            TryGetProfilePedestrianPosition(out _);
+            !Ui.ReducedMotion && TryGetProfilePedestrianPosition(out _);
 
         void CharacterCloseupRendered(ScriptableRenderContext context, Camera camera)
         {
@@ -50,7 +50,7 @@ namespace CityHighways.Presentation
             { CloseCharacterCloseup(); return false; }
             try
             {
-                if (_characterCloseupCamera == null || _characterCloseupTexture == null)
+                if (_characterCloseupCamera == null || _characterCloseupTexture == null || !_characterCloseupTexture.IsCreated())
                 {
                     CloseCharacterCloseup();
                     _characterCloseupTexture = new RenderTexture(384, 256, 24, RenderTextureFormat.ARGB32)

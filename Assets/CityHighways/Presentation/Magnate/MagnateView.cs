@@ -1309,9 +1309,11 @@ namespace CityHighways.Presentation
 
         void Sync3D(float deltaTime)
         {
-            if (_city3D == null || _map.panel == null) return;
+            if (_city3D == null || _map.panel == null)
+            { _characterObservationControl?.Sync(null); return; }
             var panelSize = _map.panel.visualTree.layout.size;
-            if (float.IsNaN(panelSize.x) || panelSize.x < 10f) return;
+            if (float.IsNaN(panelSize.x) || float.IsNaN(panelSize.y) || panelSize.x < 10f || panelSize.y < 10f)
+            { _characterObservationControl?.Sync(null); return; }
             var board = _game.Board;
             _city3D.Sync(_map.Layout, panelSize, _map.worldBound.position, _map.Light, id => board.IsDistrictOpen(id), deltaTime);
             _city3D.SyncRoads(board, ResolveConstructionFleet);

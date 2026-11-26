@@ -44,6 +44,7 @@ namespace CityHighways.Presentation
             Add(emblem);
             motionButton = Ui.Button(LocalizationService.Get("profile.garage.motion"), () =>
             {
+                if (Ui.ReducedMotion) return;
                 working = !working;
                 time = 0f;
                 model?.ResetMotion();
@@ -186,10 +187,16 @@ namespace CityHighways.Presentation
         void Tick()
         {
             if (camera == null) return;
-            bool visible = attached;
-            for (VisualElement el = this; el != null && visible; el = el.parent)
-                visible = el.resolvedStyle.display != DisplayStyle.None && el.resolvedStyle.visibility == Visibility.Visible;
+            if (texture == null || !texture.IsCreated()) { Release(); return; }
+            bool visible = attached && ProfileRenderVisibility.IsVisible(this);
             camera.enabled = visible;
+            motionButton.SetEnabled(!Ui.ReducedMotion);
+            if (Ui.ReducedMotion && working)
+            {
+                working = false;
+                time = 0f;
+                model?.ResetMotion();
+            }
             float now = Time.realtimeSinceStartup;
             if (visible && working && !Ui.ReducedMotion)
             {
