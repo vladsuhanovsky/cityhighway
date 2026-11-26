@@ -13,6 +13,7 @@ namespace CityHighways.Presentation
         readonly VisualElement surface;
         readonly FleetVehiclePreview fallback;
         readonly Button motionButton;
+        readonly ProfileBadge emblem;
         FleetLivery current;
         FleetVehicleVisual model;
         GameObject root, pivot;
@@ -37,6 +38,9 @@ namespace CityHighways.Presentation
             surface.style.display = DisplayStyle.None;
             surface.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
             Add(surface);
+            emblem = new ProfileBadge(24f);
+            emblem.Set("", Color.white);
+            Add(emblem);
             motionButton = Ui.Button(LocalizationService.Get("profile.garage.motion"), () =>
             {
                 working = !working;
@@ -91,6 +95,7 @@ namespace CityHighways.Presentation
         {
             current = value;
             fallback.Set(value);
+            emblem.Set(value?.Emblem ?? "", new Color(1f,.79f,.35f));
             if (value != null && model != null && model.Apply(value)) return;
             Rebuild();
         }
