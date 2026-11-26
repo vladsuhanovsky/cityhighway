@@ -58,6 +58,15 @@ namespace CityHighways.Presentation
             return Preview(book, profile, vehicle, raw?.scheme, raw?.hideEmblem ?? false);
         }
 
+        /// <summary>Callers must establish the actual local action owner. Remote and bot
+        /// actions pass null; an unverified profile is never inferred by display name.</summary>
+        public static FleetLivery ForActionOwner(ProfileBook book, PlayerProfile verifiedLocalOwner, string vehicle)
+        {
+            if (book?.profiles == null || verifiedLocalOwner == null || !book.profiles.Contains(verifiedLocalOwner))
+                return Read(null, null, vehicle);
+            return Read(book, verifiedLocalOwner, vehicle);
+        }
+
         // Writes a fresh bounded record and array, so callers can roll back a failed disk save
         // using a shallow copy of the previous company list. No mutation to PlayerProfile.
         public static bool Store(ProfileBook book, PlayerProfile profile, string vehicle, string scheme, bool hideEmblem)

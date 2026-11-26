@@ -45,6 +45,7 @@ namespace CityHighways.Presentation
                 (!sharedMaterial.HasProperty(BaseColor) && !sharedMaterial.HasProperty(ColorId))) return null;
             var root = new GameObject("Fleet " + livery.Vehicle);
             root.transform.SetParent(parent, false);
+            if (parent != null) root.layer = parent.gameObject.layer;
             var visual = new FleetVehicleVisual(root, livery.Vehicle);
             try
             {
