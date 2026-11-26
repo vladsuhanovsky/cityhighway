@@ -4,7 +4,7 @@ Status: proposed product/engineering roadmap, agreed starting point for the stab
 
 ## Working agreement
 
-- Large coherent batches, separate commits for completed work; one Draft PR at a time. Automatically continue after all applicable workflows succeed on the exact final HEAD, including Edit Mode and Play Mode. Verify mergeability and squash merge with expected HEAD; open only one new Draft PR, never merge it before its own green CI. Stop for external or manual acceptance blockers; do not waive them.
+- Large coherent batches, separate commits for completed work; one Draft PR at a time. Wait for the user's manual test-completion message, then verify all applicable workflows succeeded on the exact final HEAD, including Edit Mode and Play Mode. Scheduled development is disabled at the user's request. Verify mergeability and squash merge with expected HEAD; open only one new Draft PR, never merge it before its own green CI. Stop for external or manual acceptance blockers; do not waive them.
 - Preserve compatibility, deterministic game rules, existing menu and Interface Editor. Do not change live Steam/Supabase configuration without separate release setup.
 - CI green is implementation evidence, not runtime acceptance. Distinguish verified code, automated test results, playtest hypotheses and release blockers.
 
@@ -67,3 +67,5 @@ Real registered AppID rather than 480, package dependency and native callbacks, 
 No fixed delivery dates or unsupported completion percentages. Reprioritize after each measured acceptance batch.
 
 Stage 7 progress: PR #141 merged (9d09bc8), 1,431 Edit Mode tests and Play Mode passed; the menu, Interface Editor, social replay and river guard path filters did not match its changed files. Next batch adds per-seed summary rows, independent counts, cancelled batch exports, paging, problem filtering and reproduction of requested seeds. CI and Editor UI acceptance pending. Layout parameter presets and attempt-by-attempt trace remain separate work.
+
+Stage 7 progress: PR #142 merged (345babe8), 1,437 Edit Mode tests and Play Mode passed. Batch 3 implements bounded archive browsing/import, structural summary validation, partial-run support, baseline comparison by shared requested seed and the existing reproduction action. Geometry metrics compare only seeds passing in both runs. Twelve new Edit Mode cases cover import, malformed/oversized data, validation, bounded listing and comparison. CI and manual Editor acceptance pending; failed-attempt tracing and actual layout presets remain open.
