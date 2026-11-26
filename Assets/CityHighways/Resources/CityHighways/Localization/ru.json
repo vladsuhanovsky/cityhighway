@@ -6495,6 +6495,14 @@
     {
       "key": "profile.garage.motion",
       "value": "Рабочая анимация"
+    },
+    {
+      "key": "character.observation.closeup",
+      "value": "Крупный план персонажа"
+    },
+    {
+      "key": "character.observation.close_closeup",
+      "value": "Закрыть крупный план"
     }
   ]
 }

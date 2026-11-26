@@ -2104,6 +2104,7 @@ namespace CityHighways.Presentation
         {
             if (ReferenceEquals(ActiveScene, this)) ActiveScene = null;
             FrameMonitor = null;
+            CloseCharacterCloseup();
             foreach (var (camera, enabled) in _otherCameras)
                 if (camera != null) camera.enabled = enabled;
             _otherCameras.Clear();

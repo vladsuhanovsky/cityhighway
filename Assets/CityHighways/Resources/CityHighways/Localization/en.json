@@ -6495,6 +6495,14 @@
     {
       "key": "profile.garage.motion",
       "value": "Toggle working motion"
+    },
+    {
+      "key": "character.observation.closeup",
+      "value": "Character close-up"
+    },
+    {
+      "key": "character.observation.close_closeup",
+      "value": "Close close-up"
     }
   ]
 }
