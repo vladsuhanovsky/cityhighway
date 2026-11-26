@@ -4,9 +4,8 @@ using System.Linq;
 using CityHighways.Presentation;
 using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
-/// <summary>Isolated 3D authoring preview. Never edits a profile or the current scene.</summary>
+/// <summary>Temporary 3D authoring preview. No profile writes or permanent scene objects.</summary>
 public sealed class ProfileCharacterLabWindow : EditorWindow
 {
     ProfileCharacterLibrary library;
@@ -74,7 +73,7 @@ public sealed class ProfileCharacterLabWindow : EditorWindow
         }
         if (outfit == null) outfit = Outfit.Default;
         scroll = EditorGUILayout.BeginScrollView(scroll);
-        EditorGUILayout.HelpBox("Read-only catalog preview. No purchases, profile writes or scene changes.", MessageType.Info);
+        EditorGUILayout.HelpBox("Catalog preview: no purchases or profile writes. Library edits require an explicit action.", MessageType.Info);
         EditorGUI.BeginChangeCheck();
         prototype = EditorGUILayout.Toggle("Procedural prototype", prototype);
         library = (ProfileCharacterLibrary)EditorGUILayout.ObjectField("3D library", library, typeof(ProfileCharacterLibrary), false);
@@ -119,6 +118,23 @@ public sealed class ProfileCharacterLabWindow : EditorWindow
         }
         if (library != null)
         {
+            if (GUILayout.Button("Add missing catalog binding rows"))
+            {
+                var rows = (library.items ?? Array.Empty<ProfileCharacterLibrary.ItemBinding>()).ToList();
+                var ids = new HashSet<string>(rows.Where(r => r != null).Select(r => r.itemId), StringComparer.Ordinal);
+                var missing = CharacterCatalog.Slots.SelectMany(slot => CharacterCatalog.ItemsIn(slot))
+                    .Where(i => ids.Add(i.id))
+                    .Select(i => new ProfileCharacterLibrary.ItemBinding
+                    { itemId = i.id, socket = ProfileCharacterLibrary.SocketFor(i.slot) }).ToArray();
+                if (missing.Length > 0)
+                {
+                    Undo.RecordObject(library, "Add character catalog bindings");
+                    rows.AddRange(missing);
+                    library.items = rows.ToArray();
+                    EditorUtility.SetDirty(library);
+                    status = "Added " + missing.Length + " empty binding rows; assign authored prefabs in Inspector.";
+                }
+            }
             var issues = library.Audit();
             EditorGUILayout.LabelField("Library issues", issues.Length.ToString());
             foreach (string issue in issues) EditorGUILayout.LabelField(issue);
