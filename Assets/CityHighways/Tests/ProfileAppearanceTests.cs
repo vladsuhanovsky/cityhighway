@@ -257,6 +257,97 @@ namespace CityHighways.Tests
             finally { Object.DestroyImmediate(root); }
         }
 
+        [TestCase("m", ProfileAvatarPreviewStage.MaleArtResource)]
+        [TestCase("f", ProfileAvatarPreviewStage.FemaleArtResource)]
+        public void DetailedArtRetainsEveryWardrobeBindingAndArticulatedDetails(string gender, string path)
+        {
+            var root = ProfileAvatarPrototype.Build(gender, _ => null, true);
+            try
+            {
+                var rig = root.GetComponent<ProfileAvatarRig>();
+                var motion = root.GetComponent<ProfileAvatarMotion>();
+                Assert.AreEqual(path, ProfileAvatarPreviewStage.ArtResourceFor(gender));
+                Assert.IsTrue(rig.TryValidate(out var error), error);
+                Assert.IsEmpty(rig.MissingCatalogIds());
+                Assert.IsTrue(motion.IsValid());
+                Assert.IsEmpty(root.GetComponentsInChildren<Collider>(true));
+                foreach (var slot in CharacterCatalog.Slots)
+                    foreach (var item in CharacterCatalog.ItemsIn(slot, gender))
+                    {
+                        var variant = root.transform.Find(item.id);
+                        Assert.IsNotNull(variant, item.id);
+                        Assert.IsNotEmpty(variant.GetComponentsInChildren<MeshRenderer>(true), item.id);
+                        Assert.IsTrue(rig.TryApply(ProfileAppearance.FromOutfit(
+                            Outfit.DefaultFor(gender).With(slot,item.id)), out error),error);
+                    }
+                var outfit = Outfit.DefaultFor(gender);
+                var body = root.transform.Find(outfit.Get("body"));
+                Assert.IsNotNull(body.Find("Joint_Head/Jaw"));
+                Assert.IsNotNull(body.Find("Joint_LeftArm/Thumb"));
+                var vest = CharacterCatalog.ItemsIn("top",gender).First(i=>i.id.Contains("vest"));
+                var top = root.transform.Find(vest.id);
+                Assert.IsNotNull(top.Find("Utility pocket"));
+                Assert.IsNotNull(top.Find("Joint_LeftArm/Sleeve hem"));
+                Assert.IsTrue(motion.TrySample(ProfileAvatarMotionMode.Walk,.25f));
+                Assert.IsTrue(motion.TrySample(ProfileAvatarMotionMode.Still,0f));
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
+        public void PreferredArtSelectionFallsBackToCompatibleLegacyAndUsesOnlyFixedPaths()
+        {
+            var art = ProfileAvatarPrototype.Build("m",_=>null,true);
+            var old = ProfileAvatarPrototype.Build("m",_=>null);
+            var wrong = ProfileAvatarPrototype.Build("f",_=>null,true);
+            try
+            {
+                var detailed = art.GetComponent<ProfileAvatarRig>();
+                var legacy = old.GetComponent<ProfileAvatarRig>();
+                var other = wrong.GetComponent<ProfileAvatarRig>();
+                var calls = new System.Collections.Generic.List<string>();
+                Assert.AreSame(detailed,ProfileAvatarPreviewStage.SelectPreviewRig("m",path=>
+                {
+                    calls.Add(path);
+                    return detailed;
+                }));
+                CollectionAssert.AreEqual(new[]{ProfileAvatarPreviewStage.MaleArtResource},calls);
+                calls.Clear();
+                Assert.AreSame(legacy,ProfileAvatarPreviewStage.SelectPreviewRig("m",path=>
+                {
+                    calls.Add(path);
+                    return path == ProfileAvatarPreviewStage.MaleArtResource ? other : legacy;
+                }));
+                CollectionAssert.AreEqual(new[]{ProfileAvatarPreviewStage.MaleArtResource,
+                    ProfileAvatarPreviewStage.MaleResource},calls);
+                Assert.IsNull(ProfileAvatarPreviewStage.SelectPreviewRig("m",_=>null));
+                Assert.IsNull(ProfileAvatarPreviewStage.SelectPreviewRig("unknown",
+                    _=>throw new InvalidOperationException("Unexpected load")));
+            }
+            finally { Object.DestroyImmediate(art); Object.DestroyImmediate(old); Object.DestroyImmediate(wrong); }
+        }
+
+        [Test]
+        public void DetailedArtPairPersistsWithoutOverwritingExistingOutput()
+        {
+            string folder = "Assets/CharacterArtTest_" + Guid.NewGuid().ToString("N");
+            try
+            {
+                ProfileAvatarPrototypeAssets.GeneratePair(folder,true);
+                foreach (var gender in new[]{"m","f"})
+                {
+                    var path = folder + (gender=="m"?"/Male.prefab":"/Female.prefab");
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    Assert.IsNotNull(prefab);
+                    Assert.DoesNotThrow(()=>ProfileAvatarPrototypeAssets.ValidatePrefab(prefab,gender));
+                    var body = prefab.transform.Find(Outfit.DefaultFor(gender).Get("body"));
+                    Assert.IsNotNull(body.Find("Joint_Head/Jaw"));
+                }
+                Assert.Throws<InvalidOperationException>(()=>ProfileAvatarPrototypeAssets.GeneratePair(folder,true));
+            }
+            finally { if (AssetDatabase.IsValidFolder(folder)) AssetDatabase.DeleteAsset(folder); }
+        }
+
         [Test]
         public void ProceduralPrototypeRejectsUnsupportedGenderAndMissingMaterialResolver()
         {
