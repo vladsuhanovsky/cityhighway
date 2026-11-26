@@ -93,7 +93,7 @@ public static class CityProceduralBatchFixPlanner
 
         // Reject a stale preview when another active anchor now targets the same stable ID.
         var liveAnchors = UnityEngine.Object.FindObjectsByType<CityProceduralReplacement>(
-            FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            FindObjectsInactive.Exclude);
         foreach (var proposal in proposals)
         {
             if (string.IsNullOrEmpty(proposal.ObjectId)) return 0;

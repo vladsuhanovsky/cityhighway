@@ -36,7 +36,7 @@ namespace CityHighways.Presentation
         {
             CityProceduralTreePrefabRules found = null;
             foreach (var candidate in FindObjectsByType<CityProceduralTreePrefabRules>(
-                FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                FindObjectsInactive.Exclude))
             {
                 if (!candidate.AppliesTo(cityName)) continue;
                 if (found != null)

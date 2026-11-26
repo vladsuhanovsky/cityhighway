@@ -554,7 +554,7 @@ public sealed class City3DSceneQualityWindow : EditorWindow
         invalidVisuals = 0;
         skippedVisuals = 0;
         var authored = UnityEngine.Object.FindObjectsByType<CitySceneDecoration>(
-            FindObjectsInactive.Include, FindObjectsSortMode.None);
+            FindObjectsInactive.Include);
         foreach (var anchor in authored)
         {
             if (anchor == null || !anchor.gameObject.scene.IsValid() ||
@@ -568,7 +568,7 @@ public sealed class City3DSceneQualityWindow : EditorWindow
             AddVisual(anchor, anchor.VisualPrefab);
         }
         var replacements = UnityEngine.Object.FindObjectsByType<CityProceduralReplacement>(
-            FindObjectsInactive.Include, FindObjectsSortMode.None);
+            FindObjectsInactive.Include);
         foreach (var anchor in replacements)
         {
             if (anchor == null || !anchor.gameObject.scene.IsValid() ||
