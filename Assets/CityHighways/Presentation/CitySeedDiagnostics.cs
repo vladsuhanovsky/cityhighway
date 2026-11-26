@@ -26,6 +26,25 @@ namespace CityHighways.Presentation
         public bool Passed => generated && issues != null && issues.Length == 0;
     }
 
+    /// <summary>Bounded diagnostic workload, not a gameplay generation setting.</summary>
+    public static class CitySeedBatch
+    {
+        public const int MaxCount = 512;
+
+        public static bool IsValid(int first, int count) =>
+            count >= 1 && count <= MaxCount &&
+            (long)first + count - 1 <= int.MaxValue;
+
+        public static int[] Seeds(int first, int count)
+        {
+            if (!IsValid(first, count))
+                throw new ArgumentOutOfRangeException(nameof(count), "Invalid seed range.");
+            var seeds = new int[count];
+            for (int i = 0; i < count; i++) seeds[i] = first + i;
+            return seeds;
+        }
+    }
+
     /// <summary>Explicit developer diagnostic, never runs automatically during a match.</summary>
     public static class CitySeedDiagnostics
     {

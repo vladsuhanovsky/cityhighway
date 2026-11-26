@@ -23,7 +23,15 @@ public sealed class CityGeneratorLabWindow : EditorWindow
     {
         EditorGUILayout.HelpBox("Magnate topology preview and reproducible seed diagnostics. No assets, saves or live game state are modified. Timing includes diagnostic checks, not 3D scene generation.", MessageType.Info);
         seed = EditorGUILayout.IntField("Requested seed", seed);
-        count = Mathf.Clamp(EditorGUILayout.IntField("Batch count (1–512)", count), 1, 512);
+        count = EditorGUILayout.IntField("Batch count (1–512)", count);
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Quick topology (16)")) { count = 16; include3D = false; }
+        if (GUILayout.Button("Standard topology (64)")) { count = 64; include3D = false; }
+        if (GUILayout.Button("3D audit (16)")) { count = 16; include3D = true; }
+        EditorGUILayout.EndHorizontal();
+        bool validRange = CitySeedBatch.IsValid(seed, count);
+        if (!validRange)
+            EditorGUILayout.HelpBox("Invalid batch range: count must be 1–512 and the last seed must fit Int32.", MessageType.Warning);
         include3D = EditorGUILayout.ToggleLeft("Audit 3D footprints (slower; no meshes)", include3D);
         using (new EditorGUI.DisabledScope(EditorApplication.isPlayingOrWillChangePlaymode))
         {
@@ -34,7 +42,8 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                 summary = current.Passed ? "Valid topology" : "Validation failed";
                 if (!current.Passed || WarningCount(current) > 0) SaveFailure(current);
             }
-            if (GUILayout.Button("Run seed range")) RunBatch();
+            using (new EditorGUI.DisabledScope(!validRange))
+                if (GUILayout.Button("Run seed range")) RunBatch();
         }
         if (!string.IsNullOrEmpty(summary)) EditorGUILayout.HelpBox(summary, MessageType.None);
         if (current == null) return;
@@ -69,18 +78,19 @@ public sealed class CityGeneratorLabWindow : EditorWindow
 
     void RunBatch()
     {
+        var seeds = CitySeedBatch.Seeds(seed, count);
         failures.Clear();
-        int completed = 0, invalid = 0, warned = 0;
+        int completed = 0, invalid = 0, warned = 0, fallback = 0;
         try
         {
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < seeds.Length; i++)
             {
-                long requested = (long)seed + i;
-                if (requested > int.MaxValue) break;
+                int requested = seeds[i];
                 if (EditorUtility.DisplayCancelableProgressBar("City Generator Lab",
                     "Seed " + requested, i / (float)count)) break;
-                current = CitySeedDiagnostics.Run((int)requested, include3D);
+                current = CitySeedDiagnostics.Run(requested, include3D);
                 completed++;
+                if (current.generated && current.actualSeed != requested) fallback++;
                 if (!current.Passed) invalid++;
                 if (WarningCount(current) > 0) warned++;
                 if (!current.Passed || WarningCount(current) > 0) SaveFailure(current);
@@ -88,7 +98,8 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         }
         finally { EditorUtility.ClearProgressBar(); }
         summary = "Completed " + completed + " / " + count + "; failed " + invalid +
-            "; 3D warnings on " + warned + " seed(s). Reports: Library/CityHighways/CitySeedDiagnostics.";
+            "; 3D warnings on " + warned + " seed(s); fallback seeds " + fallback + "." +
+            (completed < count ? " Cancelled before completion." : "") + " Reports: Library/CityHighways/CitySeedDiagnostics.";
     }
 
     static int WarningCount(CitySeedReport report) => report.layout3D?.warnings?.Length ?? 0;
