@@ -283,6 +283,10 @@ namespace CityHighways.Tests
                     try
                     {
                         var rig = clone.GetComponent<ProfileAvatarRig>();
+                        var motion = clone.GetComponent<ProfileAvatarMotion>();
+                        Assert.IsNotNull(motion);
+                        Assert.IsTrue(motion.TrySample(ProfileAvatarMotionMode.Walk, .25f));
+                        Assert.IsTrue(motion.TrySample(ProfileAvatarMotionMode.Still, 0f));
                         var hat = CharacterCatalog.ItemsIn("hat", gender).First();
                         var look = ProfileAppearance.FromOutfit(Outfit.DefaultFor(gender).With("hat", hat.id));
                         Assert.IsTrue(rig.TryApply(look, out var error), error);
@@ -334,6 +338,56 @@ namespace CityHighways.Tests
             Assert.Throws<InvalidOperationException>(() => ProfileAvatarPrototypeAssets.ValidatePrefab(null, "m"));
             var root = new GameObject("Invalid prototype");
             try { Assert.Throws<InvalidOperationException>(() => ProfileAvatarPrototypeAssets.ValidatePrefab(root, "m")); }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [TestCase("m")]
+        [TestCase("f")]
+        public void PrototypeMotionKeepsClothingAndLimbsInSyncAndRestoresRestPose(string gender)
+        {
+            var root = ProfileAvatarPrototype.Build(gender, _ => null);
+            try
+            {
+                var motion = root.GetComponent<ProfileAvatarMotion>();
+                Assert.IsTrue(motion.IsValid());
+                var outfit = Outfit.DefaultFor(gender);
+                Transform Joint(string slot, string name) => root.transform.Find(outfit.Get(slot) + "/Joint_" + name);
+                var arm = Joint("body", "LeftArm");
+                var sleeve = Joint("top", "LeftArm");
+                var leg = Joint("bottom", "LeftLeg");
+                var shoe = Joint("shoes", "LeftLeg");
+                var rightLeg = Joint("bottom", "RightLeg");
+                var head = Joint("body", "Head");
+                var hair = Joint("hair", "Head");
+                foreach (var t in new[] {arm,sleeve,leg,shoe,rightLeg,head,hair}) Assert.IsNotNull(t);
+                Assert.IsTrue(motion.TrySample(ProfileAvatarMotionMode.Walk, .25f));
+                Assert.Greater(Quaternion.Angle(Quaternion.identity, arm.localRotation), 10f);
+                Assert.Greater(Quaternion.Angle(leg.localRotation, rightLeg.localRotation), 30f);
+                Assert.Less(Quaternion.Angle(arm.localRotation, sleeve.localRotation), .01f);
+                Assert.Less(Quaternion.Angle(leg.localRotation, shoe.localRotation), .01f);
+                Assert.Less(Quaternion.Angle(head.localRotation, hair.localRotation), .01f);
+                var before = leg.localRotation;
+                Assert.IsFalse(motion.TrySample(ProfileAvatarMotionMode.Walk, float.NaN));
+                Assert.AreEqual(before, leg.localRotation);
+                Assert.IsTrue(motion.TrySample(ProfileAvatarMotionMode.Idle, .25f));
+                Assert.Less(Quaternion.Angle(Quaternion.identity, leg.localRotation), .01f);
+                Assert.IsTrue(motion.TrySample(ProfileAvatarMotionMode.Still, .5f));
+                foreach (var t in new[] {arm,sleeve,leg,shoe,rightLeg,head,hair})
+                    Assert.Less(Quaternion.Angle(Quaternion.identity, t.localRotation), .01f);
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
+        public void EmptyMotionContractRejectsSampling()
+        {
+            var root = new GameObject("Invalid motion");
+            try
+            {
+                var motion = root.AddComponent<ProfileAvatarMotion>();
+                Assert.IsFalse(motion.IsValid());
+                Assert.IsFalse(motion.TrySample(ProfileAvatarMotionMode.Idle, 0f));
+            }
             finally { Object.DestroyImmediate(root); }
         }
 

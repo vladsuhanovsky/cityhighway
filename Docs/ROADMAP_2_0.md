@@ -89,3 +89,5 @@ Profile 2.0 batch 3b: #149 merged (186f3fa); optional runtime ProfileAvatarRig p
 Profile 2.0 batch 3c: #150 merged (eb7f313); explicit Editor generator for two static modular prototype prefabs, full existing catalog binding coverage and three new Edit Mode cases. Generated assets not committed; local generation and real preview validation pending. Production art and animation remain open.
 
 Profile 2.0 batch 3d: #151 merged (af00a7d); shared Editor-only prototype asset persistence, read-only validator, three Edit Mode persistence/refusal/invalid-input cases. CI and manual rendering acceptance pending; production art and animation remain open.
+
+Profile 2.0 batch 3e: #152 merged (77a3137); optional rigid-part prototype articulation and opt-in Still/Idle/Walk profile preview, three new Edit Mode cases and prefab round-trip extension. CI pending. Production skeleton/skinning, art, visual acceptance and city integration remain open.

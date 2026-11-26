@@ -16,6 +16,10 @@ namespace CityHighways.Presentation
         static int nextStage;
         readonly Vector3 origin = new Vector3(-8000f - 30f * (nextStage++ % 128), -8000f, -8000f);
         readonly VisualElement fallback, surface;
+        readonly Button motionButton;
+        ProfileAvatarMotion motion;
+        ProfileAvatarMotionMode motionMode;
+        float phase, lastMotionTime;
         readonly Func<string, ProfileAvatarRig> load;
         ProfileAppearance appearance;
         bool debugFallback, attached;
@@ -46,6 +50,13 @@ namespace CityHighways.Presentation
             surface.style.display = DisplayStyle.None;
             surface.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
             Add(surface);
+            motionButton = new Button(CycleMotion) { name = "profile-avatar-motion" };
+            motionButton.style.position = Position.Absolute;
+            motionButton.style.bottom = 4f;
+            motionButton.style.right = 4f;
+            motionButton.style.display = DisplayStyle.None;
+            Add(motionButton);
+            UpdateMotionLabel();
             RegisterCallback<AttachToPanelEvent>(_ => { attached = true; Refresh(); });
             RegisterCallback<DetachFromPanelEvent>(_ => { attached = false; Release(); });
             surface.RegisterCallback<PointerDownEvent>(e =>
@@ -95,8 +106,16 @@ namespace CityHighways.Presentation
                     for (VisualElement el = this; el != null && visible; el = el.parent)
                         visible = el.resolvedStyle.display != DisplayStyle.None && el.resolvedStyle.visibility == Visibility.Visible;
                     camera.enabled = visible;
+                    float now = Time.realtimeSinceStartup;
+                    if (visible && motion != null && motionMode != ProfileAvatarMotionMode.Still)
+                    {
+                        phase = Mathf.Repeat(phase + Mathf.Clamp(now - lastMotionTime, 0f, .1f) *
+                            (motionMode == ProfileAvatarMotionMode.Walk ? 1.1f : .35f), 1f);
+                        motion.SampleValidated(motionMode, phase);
+                    }
+                    lastMotionTime = now;
                 }
-            }).Every(100);
+            }).Every(33);
         }
 
         public void Show(ProfileAppearance look, bool force2D = false)
@@ -181,12 +200,39 @@ namespace CityHighways.Presentation
                 surface.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(texture));
                 surface.style.display = DisplayStyle.Flex;
                 fallback.style.opacity = 0f;
+                motion = rig.GetComponent<ProfileAvatarMotion>();
+                if (motion != null && motion.IsValid())
+                {
+                    motionButton.style.display = DisplayStyle.Flex;
+                    lastMotionTime = Time.realtimeSinceStartup;
+                    UpdateMotionLabel();
+                }
+                else motion = null;
             }
             catch (Exception ex)
             {
                 Release();
                 Debug.LogWarning("Profile 3D preview fell back to 2D: " + ex.Message);
             }
+        }
+
+        void CycleMotion()
+        {
+            if (motion == null) return;
+            motionMode = motionMode == ProfileAvatarMotionMode.Still ? ProfileAvatarMotionMode.Idle :
+                motionMode == ProfileAvatarMotionMode.Idle ? ProfileAvatarMotionMode.Walk : ProfileAvatarMotionMode.Still;
+            phase = 0f;
+            lastMotionTime = Time.realtimeSinceStartup;
+            motion.SampleValidated(motionMode, phase);
+            UpdateMotionLabel();
+        }
+
+        void UpdateMotionLabel()
+        {
+            bool en = LocalizationService.Language == "en";
+            motionButton.text = motionMode == ProfileAvatarMotionMode.Idle ? (en ? "Idle" : "Ожидание") :
+                motionMode == ProfileAvatarMotionMode.Walk ? (en ? "Walk" : "Ходьба") : (en ? "Still" : "Статично");
+            motionButton.tooltip = en ? "Change preview motion" : "Сменить анимацию предпросмотра";
         }
 
         static bool IsSelected(Transform child, Transform stop)
@@ -241,6 +287,10 @@ namespace CityHighways.Presentation
         public void Release()
         {
             CancelPointer();
+            motion = null;
+            motionMode = ProfileAvatarMotionMode.Still;
+            phase = 0f;
+            motionButton.style.display = DisplayStyle.None;
             surface.style.backgroundImage = StyleKeyword.None;
             surface.style.display = DisplayStyle.None;
             fallback.style.opacity = 1f;
