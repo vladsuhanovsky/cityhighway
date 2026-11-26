@@ -572,6 +572,16 @@ namespace CityHighways.Presentation
             _walkerAppearance = appearance;
         }
 
+        // Read-only observation anchor for a later camera/UI feature. No focus changes.
+        public bool TryGetProfilePedestrianPosition(out Vector3 position)
+        {
+            position = default;
+            if (_profileRoute == null || _profileWalker?.Root == null ||
+                !_profileWalker.Root.activeInHierarchy) return false;
+            position = _profileWalker.Root.transform.position;
+            return true;
+        }
+
         void RestoreProfileRoute()
         {
             if (_replacedWalkerRenderer != null) _replacedWalkerRenderer.enabled = true;
