@@ -265,6 +265,79 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void GeneratedPrototypePairRoundTripsThroughPrefabAssets()
+        {
+            string folder = "Assets/AvatarPrototypeTest_" + Guid.NewGuid().ToString("N");
+            try
+            {
+                ProfileAvatarPrototypeAssets.GeneratePair(folder);
+                Assert.IsTrue(ProfileAvatarPrototypeAssets.OutputExists(folder));
+                foreach (string gender in new[] { "m", "f" })
+                {
+                    string path = folder + (gender == "m" ? "/Male.prefab" : "/Female.prefab");
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    Assert.IsNotNull(prefab);
+                    Assert.DoesNotThrow(() => ProfileAvatarPrototypeAssets.ValidatePrefab(prefab, gender));
+                    var clone = Object.Instantiate(prefab);
+                    try
+                    {
+                        var rig = clone.GetComponent<ProfileAvatarRig>();
+                        var hat = CharacterCatalog.ItemsIn("hat", gender).First();
+                        var look = ProfileAppearance.FromOutfit(Outfit.DefaultFor(gender).With("hat", hat.id));
+                        Assert.IsTrue(rig.TryApply(look, out var error), error);
+                        Assert.IsTrue(clone.transform.Find(hat.id).gameObject.activeSelf);
+                        Assert.IsFalse(prefab.transform.Find(hat.id).gameObject.activeSelf);
+                        foreach (var renderer in clone.GetComponentsInChildren<MeshRenderer>())
+                            Assert.IsNotNull(renderer.sharedMaterial);
+                    }
+                    finally { Object.DestroyImmediate(clone); }
+                }
+                string malePath = folder + "/Male.prefab";
+                string guid = AssetDatabase.AssetPathToGUID(malePath);
+                Assert.Throws<InvalidOperationException>(() => ProfileAvatarPrototypeAssets.GeneratePair(folder));
+                Assert.AreEqual(guid, AssetDatabase.AssetPathToGUID(malePath));
+                Assert.DoesNotThrow(() => ProfileAvatarPrototypeAssets.ValidatePrefab(
+                    AssetDatabase.LoadAssetAtPath<GameObject>(malePath), "m"));
+            }
+            finally
+            {
+                if (AssetDatabase.IsValidFolder(folder)) AssetDatabase.DeleteAsset(folder);
+            }
+        }
+
+        [Test]
+        public void PrototypeGenerationRefusesOccupiedOutputWithoutTouchingIt()
+        {
+            string name = "AvatarPrototypeOccupied_" + Guid.NewGuid().ToString("N");
+            string folder = "Assets/" + name;
+            try
+            {
+                Assert.IsNotEmpty(AssetDatabase.CreateFolder("Assets", name));
+                Assert.IsNotEmpty(AssetDatabase.CreateFolder(folder, "PrototypeMaterials"));
+                Assert.Throws<InvalidOperationException>(() => ProfileAvatarPrototypeAssets.GeneratePair(folder));
+                Assert.IsTrue(AssetDatabase.IsValidFolder(folder + "/PrototypeMaterials"));
+                Assert.IsNull(AssetDatabase.LoadMainAssetAtPath(folder + "/Male.prefab"));
+                Assert.IsNull(AssetDatabase.LoadMainAssetAtPath(folder + "/Female.prefab"));
+            }
+            finally
+            {
+                if (AssetDatabase.IsValidFolder(folder)) AssetDatabase.DeleteAsset(folder);
+            }
+        }
+
+        [Test]
+        public void PrototypePersistenceRejectsInvalidInputs()
+        {
+            Assert.Throws<ArgumentException>(() => ProfileAvatarPrototypeAssets.GeneratePair(null));
+            Assert.Throws<ArgumentException>(() => ProfileAvatarPrototypeAssets.GeneratePair("Assets/../Other"));
+            Assert.Throws<InvalidOperationException>(() => ProfileAvatarPrototypeAssets.ValidatePrefab(null, "m"));
+            var root = new GameObject("Invalid prototype");
+            try { Assert.Throws<InvalidOperationException>(() => ProfileAvatarPrototypeAssets.ValidatePrefab(root, "m")); }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
         public void ItemCropClampsAndFallsBackForInvalidBounds()
         {
             var item = new CharacterItem { bounds = new[] { -16, 76, 272, 384 } };

@@ -87,3 +87,5 @@ Profile 2.0 batch 3a: #148 merged (a2bd19c); unified appearance normalization, c
 Profile 2.0 batch 3b: #149 merged (186f3fa); optional runtime ProfileAvatarRig preview integrated with Overview/Wardrobe, fixed resource paths, 2D fallback, bounded rotation/zoom and resource lifecycle. Five new Edit Mode cases. CI pending; no actual authored production prefabs, animation or measured runtime visual/performance acceptance. See Docs/PROFILE_2_0_LIVING_CITY.md.
 
 Profile 2.0 batch 3c: #150 merged (eb7f313); explicit Editor generator for two static modular prototype prefabs, full existing catalog binding coverage and three new Edit Mode cases. Generated assets not committed; local generation and real preview validation pending. Production art and animation remain open.
+
+Profile 2.0 batch 3d: #151 merged (af00a7d); shared Editor-only prototype asset persistence, read-only validator, three Edit Mode persistence/refusal/invalid-input cases. CI and manual rendering acceptance pending; production art and animation remain open.
