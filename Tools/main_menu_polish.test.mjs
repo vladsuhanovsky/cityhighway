@@ -69,7 +69,10 @@ test("profile statistics stays next to the current avatar", () => {
   assert.match(corner, /_profileCard = new ProfileCard/);
   assert.match(corner, /corner\.Add\(_profileCard\)/);
   assert.match(corner, /Ui\.Button\(LocalizationService\.Get\("menu\.home\.stats"\)/);
-  assert.match(corner, /ShowPage\(Page\.Stats\)/);
+  assert.match(corner, /OpenStats\(Page\.Home\)/);
+  assert.match(view, /new MenuProfilePage\(setup, \(\) => ShowPage\(Page\.Home\), Refresh, \(\) => OpenStats\(Page\.Profile\)\)/);
+  assert.match(view, /MenuStatsPage\.Build\(CloseStats,/);
+  assert.match(view, /ShowPage\(_statsReturn\)/);
   assert.doesNotMatch(corner, /"Влад"|"Vlad"/);
   assert.equal(translated(ru, "menu.home.stats"), "Статистика");
 });

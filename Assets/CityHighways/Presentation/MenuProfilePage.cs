@@ -148,6 +148,7 @@ namespace CityHighways.Presentation
         {
             var button = Btn("", () => Navigate(tab), ButtonKind.Secondary, 14f);
             button.name = "profile-tab-" + tab.ToString().ToLowerInvariant();
+            button.tooltip = caption;
             button.style.flexDirection = FlexDirection.Row;
             button.style.alignItems = Align.Center;
             button.style.justifyContent = Justify.Center;
@@ -167,6 +168,8 @@ namespace CityHighways.Presentation
             label.style.whiteSpace = WhiteSpace.Normal;
             label.style.unityTextAlign = TextAnchor.MiddleCenter;
             button.Add(label);
+            button.RegisterCallback<PointerEnterEvent>(_ => { if (ProfileNavigation.Primary(_tab) == tab) StyleTabs(); });
+            button.RegisterCallback<FocusInEvent>(_ => { if (ProfileNavigation.Primary(_tab) == tab) StyleTabs(); });
             button.RegisterCallback<PointerLeaveEvent>(_ => StyleTabs());
             button.RegisterCallback<FocusOutEvent>(_ => StyleTabs());
             _tabButtons[tab] = (button, icon, label);
@@ -188,7 +191,6 @@ namespace CityHighways.Presentation
         public void Rebuild()
         {
             // Ушли с вкладки посреди открытия — вещь уже выдана, рулетку просто досматривать не нужно.
-            if (_tab != Tab.Collection) FinishSpin(false);
             var profile = Profiles.Active;
             if (_shownProfile != profile)
             {
@@ -201,6 +203,7 @@ namespace CityHighways.Presentation
                 _lastResult = null;
                 _spinCrate = null;
             }
+            if (_tab != Tab.Collection) FinishSpin(false);
             _walletButton.text = string.Format(LocalizationService.Get("profile.containers.wallet"), profile.wallet);
             _title.text = LocalizationService.Get("menu.profile.012") + profile.name;
             _idChip.text = profile.IsSteam ? $"ID Steam: {profile.steamId}" : "";
@@ -222,6 +225,7 @@ namespace CityHighways.Presentation
                 case Tab.Mastery: MasteryTab(profile); break;
                 default: OverviewTab(profile); break;
             }
+            _walletButton.text = string.Format(LocalizationService.Get("profile.containers.wallet"), profile.wallet);
             // В прокрутке блоки не должны сжиматься: иначе заголовки наезжают на содержимое.
             NoShrink(_content);
         }
