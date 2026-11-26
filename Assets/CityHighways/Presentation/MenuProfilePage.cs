@@ -1343,7 +1343,81 @@ namespace CityHighways.Presentation
             if (_showStats != null)
                 actions.Add(Btn(LocalizationService.Get("profile.v2.full_stats"), _showStats, ButtonKind.Secondary, 14f));
             _content.Add(actions);
+            CompanyCard(profile);
             ProfilesCard(profile);
+        }
+
+        void CompanyCard(PlayerProfile profile)
+        {
+            var current = CompanyIdentity.Read(Profiles.Book, profile);
+            var card = Card(14f);
+            card.name = "profile-company";
+            card.style.marginBottom = 12f;
+            card.Add(Ui.Text(LocalizationService.Get("profile.company.title"), 18f, Theme.Text, true));
+            card.Add(Caption(LocalizationService.Get("profile.company.hint"), 13f, Theme.TextDim, 0f, 4f));
+            var name = Field(current.Name, CompanyIdentity.MaxNameLength);
+            name.name = "profile-company-name";
+            name.textEdition.placeholder = LocalizationService.Get("profile.company.name");
+            card.Add(name);
+            var colors = CompanyIdentity.ColorIds.ToList();
+            var labels = colors.Select(c => LocalizationService.Get("profile.company.color." + c)).ToList();
+            var primary = new DropdownField(LocalizationService.Get("profile.company.primary"), labels, colors.IndexOf(current.Primary));
+            var secondary = new DropdownField(LocalizationService.Get("profile.company.secondary"), new List<string>(labels), colors.IndexOf(current.Secondary));
+            card.Add(primary);
+            card.Add(secondary);
+            var emblems = new List<string> { "" };
+            emblems.AddRange(Profiles.Catalog.Where(i => i.Kind == ShopKind.Emblem &&
+                (i.Price <= 0 || (profile.owned != null && profile.owned.Contains(i.Id)))).Select(i => i.Id));
+            var emblem = new DropdownField(LocalizationService.Get("profile.company.emblem"),
+                emblems.Select(id => string.IsNullOrEmpty(id) ? LocalizationService.Get("profile.company.none") : Profiles.Item(id).DisplayName).ToList(),
+                Mathf.Max(0, emblems.IndexOf(current.Emblem)));
+            card.Add(emblem);
+            var swatches = Ui.Row();
+            swatches.style.alignItems = Align.Center;
+            swatches.style.marginTop = 8f;
+            var paint = Ui.Box();
+            paint.style.width = 124f;
+            paint.style.height = 48f;
+            paint.style.justifyContent = Justify.Center;
+            paint.style.alignItems = Align.Center;
+            Ui.Radius(paint, 8f);
+            var badge = new ProfileBadge(30f);
+            paint.Add(badge);
+            var stripe = Ui.Box();
+            stripe.style.height = 8f;
+            stripe.style.position = Position.Absolute;
+            stripe.style.bottom = 0f;
+            stripe.style.left = 0f;
+            stripe.style.right = 0f;
+            paint.Add(stripe);
+            swatches.Add(paint);
+            card.Add(swatches);
+            string At(List<string> values, int index, string fallback) => index >= 0 && index < values.Count ? values[index] : fallback;
+            CompanyIdentity Draft() => CompanyIdentity.Create(profile, name.value,
+                At(emblems, emblem.index, ""), At(colors, primary.index, "navy"), At(colors, secondary.index, "orange"));
+            void Preview()
+            {
+                var value = Draft();
+                paint.style.backgroundColor = CompanyIdentity.Paint(value.Primary);
+                stripe.style.backgroundColor = CompanyIdentity.Paint(value.Secondary);
+                badge.Set(value.Emblem, CompanyIdentity.Paint(value.Secondary));
+            }
+            primary.RegisterValueChangedCallback(_ => Preview());
+            secondary.RegisterValueChangedCallback(_ => Preview());
+            emblem.RegisterValueChangedCallback(_ => Preview());
+            Preview();
+            card.Add(Btn(LocalizationService.Get("profile.company.save"), () =>
+            {
+                if (Profiles.Active != profile) return;
+                var book = Profiles.Book;
+                var previous = book.companies == null ? null : new List<CompanyIdentityRecord>(book.companies);
+                CompanyIdentity.Store(book, profile, Draft());
+                bool saved = Profiles.TrySaveLocal();
+                if (!saved) book.companies = previous;
+                _status = LocalizationService.Get(saved ? "profile.company.saved" : "profile.company.failed");
+                Rebuild();
+            }, ButtonKind.Secondary, 14f));
+            _content.Add(card);
         }
 
         /// <summary>Аватар, имя, список профилей этого компьютера, создание, удаление, «играть под этим именем».</summary>

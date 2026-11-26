@@ -6347,6 +6347,78 @@
     {
       "key": "profile.v2.full_stats",
       "value": "Подробная статистика"
+    },
+    {
+      "key": "profile.company.title",
+      "value": "Фирменный стиль компании"
+    },
+    {
+      "key": "profile.company.hint",
+      "value": "Локальные настройки оформления. Цвета владельцев дорог не меняются."
+    },
+    {
+      "key": "profile.company.name",
+      "value": "Название компании"
+    },
+    {
+      "key": "profile.company.primary",
+      "value": "Основной цвет"
+    },
+    {
+      "key": "profile.company.secondary",
+      "value": "Дополнительный цвет"
+    },
+    {
+      "key": "profile.company.emblem",
+      "value": "Эмблема компании"
+    },
+    {
+      "key": "profile.company.none",
+      "value": "Без эмблемы"
+    },
+    {
+      "key": "profile.company.save",
+      "value": "Сохранить оформление"
+    },
+    {
+      "key": "profile.company.saved",
+      "value": "Оформление компании сохранено локально."
+    },
+    {
+      "key": "profile.company.failed",
+      "value": "Не удалось сохранить оформление компании."
+    },
+    {
+      "key": "profile.company.color.navy",
+      "value": "Тёмно-синий"
+    },
+    {
+      "key": "profile.company.color.orange",
+      "value": "Оранжевый"
+    },
+    {
+      "key": "profile.company.color.steel",
+      "value": "Стальной"
+    },
+    {
+      "key": "profile.company.color.white",
+      "value": "Белый"
+    },
+    {
+      "key": "profile.company.color.green",
+      "value": "Зелёный"
+    },
+    {
+      "key": "profile.company.color.red",
+      "value": "Красный"
+    },
+    {
+      "key": "profile.company.color.blue",
+      "value": "Синий"
+    },
+    {
+      "key": "profile.company.color.graphite",
+      "value": "Графитовый"
     }
   ]
 }

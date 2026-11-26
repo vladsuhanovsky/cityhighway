@@ -106,6 +106,7 @@ namespace CityHighways.Presentation
     {
         public List<PlayerProfile> profiles = new List<PlayerProfile>();
         public string active = "";
+        public List<CompanyIdentityRecord> companies = new List<CompanyIdentityRecord>();
     }
 
     public enum ShopKind { Emblem, Title, Frame }
@@ -322,7 +323,9 @@ namespace CityHighways.Presentation
             var other = Find(newName);
             if (other != null && other != profile) return "Профиль с таким именем уже есть.";
             bool active = Key(Book.active) == Key(profile.name);
+            string oldCompanyKey = CompanyIdentity.OwnerKey(profile);
             profile.name = newName;
+            CompanyIdentity.Move(Book, oldCompanyKey, CompanyIdentity.OwnerKey(profile));
             if (active) Book.active = newName;
             Save();
             return null;
@@ -330,6 +333,7 @@ namespace CityHighways.Presentation
 
         public static void Remove(PlayerProfile profile)
         {
+            CompanyIdentity.Remove(Book, CompanyIdentity.OwnerKey(profile));
             Book.profiles.Remove(profile);
             if (Key(Book.active) == Key(profile.name)) Book.active = Book.profiles.FirstOrDefault()?.name ?? "";
             Save();
@@ -449,7 +453,10 @@ namespace CityHighways.Presentation
                 // Профиль с таким именем уже был (до Steam) — привязываем его, иначе создаём новый.
                 profile = Find(persona) ?? new PlayerProfile { name = persona };
                 if (!Book.profiles.Contains(profile)) Book.profiles.Add(profile);
+                string oldCompanyKey = CompanyIdentity.OwnerKey(profile);
+                bool wasLocal = !profile.IsSteam;
                 profile.steamId = steam.SteamId;
+                if (wasLocal) CompanyIdentity.Move(Book, oldCompanyKey, CompanyIdentity.OwnerKey(profile));
             }
             profile.name = persona;
             Book.active = profile.name;
