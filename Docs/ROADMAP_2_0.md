@@ -97,3 +97,5 @@ Profile 2.0 batch 4a: #153 merged (062b23d); local company identity in Overview 
 Profile 2.0 batch 4b: #154 merged (695a1fe); Collection garage, four free vehicle categories, per-vehicle paint scheme and emblem visibility, live schematic preview, local persistence and nine Edit Mode cases. CI pending. Actual world vehicle models and construction FX not yet connected.
 
 Profile 2.0 batch 4c: #155 merged (7ccc0c6); four reusable procedural 3D fleet visual types, per-renderer shared-material paint, explicit local-owner resolution contract and seven Edit Mode cases. CI pending. Actual garage 3D display, world construction event integration, emblem decals and performance acceptance remain open.
+
+Profile 2.0 batch 4d: #156 merged (5438737); local GameView construction slice, road owner seat resolution, resource-to-machine mapping and capped per-scene reusable fleet pool. Eight Edit Mode cases; CI and runtime/manual acceptance pending. Magnate/bridge integration, actual committed-action semantics, decals and performance remain open.

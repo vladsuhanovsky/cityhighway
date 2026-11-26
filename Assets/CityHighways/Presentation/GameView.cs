@@ -1385,11 +1385,18 @@ namespace CityHighways.Presentation
             if (float.IsNaN(panelSize.x) || panelSize.x < 10f) return;
             var game = _game;
             _city3D.Sync(_map.Layout, panelSize, _map.worldBound.position, _map.Light, id => game.IsDistrictOpen(id), deltaTime);
-            _city3D.SyncRoads(game);
+            _city3D.SyncRoads(game, ResolveConstructionFleet);
             // Этап 2 полноценного 3D: бордюры цвета компании, разметка и машины — в сцене.
             _city3D.SyncRoadDetails(game, Palette.PlayerColor, game.Players.Count);
             _city3D.SyncTraffic(game, _map.PulseTime);
             _city3D.SyncPeople(game, _map.PulseTime);
+        }
+
+        FleetLivery ResolveConstructionFleet(int owner, Resource? resource)
+        {
+            if (Online || _game == null || owner < 0 || owner >= _game.Players.Count ||
+                (_app.Display != null && _app.Display.city3DQuality == 0)) return null;
+            return ConstructionFleetPolicy.Resolve(Profiles.Book, _setup, owner, _game.Players[owner].Name, Online, resource);
         }
 
         bool TimerEnabled => _setup.turnSeconds > 0;

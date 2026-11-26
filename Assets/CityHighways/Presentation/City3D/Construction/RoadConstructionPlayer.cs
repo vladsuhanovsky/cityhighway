@@ -31,6 +31,8 @@ namespace CityHighways.Presentation
 
         PrefabPool _workers, _excavators, _rollers, _dust;
         Transform _poolRoot;
+        ConstructionFleetPool _fleet;
+        Material _fleetMaterial;
         readonly List<Site> _sites = new List<Site>();
         readonly List<Dust> _puffs = new List<Dust>();
 
@@ -41,6 +43,7 @@ namespace CityHighways.Presentation
             public float Duration, Time;
             public Action<BuiltRoad> Done;
             public GameObject Excavator, Roller;
+            public FleetVehicleVisual Fleet;
             public ConstructionMachine Digger, Compactor;
             public Vector3 RollerScale, ExcavatorScale;
             public float RollerDistance;   // где каток был в прошлом кадре — для вращения вальца
@@ -111,7 +114,7 @@ namespace CityHighways.Presentation
         /// Построить дорогу от start до end с анимацией стройки длительностью duration секунд (обычно 2–3).
         /// Возвращает построенную дорогу (её куски проявляются по ходу стройки).
         /// </summary>
-        public BuiltRoad PlayConstruction(Vector3 start, Vector3 end, float duration, Action<BuiltRoad> completed = null)
+        public BuiltRoad PlayConstruction(Vector3 start, Vector3 end, float duration, Action<BuiltRoad> completed = null, FleetLivery livery = null)
         {
             if (roadBuilder == null || settings == null)
             {
@@ -134,7 +137,11 @@ namespace CityHighways.Presentation
                 site.Digger = site.Excavator.GetComponent<ConstructionMachine>();
                 site.ExcavatorScale = site.Excavator.transform.localScale;
             }
-            if (_rollers != null)
+            // Use the personalized vehicle in the existing roller position. For bridges
+            // and missing/over-budget visuals retain the original pooled roller.
+            if (livery != null && !road.HasBridge && road.Length >= .12f)
+                site.Fleet = AcquireFleet(livery);
+            if (site.Fleet == null && _rollers != null)
             {
                 site.Roller = _rollers.Get(RollerPosition(site, 0f), rotation, transform);
                 site.Compactor = site.Roller.GetComponent<ConstructionMachine>();
@@ -242,6 +249,13 @@ namespace CityHighways.Presentation
 
             if (site.Excavator != null) UpdateExcavator(site, scale);
             if (site.Roller != null) UpdateRoller(site, scale);
+            if (site.Fleet != null && site.Fleet.Root != null)
+            {
+                var t = site.Fleet.Root.transform;
+                t.SetPositionAndRotation(RollerPosition(site, site.Time), Quaternion.LookRotation(Forward(road), Vector3.up));
+                // Original fleet geometry is ~2 units long; the existing machinery is ~0.08.
+                t.localScale = Vector3.one * (.032f * scale);
+            }
             foreach (var runner in site.Workers) UpdateWorker(site, runner, scale);
         }
 
@@ -362,12 +376,55 @@ namespace CityHighways.Presentation
             ReleaseAll(site);
         }
 
+        public void Cancel(BuiltRoad road)
+        {
+            for (int i = _sites.Count - 1; i >= 0; i--)
+            {
+                if (_sites[i].Road != road) continue;
+                Abort(_sites[i]);
+                _sites.RemoveAt(i);
+            }
+        }
+
+        FleetVehicleVisual AcquireFleet(FleetLivery livery)
+        {
+            try
+            {
+                if (_fleet == null)
+                {
+                    var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                    if (shader == null || !shader.isSupported || _poolRoot == null) return null;
+                    _fleetMaterial = new Material(shader) { name = "Construction fleet paint", hideFlags = HideFlags.DontSave };
+                    _fleet = new ConstructionFleetPool(_poolRoot, _fleetMaterial);
+                }
+                return _fleet.Acquire(livery);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("Construction fleet unavailable: " + ex.Message);
+                return null;
+            }
+        }
+
+        void OnDestroy()
+        {
+            _fleet?.Clear();
+            _fleet = null;
+            if (_fleetMaterial != null)
+            {
+                if (Application.isPlaying) Destroy(_fleetMaterial); else DestroyImmediate(_fleetMaterial);
+                _fleetMaterial = null;
+            }
+        }
+
         void ReleaseAll(Site site)
         {
             if (site.Excavator != null) _excavators.Release(site.Excavator);
             if (site.Roller != null) _rollers.Release(site.Roller);
             foreach (var runner in site.Workers)
                 if (runner.Go != null) _workers.Release(runner.Go);
+            if (site.Fleet != null) _fleet?.Release(site.Fleet);
+            site.Fleet = null;
             site.Excavator = site.Roller = null;
             site.Workers.Clear();
         }

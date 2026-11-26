@@ -1915,7 +1915,7 @@ namespace CityHighways.Presentation
         /// Построенные игроками дороги появляются в 3D (DOTween): плита под дорогой интерфейса с настоящей тенью,
         /// а если дорога идёт над водой — мост. При первом вызове (загрузка партии) — сразу, без анимации.
         /// </summary>
-        public void SyncRoads(Game game)
+        public void SyncRoads(Game game, Func<int, Resource?, FleetLivery> fleetForOwner = null)
         {
             if (_roads == null || game == null) return;
             bool animated = _roadsSynced;
@@ -1923,7 +1923,8 @@ namespace CityHighways.Presentation
             foreach (var road in game.Map.Roads)
             {
                 if (road.IsBridge) continue;
-                bool owned = game.GetRoadOwner(road.Id).HasValue;
+                int? owner = game.GetRoadOwner(road.Id);
+                bool owned = owner.HasValue;
                 bool has = _builtRoads.TryGetValue(road.Id, out var built);
                 if (owned && !has)
                 {
@@ -1937,7 +1938,13 @@ namespace CityHighways.Presentation
                     {
                         // Стройка: дорога проявляется по фронту, вокруг — рабочие, экскаватор и каток.
                         string id = road.Id;
-                        built = _construction.PlayConstruction(start, end, ConstructionSeconds(start, end), done => _constructing.Remove(id));
+                        FleetLivery livery = null;
+                        if (ShowTraffic && !Ui.ReducedMotion && fleetForOwner != null)
+                        {
+                            try { livery = fleetForOwner(owner.Value, road.Resource); }
+                            catch (Exception ex) { Debug.LogWarning("Construction livery unavailable: " + ex.Message); }
+                        }
+                        built = _construction.PlayConstruction(start, end, ConstructionSeconds(start, end), done => _constructing.Remove(id), livery);
                         if (built != null) _constructing.Add(id);
                     }
                     else built = _roads.BuildRoad(start, end, false);
@@ -1945,6 +1952,7 @@ namespace CityHighways.Presentation
                 }
                 else if (!owned && has)
                 {
+                    _construction?.Cancel(built);
                     _roads.Remove(built);
                     _builtRoads.Remove(road.Id);
                     _constructing.Remove(road.Id);
