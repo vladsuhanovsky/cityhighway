@@ -3,25 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Tab = CityHighways.Presentation.ProfileSection;
 
 namespace CityHighways.Presentation
 {
     /// <summary>
-    /// Страница «Профиль» из вкладок: Персонаж (гардероб с поворотной площадкой, примеркой и перетаскиванием вещей),
-    /// Достижения (прогресс, фильтры, сортировка, группы), Кошелёк (история, график по дням, источники, прогноз уровня),
-    /// Стиль (эмблемы, титулы, рамки с живым превью) и Стата (итоги партий и управление профилями).
+    /// Profile overview, wardrobe, collection, achievements and mastery; wallet and style remain accessible from overview.
     /// Профиль привязан к имени игрока: игрок с таким именем в «Новой игре» получает его оформление и пополняет кошелёк.
     /// </summary>
     public sealed partial class MenuProfilePage
     {
         static bool IsEnglish => LocalizationService.Language == "en";
-        enum Tab { Character, Achievements, Wallet, Style, Containers, Mastery, Stats }
         enum AchievementFilter { All, Active, Done }
         enum StyleFilter { All, Owned, Affordable }
 
         readonly GameSetup _setup;
         readonly Action _back;
         readonly Action _setupChanged;
+        readonly Action _showStats;
+        readonly Button _walletButton;
+        PlayerProfile _shownProfile;
         readonly Label _title;
         readonly Dictionary<Tab, (VisualElement button, MenuIcon icon, Label label)> _tabButtons = new Dictionary<Tab, (VisualElement, MenuIcon, Label)>();
         readonly ScrollView _scroll;
@@ -29,7 +30,7 @@ namespace CityHighways.Presentation
         readonly VisualElement _content;
         readonly Label _statusLabel;
         readonly UnityEngine.UIElements.Button _idChip;
-        Tab _tab = Tab.Character;
+        Tab _tab = Tab.Overview;
         string _status = "";
 
         // Персонаж
@@ -64,11 +65,12 @@ namespace CityHighways.Presentation
 
         public VisualElement Root { get; }
 
-        public MenuProfilePage(GameSetup setup, Action back, Action setupChanged)
+        public MenuProfilePage(GameSetup setup, Action back, Action setupChanged, Action showStats = null)
         {
             _setup = setup;
             _back = back;
             _setupChanged = setupChanged;
+            _showStats = showStats;
             // Своя подложка страницы в палитре профиля (GameColors) поверх приглушённого города.
             Root = Ui.Column();
             Root.style.backgroundColor = new Color(GameColors.Background.r, GameColors.Background.g, GameColors.Background.b, 0.94f);
@@ -77,6 +79,7 @@ namespace CityHighways.Presentation
 
             var header = Ui.Row();
             header.style.alignItems = Align.Center;
+            header.style.flexWrap = Wrap.Wrap;
             header.style.marginBottom = 12f;
             var backButton = Btn(LocalizationService.Get("menu.profile.001"), () => _back(), ButtonKind.Ghost, 15f);
             backButton.style.marginRight = 16f;
@@ -100,20 +103,22 @@ namespace CityHighways.Presentation
             var grow = Ui.Box();
             grow.style.flexGrow = 1f;
             header.Add(grow);
-            _statusLabel = Ui.Text("", 14f, GameColors.Accent);
-            header.Add(_statusLabel);
+            _walletButton = Btn("", () => Navigate(Tab.Wallet), ButtonKind.Secondary, 14f);
+            _walletButton.name = "profile-wallet";
+            header.Add(_walletButton);
             Root.Add(header);
+            _statusLabel = Ui.Text("", 14f, GameColors.Accent);
+            _statusLabel.style.whiteSpace = WhiteSpace.Normal;
+            Root.Add(_statusLabel);
 
             // Вкладки вместо длинной прокрутки.
             var tabs = Ui.Row();
             tabs.style.marginBottom = 12f;
-            AddTab(tabs, Tab.Character, MenuIcon.Glyph.Person, LocalizationService.Get("menu.profile.005"));
+            AddTab(tabs, Tab.Overview, MenuIcon.Glyph.Person, LocalizationService.Get("profile.v2.overview"));
+            AddTab(tabs, Tab.Wardrobe, MenuIcon.Glyph.Palette, LocalizationService.Get("profile.v2.wardrobe"));
+            AddTab(tabs, Tab.Collection, MenuIcon.Glyph.Box, LocalizationService.Get("profile.v2.collection"));
             AddTab(tabs, Tab.Achievements, MenuIcon.Glyph.Trophy, LocalizationService.Get("menu.profile.006"));
-            AddTab(tabs, Tab.Wallet, MenuIcon.Glyph.Coins, LocalizationService.Get("menu.profile.007"));
-            AddTab(tabs, Tab.Style, MenuIcon.Glyph.Palette, LocalizationService.Get("menu.profile.008"));
-            AddTab(tabs, Tab.Containers, MenuIcon.Glyph.Box, LocalizationService.Get("menu.profile.009"));
             AddTab(tabs, Tab.Mastery, MenuIcon.Glyph.Cap, LocalizationService.Get("menu.profile.010"));
-            AddTab(tabs, Tab.Stats, MenuIcon.Glyph.Chart, LocalizationService.Get("menu.profile.011"));
             Root.Add(tabs);
 
             _scroll = new ScrollView(ScrollViewMode.Vertical);
@@ -131,39 +136,39 @@ namespace CityHighways.Presentation
             Rebuild();
         }
 
+        void Navigate(Tab section)
+        {
+            _tab = section;
+            _status = "";
+            _scroll.scrollOffset = Vector2.zero;
+            Rebuild();
+        }
+
         void AddTab(VisualElement row, Tab tab, MenuIcon.Glyph glyph, string caption)
         {
-            var button = Ui.Row();
-            button.pickingMode = PickingMode.Position;
-            button.style.marginRight = 8f;
-            button.style.height = 44f;
-            Ui.Padding(button, 0f, 16f);
-            Ui.Radius(button, 10f);
-            Ui.Transitions(button, "background-color", "translate");
-            var icon = new MenuIcon(glyph, 20f, Theme.Text);
-            icon.style.marginRight = 8f;
+            var button = Btn("", () => Navigate(tab), ButtonKind.Secondary, 14f);
+            button.name = "profile-tab-" + tab.ToString().ToLowerInvariant();
+            button.style.flexDirection = FlexDirection.Row;
+            button.style.alignItems = Align.Center;
+            button.style.justifyContent = Justify.Center;
+            button.style.flexGrow = 1f;
+            button.style.flexBasis = 0f;
+            button.style.minWidth = 0f;
+            button.style.marginRight = tab == Tab.Mastery ? 0f : 6f;
+            button.style.minHeight = 44f;
+            Ui.Padding(button, 4f, 6f);
+            var icon = new MenuIcon(glyph, 18f, Theme.Text);
+            icon.pickingMode = PickingMode.Ignore;
+            icon.style.flexShrink = 0f;
+            icon.style.marginRight = 5f;
             button.Add(icon);
-            var label = Ui.Text(caption, 16f, Theme.Text, true);
+            var label = Ui.Text(caption, 14f, Theme.Text, true);
+            label.pickingMode = PickingMode.Ignore;
+            label.style.whiteSpace = WhiteSpace.Normal;
+            label.style.unityTextAlign = TextAnchor.MiddleCenter;
             button.Add(label);
-            button.RegisterCallback<PointerEnterEvent>(_ =>
-            {
-                if (_tab != tab) button.style.backgroundColor = GameColors.ButtonHover;
-                button.style.translate = new Translate(new Length(0f), new Length(-1.5f));
-                MenuButton.Hovered?.Invoke();
-            });
-            button.RegisterCallback<PointerLeaveEvent>(_ =>
-            {
-                StyleTabs();
-                button.style.translate = new Translate(new Length(0f), new Length(0f));
-            });
-            button.RegisterCallback<ClickEvent>(_ =>
-            {
-                Ui.ButtonClicked?.Invoke();
-                _tab = tab;
-                _status = "";
-                _scroll.scrollOffset = Vector2.zero;
-                Rebuild();
-            });
+            button.RegisterCallback<PointerLeaveEvent>(_ => StyleTabs());
+            button.RegisterCallback<FocusOutEvent>(_ => StyleTabs());
             _tabButtons[tab] = (button, icon, label);
             row.Add(button);
         }
@@ -172,7 +177,7 @@ namespace CityHighways.Presentation
         {
             foreach (var pair in _tabButtons)
             {
-                bool active = pair.Key == _tab;
+                bool active = pair.Key == ProfileNavigation.Primary(_tab);
                 var ink = active ? GameColors.AccentText : Theme.Text;
                 pair.Value.button.style.backgroundColor = active ? GameColors.Accent : GameColors.Button;
                 pair.Value.icon.SetColor(ink);
@@ -183,25 +188,39 @@ namespace CityHighways.Presentation
         public void Rebuild()
         {
             // Ушли с вкладки посреди открытия — вещь уже выдана, рулетку просто досматривать не нужно.
-            if (_tab != Tab.Containers) FinishSpin(false);
+            if (_tab != Tab.Collection) FinishSpin(false);
             var profile = Profiles.Active;
+            if (_shownProfile != profile)
+            {
+                _shownProfile = profile;
+                _tryOn = null;
+                _preview = null;
+                _animateSlot = null;
+                _spinActive = false;
+                _spinItems = null;
+                _lastResult = null;
+                _spinCrate = null;
+            }
+            _walletButton.text = string.Format(LocalizationService.Get("profile.containers.wallet"), profile.wallet);
             _title.text = LocalizationService.Get("menu.profile.012") + profile.name;
             _idChip.text = profile.IsSteam ? $"ID Steam: {profile.steamId}" : "";
             Ui.Show(_idChip, profile.IsSteam);
             _statusLabel.text = _status;
+            Ui.Show(_statusLabel, !string.IsNullOrEmpty(_status));
             StyleTabs();
             _content.Clear();
             _frames.Clear();
             _pulsing.Clear();
             switch (_tab)
             {
-                case Tab.Character: CharacterTab(profile); break;
+                case Tab.Overview: OverviewTab(profile); break;
+                case Tab.Wardrobe: CharacterTab(profile); break;
                 case Tab.Achievements: AchievementsTab(profile); break;
-                case Tab.Wallet: WalletTab(profile); break;
-                case Tab.Style: StyleTab(profile); break;
-                case Tab.Containers: ContainersTab(profile); break;
+                case Tab.Wallet: AddOverviewReturn(); WalletTab(profile); break;
+                case Tab.Style: AddOverviewReturn(); StyleTab(profile); break;
+                case Tab.Collection: ContainersTab(profile); break;
                 case Tab.Mastery: MasteryTab(profile); break;
-                default: StatsTab(profile); break;
+                default: OverviewTab(profile); break;
             }
             // В прокрутке блоки не должны сжиматься: иначе заголовки наезжают на содержимое.
             NoShrink(_content);
@@ -211,18 +230,18 @@ namespace CityHighways.Presentation
         public void Tick(float dt)
         {
             _time += dt;
-            if (_tab == Tab.Character)
+            if (_tab == Tab.Overview || _tab == Tab.Wardrobe)
             {
                 _turntable.Tick(dt);
                 // F3 — отладка слоёв: сокеты (точки привязки) и рамки надетых вещей поверх персонажа.
                 var keyboard = UnityEngine.InputSystem.Keyboard.current;
-                if (keyboard != null && keyboard.f3Key.wasPressedThisFrame)
+                if (_tab == Tab.Wardrobe && keyboard != null && keyboard.f3Key.wasPressedThisFrame)
                 {
                     CharacterLayers.ShowDebug = !CharacterLayers.ShowDebug;
                     _turntable.RefreshDebug();
                 }
             }
-            if (_tab == Tab.Containers) TickContainers(dt);
+            if (_tab == Tab.Collection) TickContainers(dt);
             foreach (var frame in _frames) frame.Tick(dt);
             float pulse = 1f + 0.03f * Mathf.Sin(_time * 5f);
             foreach (var element in _pulsing) element.style.scale = new Scale(new Vector3(pulse, pulse, 1f));
@@ -319,9 +338,6 @@ namespace CityHighways.Presentation
                 hidden.style.whiteSpace = WhiteSpace.Normal;
                 left.Add(hidden);
             }
-            var wallet = Ui.Text($"Кошелёк: {profile.wallet} влияния", 14f, GameColors.Accent, true);
-            wallet.style.marginTop = 10f;
-            left.Add(wallet);
             row.Add(left);
 
             var right = Card(14f);
@@ -1198,13 +1214,13 @@ namespace CityHighways.Presentation
             else if (item.Mastery)
             {
                 // Награда древа мастерства: ни купить, ни выиграть в контейнере.
-                button = Btn(LocalizationService.Get("menu.profile.072"), () => { _tab = Tab.Mastery; Rebuild(); }, ButtonKind.Secondary, 13f);
+                button = Btn(LocalizationService.Get("menu.profile.072"), () => Navigate(Tab.Mastery), ButtonKind.Secondary, 13f);
                 button.tooltip = LocalizationService.Get("menu.profile.073");
             }
             else if (item.Exclusive)
             {
                 // В продаже не бывает: только из контейнеров.
-                button = Btn(LocalizationService.Get("menu.profile.074"), () => { _tab = Tab.Containers; Rebuild(); }, ButtonKind.Secondary, 13f);
+                button = Btn(LocalizationService.Get("menu.profile.074"), () => Navigate(Tab.Collection), ButtonKind.Secondary, 13f);
                 button.tooltip = LocalizationService.Get("menu.profile.075");
             }
             else
@@ -1235,70 +1251,87 @@ namespace CityHighways.Presentation
 
         // ================================================================== Стата и профили
 
-        void StatsTab(PlayerProfile profile)
+        void AddOverviewReturn()
         {
-            int xp = ProfileLevel.Xp(profile);
-            int level = ProfileLevel.Of(xp, out _, out _);
-            var games = StatsLog.LoadAll()
-                .Where(g => g.results != null)
-                .Select(g => (game: g, me: g.results.FirstOrDefault(r => r.kind == "human" && string.Equals(r.name, profile.name, StringComparison.OrdinalIgnoreCase))))
-                .Where(x => x.me != null).ToList();
-            int best = games.Count > 0 ? games.Max(x => x.me.total) : 0;
-            float average = games.Count > 0 ? (float)games.Average(x => x.me.total) : 0f;
-            int contracts = games.Sum(x => x.me.completedContracts);
-            int tolls = games.Sum(x => x.me.tollsEarned);
-            int achievements = Achievements.All.Count(a => Achievements.Unlocked(profile, a));
+            var button = Btn(LocalizationService.Get("profile.v2.return_overview"), () => Navigate(Tab.Overview), ButtonKind.Ghost, 14f);
+            button.style.alignSelf = Align.FlexStart;
+            button.style.marginBottom = 8f;
+            _content.Add(button);
+        }
+
+        void OverviewTab(PlayerProfile profile)
+        {
+            var row = Ui.Row();
+            row.style.alignItems = Align.Stretch;
+            row.style.marginBottom = 12f;
+            var left = Card(14f);
+            left.style.width = InterfaceLayout.ProfileSidebarWidth;
+            left.style.flexShrink = 0f;
+            left.style.marginRight = 12f;
+            left.style.alignItems = Align.Center;
+            _turntable.RemoveFromHierarchy();
+            _turntable.Set(profile.Outfit, null);
+            left.Add(_turntable);
+            left.Add(Btn(LocalizationService.Get("profile.v2.edit_outfit"), () => Navigate(Tab.Wardrobe), ButtonKind.Primary, 14f));
+            row.Add(left);
+
+            var right = Ui.Column();
+            right.style.flexGrow = 1f;
+            right.style.flexBasis = 0f;
+            right.style.minWidth = 0f;
+            var identity = Card(16f);
+            int level = ProfileLevel.Of(ProfileLevel.Xp(profile), out int into, out int need);
+            identity.Add(Ui.Text(string.Format(LocalizationService.Get("profile.v2.level"), level), 16f, ProfileLevel.TierColor(level), true));
+            identity.Add(Ui.Text(profile.name, 28f, Theme.Text, true));
+            string rank = ProfileLevel.Rank(level);
+            identity.Add(Ui.Text(IsEnglish && rank == "Инженер" ? "Engineer" : LocalizationService.TranslateLegacy(rank), 16f, GameColors.Accent, true));
+            var progress = new ProgressBar(260f, 8f, GameColors.Accent);
+            progress.Set(into / (float)Mathf.Max(1, need));
+            identity.Add(progress);
+            identity.Add(Caption(string.Format(LocalizationService.Get("profile.v2.xp"), into, need), 13f, Theme.TextDim, 0f, 5f));
+            right.Add(identity);
 
             var tiles = Ui.Row();
             tiles.style.flexWrap = Wrap.Wrap;
-            tiles.style.marginBottom = 8f;
-            void Tile(string caption, string value, Color color, string note = null)
+            tiles.style.marginTop = 10f;
+            void Tile(string key, string value, Color color)
             {
-                var tile = Card(14f);
-                tile.style.width = 205f;
-                tile.style.marginRight = 10f;
-                tile.style.marginBottom = 10f;
-                tile.Add(Ui.Text(caption, 12f, Theme.TextDim, true));
-                tile.Add(Ui.Number(value, 28f, color, true));
-                if (note != null) tile.Add(Caption(note, 11f, Theme.TextDim, 0f, 2f));
+                var tile = Card(12f);
+                tile.style.flexGrow = 1f;
+                tile.style.flexBasis = 112f;
+                tile.style.marginRight = 6f;
+                tile.style.marginBottom = 6f;
+                tile.Add(Ui.Text(LocalizationService.Get(key), 12f, Theme.TextDim, true));
+                tile.Add(Ui.Number(value, 26f, color, true));
                 tiles.Add(tile);
             }
-            Tile(LocalizationService.Get("menu.profile.076"), $"{level}", ProfileLevel.TierColor(level), (IsEnglish && ProfileLevel.Rank(level) == "Инженер" ? "Engineer" : ProfileLevel.Rank(level)));
-            Tile(LocalizationService.Get("menu.profile.077"), $"{profile.games}", Theme.Text);
-            Tile(LocalizationService.Get("menu.profile.078"), $"{profile.wins}", GameColors.Success, profile.games > 0 ? (IsEnglish ? $"{100f * profile.wins / profile.games:0}% of games" : $"{100f * profile.wins / profile.games:0}% партий") : null);
-            Tile(LocalizationService.Get("menu.profile.079"), games.Count > 0 ? $"{best}" : "—", GameColors.Accent, games.Count > 0 ? (IsEnglish ? $"average {average:0}" : $"в среднем {average:0}") : LocalizationService.Get("menu.profile.080"));
-            Tile(LocalizationService.Get("menu.profile.081"), games.Count > 0 ? $"{contracts}" : "—", Theme.Text);
-            Tile(LocalizationService.Get("menu.profile.082"), games.Count > 0 ? $"{tolls}" : "—", Theme.Text);
-            Tile(LocalizationService.Get("menu.profile.083"), $"{achievements}/{Achievements.All.Count}", GameColors.Accent);
-            Tile(IsEnglish ? "Daily challenges" : "Заданий дня", $"{profile.dailyTotal}", Theme.Text);
-            Tile(LocalizationService.Get("menu.profile.084"), $"{profile.earnedTotal}", GameColors.Accent);
-            _content.Add(tiles);
+            Tile("menu.profile.077", profile.games.ToString(), Theme.Text);
+            Tile("menu.profile.078", profile.wins.ToString(), GameColors.Success);
+            var unlocked = Achievements.All.Where(a => Achievements.Unlocked(profile, a)).ToList();
+            Tile("menu.profile.083", unlocked.Count + "/" + Achievements.All.Count, GameColors.Accent);
+            right.Add(tiles);
 
-            if (games.Count > 0)
-            {
-                var recent = Card(14f);
-                recent.style.marginBottom = 12f;
-                recent.Add(Ui.Text(LocalizationService.Get("menu.profile.085"), 16f, Theme.Text, true));
-                foreach (var (game, me) in games.AsEnumerable().Reverse().Take(8))
-                {
-                    int place = game.results.Count(r => r.total > me.total) + 1;
-                    var line = Ui.Row();
-                    line.style.marginTop = 6f;
-                    line.style.backgroundColor = GameColors.Background;
-                    Ui.Radius(line, 8f);
-                    Ui.Padding(line, 6f, 10f);
-                    var date = Ui.Number(game.date ?? "", 12f, Theme.TextDim);
-                    date.style.width = 150f;
-                    line.Add(date);
-                    var where = Ui.Text((IsEnglish ? $"Place {place} of {game.results.Length}" : $"{place}-е место из {game.results.Length}") + (me.winner ? LocalizationService.Get("menu.profile.086") : ""), 13f, me.winner ? GameColors.Success : Theme.Text, me.winner);
-                    where.style.flexGrow = 1f;
-                    line.Add(where);
-                    line.Add(Ui.Number((IsEnglish ? $"{me.total} pts" : $"{me.total} очк"), 14f, GameColors.Accent, true));
-                    recent.Add(line);
-                }
-                _content.Add(recent);
-            }
+            var showcase = Card(14f);
+            showcase.Add(Ui.Text(LocalizationService.Get("profile.v2.unlocked"), 16f, Theme.Text, true));
+            if (unlocked.Count == 0)
+                showcase.Add(Caption(LocalizationService.Get("profile.v2.no_achievements"), 13f, Theme.TextDim, 0f, 4f));
+            else
+                foreach (var achievement in unlocked.Take(4))
+                    showcase.Add(Caption(achievement.Title, 14f, GameColors.Accent, 0f, 4f));
+            showcase.Add(Btn(LocalizationService.Get("menu.profile.006"), () => Navigate(Tab.Achievements), ButtonKind.Secondary, 14f));
+            right.Add(showcase);
+            row.Add(right);
+            _content.Add(row);
 
+            var actions = Ui.Row();
+            actions.style.flexWrap = Wrap.Wrap;
+            actions.style.marginBottom = 10f;
+            var style = Btn(LocalizationService.Get("menu.profile.008"), () => Navigate(Tab.Style), ButtonKind.Secondary, 14f);
+            style.style.marginRight = 8f;
+            actions.Add(style);
+            if (_showStats != null)
+                actions.Add(Btn(LocalizationService.Get("profile.v2.full_stats"), _showStats, ButtonKind.Secondary, 14f));
+            _content.Add(actions);
             ProfilesCard(profile);
         }
 
