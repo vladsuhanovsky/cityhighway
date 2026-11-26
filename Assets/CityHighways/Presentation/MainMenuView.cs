@@ -55,6 +55,7 @@ namespace CityHighways.Presentation
         readonly RulesView _rules;
         /// <summary>Куда ведёт «Назад» со страницы правил: на главную или в «Обучение» (если открыли оттуда).</summary>
         Page _rulesReturn = Page.Home;
+        Page _statsReturn = Page.Home;
 
         public VisualElement Root { get; }
 
@@ -118,13 +119,13 @@ namespace CityHighways.Presentation
                 out _trainsValue, out _hideCardsButton, out _timerButton, out _hint);
             _online = new MenuOnlinePage(app, setup, () => ShowPage(Page.Home));
             _pages[Page.Online] = _online.Root;
-            _profile = new MenuProfilePage(setup, () => ShowPage(Page.Home), Refresh);
+            _profile = new MenuProfilePage(setup, () => ShowPage(Page.Home), Refresh, () => OpenStats(Page.Profile));
             _pages[Page.Profile] = _profile.Root;
             _rules = MenuRulesPage.Create(new GameConfig(), () => ShowPage(_rulesReturn));
             _pages[Page.Rules] = _rules.Root;
             _pages[Page.Tutorial] = BuildTutorial();
             _pages[Page.Campaign] = BuildCampaign();
-            _pages[Page.Stats] = MenuStatsPage.Build(() => ShowPage(Page.Home), () => ShowPage(Page.Stats), RebuildStats);
+            _pages[Page.Stats] = MenuStatsPage.Build(CloseStats, () => ShowPage(Page.Stats), RebuildStats);
             _settings = new MenuSettingsPage(app, _setup, _display, () => ShowPage(Page.Home), ApplyBackgroundSettings);
             _pages[Page.Settings] = _settings.Root;
             _club = new MenuClubPage(app, () => ShowPage(Page.Home));
@@ -236,7 +237,7 @@ namespace CityHighways.Presentation
             // Personal statistics belong next to the active avatar, not to
             // the global primary navigation. No hard-coded Steam nickname.
             var stats = Ui.Button(LocalizationService.Get("menu.home.stats"),
-                () => ShowPage(Page.Stats), ButtonKind.Secondary, 13f);
+                () => OpenStats(Page.Home), ButtonKind.Secondary, 13f);
             stats.style.width = 150f;
             stats.style.minHeight = 32f;
             stats.style.marginTop = 7f;
@@ -249,12 +250,24 @@ namespace CityHighways.Presentation
         void RefreshProfileCorner() => _profileCard?.Set(Profiles.Active);
 
         /// <summary>Счётчик партий пересобирается после сброса статистики.</summary>
+        void OpenStats(Page returnTo)
+        {
+            _statsReturn = returnTo;
+            RebuildStats();
+        }
+
+        void CloseStats()
+        {
+            if (_statsReturn == Page.Profile) _profile.Rebuild();
+            ShowPage(_statsReturn);
+        }
+
         void RebuildStats()
         {
             var old = _pages[Page.Stats];
             int index = _pageHost.IndexOf(old);
             old.RemoveFromHierarchy();
-            var fresh = MenuStatsPage.Build(() => ShowPage(Page.Home), () => ShowPage(Page.Stats), RebuildStats);
+            var fresh = MenuStatsPage.Build(CloseStats, () => ShowPage(Page.Stats), RebuildStats);
             _pages[Page.Stats] = fresh;
             _pageHost.Insert(index, fresh);
             ShowPage(Page.Stats);

@@ -6307,6 +6307,46 @@
     {
       "key": "game.redo.disabled_hint",
       "value": "No undone action or redo is unavailable for this game."
+    },
+    {
+      "key": "profile.v2.overview",
+      "value": "Overview"
+    },
+    {
+      "key": "profile.v2.wardrobe",
+      "value": "Wardrobe"
+    },
+    {
+      "key": "profile.v2.collection",
+      "value": "Collection"
+    },
+    {
+      "key": "profile.v2.return_overview",
+      "value": "Return to overview"
+    },
+    {
+      "key": "profile.v2.edit_outfit",
+      "value": "Edit outfit"
+    },
+    {
+      "key": "profile.v2.level",
+      "value": "Level {0}"
+    },
+    {
+      "key": "profile.v2.xp",
+      "value": "{0} / {1} XP toward next level"
+    },
+    {
+      "key": "profile.v2.unlocked",
+      "value": "Unlocked achievements"
+    },
+    {
+      "key": "profile.v2.no_achievements",
+      "value": "No achievements unlocked yet"
+    },
+    {
+      "key": "profile.v2.full_stats",
+      "value": "Detailed statistics"
     }
   ]
 }

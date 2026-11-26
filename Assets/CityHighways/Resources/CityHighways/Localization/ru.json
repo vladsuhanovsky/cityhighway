@@ -6307,6 +6307,46 @@
     {
       "key": "game.redo.disabled_hint",
       "value": "Нет отменённого действия или повтор недоступен для этой партии."
+    },
+    {
+      "key": "profile.v2.overview",
+      "value": "Обзор"
+    },
+    {
+      "key": "profile.v2.wardrobe",
+      "value": "Гардероб"
+    },
+    {
+      "key": "profile.v2.collection",
+      "value": "Коллекция"
+    },
+    {
+      "key": "profile.v2.return_overview",
+      "value": "К обзору профиля"
+    },
+    {
+      "key": "profile.v2.edit_outfit",
+      "value": "Изменить образ"
+    },
+    {
+      "key": "profile.v2.level",
+      "value": "Уровень {0}"
+    },
+    {
+      "key": "profile.v2.xp",
+      "value": "{0} / {1} опыта до следующего уровня"
+    },
+    {
+      "key": "profile.v2.unlocked",
+      "value": "Открытые достижения"
+    },
+    {
+      "key": "profile.v2.no_achievements",
+      "value": "Пока нет открытых достижений"
+    },
+    {
+      "key": "profile.v2.full_stats",
+      "value": "Подробная статистика"
     }
   ]
 }

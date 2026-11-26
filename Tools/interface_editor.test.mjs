@@ -157,3 +157,17 @@ test("screens do not need custom inspector scripts to take theme edits", () => {
   for (const key of ["main", "online", "rules", "settings", "stats", "profile", "hud"])
     assert.ok(s[key].includes("InterfaceLayout."), key);
 });
+
+
+test("profile has five primary routes and retains wallet, style, account management and canonical statistics", () => {
+  const tabs = [...s.profile.matchAll(/AddTab\(tabs, Tab\.(\w+),/g)].map(m => m[1]);
+  assert.deepEqual(tabs, ["Overview", "Wardrobe", "Collection", "Achievements", "Mastery"]);
+  assert.match(s.profile, /_walletButton = Btn\("", \(\) => Navigate\(Tab\.Wallet\)/);
+  assert.match(s.profile, /case Tab\.Wallet: AddOverviewReturn\(\); WalletTab\(profile\)/);
+  assert.match(s.profile, /case Tab\.Style: AddOverviewReturn\(\); StyleTab\(profile\)/);
+  assert.match(s.profile, /case Tab\.Collection: ContainersTab\(profile\)/);
+  assert.match(s.profile, /ProfilesCard\(profile\);/);
+  assert.match(s.profile, /"profile\.v2\.full_stats"\), _showStats/);
+  assert.doesNotMatch(s.profile, /void StatsTab\(|StatsLog\.LoadAll\(/);
+  assert.match(s.profile, /_lastResult = null;/);
+});

@@ -29,6 +29,7 @@ namespace CityHighways.Presentation
                 Profiles.Save();
                 _status = string.Format(LocalizationService.Get("mastery.unlocked"), string.Join(", ", fresh));
                 _statusLabel.text = _status;
+                Ui.Show(_statusLabel, true);
                 _setupChanged?.Invoke();
             }
             if (_masteryKind == CharacterKind.None)
