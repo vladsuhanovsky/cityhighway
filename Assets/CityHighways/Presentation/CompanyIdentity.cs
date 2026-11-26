@@ -109,8 +109,10 @@ namespace CityHighways.Presentation
             var record = book.companies.FirstOrDefault(r => r != null && r.owner == oldKey);
             Remove(book, oldKey);
             if (record == null || book.companies.Any(r => r != null && r.owner == newKey)) return;
-            record.owner = newKey;
-            book.companies.Add(record);
+            // Preserve old snapshots used by local cosmetic transactions.
+            book.companies.Add(new CompanyIdentityRecord { owner = newKey, name = record.name,
+                emblem = record.emblem, primary = record.primary, secondary = record.secondary,
+                fleet = record.fleet, exhibits = record.exhibits });
         }
 
         public static void Remove(ProfileBook book, string key)

@@ -64,9 +64,8 @@ namespace CityHighways.Presentation
                 {
                     if (Profiles.Active != profile) return;
                     var book = Profiles.Book;
-                    var previous = book.companies == null ? null : new List<CompanyIdentityRecord>(book.companies);
-                    bool ok = ProfileExhibition.Store(book, profile, index, Selected()) && Profiles.TrySaveLocal();
-                    if (!ok) book.companies = previous;
+                    bool ok = ProfileCosmeticSave.TryCommit(book, profile,
+                        () => ProfileExhibition.Store(book, profile, index, Selected()), Profiles.TrySaveLocal);
                     _status = LocalizationService.Get(ok ? "profile.exhibit.saved" : "profile.company.failed");
                     Rebuild();
                 }, ButtonKind.Secondary, 13f));

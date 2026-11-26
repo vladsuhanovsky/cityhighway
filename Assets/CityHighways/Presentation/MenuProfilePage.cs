@@ -1410,10 +1410,11 @@ namespace CityHighways.Presentation
             {
                 if (Profiles.Active != profile) return;
                 var book = Profiles.Book;
-                var previous = book.companies == null ? null : new List<CompanyIdentityRecord>(book.companies);
-                CompanyIdentity.Store(book, profile, Draft());
-                bool saved = Profiles.TrySaveLocal();
-                if (!saved) book.companies = previous;
+                bool saved = ProfileCosmeticSave.TryCommit(book, profile, () =>
+                {
+                    CompanyIdentity.Store(book, profile, Draft());
+                    return true;
+                }, Profiles.TrySaveLocal);
                 _status = LocalizationService.Get(saved ? "profile.company.saved" : "profile.company.failed");
                 Rebuild();
             }, ButtonKind.Secondary, 14f));
