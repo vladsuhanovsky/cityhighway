@@ -17,6 +17,8 @@ public sealed class CityGeneratorLabWindow : EditorWindow
     int batchPage;
     bool onlyProblems;
     bool archiveOpen;
+    bool attemptsOpen;
+    int attemptPage;
     string[] archivePaths = Array.Empty<string>();
     int archiveIndex;
     CitySeedBatchReport baseline;
@@ -57,7 +59,16 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                 current = CitySeedDiagnostics.Run(seed, include3D);
                 failures.Clear();
                 summary = current.Passed ? "Valid topology" : "Validation failed";
-                if (!current.Passed || WarningCount(current) > 0) SaveFailure(current);
+                attemptPage = 0;
+                if (ShouldArchive(current)) SaveFailure(current);
+            }
+            if (GUILayout.Button("Generate fixed tutorial city"))
+            {
+                current = CitySeedDiagnostics.RunTutorial(include3D);
+                attemptPage = 0;
+                failures.Clear();
+                summary = current.Passed ? "Valid tutorial topology" : "Tutorial validation failed";
+                if (ShouldArchive(current)) SaveFailure(current);
             }
             using (new EditorGUI.DisabledScope(!validRange))
                 if (GUILayout.Button("Run seed range")) RunBatch();
@@ -66,6 +77,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         DrawArchive();
         DrawBatchSummary();
         if (current == null) return;
+        EditorGUILayout.LabelField("Generation profile", current.generationProfile ?? "standard");
         EditorGUILayout.LabelField("Actual seed", current.generated ? current.actualSeed.ToString() : "Unavailable");
         EditorGUILayout.LabelField("Duration", current.milliseconds + " ms");
         EditorGUILayout.LabelField("Locations / roads / hubs",
@@ -79,6 +91,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                     " | Crosswalks drawn: " + current.layout3D.crosswalksDrawn + "/" + current.layout3D.crosswalkCandidates +
                     " | Legacy overlap pairs: " + current.layout3D.legacyOverlapPairs, MessageType.Info);
         }
+        DrawAttemptTrace();
         if (GUILayout.Button("Export selected diagnostic JSON"))
         {
             string dir = EditorUtility.OpenFolderPanel("Export seed diagnostics", "", "");
@@ -103,6 +116,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         batchPage = 0;
         batchExportPath = null;
         current = null;
+        attemptPage = 0;
         try
         {
             for (int i = 0; i < seeds.Length; i++)
@@ -111,7 +125,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                 if (EditorUtility.DisplayCancelableProgressBar("City Generator Lab",
                     "Seed " + requested, i / (float)count)) break;
                 current = CitySeedDiagnostics.Run(requested, include3D);
-                string path = !current.Passed || WarningCount(current) > 0 ? SaveFailure(current) : null;
+                string path = ShouldArchive(current) ? SaveFailure(current) : null;
                 lastBatch.Add(current, path);
             }
         }
@@ -244,11 +258,45 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                     current = CitySeedDiagnostics.Run(seed, include3D);
                     summary = "Reproduced requested seed " + seed + "; actual " +
                         (current.generated ? current.actualSeed.ToString() : "n/a");
-                    if (!current.Passed || WarningCount(current) > 0) SaveFailure(current);
+                    attemptPage = 0;
+                    if (ShouldArchive(current)) SaveFailure(current);
                 }
             EditorGUILayout.EndHorizontal();
         }
     }
+
+    void DrawAttemptTrace()
+    {
+        var attempts = current.attempts ?? Array.Empty<CityGenerationAttempt>();
+        attemptsOpen = EditorGUILayout.Foldout(attemptsOpen, "Generation attempts (" + attempts.Length + ")", true);
+        if (!attemptsOpen) return;
+        foreach (var group in attempts.GroupBy(a => a.outcome).OrderBy(g => g.Key, StringComparer.Ordinal))
+            EditorGUILayout.LabelField(group.Key, group.Count().ToString());
+        const int pageSize = 8;
+        int pages = Math.Max(1, (attempts.Length + pageSize - 1) / pageSize);
+        attemptPage = Mathf.Clamp(attemptPage, 0, pages - 1);
+        EditorGUILayout.BeginHorizontal();
+        using (new EditorGUI.DisabledScope(attemptPage == 0))
+            if (GUILayout.Button("Previous attempts")) attemptPage--;
+        GUILayout.Label((attemptPage + 1) + " / " + pages);
+        using (new EditorGUI.DisabledScope(attemptPage + 1 >= pages))
+            if (GUILayout.Button("Next attempts")) attemptPage++;
+        EditorGUILayout.EndHorizontal();
+        foreach (var a in attempts.Skip(attemptPage * pageSize).Take(pageSize))
+        {
+            EditorGUILayout.LabelField("#" + a.index + " · " + a.profile + " · seed " + a.seed + " · " + a.outcome,
+                EditorStyles.wordWrappedLabel);
+            EditorGUILayout.LabelField("Locations / roads / components",
+                FormatCount(a.locations) + " / " + FormatCount(a.roads) + " / " + FormatCount(a.components));
+            foreach (string issue in a.issues ?? Array.Empty<string>())
+                EditorGUILayout.HelpBox(issue, MessageType.Info);
+        }
+    }
+
+    static string FormatCount(int count) => count < 0 ? "n/a" : count.ToString();
+
+    static bool ShouldArchive(CitySeedReport report) => !report.Passed || WarningCount(report) > 0 ||
+        (report.attempts?.Length ?? 0) > 1;
 
     static int WarningCount(CitySeedReport report) => report.layout3D?.warnings?.Length ?? 0;
 
