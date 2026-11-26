@@ -432,7 +432,7 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>
-        /// Вещь в гардеробе: мини-персонаж в ней, название, редкость (цвет рамки и плашка), цена и кнопка.
+        /// Вещь в гардеробе: изображение самого предмета, название, редкость, цена и кнопка.
         /// Клик — примерить, перетащить на персонажа — надеть (или примерить, если ещё не куплено).
         /// item == null — «ничего» для необязательного слота.
         /// </summary>
@@ -459,19 +459,20 @@ namespace CityHighways.Presentation
             tile.style.borderTopColor = rarity;
             Ui.Transitions(tile, "translate", "background-color");
 
-            var mini = new CharacterView(60f, slot == "hat" || slot == "hair" || slot == "body");
-            mini.Set(worn.With(slot, id));
-            tile.Add(mini);
+            tile.Add(new WardrobeItemPreview(item, worn.Tone));
             var name = Ui.Text(item?.DisplayName ?? LocalizationService.Get("menu.profile.021") + (slot == "hat" ? LocalizationService.Get("menu.profile.022") : LocalizationService.Get("menu.profile.023")), 12f, Theme.Text, true);
             name.style.unityTextAlign = TextAnchor.MiddleCenter;
             name.style.marginTop = 4f;
+            name.style.height = 34f;
+            name.style.width = Length.Percent(100f);
+            name.style.whiteSpace = WhiteSpace.Normal;
             tile.Add(name);
-            if (item != null)
-            {
-                var tag = Rarity.Tag(item.Level);
-                tag.style.marginTop = 3f;
-                tile.Add(tag);
-            }
+            var rarityRow = Ui.Row();
+            rarityRow.style.height = 24f;
+            rarityRow.style.alignItems = Align.Center;
+            rarityRow.style.justifyContent = Justify.Center;
+            if (item != null) rarityRow.Add(Rarity.Tag(item.Level));
+            tile.Add(rarityRow);
 
             UnityEngine.UIElements.Button button;
             if (wearing)
@@ -497,6 +498,7 @@ namespace CityHighways.Presentation
                 Ui.SetEnabled(button, profile.wallet >= item.price);
             }
             button.style.marginTop = 4f;
+            button.style.width = Length.Percent(100f);
             tile.Add(button);
 
             tile.RegisterCallback<PointerEnterEvent>(_ =>
