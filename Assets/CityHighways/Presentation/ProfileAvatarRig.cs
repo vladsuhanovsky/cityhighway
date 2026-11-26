@@ -21,6 +21,15 @@ namespace CityHighways.Presentation
 
         public string Gender => gender;
 
+#if UNITY_EDITOR
+        // Used by the explicit prototype authoring tool only.
+        internal void ConfigurePrototype(string value, Binding[] variants)
+        {
+            gender = value;
+            bindings = variants;
+        }
+#endif
+
         public bool TryValidate(out string error)
         {
             return TryIndex(out _, out error);
