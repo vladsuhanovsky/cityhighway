@@ -85,3 +85,5 @@ Profile 2.0 progress: #146 merged (3bed5cc), 1,468 Edit Mode tests, Play Mode, I
 Profile 2.0 batch 3a: #148 merged (a2bd19c); unified appearance normalization, canonical library entry points, compatibility adapter and Lab zoom/reset. Four additional Edit Mode cases and expanded assembly checks. CI pending. Actual runtime preview, asset fit and production rig selection remain open.
 
 Profile 2.0 batch 3b: #149 merged (186f3fa); optional runtime ProfileAvatarRig preview integrated with Overview/Wardrobe, fixed resource paths, 2D fallback, bounded rotation/zoom and resource lifecycle. Five new Edit Mode cases. CI pending; no actual authored production prefabs, animation or measured runtime visual/performance acceptance. See Docs/PROFILE_2_0_LIVING_CITY.md.
+
+Profile 2.0 batch 3c: #150 merged (eb7f313); explicit Editor generator for two static modular prototype prefabs, full existing catalog binding coverage and three new Edit Mode cases. Generated assets not committed; local generation and real preview validation pending. Production art and animation remain open.
