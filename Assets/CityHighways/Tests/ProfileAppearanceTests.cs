@@ -202,6 +202,33 @@ namespace CityHighways.Tests
             Assert.AreEqual("", snapshot.EquippedId("unknown"));
         }
 
+        [TestCase("m", ProfileAvatarPreviewStage.MaleResource)]
+        [TestCase("f", ProfileAvatarPreviewStage.FemaleResource)]
+        [TestCase("unknown", null)]
+        [TestCase(null, null)]
+        public void RuntimePreviewUsesOnlyFixedAuthoredResources(string gender, string expected)
+        {
+            Assert.AreEqual(expected, ProfileAvatarPreviewStage.ResourceFor(gender));
+        }
+
+        [Test]
+        public void DetachedPreviewKeepsFallbackAndDoesNotAllocateOrLoad()
+        {
+            var fallback = new UnityEngine.UIElements.VisualElement();
+            int loads = 0;
+            var stage = new ProfileAvatarPreviewStage(fallback, _ => { loads++; return null; });
+            stage.Show(ProfileAppearance.FromOutfit(Outfit.Default));
+            Assert.AreSame(stage, fallback.parent);
+            Assert.IsFalse(stage.IsShowing3D);
+            stage.SetDebugFallback(true);
+            stage.SetDebugFallback(false);
+            stage.Release();
+            stage.Release();
+            Assert.AreEqual(0, loads);
+            Assert.IsFalse(stage.IsShowing3D);
+            Assert.AreEqual(1f, fallback.style.opacity.value);
+        }
+
         [Test]
         public void ItemCropClampsAndFallsBackForInvalidBounds()
         {
