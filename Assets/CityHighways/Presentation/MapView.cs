@@ -43,6 +43,8 @@ namespace CityHighways.Presentation
         public const float MaxZoom = 8f;
         float _zoom = 1f, _zoomTarget = 1f;
         Vector2 _pan, _panTarget;
+        readonly CharacterObservation _characterObservation = new CharacterObservation();
+        public bool IsObservingCharacter => _characterObservation.Active;
         bool _panning;
         Vector2 _panStartPointer, _panStartOffset;
         int _panPointer = -1;
@@ -137,6 +139,7 @@ namespace CityHighways.Presentation
             set
             {
                 if (_use3D == value) return;
+                if (!value) EndCharacterObservation(true);
                 _use3D = value;
                 if (!value) { _yaw = _yawTarget = 0f; _rotating = false; _leftPending = false; }
                 Relayout();
@@ -487,6 +490,7 @@ namespace CityHighways.Presentation
             });
             RegisterCallback<PointerDownEvent>(e =>
             {
+                EndCharacterObservation(false);
                 // Physical pointer interaction always takes ownership back.
                 if (_gamepadCursor.Active) StopGamepadTargeting(false);
                 if (_game == null) return;
@@ -581,6 +585,7 @@ namespace CityHighways.Presentation
 
         void StartGamepadTargeting()
         {
+            EndCharacterObservation(false);
             _gamepadCursor.Activate(GamepadTargetBounds);
             focusable = true;
             Focus();
@@ -697,6 +702,7 @@ namespace CityHighways.Presentation
         /// <summary>Приблизить (factor больше 1) или отдалить так, чтобы точка anchor осталась под курсором.</summary>
         public void ZoomAt(Vector2 anchor, float factor)
         {
+            EndCharacterObservation(false);
             if (_layout == null) return;
             float zoom = Mathf.Clamp(_zoomTarget * factor, 1f, MaxZoom);
             var center = _layout.Area.center;
@@ -747,6 +753,7 @@ namespace CityHighways.Presentation
         /// <summary>Новые углы камеры; immediate — сразу (клавиши Q/E, R/F — они и так меняют угол каждый кадр), иначе плавно догоняют (мышь, кнопки).</summary>
         void SetAngles(float yaw, float pitch, bool immediate)
         {
+            EndCharacterObservation(false);
             _yawTarget = yaw;
             _pitchTarget = Mathf.Clamp(pitch, MinPitch, BoardLayout.MaxPitch);
             if (immediate) ApplyAngles(_yawTarget, _pitchTarget);
@@ -824,9 +831,40 @@ namespace CityHighways.Presentation
                 ZoomBy(Mathf.Exp(motion.Zoom * 1.3f * factor * dt));
         }
 
+        public bool CanObserveCharacter => _use3D && Interactive && !Ui.ReducedMotion &&
+            !_gamepadCursor.Active && !_panning && !_rotating && !_leftPending &&
+            _layout != null && _layout.Perspective && _layout.Area.width >= 50f && _layout.Area.height >= 50f;
+
+        public bool BeginCharacterObservation(Vector3 world)
+        {
+            if (!CanObserveCharacter || !CharacterObservation.IsFinite(world) ||
+                !_characterObservation.Begin(_zoomTarget, _panTarget)) return false;
+            // Keep the existing angles and projection, including the original near/far planes.
+            UpdateCharacterObservation(world);
+            return true;
+        }
+
+        public void UpdateCharacterObservation(Vector3 world)
+        {
+            if (!IsObservingCharacter) return;
+            if (!CanObserveCharacter || !CharacterObservation.IsFinite(world))
+            { EndCharacterObservation(true); return; }
+            _zoomTarget = Mathf.Clamp(CharacterObservation.ObservationZoom, 1f, MaxZoom);
+            _panTarget = _layout.PanToCenterWorld(world, _zoomTarget);
+        }
+
+        public void EndCharacterObservation(bool restore)
+        {
+            if (!_characterObservation.End(restore, out var zoom, out var pan)) return;
+            _zoomTarget = Mathf.Clamp(zoom, 1f, MaxZoom);
+            _panTarget = _layout != null ? _layout.ClampPan(pan, _zoomTarget) : Vector2.zero;
+            ViewChanged?.Invoke();
+        }
+
         /// <summary>Показать всю карту.</summary>
         public void ResetView()
         {
+            EndCharacterObservation(false);
             _zoomTarget = 1f;
             _panTarget = Vector2.zero;
             ViewChanged?.Invoke();
@@ -835,6 +873,7 @@ namespace CityHighways.Presentation
         /// <summary>Поставить точку карты (координаты 0..1) в центр поля; без приближения — сначала приблизить.</summary>
         public void CenterOn(Vector2 mapPoint)
         {
+            EndCharacterObservation(false);
             if (_layout == null) return;
             if (_zoomTarget < 1.5f) _zoomTarget = 1.8f;
             _panTarget = _layout.PanToCenter(mapPoint.x, mapPoint.y, _zoomTarget);
@@ -913,6 +952,7 @@ namespace CityHighways.Presentation
 
         public void SetGame(Game game)
         {
+            EndCharacterObservation(false);
             StopGamepadTargeting();
             _game = game;
             _layout = new BoardLayout(game.Map) { GroundQuads = _groundRoads };

@@ -138,6 +138,8 @@ namespace CityHighways.Presentation
             }, ButtonKind.Secondary, 13f);
             layersButton.style.width = 130f;
             _layersPanel.Add(layersButton);
+            _characterObservationControl = new CharacterObservationControl(_map);
+            _layersPanel.Add(_characterObservationControl);
             _layersList = new VisualElement();
             _layersList.style.marginTop = 6f;
             _layersList.style.backgroundColor = Theme.PanelGlass;
@@ -1291,8 +1293,11 @@ namespace CityHighways.Presentation
             SyncHubs();
         }
 
+        CharacterObservationControl _characterObservationControl;
+
         public void Release3D()
         {
+            _characterObservationControl?.Sync(null);
             if (_city3D == null) return;
             _city3D.Dispose();
             _city3D = null;
@@ -1314,6 +1319,7 @@ namespace CityHighways.Presentation
             _city3D.SyncRoadDetails(board, Palette.PlayerColor, _game.PublicOwner);
             _city3D.SyncTraffic(board, _map.PulseTime);
             _city3D.SyncPeople(board, _map.PulseTime);
+            _characterObservationControl?.Sync(_city3D);
             SyncTrucks3D();
         }
 
