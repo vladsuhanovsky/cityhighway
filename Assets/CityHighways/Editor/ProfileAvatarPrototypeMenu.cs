@@ -27,6 +27,27 @@ public static class ProfileAvatarPrototypeMenu
         catch (Exception ex) { Debug.LogError("Prototype generation failed: " + ex.Message); }
     }
 
+    [MenuItem("City Highways/Profile/Create Character Art 2.0 Avatars")]
+    public static void GenerateArt()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+        string folder = ProfileAvatarPrototypeAssets.ArtResourcesFolder;
+        if (ProfileAvatarPrototypeAssets.OutputExists(folder))
+        {
+            EditorUtility.DisplayDialog("Character Art 2.0", "Art output already exists. Existing assets were not changed.", "OK");
+            return;
+        }
+        if (!EditorUtility.DisplayDialog("Character Art 2.0",
+            "Create the detailed procedural art study for both genders? Original Profile3D assets remain untouched.", "Create", "Cancel")) return;
+        try
+        {
+            ProfileAvatarPrototypeAssets.GeneratePair(folder, true);
+            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(folder + "/Male.prefab");
+            Debug.Log("Character Art 2.0 pair generated. Open Wardrobe in Play Mode to inspect the new art study.");
+        }
+        catch (Exception ex) { Debug.LogError("Character Art 2.0 generation failed: " + ex.Message); }
+    }
+
     [MenuItem("City Highways/Profile/Validate Prototype 3D Avatars")]
     public static void Validate()
     {

@@ -13,6 +13,7 @@ namespace CityHighways.Presentation
     public static class ProfileAvatarPrototypeAssets
     {
         public const string ResourcesFolder = "Assets/CityHighways/Resources/CityHighways/Profile3D";
+        public const string ArtResourcesFolder = "Assets/CityHighways/Resources/CityHighways/Profile3DArt";
 
         public static bool OutputExists(string folder)
         {
@@ -22,7 +23,7 @@ namespace CityHighways.Presentation
             return false;
         }
 
-        public static void GeneratePair(string folder)
+        public static void GeneratePair(string folder, bool detailed = false)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 throw new InvalidOperationException("Generate prototypes outside Play Mode.");
@@ -54,7 +55,9 @@ namespace CityHighways.Presentation
                 Material Resolve(Color color)
                 {
                     if (mats.TryGetValue(color, out var existing)) return existing;
-                    var mat = new Material(shader) { color = color, name = "Prototype " + mats.Count };
+                    var mat = new Material(shader) { color = color, name = (detailed ? "Character Art " : "Prototype ") + mats.Count };
+                    if (detailed && mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", .23f);
+                    if (detailed && mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", 0f);
                     string path = palette + "/Color_" + mats.Count.ToString("00") + ".mat";
                     created.Add(path);
                     try { AssetDatabase.CreateAsset(mat, path); }
@@ -64,7 +67,7 @@ namespace CityHighways.Presentation
                 }
                 foreach (string gender in new[] { CharacterCatalog.Male, CharacterCatalog.Female })
                 {
-                    var model = ProfileAvatarPrototype.Build(gender, Resolve);
+                    var model = ProfileAvatarPrototype.Build(gender, Resolve, detailed);
                     roots.Add(model);
                     string path = folder + (gender == CharacterCatalog.Male ? "/Male.prefab" : "/Female.prefab");
                     created.Add(path);
