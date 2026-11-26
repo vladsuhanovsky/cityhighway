@@ -14,6 +14,18 @@ namespace CityHighways.Tests
             return new Material(shader);
         }
 
+        // MaterialPropertyBlock color round-trips may incur tiny floating-point
+        // differences (including color-space conversion). Compare every channel,
+        // not exact float bits; keep the tolerance far below palette differences.
+        static void AssertPaint(Color expected, Color actual, string context)
+        {
+            const float tolerance = 0.0001f;
+            Assert.That(actual.r, Is.EqualTo(expected.r).Within(tolerance), context + " (R)");
+            Assert.That(actual.g, Is.EqualTo(expected.g).Within(tolerance), context + " (G)");
+            Assert.That(actual.b, Is.EqualTo(expected.b).Within(tolerance), context + " (B)");
+            Assert.That(actual.a, Is.EqualTo(expected.a).Within(tolerance), context + " (A)");
+        }
+
         [TestCase("paver", "Screed")]
         [TestCase("mixer", "Mixing drum")]
         [TestCase("grader", "Grading blade")]
@@ -68,16 +80,18 @@ namespace CityHighways.Tests
                     renderer.GetPropertyBlock(block);
                     return block.GetColor(colorId);
                 }
-                Assert.AreEqual(CompanyIdentity.Paint("green"), ColorOf(first, "Cab"));
-                Assert.AreEqual(CompanyIdentity.Paint("steel"), ColorOf(second, "Door stripe"));
+                AssertPaint(CompanyIdentity.Paint("green"), ColorOf(first, "Cab"), "Initial first cab");
+                AssertPaint(CompanyIdentity.Paint("steel"), ColorOf(second, "Door stripe"), "Initial second stripe");
                 var tire = ColorOf(first, "Tire");
                 Assert.IsTrue(first.Apply(FleetLivery.Preview(book, a, "mixer", "reverse", false)));
-                Assert.AreEqual(CompanyIdentity.Paint("white"), ColorOf(first, "Cab"));
-                Assert.AreEqual(CompanyIdentity.Paint("green"), ColorOf(first, "Door stripe"));
-                Assert.AreEqual(tire, ColorOf(first, "Tire"));
+                AssertPaint(CompanyIdentity.Paint("white"), ColorOf(first, "Cab"), "Repainted first cab");
+                AssertPaint(CompanyIdentity.Paint("green"), ColorOf(first, "Door stripe"), "Repainted first stripe");
+                AssertPaint(tire, ColorOf(first, "Tire"), "Mechanical tire unchanged");
                 Assert.IsFalse(first.Apply(FleetLivery.Read(book, b, "crane")));
-                Assert.AreEqual(CompanyIdentity.Paint("white"), ColorOf(first, "Cab"));
-                Assert.AreEqual(CompanyIdentity.Paint("blue"), ColorOf(second, "Cab"));
+                AssertPaint(CompanyIdentity.Paint("white"), ColorOf(first, "Cab"), "First cab unchanged after rejected type");
+                AssertPaint(CompanyIdentity.Paint("green"), ColorOf(first, "Door stripe"), "First stripe unchanged after rejected type");
+                AssertPaint(CompanyIdentity.Paint("steel"), ColorOf(second, "Door stripe"), "Second stripe unchanged");
+                AssertPaint(CompanyIdentity.Paint("blue"), ColorOf(second, "Cab"), "Second cab unchanged");
                 Assert.AreEqual(original, material.GetColor(colorId));
             }
             finally { Object.DestroyImmediate(parent); Object.DestroyImmediate(material); }
