@@ -560,6 +560,8 @@ namespace CityHighways.Presentation
         ProfileAppearance _walkerAppearance;
         CityProfileWalker _profileWalker;
         Walker _profileRoute;
+        ProfilePadRoute _profilePadRoute;
+        float _profileRouteStart;
         Renderer _replacedWalkerRenderer;
         bool _profileWalkerAttempted;
 
@@ -587,6 +589,7 @@ namespace CityHighways.Presentation
             if (_replacedWalkerRenderer != null) _replacedWalkerRenderer.enabled = true;
             _replacedWalkerRenderer = null;
             _profileRoute = null;
+            _profilePadRoute = null;
             _profileWalker?.Hide();
         }
 
@@ -636,6 +639,15 @@ namespace CityHighways.Presentation
                         if (_profileWalker != null && _profileWalker.Root != null)
                         {
                             _profileRoute = candidate;
+                            _profileRouteStart = time;
+                            _profilePadRoute = null;
+                            if (candidate.OnPad)
+                                foreach (var other in _walkers)
+                                {
+                                    if (other == candidate || !other.OnPad || other.Location != candidate.Location) continue;
+                                    _profilePadRoute = ProfilePadRoute.TryCreate(candidate.A, candidate.B, other.A, other.B);
+                                    if (_profilePadRoute != null) break;
+                                }
                             _replacedWalkerRenderer = candidate.Go.GetComponent<Renderer>();
                             if (_replacedWalkerRenderer != null) _replacedWalkerRenderer.enabled = false;
                         }
@@ -657,7 +669,13 @@ namespace CityHighways.Presentation
                 heading.y = 0f;
                 var rotation = heading.sqrMagnitude > 1e-8f ? Quaternion.LookRotation(heading, Vector3.up) : Quaternion.identity;
                 walker.Go.transform.SetPositionAndRotation(p, rotation);
-                if (walker == _profileRoute) _profileWalker?.SetPose(p, rotation, time * 1.1f);
+                if (walker == _profileRoute)
+                {
+                    float distance = Mathf.Max(0f, time - _profileRouteStart) * ProfilePadRoute.Speed;
+                    if (_profilePadRoute != null && _profilePadRoute.TrySample(distance, out var loopPoint, out var loopHeading))
+                        _profileWalker?.SetPose(loopPoint, loopHeading, distance / .006f);
+                    else _profileWalker?.SetPose(p, rotation, time * 1.1f);
+                }
             }
         }
 
