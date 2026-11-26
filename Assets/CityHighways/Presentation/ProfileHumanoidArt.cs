@@ -26,16 +26,20 @@ namespace CityHighways.Presentation
             { error = "Expected exactly one Animator."; return false; }
             if (!ValidClip(idle) || !ValidClip(walk))
             { error = "Expected non-legacy Humanoid idle and walk clips."; return false; }
+            var rig = GetComponent<ProfileAvatarRig>();
+            if (rig == null || !rig.TryValidate(out _) || rig.MissingCatalogIds().Length != 0 ||
+                !rig.IsStableSkeletonTransform(animator.transform))
+            { error = "Expected complete wardrobe bindings outside the shared skeleton."; return false; }
             var skins = GetComponentsInChildren<SkinnedMeshRenderer>(true);
             if (skins.Length == 0)
             { error = "Missing skinned geometry."; return false; }
             foreach (var skin in skins)
             {
                 if (skin.sharedMesh == null || skin.rootBone == null ||
-                    !InsideSkeleton(skin.rootBone) || skin.bones.Length == 0)
+                    !InsideSkeleton(skin.rootBone) || !rig.IsStableSkeletonTransform(skin.rootBone) || skin.bones.Length == 0)
                 { error = "Missing mesh or shared skeleton: " + skin.name; return false; }
                 foreach (var bone in skin.bones)
-                    if (bone == null || !InsideSkeleton(bone))
+                    if (bone == null || !InsideSkeleton(bone) || !rig.IsStableSkeletonTransform(bone))
                     { error = "Bone outside shared Animator hierarchy: " + skin.name; return false; }
             }
             foreach (var behaviour in GetComponentsInChildren<MonoBehaviour>(true))
