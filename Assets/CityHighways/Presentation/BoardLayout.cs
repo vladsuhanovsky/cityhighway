@@ -316,6 +316,11 @@ namespace CityHighways.Presentation
             ClampPan(-(Project(x, y) - ViewCenter) * zoom, zoom);
 
         /// <summary>Сдвиг, при котором экранная точка anchor останется на месте после смены приближения.</summary>
+        /// <summary>Center an actual world point, including elevation, in the same
+        /// projection used by the city and its interactive overlay.</summary>
+        public Vector2 PanToCenterWorld(Vector3 world, float zoom) =>
+            ClampPan(-(ProjectWorld(world) - ViewCenter) * zoom, zoom);
+
         public Vector2 PanForZoomAt(Vector2 anchor, float newZoom)
         {
             var offset = anchor - ViewCenter - Pan;

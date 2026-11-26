@@ -499,6 +499,8 @@ namespace CityHighways.Presentation
             }, ButtonKind.Secondary, 13f);
             layersButton.style.minHeight = 34f;
             _layersPanel.Add(layersButton);
+            _characterObservationControl = new CharacterObservationControl(_map);
+            _layersPanel.Add(_characterObservationControl);
             _layersList = new VisualElement();
             _layersList.style.marginTop = 6f;
             _layersList.style.backgroundColor = Theme.PanelGlass;
@@ -1376,8 +1378,11 @@ namespace CityHighways.Presentation
         }
 
         /// <summary>Убрать 3D-город (выход в меню, новая партия, выключили в настройках).</summary>
+        CharacterObservationControl _characterObservationControl;
+
         public void Release3D()
         {
+            _characterObservationControl?.Sync(null);
             foreach (var stage in _heroStages.Values) stage.Release();
             _heroStages.Clear();
             if (_city3D == null) return;
@@ -1401,6 +1406,7 @@ namespace CityHighways.Presentation
             _city3D.SyncRoadDetails(game, Palette.PlayerColor, game.Players.Count);
             _city3D.SyncTraffic(game, _map.PulseTime);
             _city3D.SyncPeople(game, _map.PulseTime);
+            _characterObservationControl?.Sync(_city3D);
         }
 
         FleetLivery ResolveConstructionFleet(int owner, Resource? resource)

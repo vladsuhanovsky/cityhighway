@@ -6471,6 +6471,22 @@
     {
       "key": "profile.garage.saved",
       "value": "Vehicle livery saved locally."
+    },
+    {
+      "key": "character.observation.find",
+      "value": "Find my character"
+    },
+    {
+      "key": "character.observation.return",
+      "value": "Return to map"
+    },
+    {
+      "key": "character.observation.find_hint",
+      "value": "Zoom in and follow the local character. Manual map input stops following."
+    },
+    {
+      "key": "character.observation.return_hint",
+      "value": "Restore the previous map zoom and position."
     }
   ]
 }

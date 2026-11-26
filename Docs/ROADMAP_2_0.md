@@ -103,3 +103,5 @@ Profile 2.0 batch 4d: #156 merged (5438737); local GameView construction slice, 
 Profile 2.0 batch 4e: #157 merged (ff898a2); local Magnate resolver and non-mutating cosmetic crane on newly claimed prebuilt bridges, owner transition baseline, safe deck placement, four Edit Mode cases. CI and runtime visual acceptance pending.
 
 Profile 2.0 batch 5a: #158 merged (5c486e9); one local profile avatar reuses existing open pedestrian route in Classic/Magnate, optional articulation, city-scale bounds, safe fallback and observation position API. Four Edit Mode cases; CI and runtime/manual visual acceptance pending. Observation camera, full navigation and production art remain open.
+
+Profile 2.0 batch 5b: #159 merged (91c22a2); shared Classic/Magnate find/follow/return control, existing board projection and x8 zoom cap, manual takeover and lost-target restore, four RU/EN keys and seven Edit Mode cases. CI and runtime/manual acceptance pending. Cinematic camera, marker, full navigation and final art remain open.
