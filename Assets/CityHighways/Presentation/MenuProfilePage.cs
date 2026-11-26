@@ -37,6 +37,7 @@ namespace CityHighways.Presentation
         string _slot = "hat";
         Outfit _tryOn;
         TurntableCharacter _turntable;
+        ProfileAvatarPreviewStage _avatarStage;
         string _animateSlot;
         VisualElement _itemInfo;
         VisualElement _ghost;
@@ -133,6 +134,7 @@ namespace CityHighways.Presentation
             _scroll.Add(_content);
 
             _turntable = new TurntableCharacter(230f);
+            _avatarStage = new ProfileAvatarPreviewStage(_turntable);
             Rebuild();
         }
 
@@ -243,6 +245,7 @@ namespace CityHighways.Presentation
                 {
                     CharacterLayers.ShowDebug = !CharacterLayers.ShowDebug;
                     _turntable.RefreshDebug();
+                    _avatarStage.SetDebugFallback(CharacterLayers.ShowDebug);
                 }
             }
             if (_tab == Tab.Collection) TickContainers(dt);
@@ -274,10 +277,11 @@ namespace CityHighways.Presentation
             hint.style.unityTextAlign = TextAnchor.MiddleCenter;
             hint.style.marginBottom = 8f;
             left.Add(hint);
-            _turntable.RemoveFromHierarchy();
+            _avatarStage.RemoveFromHierarchy();
             _turntable.Set(shown, _animateSlot);
             _animateSlot = null;
-            left.Add(_turntable);
+            _avatarStage.Show(ProfileAppearance.FromOutfit(shown), CharacterLayers.ShowDebug);
+            left.Add(_avatarStage);
 
             if (_tryOn != null)
             {
@@ -548,8 +552,8 @@ namespace CityHighways.Presentation
                 if (tile.HasPointerCapture(e.pointerId)) tile.ReleasePointer(e.pointerId);
                 _ghost?.RemoveFromHierarchy();
                 _ghost = null;
-                Ui.Border(_turntable, 0f, Color.clear);
-                if (_turntable.worldBound.Contains(e.position)) Apply(profile, _dragItem, slot, true);
+                Ui.Border(_avatarStage, 0f, Color.clear);
+                if (_avatarStage.worldBound.Contains(e.position)) Apply(profile, _dragItem, slot, true);
             });
             return tile;
         }
@@ -637,9 +641,9 @@ namespace CityHighways.Presentation
             }
             Root.Add(_ghost);
             // Подсказка, куда бросать.
-            _turntable.style.borderTopWidth = 0f;
-            Ui.Border(_turntable, 2f, new Color(GameColors.Accent.r, GameColors.Accent.g, GameColors.Accent.b, 0.8f));
-            Ui.Radius(_turntable, 12f);
+            _avatarStage.style.borderTopWidth = 0f;
+            Ui.Border(_avatarStage, 2f, new Color(GameColors.Accent.r, GameColors.Accent.g, GameColors.Accent.b, 0.8f));
+            Ui.Radius(_avatarStage, 12f);
         }
 
         void MoveGhost(Vector2 position)
@@ -1275,9 +1279,10 @@ namespace CityHighways.Presentation
             left.style.flexShrink = 0f;
             left.style.marginRight = 12f;
             left.style.alignItems = Align.Center;
-            _turntable.RemoveFromHierarchy();
+            _avatarStage.RemoveFromHierarchy();
             _turntable.Set(profile.Outfit, null);
-            left.Add(_turntable);
+            _avatarStage.Show(ProfileAppearance.FromOutfit(profile.Outfit), false);
+            left.Add(_avatarStage);
             left.Add(Btn(LocalizationService.Get("profile.v2.edit_outfit"), () => Navigate(Tab.Wardrobe), ButtonKind.Primary, 14f));
             row.Add(left);
 
