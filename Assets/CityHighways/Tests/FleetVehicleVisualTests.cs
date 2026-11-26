@@ -97,6 +97,79 @@ namespace CityHighways.Tests
             finally { Object.DestroyImmediate(parent); Object.DestroyImmediate(material); }
         }
 
+        [TestCase("paver", "Screed")]
+        [TestCase("mixer", "Mixing drum")]
+        [TestCase("grader", "Grading blade")]
+        [TestCase("crane", "Boom")]
+        public void WorkingMotionIsAbsoluteAndRestoresOriginalPose(string id, string name)
+        {
+            var parent = new GameObject("Fleet motion test");
+            var material = NewMaterial();
+            try
+            {
+                var model = FleetVehicleVisual.Build(FleetLivery.Read(null, null, id), material, parent.transform);
+                Assert.IsNotNull(model);
+                var part = model.Root.transform.Find(name);
+                var position = part.localPosition;
+                var rotation = part.localRotation;
+                model.SampleMotion(.5f, .5f, true);
+                Assert.IsTrue(Vector3.Distance(position, part.localPosition) > .001f ||
+                    Quaternion.Angle(rotation, part.localRotation) > .1f);
+                var sampledPosition = part.localPosition;
+                var sampledRotation = part.localRotation;
+                model.SampleMotion(.5f, .5f, true);
+                Assert.That(Vector3.Distance(sampledPosition, part.localPosition), Is.LessThan(.0001f));
+                Assert.That(Quaternion.Angle(sampledRotation, part.localRotation), Is.LessThan(.1f));
+                model.SampleMotion(float.NaN, 1f, true);
+                Assert.That(Vector3.Distance(sampledPosition, part.localPosition), Is.LessThan(.0001f));
+                Assert.That(Quaternion.Angle(sampledRotation, part.localRotation), Is.LessThan(.1f));
+                model.ResetMotion();
+                Assert.That(Vector3.Distance(position, part.localPosition), Is.LessThan(.0001f));
+                Assert.That(Quaternion.Angle(rotation, part.localRotation), Is.LessThan(.1f));
+            }
+            finally { Object.DestroyImmediate(parent); Object.DestroyImmediate(material); }
+        }
+
+        [Test]
+        public void PoolReleaseResetsWorkingPoseAndRootTransform()
+        {
+            var parent = new GameObject("Fleet reset test");
+            var material = NewMaterial();
+            var pool = new ConstructionFleetPool(parent.transform, material);
+            try
+            {
+                var value = FleetLivery.Read(null, null, "mixer");
+                var model = pool.Acquire(value);
+                Assert.IsNotNull(model);
+                var drum = model.Root.transform.Find("Mixing drum");
+                var rest = drum.localRotation;
+                model.SampleMotion(.5f, .5f, true);
+                Assert.Greater(Quaternion.Angle(rest, drum.localRotation), .1f);
+                model.Root.transform.localPosition = Vector3.one;
+                model.Root.transform.localScale = Vector3.one * .03f;
+                pool.Release(model);
+                Assert.IsFalse(model.Root.activeSelf);
+                var next = pool.Acquire(value);
+                Assert.AreSame(model, next);
+                Assert.AreEqual(Vector3.zero, next.Root.transform.localPosition);
+                Assert.AreEqual(Vector3.one, next.Root.transform.localScale);
+                Assert.That(Quaternion.Angle(rest, drum.localRotation), Is.LessThan(.1f));
+            }
+            finally { pool.Clear(); Object.DestroyImmediate(parent); Object.DestroyImmediate(material); }
+        }
+
+        [Test]
+        public void DetachedGarageStageUsesFallbackAndReleaseIsIdempotent()
+        {
+            var stage = new FleetGarageStage();
+            stage.Show(FleetLivery.Read(null, null, "paver"));
+            stage.Show(FleetLivery.Read(null, null, "crane"));
+            Assert.IsFalse(stage.IsShowing3D);
+            stage.Release();
+            stage.Release();
+            Assert.IsFalse(stage.IsShowing3D);
+        }
+
         [Test]
         public void MissingMaterialOrLiveryDoesNotCreateObjects()
         {

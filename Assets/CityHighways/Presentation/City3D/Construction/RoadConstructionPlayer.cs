@@ -275,6 +275,9 @@ namespace CityHighways.Presentation
                 t.SetPositionAndRotation(site.CosmeticBridge ? site.BridgePosition : RollerPosition(site, site.Time), Quaternion.LookRotation(Forward(road), Vector3.up));
                 // Original fleet geometry is ~2 units long; the existing machinery is ~0.08.
                 t.localScale = Vector3.one * (.032f * scale);
+                float distance = site.CosmeticBridge ? 0f : Mathf.Clamp(front - settings.rollerLag, 0f, road.Length) / .032f;
+                if (Ui.ReducedMotion) site.Fleet.ResetMotion();
+                else site.Fleet.SampleMotion(distance, site.Time, site.Time <= site.Duration + settings.linger);
             }
             foreach (var runner in site.Workers) UpdateWorker(site, runner, scale);
         }

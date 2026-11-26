@@ -15,6 +15,76 @@ namespace CityHighways.Presentation
         readonly List<Renderer> main = new List<Renderer>();
         readonly List<Renderer> accent = new List<Renderer>();
         readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
+        readonly List<(Transform part, Quaternion rest, Vector3 axis, float radius)> wheels =
+            new List<(Transform, Quaternion, Vector3, float)>();
+        Transform drum, blade, screed;
+        Quaternion drumRest, bladeRest;
+        readonly List<(Transform part, Vector3 position, Quaternion rotation)> drumDetails =
+            new List<(Transform, Vector3, Quaternion)>();
+        readonly List<(Transform part, Vector3 position, Quaternion rotation)> boomParts =
+            new List<(Transform, Vector3, Quaternion)>();
+        Vector3 screedRest;
+        // Rigid cosmetic motion only. All samples are absolute, so pooling and repeated
+        // samples cannot accumulate drift.
+        public void SampleMotion(float distance, float seconds, bool working)
+        {
+            if (Root == null || float.IsNaN(distance) || float.IsInfinity(distance) ||
+                float.IsNaN(seconds) || float.IsInfinity(seconds)) return;
+            foreach (var wheel in wheels)
+                if (wheel.part != null)
+                    wheel.part.localRotation = wheel.rest * Quaternion.AngleAxis(
+                        Mathf.Repeat(distance / wheel.radius * Mathf.Rad2Deg, 360f), wheel.axis);
+            float wave = working ? Mathf.Sin(Mathf.Repeat(seconds, 2f) * Mathf.PI) : 0f;
+            if (drum != null)
+            {
+                var spin = Quaternion.AngleAxis(working ? Mathf.Repeat(seconds * 100f, 360f) : 0f, Vector3.up);
+                drum.localRotation = drumRest * spin;
+                var turnDrum = drumRest * spin * Quaternion.Inverse(drumRest);
+                foreach (var detail in drumDetails)
+                    if (detail.part != null)
+                    {
+                        detail.part.localPosition = drum.localPosition + turnDrum * (detail.position - drum.localPosition);
+                        detail.part.localRotation = turnDrum * detail.rotation;
+                    }
+            }
+            if (blade != null) blade.localRotation = bladeRest * Quaternion.Euler(0f, wave * 10f, 0f);
+            if (screed != null) screed.localPosition = screedRest + Vector3.up * (wave * .025f);
+            var turn = Quaternion.Euler(0f, wave * 18f, 0f);
+            var anchor = new Vector3(0f, 1.03f, -.36f);
+            foreach (var part in boomParts)
+                if (part.part != null)
+                {
+                    part.part.localPosition = anchor + turn * (part.position - anchor);
+                    part.part.localRotation = turn * part.rotation;
+                }
+        }
+
+        public void ResetMotion() => SampleMotion(0f, 0f, false);
+
+        void BindMotion()
+        {
+            foreach (Transform part in Root.transform)
+            {
+                if (part.name == "Tire" || part.name == "Hub" || part.name == "Track roller")
+                    wheels.Add((part, part.localRotation, Vector3.up, part.name == "Track roller" ? .115f : .24f));
+                else if (part.name == "Mixing drum") { drum = part; drumRest = part.localRotation; }
+                else if (part.name == "Grading blade") { blade = part; bladeRest = part.localRotation; }
+                else if (part.name == "Screed") { screed = part; screedRest = part.localPosition; }
+            }
+            if (Vehicle == "mixer")
+                foreach (string name in new[] { "Drum band", "Drum rib" })
+                {
+                    var part = Root.transform.Find(name);
+                    if (part != null) drumDetails.Add((part, part.localPosition, part.localRotation));
+                }
+            if (Vehicle == "crane")
+                foreach (string name in new[] { "Boom base", "Boom", "Boom extension", "Cable", "Hook" })
+                {
+                    var part = Root.transform.Find(name);
+                    if (part != null) boomParts.Add((part, part.localPosition, part.localRotation));
+                }
+        }
+
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
         static readonly int ColorId = Shader.PropertyToID("_Color");
 
@@ -50,6 +120,7 @@ namespace CityHighways.Presentation
             try
             {
                 visual.BuildParts(sharedMaterial);
+                visual.BindMotion();
                 if (!visual.Apply(livery)) throw new InvalidOperationException("Invalid fleet livery.");
                 return visual;
             }
@@ -138,6 +209,7 @@ namespace CityHighways.Presentation
                     Box("Mixer support",0,.61f,-.38f,.76f,.27f,1.14f,black,2);
                     Cylinder("Mixing drum",0,.95f,-.43f,.76f,.57f,.76f,black,1,new Vector3(74,0,0));
                     Cylinder("Drum band",0,.95f,-.43f,.78f,.075f,.78f,black,2,new Vector3(74,0,0));
+                    Box("Drum rib",.385f,.95f,-.43f,.035f,.80f,.065f,black,2,new Vector3(74,0,0));
                     Box("Discharge chute",0,.58f,-1.03f,.30f,.11f,.46f,metal,0,new Vector3(-25,0,0));
                     break;
                 case "grader":

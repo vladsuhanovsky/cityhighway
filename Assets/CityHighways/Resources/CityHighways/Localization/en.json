@@ -6487,6 +6487,14 @@
     {
       "key": "character.observation.return_hint",
       "value": "Restore the previous map zoom and position."
+    },
+    {
+      "key": "profile.garage.inspect",
+      "value": "Inspect in 3D"
+    },
+    {
+      "key": "profile.garage.motion",
+      "value": "Toggle working motion"
     }
   ]
 }

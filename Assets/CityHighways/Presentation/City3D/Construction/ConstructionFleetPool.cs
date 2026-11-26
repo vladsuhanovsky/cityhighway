@@ -33,6 +33,7 @@ namespace CityHighways.Presentation
                 count++;
                 if (active.Contains(model)) continue;
                 if (!model.Apply(value)) return null;
+                model.ResetMotion();
                 model.Root.SetActive(true);
                 active.Add(model);
                 return model;
@@ -48,8 +49,12 @@ namespace CityHighways.Presentation
         public void Release(FleetVehicleVisual model)
         {
             if (model == null || !active.Remove(model) || model.Root == null) return;
+            model.ResetMotion();
             model.Root.SetActive(false);
             model.Root.transform.SetParent(root, false);
+            model.Root.transform.localPosition = Vector3.zero;
+            model.Root.transform.localRotation = Quaternion.identity;
+            model.Root.transform.localScale = Vector3.one;
         }
 
         public void Clear()
