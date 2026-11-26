@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace CityHighways.Presentation
@@ -9,6 +10,21 @@ namespace CityHighways.Presentation
     {
         Camera _characterCloseupCamera;
         RenderTexture _characterCloseupTexture;
+        bool _characterCloseupRendered;
+        public bool CanCaptureCharacterPhoto => _characterCloseupRendered && _characterCloseupCamera != null &&
+            _characterCloseupCamera.enabled && _characterCloseupTexture != null && _characterCloseupTexture.IsCreated() &&
+            TryGetProfilePedestrianPosition(out _);
+
+        void CharacterCloseupRendered(ScriptableRenderContext context, Camera camera)
+        {
+            if (camera == _characterCloseupCamera) _characterCloseupRendered = true;
+        }
+
+        public bool TryCaptureCharacterPhoto(out string path)
+        {
+            path = null;
+            return CanCaptureCharacterPhoto && CharacterPhoto.TrySave(_characterCloseupTexture, out path);
+        }
 
         public static bool TryCharacterCloseupPose(Vector3 feet, float yaw, float zoom,
             out Vector3 position, out Quaternion rotation)
@@ -57,6 +73,7 @@ namespace CityHighways.Presentation
                     data.renderPostProcessing = false;
                     data.renderShadows = false;
                     if (_rendererIndex >= 0) data.SetRenderer(_rendererIndex);
+                    RenderPipelineManager.endCameraRendering += CharacterCloseupRendered;
                 }
                 _characterCloseupCamera.backgroundColor = _camera.backgroundColor;
                 _characterCloseupCamera.transform.SetPositionAndRotation(position, rotation);
@@ -74,6 +91,8 @@ namespace CityHighways.Presentation
 
         public void CloseCharacterCloseup()
         {
+            RenderPipelineManager.endCameraRendering -= CharacterCloseupRendered;
+            _characterCloseupRendered = false;
             if (_characterCloseupCamera != null)
             {
                 _characterCloseupCamera.enabled = false;
