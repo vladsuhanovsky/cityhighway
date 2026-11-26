@@ -12,6 +12,7 @@ namespace CityHighways.Presentation
         public const int MaxPerType = 2;
         readonly Transform root;
         readonly Material material;
+        readonly FleetEmblemCache emblems = new FleetEmblemCache();
         readonly List<FleetVehicleVisual> models = new List<FleetVehicleVisual>();
         readonly HashSet<FleetVehicleVisual> active = new HashSet<FleetVehicleVisual>();
         public int Count => models.Count;
@@ -39,7 +40,7 @@ namespace CityHighways.Presentation
                 return model;
             }
             if (count >= MaxPerType) return null;
-            var created = FleetVehicleVisual.Build(value, material, root);
+            var created = FleetVehicleVisual.Build(value, material, root, emblems);
             if (created == null) return null;
             models.Add(created);
             active.Add(created);
@@ -50,6 +51,7 @@ namespace CityHighways.Presentation
         {
             if (model == null || !active.Remove(model) || model.Root == null) return;
             model.ResetMotion();
+            model.ClearBranding();
             model.Root.SetActive(false);
             model.Root.transform.SetParent(root, false);
             model.Root.transform.localPosition = Vector3.zero;
@@ -68,6 +70,7 @@ namespace CityHighways.Presentation
             }
             models.Clear();
             active.Clear();
+            emblems.Clear();
         }
     }
 }
