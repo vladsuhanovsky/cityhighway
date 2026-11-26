@@ -6419,6 +6419,58 @@
     {
       "key": "profile.company.color.graphite",
       "value": "Графитовый"
+    },
+    {
+      "key": "profile.garage.title",
+      "value": "Гараж строительной техники"
+    },
+    {
+      "key": "profile.garage.hint",
+      "value": "Настройте окраску автопарка. Все четыре варианта доступны бесплатно; настройки не влияют на игровой процесс."
+    },
+    {
+      "key": "profile.garage.edit_company",
+      "value": "Изменить цвета компании"
+    },
+    {
+      "key": "profile.garage.vehicle.paver",
+      "value": "Асфальтоукладчик"
+    },
+    {
+      "key": "profile.garage.vehicle.mixer",
+      "value": "Бетономешалка"
+    },
+    {
+      "key": "profile.garage.vehicle.grader",
+      "value": "Грейдер"
+    },
+    {
+      "key": "profile.garage.vehicle.crane",
+      "value": "Кран"
+    },
+    {
+      "key": "profile.garage.scheme.company",
+      "value": "Цвета компании"
+    },
+    {
+      "key": "profile.garage.scheme.reverse",
+      "value": "Обратная расцветка"
+    },
+    {
+      "key": "profile.garage.scheme.solid",
+      "value": "Однотонная окраска"
+    },
+    {
+      "key": "profile.garage.show_emblem",
+      "value": "Показывать эмблему"
+    },
+    {
+      "key": "profile.garage.save",
+      "value": "Сохранить расцветку"
+    },
+    {
+      "key": "profile.garage.saved",
+      "value": "Расцветка техники сохранена локально."
     }
   ]
 }
