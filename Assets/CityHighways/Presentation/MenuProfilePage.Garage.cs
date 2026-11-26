@@ -18,16 +18,19 @@ namespace CityHighways.Presentation
             if (!string.IsNullOrEmpty(company.Name))
                 garage.Add(Caption(company.Name, 14f, GameColors.Accent, 0f, 4f));
             garage.Add(Btn(LocalizationService.Get("profile.garage.edit_company"), () => Navigate(ProfileSection.Overview), ButtonKind.Secondary, 13f));
+            var stage = new FleetGarageStage();
+            stage.Show(FleetLivery.Read(Profiles.Book, profile, FleetLivery.VehicleIds[0]));
+            garage.Add(stage);
             var row = Ui.Row();
             row.style.flexWrap = Wrap.Wrap;
             row.style.marginTop = 8f;
             foreach (string vehicle in FleetLivery.VehicleIds)
-                row.Add(GarageVehicleCard(profile, vehicle));
+                row.Add(GarageVehicleCard(profile, vehicle, stage));
             garage.Add(row);
             return garage;
         }
 
-        VisualElement GarageVehicleCard(PlayerProfile profile, string vehicle)
+        VisualElement GarageVehicleCard(PlayerProfile profile, string vehicle, FleetGarageStage stage)
         {
             var current = FleetLivery.Read(Profiles.Book, profile, vehicle);
             var card = Card(10f);
@@ -48,9 +51,11 @@ namespace CityHighways.Presentation
             var emblem = new Toggle(LocalizationService.Get("profile.garage.show_emblem")) { value = !current.HideEmblem };
             card.Add(emblem);
             string Scheme() => paint.index >= 0 && paint.index < schemes.Count ? schemes[paint.index] : "company";
-            void Refresh() => preview.Set(FleetLivery.Preview(Profiles.Book, profile, vehicle, Scheme(), !emblem.value));
-            paint.RegisterValueChangedCallback(_ => Refresh());
-            emblem.RegisterValueChangedCallback(_ => Refresh());
+            FleetLivery Draft() => FleetLivery.Preview(Profiles.Book, profile, vehicle, Scheme(), !emblem.value);
+            void Refresh() => preview.Set(Draft());
+            card.Add(Btn(LocalizationService.Get("profile.garage.inspect"), () => stage.Show(Draft()), ButtonKind.Secondary, 13f));
+            paint.RegisterValueChangedCallback(_ => { Refresh(); stage.Show(Draft()); });
+            emblem.RegisterValueChangedCallback(_ => { Refresh(); stage.Show(Draft()); });
             Refresh();
             var save = Btn(LocalizationService.Get("profile.garage.save"), () =>
             {
