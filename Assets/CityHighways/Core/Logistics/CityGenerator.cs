@@ -28,6 +28,16 @@ namespace CityHighways.Core
         public int Seed;
     }
 
+    /// <summary>Diagnostic metadata for one attempted seed; not part of the game or save state.</summary>
+    [Serializable]
+    public sealed class CityGenerationAttempt
+    {
+        public int seed, index;
+        public string profile, outcome;
+        public int locations = -1, roads = -1, components = -1;
+        public string[] issues;
+    }
+
     /// <summary>
     /// Генератор города для «Логистического магната»: каждый запуск — новая карта.
     ///   1. Центр города и реки: главная река с запада на восток с изгибами, иногда приток с севера или юга,
@@ -103,25 +113,60 @@ namespace CityHighways.Core
 
         public const int TutorialSeed = 20261118;
 
-        public static GeneratedCity Generate(int seed)
+        public const int StandardAttemptLimit = 60, TutorialAttemptLimit = 400, AttemptSeedStride = 7919;
+
+        public static GeneratedCity Generate(int seed) => Generate(seed, null);
+
+        public static GeneratedCity Generate(int seed, List<CityGenerationAttempt> trace)
         {
-            for (int attempt = 0; attempt < 60; attempt++)
+            trace?.Clear();
+            return GenerateStandard(seed, trace);
+        }
+
+        static GeneratedCity GenerateStandard(int seed, List<CityGenerationAttempt> trace)
+        {
+            for (int attempt = 0; attempt < StandardAttemptLimit; attempt++)
             {
-                var city = TryGenerate(seed + attempt * 7919, Standard);
-                if (city != null) return city;
+                int candidate = unchecked(seed + attempt * AttemptSeedStride);
+                var entry = BeginAttempt(trace, candidate, "standard");
+                var city = TryGenerate(candidate, Standard, entry);
+                if (city != null)
+                {
+                    if (entry != null) entry.outcome = "accepted";
+                    return city;
+                }
             }
             throw new InvalidOperationException("Не удалось сгенерировать город.");
         }
 
-        /// <summary>Маленький учебный город (всегда один и тот же). Не сложился ни один вариант — обычный город.</summary>
-        public static GeneratedCity GenerateTutorial()
+        static CityGenerationAttempt BeginAttempt(List<CityGenerationAttempt> trace, int seed, string profile)
         {
-            for (int attempt = 0; attempt < 400; attempt++)
+            if (trace == null) return null;
+            var entry = new CityGenerationAttempt { seed = seed, index = trace.Count + 1, profile = profile,
+                outcome = "started", issues = Array.Empty<string>() };
+            trace.Add(entry);
+            return entry;
+        }
+
+        /// <summary>Маленький учебный город (всегда один и тот же). Не сложился ни один вариант — обычный город.</summary>
+        public static GeneratedCity GenerateTutorial() => GenerateTutorial(null);
+
+        public static GeneratedCity GenerateTutorial(List<CityGenerationAttempt> trace)
+        {
+            trace?.Clear();
+            for (int attempt = 0; attempt < TutorialAttemptLimit; attempt++)
             {
-                var city = TryGenerate(TutorialSeed + attempt * 7919, Tutorial);
-                if (city != null && city.Hubs.Count >= 3) return city;
+                int candidate = unchecked(TutorialSeed + attempt * AttemptSeedStride);
+                var entry = BeginAttempt(trace, candidate, "tutorial");
+                var city = TryGenerate(candidate, Tutorial, entry);
+                if (city != null && city.Hubs.Count >= 3)
+                {
+                    if (entry != null) entry.outcome = "accepted";
+                    return city;
+                }
+                if (city != null && entry != null) entry.outcome = "tutorial-hub-count";
             }
-            return Generate(TutorialSeed);
+            return GenerateStandard(TutorialSeed, trace);
         }
 
         /// <summary>
@@ -307,7 +352,7 @@ namespace CityHighways.Core
 
         // ================================================================== Генерация
 
-        static GeneratedCity TryGenerate(int seed, Layout layout)
+        static GeneratedCity TryGenerate(int seed, Layout layout, CityGenerationAttempt trace)
         {
             var rng = new Random(seed);
             float R() => (float)rng.NextDouble();
@@ -355,6 +400,16 @@ namespace CityHighways.Core
 
             // ---- Места.
             var spots = new List<Spot>();
+            GeneratedCity Reject(string reason, List<string> issues = null)
+            {
+                if (trace != null)
+                {
+                    trace.outcome = reason;
+                    trace.locations = spots.Count;
+                    if (issues != null) trace.issues = issues.ToArray();
+                }
+                return null;
+            }
             var used = new HashSet<string>();
             bool Free(P p, string name, float minDistance)
             {
@@ -395,7 +450,7 @@ namespace CityHighways.Core
                     if (used.Contains(name)) name = name.Replace("Аэропорт", "Аэропорт-2");
                     if (Free(p, name, 120f)) { Add(p, name, "airports", HubKind.Airport); placed = true; }
                 }
-                if (!placed) return null;
+                if (!placed) return Reject("airport-placement");
             }
 
             // Вокзалы — кольцом вокруг центра.
@@ -410,7 +465,7 @@ namespace CityHighways.Core
                     var p = new P(cx + (float)Math.Cos(a) * rad * W, cy + (float)Math.Sin(a) * rad * H * 1.4f);
                     if (Free(p, stations[k], 80f)) { Add(p, stations[k], "vokzaly", HubKind.Station); placed = true; }
                 }
-                if (!placed) return null;
+                if (!placed) return Reject("station-placement");
             }
 
             // Речные порты — у главной реки, не в самом центре.
@@ -430,7 +485,7 @@ namespace CityHighways.Core
                     if (compact && SpreadOf(p) > 0.95f) continue;
                     if (Free(p, PortNames[k], 80f)) { Add(p, PortNames[k], "port", HubKind.Port); placed = true; }
                 }
-                if (!placed) return null;
+                if (!placed) return Reject("port-placement");
             }
 
             // Центр.
@@ -442,7 +497,7 @@ namespace CityHighways.Core
                 var p = new P(cx + (float)Math.Cos(a) * rad * W, cy + (float)Math.Sin(a) * rad * H * 1.5f);
                 if (Free(p, centers[centerCount], 78f)) { Add(p, centers[centerCount], "center", null); centerCount++; }
             }
-            if (centerCount < layout.MinCenters) return null;
+            if (centerCount < layout.MinCenters) return Reject("center-placement");
 
             // Остальные — гуще к центру.
             var pool = Names.OrderBy(_ => rng.Next()).ToList();
@@ -457,7 +512,7 @@ namespace CityHighways.Core
                 string name = pool[pool.Count - 1];
                 if (Free(p, name, e < 0.7f ? 84f : 96f)) { Add(p, name, null, null); pool.RemoveAt(pool.Count - 1); }
             }
-            if (spots.Count < layout.MinSpots) return null;
+            if (spots.Count < layout.MinSpots) return Reject("location-count");
 
             // ---- Районы: центр, хабы, шесть секторов по сторонам света.
             foreach (var spot in spots)
@@ -531,7 +586,9 @@ namespace CityHighways.Core
             var parent = Enumerable.Range(0, n).ToArray();
             int Find(int x) { while (parent[x] != x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
             foreach (var e in edges) parent[Find(e.i)] = Find(e.j);
-            if (Enumerable.Range(0, n).Select(Find).Distinct().Count() > 1) return null;
+            int components = Enumerable.Range(0, n).Select(Find).Distinct().Count();
+            if (trace != null) { trace.roads = edges.Count; trace.components = components; }
+            if (components > 1) return Reject("disconnected-graph");
 
             // ---- Сборка карты.
             var ids = new string[n];
@@ -611,7 +668,11 @@ namespace CityHighways.Core
             // застройка берут точки как есть. Раньше сюда шли редкие опорные точки — 3D сглаживало их в дугу,
             // а дома ставились по прямым хордам, и на изгибах притока дома оказывались в воде.
             map.SetExtras(lines.Select(r => (IReadOnlyList<MapPoint>)r.Select(p => new MapPoint(Math.Min(1f, Math.Max(0f, p.X / W)), Math.Min(1f, Math.Max(0f, p.Y / H)))).ToList()), 1f);
-            if (map.Validate(6).Count > 0 || CheckWater(map).Count > 0) return null;
+            var mapIssues = map.Validate(6);
+            if (mapIssues.Count > 0) return Reject("map-validation", mapIssues.ToList());
+            var waterIssues = CheckWater(map);
+            if (waterIssues.Count > 0) return Reject("water-validation", waterIssues);
+            if (trace != null) trace.locations = n;
 
             // Городская сеть: минимальное остовное дерево (мосты чуть «дороже» — их в общей сети меньше).
             // Дороги — единственный путь куда-либо (без них карта распадается: тупик вроде Крутого Яра, единственная
