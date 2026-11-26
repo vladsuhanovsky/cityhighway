@@ -423,7 +423,6 @@ namespace CityHighways.Presentation
             Root.RegisterCallback<NavigationSubmitEvent>(evt =>
             {
                 if (_map == null || !_map.IsGamepadTargeting || evt.target == _map) return;
-                evt.PreventDefault();
                 evt.StopPropagation();
             }, TrickleDown.TrickleDown);
 

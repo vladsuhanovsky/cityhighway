@@ -301,7 +301,7 @@ public sealed class CityProceduralObjectCatalogWindow : EditorWindow
                 byId.Add(row.id, row);
 
         var anchors = UnityEngine.Object.FindObjectsByType<CityProceduralReplacement>(
-            FindObjectsInactive.Include, FindObjectsSortMode.None);
+            FindObjectsInactive.Include);
         Array.Sort(anchors, (a, b) => string.CompareOrdinal(
             a.gameObject.name, b.gameObject.name));
         var currentCityIds = new List<string>();

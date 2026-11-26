@@ -25,7 +25,7 @@ namespace CityHighways.Presentation
         {
             CityProceduralPrefabBudget found = null;
             foreach (var candidate in FindObjectsByType<CityProceduralPrefabBudget>(
-                FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                FindObjectsInactive.Exclude))
             {
                 if (!candidate.AppliesTo(cityName)) continue;
                 if (found != null)

@@ -31,7 +31,7 @@ namespace CityHighways.Presentation
         {
             CityProceduralPropPrefabRules found = null;
             foreach (var candidate in FindObjectsByType<CityProceduralPropPrefabRules>(
-                FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                FindObjectsInactive.Exclude))
             {
                 if (!candidate.AppliesTo(cityName)) continue;
                 if (found != null)

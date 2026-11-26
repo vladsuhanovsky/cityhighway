@@ -23,19 +23,19 @@ public sealed class CityProceduralPrefabBudgetInspector : Editor
         int checkedPrefabs = 0;
         int violations = 0;
         foreach (var rules in Object.FindObjectsByType<CityProceduralBuildingPrefabRules>(
-            FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            FindObjectsInactive.Exclude))
             foreach (var rule in rules.Rules)
                 if (rule != null && rule.visualPrefab != null)
                     Check(rule.visualPrefab, triangleLimit, meshLimit,
                         ref checkedPrefabs, ref violations);
         foreach (var rules in Object.FindObjectsByType<CityProceduralTreePrefabRules>(
-            FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            FindObjectsInactive.Exclude))
             foreach (var rule in rules.Rules)
                 if (rule != null && rule.visualPrefab != null)
                     Check(rule.visualPrefab, triangleLimit, meshLimit,
                         ref checkedPrefabs, ref violations);
         foreach (var rules in Object.FindObjectsByType<CityProceduralPropPrefabRules>(
-            FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            FindObjectsInactive.Exclude))
             foreach (var rule in rules.Rules)
                 if (rule != null && rule.visualPrefab != null)
                     Check(rule.visualPrefab, triangleLimit, meshLimit,

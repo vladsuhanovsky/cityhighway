@@ -23,6 +23,8 @@ namespace CityHighways.Presentation
         public RiverDto[] rivers;
         public string[] hubs, publicRoads, issues;
         public City3DLayoutReport layout3D;
+        public string generationProfile;
+        public CityGenerationAttempt[] attempts;
         public bool Passed => generated && issues != null && issues.Length == 0;
     }
 
@@ -48,15 +50,21 @@ namespace CityHighways.Presentation
     /// <summary>Explicit developer diagnostic, never runs automatically during a match.</summary>
     public static class CitySeedDiagnostics
     {
-        public static CitySeedReport Run(int seed, bool include3D = false)
+        public static CitySeedReport Run(int seed, bool include3D = false) => RunInternal(seed, include3D, false);
+
+        public static CitySeedReport RunTutorial(bool include3D = false) =>
+            RunInternal(CityGenerator.TutorialSeed, include3D, true);
+
+        static CitySeedReport RunInternal(int seed, bool include3D, bool tutorial)
         {
             var report = new CitySeedReport { requestedSeed = seed, unityVersion = Application.unityVersion,
-                utc = DateTime.UtcNow.ToString("O") };
+                utc = DateTime.UtcNow.ToString("O"), generationProfile = tutorial ? "tutorial" : "standard" };
+            var attempts = new List<CityGenerationAttempt>();
             var watch = Stopwatch.StartNew();
             var errors = new List<string>();
             try
             {
-                var city = CityGenerator.Generate(seed);
+                var city = tutorial ? CityGenerator.GenerateTutorial(attempts) : CityGenerator.Generate(seed, attempts);
                 report.generated = true;
                 report.actualSeed = city.Seed;
                 var map = city.Map;
@@ -92,6 +100,7 @@ namespace CityHighways.Presentation
             {
                 errors.Add(ex.GetType().Name + ": " + ex.Message);
             }
+            report.attempts = attempts.ToArray();
             report.milliseconds = watch.ElapsedMilliseconds;
             report.issues = errors.ToArray();
             return report;
