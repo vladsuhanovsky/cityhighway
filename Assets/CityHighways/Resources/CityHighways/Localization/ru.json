@@ -6503,6 +6503,110 @@
     {
       "key": "character.observation.close_closeup",
       "value": "Закрыть крупный план"
+    },
+    {
+      "key": "profile.exhibit.title",
+      "value": "Выставка коллекции"
+    },
+    {
+      "key": "profile.exhibit.hint",
+      "value": "Выберите три открытых экспоната для локальной витрины. Они открываются по существующим достижениям и истории карт."
+    },
+    {
+      "key": "profile.exhibit.progress",
+      "value": "Открыто экспонатов: {0}/{1}"
+    },
+    {
+      "key": "profile.exhibit.empty",
+      "value": "Пустой подиум"
+    },
+    {
+      "key": "profile.exhibit.slot",
+      "value": "Подиум {0}"
+    },
+    {
+      "key": "profile.exhibit.save",
+      "value": "Сохранить подиум"
+    },
+    {
+      "key": "profile.exhibit.saved",
+      "value": "Выставка сохранена локально."
+    },
+    {
+      "key": "profile.exhibit.unlocked",
+      "value": "Открыто"
+    },
+    {
+      "key": "profile.exhibit.locked",
+      "value": "Закрыто"
+    },
+    {
+      "key": "profile.exhibit.play_map",
+      "value": "Завершите учитываемую в профиле партию на этой карте."
+    },
+    {
+      "key": "profile.exhibit.group.vehicles",
+      "value": "Миниатюры техники"
+    },
+    {
+      "key": "profile.exhibit.group.cities",
+      "value": "Коллекции городов"
+    },
+    {
+      "key": "profile.exhibit.group.medals",
+      "value": "Медали"
+    },
+    {
+      "key": "profile.exhibit.item.paver",
+      "value": "Миниатюра асфальтоукладчика"
+    },
+    {
+      "key": "profile.exhibit.item.mixer",
+      "value": "Миниатюра бетономешалки"
+    },
+    {
+      "key": "profile.exhibit.item.grader",
+      "value": "Миниатюра грейдера"
+    },
+    {
+      "key": "profile.exhibit.item.crane",
+      "value": "Миниатюра крана"
+    },
+    {
+      "key": "profile.exhibit.item.moscow",
+      "value": "Диорама Москвы"
+    },
+    {
+      "key": "profile.exhibit.item.amsterdam",
+      "value": "Диорама Амстердама"
+    },
+    {
+      "key": "profile.exhibit.item.chongqing",
+      "value": "Диорама Чунцина"
+    },
+    {
+      "key": "profile.exhibit.item.first_win",
+      "value": "Медаль первой победы"
+    },
+    {
+      "key": "profile.exhibit.item.mg_win",
+      "value": "Медаль победы магната"
+    },
+    {
+      "key": "profile.exhibit.item.travel",
+      "value": "Медаль «Турне»"
+    },
+    {
+      "key": "character.photo.capture",
+      "value": "Сохранить фото (PNG)"
+    },
+    {
+      "key": "character.photo.saved",
+      "value": "Фото сохранено в папке Photos."
+    },
+    {
+      "key": "character.photo.failed",
+      "value": "Не удалось сохранить фото."
     }
   ]
 }

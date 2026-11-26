@@ -8,7 +8,8 @@ namespace CityHighways.Presentation
     public sealed class CharacterObservationControl : VisualElement
     {
         readonly MapView map;
-        readonly Button toggle, portraitButton;
+        readonly Button toggle, portraitButton, captureButton;
+        readonly Label photoStatus;
         readonly VisualElement portrait, image;
         City3DScene currentCity;
         RenderTexture shownTexture;
@@ -52,6 +53,13 @@ namespace CityHighways.Presentation
             Action("−", () => portraitZoom = Mathf.Max(.8f, portraitZoom - .1f));
             Action("+", () => portraitZoom = Mathf.Min(1.4f, portraitZoom + .1f));
             portrait.Add(row);
+            captureButton = Ui.Button(LocalizationService.Get("character.photo.capture"), Capture, ButtonKind.Secondary, 13f);
+            captureButton.name = "character-photo-capture";
+            captureButton.SetEnabled(false);
+            portrait.Add(captureButton);
+            photoStatus = Ui.Text("", 11f, Theme.TextDim);
+            photoStatus.style.whiteSpace = WhiteSpace.Normal;
+            portrait.Add(photoStatus);
             Add(portrait);
             Ui.Show(portrait, false);
             RegisterCallback<DetachFromPanelEvent>(_ => ClosePortrait());
@@ -73,6 +81,15 @@ namespace CityHighways.Presentation
             SyncPortrait();
         }
 
+        void Capture()
+        {
+            if (!portraitOpen || currentCity == null || !currentCity.CanCaptureCharacterPhoto) return;
+            bool saved = currentCity.TryCaptureCharacterPhoto(out var path);
+            photoStatus.text = saved ? LocalizationService.Get("character.photo.saved") :
+                LocalizationService.Get("character.photo.failed");
+            photoStatus.tooltip = saved ? path : CharacterPhoto.Folder;
+        }
+
         void SyncPortrait()
         {
             if (!portraitOpen) return;
@@ -84,6 +101,8 @@ namespace CityHighways.Presentation
                 shownTexture = texture;
                 image.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(texture));
             }
+            captureButton.text = LocalizationService.Get("character.photo.capture");
+            captureButton.SetEnabled(currentCity.CanCaptureCharacterPhoto);
             Ui.Show(portrait, true);
             portraitButton.text = LocalizationService.Get("character.observation.close_closeup");
         }
@@ -91,6 +110,9 @@ namespace CityHighways.Presentation
         void ClosePortrait()
         {
             portraitOpen = false;
+            captureButton.SetEnabled(false);
+            photoStatus.text = "";
+            photoStatus.tooltip = "";
             image.style.backgroundImage = StyleKeyword.None;
             shownTexture = null;
             Ui.Show(portrait, false);

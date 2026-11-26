@@ -12,6 +12,7 @@ namespace CityHighways.Presentation
     {
         public string owner, name, emblem, primary, secondary;
         public FleetPaintRecord[] fleet;
+        public string[] exhibits;
     }
 
     /// <summary>Bounded cosmetic identity. Colors are fleet paint only, never ownership markers.</summary>
@@ -95,10 +96,11 @@ namespace CityHighways.Presentation
             if (book == null || string.IsNullOrEmpty(key) || value == null) return;
             value = Create(profile, value.Name, value.Emblem, value.Primary, value.Secondary);
             if (book.companies == null) book.companies = new List<CompanyIdentityRecord>();
-            var fleet = book.companies.FirstOrDefault(r => r != null && r.owner == key)?.fleet;
+            var prior = book.companies.FirstOrDefault(r => r != null && r.owner == key);
+            var fleet = prior?.fleet;
             book.companies.RemoveAll(r => r != null && r.owner == key);
             book.companies.Add(new CompanyIdentityRecord { owner = key, name = value.Name,
-                emblem = value.Emblem, primary = value.Primary, secondary = value.Secondary, fleet = fleet });
+                emblem = value.Emblem, primary = value.Primary, secondary = value.Secondary, fleet = fleet, exhibits = prior?.exhibits });
         }
 
         public static void Move(ProfileBook book, string oldKey, string newKey)
