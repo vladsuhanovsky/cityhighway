@@ -6503,6 +6503,110 @@
     {
       "key": "character.observation.close_closeup",
       "value": "Close close-up"
+    },
+    {
+      "key": "profile.exhibit.title",
+      "value": "Exhibition"
+    },
+    {
+      "key": "profile.exhibit.hint",
+      "value": "Choose three unlocked exhibits for your local showcase. Unlocks follow existing achievements and map history."
+    },
+    {
+      "key": "profile.exhibit.progress",
+      "value": "Exhibits unlocked: {0}/{1}"
+    },
+    {
+      "key": "profile.exhibit.empty",
+      "value": "Empty pedestal"
+    },
+    {
+      "key": "profile.exhibit.slot",
+      "value": "Pedestal {0}"
+    },
+    {
+      "key": "profile.exhibit.save",
+      "value": "Save pedestal"
+    },
+    {
+      "key": "profile.exhibit.saved",
+      "value": "Exhibition saved locally."
+    },
+    {
+      "key": "profile.exhibit.unlocked",
+      "value": "Unlocked"
+    },
+    {
+      "key": "profile.exhibit.locked",
+      "value": "Locked"
+    },
+    {
+      "key": "profile.exhibit.play_map",
+      "value": "Complete a recorded match on this map."
+    },
+    {
+      "key": "profile.exhibit.group.vehicles",
+      "value": "Vehicle miniatures"
+    },
+    {
+      "key": "profile.exhibit.group.cities",
+      "value": "City collections"
+    },
+    {
+      "key": "profile.exhibit.group.medals",
+      "value": "Medals"
+    },
+    {
+      "key": "profile.exhibit.item.paver",
+      "value": "Asphalt paver miniature"
+    },
+    {
+      "key": "profile.exhibit.item.mixer",
+      "value": "Concrete mixer miniature"
+    },
+    {
+      "key": "profile.exhibit.item.grader",
+      "value": "Grader miniature"
+    },
+    {
+      "key": "profile.exhibit.item.crane",
+      "value": "Crane miniature"
+    },
+    {
+      "key": "profile.exhibit.item.moscow",
+      "value": "Moscow diorama"
+    },
+    {
+      "key": "profile.exhibit.item.amsterdam",
+      "value": "Amsterdam diorama"
+    },
+    {
+      "key": "profile.exhibit.item.chongqing",
+      "value": "Chongqing diorama"
+    },
+    {
+      "key": "profile.exhibit.item.first_win",
+      "value": "First victory medal"
+    },
+    {
+      "key": "profile.exhibit.item.mg_win",
+      "value": "Magnate victory medal"
+    },
+    {
+      "key": "profile.exhibit.item.travel",
+      "value": "City tour medal"
+    },
+    {
+      "key": "character.photo.capture",
+      "value": "Save photo (PNG)"
+    },
+    {
+      "key": "character.photo.saved",
+      "value": "Photo saved in the Photos folder."
+    },
+    {
+      "key": "character.photo.failed",
+      "value": "Could not save photo."
     }
   ]
 }

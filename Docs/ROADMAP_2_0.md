@@ -111,3 +111,5 @@ Profile 2.0 batch 6a: #160 merged (29aad63); shared garage 3D inspection stand a
 Profile 2.0 batch 6b: #161 merged (e3cc650); eight existing company emblems supported as cab-door badge plaques in garage and construction, bounded scene-owned texture cache, hide/revoke/reuse cleanup and six Edit Mode cases. CI pending. Actual graphics/performance acceptance and final art remain open.
 
 Profile 2.0 batch 6c: #162 merged (5d2f78e); bounded adjacent hub-pad avatar loop and optional independent in-city close-up window with orbit/zoom and scene-owned cleanup. Two localization keys, six Edit Mode cases; CI and runtime/manual acceptance pending. Not a full navmesh or cinematic full-screen mode. Continue collection framework/photo capture/stabilization before art phase.
+
+Profile 2.0 batch 6d: #163 merged (d13ce2c); ten progress-derived exhibition items, three local display slots, collection UI foundation and explicit HUD-free PNG export from character close-up. 26 RU/EN keys, six Edit Mode cases; CI and runtime/manual acceptance pending. Actual diorama art and full-screen photo mode remain open.
