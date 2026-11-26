@@ -80,7 +80,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
     {
         var seeds = CitySeedBatch.Seeds(seed, count);
         failures.Clear();
-        int completed = 0, invalid = 0, warned = 0;
+        int completed = 0, invalid = 0, warned = 0, fallback = 0;
         try
         {
             for (int i = 0; i < seeds.Length; i++)
@@ -90,6 +90,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
                     "Seed " + requested, i / (float)count)) break;
                 current = CitySeedDiagnostics.Run(requested, include3D);
                 completed++;
+                if (current.generated && current.actualSeed != requested) fallback++;
                 if (!current.Passed) invalid++;
                 if (WarningCount(current) > 0) warned++;
                 if (!current.Passed || WarningCount(current) > 0) SaveFailure(current);
@@ -97,7 +98,7 @@ public sealed class CityGeneratorLabWindow : EditorWindow
         }
         finally { EditorUtility.ClearProgressBar(); }
         summary = "Completed " + completed + " / " + count + "; failed " + invalid +
-            "; 3D warnings on " + warned + " seed(s)." +
+            "; 3D warnings on " + warned + " seed(s); fallback seeds " + fallback + "." +
             (completed < count ? " Cancelled before completion." : "") + " Reports: Library/CityHighways/CitySeedDiagnostics.";
     }
 
