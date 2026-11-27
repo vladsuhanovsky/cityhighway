@@ -37,6 +37,44 @@ namespace CityHighways.Tests
         }
 
         [Test]
+        public void BakedGeometryBoundsIgnoreInflatedImporterBoundsAndTrackMovedBone()
+        {
+            var root = new GameObject("Trial");
+            var child = new GameObject("Trial_boot_L").transform;
+            child.SetParent(root.transform, false);
+            var bone = new GameObject("Bone").transform;
+            bone.SetParent(root.transform, false);
+            var mesh = new Mesh();
+            var idle = Clip("Idle", "Bone", 1f, 1f);
+            var walk = Clip("Walk", "Bone", 1f, 1f);
+            try
+            {
+                mesh.vertices = new[] { new Vector3(0f, .1f, 0f), new Vector3(1f, .1f, 0f), new Vector3(0f, .2f, 1f) };
+                mesh.triangles = new[] {0, 1, 2};
+                mesh.bindposes = new[] {Matrix4x4.identity};
+                var weight = new BoneWeight { boneIndex0 = 0, weight0 = 1f };
+                mesh.boneWeights = new[] {weight, weight, weight};
+                mesh.RecalculateBounds();
+                var skin = child.gameObject.AddComponent<SkinnedMeshRenderer>();
+                skin.sharedMesh = mesh;
+                skin.bones = new[] {bone};
+                skin.rootBone = bone;
+                skin.localBounds = new Bounds(Vector3.zero, Vector3.one * 100f);
+                using var player = new ProfileRoadWorkerPreviewPlayer(root, idle, walk);
+                Assert.IsTrue(player.TryGetGeometryBounds(root.transform, true, out var before));
+                Assert.That(before.min.y, Is.EqualTo(.1f).Within(.0001f));
+                bone.localPosition = Vector3.up * .25f;
+                Assert.IsTrue(player.TryGetGeometryBounds(root.transform, true, out var after));
+                Assert.That(after.min.y, Is.EqualTo(.35f).Within(.0001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root); Object.DestroyImmediate(mesh);
+                Object.DestroyImmediate(idle); Object.DestroyImmediate(walk);
+            }
+        }
+
+        [Test]
         public void SamplingRestoresRestPoseAndUsesActualClipDuration()
         {
             var root = new GameObject("Trial");
@@ -46,7 +84,7 @@ namespace CityHighways.Tests
             var walk = Clip("Walk", "Bone", 1f, 2f);
             try
             {
-                var player = new ProfileRoadWorkerPreviewPlayer(root, idle, walk);
+                using var player = new ProfileRoadWorkerPreviewPlayer(root, idle, walk);
                 Assert.AreEqual(.25f, player.Rate(ProfileAvatarMotionMode.Idle));
                 Assert.AreEqual(1f, player.Rate(ProfileAvatarMotionMode.Walk));
                 player.Sample(ProfileAvatarMotionMode.Idle, .5f);

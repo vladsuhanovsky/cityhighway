@@ -28,6 +28,8 @@ namespace CityHighways.Presentation
         readonly Button trialButton;
         bool trialRequested;
         ProfileRoadWorkerPreviewPlayer trialPlayer;
+        Transform trialFraming;
+        float trialGroundY;
 #endif
         ProfileAvatarMotionMode motionMode;
         float phase, lastMotionTime;
@@ -94,6 +96,7 @@ namespace CityHighways.Presentation
             motionButton.style.bottom = 4f;
             motionButton.style.right = 4f;
             motionButton.style.display = DisplayStyle.None;
+            StylePreviewButton(motionButton);
             Add(motionButton);
 #if UNITY_EDITOR
             trialButton = new Button(() => { trialRequested = !trialRequested; Refresh(); })
@@ -102,6 +105,7 @@ namespace CityHighways.Presentation
             trialButton.style.top = 4f;
             trialButton.style.left = 4f;
             trialButton.style.display = DisplayStyle.None;
+            StylePreviewButton(trialButton);
             Add(trialButton);
 #endif
             UpdateMotionLabel();
@@ -241,6 +245,7 @@ namespace CityHighways.Presentation
                     // Animation can target the imported root; framing must live outside it.
                     framing = new GameObject("Local demo framing").transform;
                     framing.SetParent(pivot.transform, false);
+                    trialFraming = framing;
                     model = Object.Instantiate(trialAsset, framing, false);
                     trialPlayer = new ProfileRoadWorkerPreviewPlayer(model, trialIdle, trialWalk);
                 }
@@ -270,13 +275,29 @@ namespace CityHighways.Presentation
                     if (!hasBounds) { bounds = renderer.bounds; hasBounds = true; }
                     else bounds.Encapsulate(renderer.bounds);
                 }
+#if UNITY_EDITOR
+                if (trialPlayer != null && trialPlayer.TryGetGeometryBounds(pivot.transform, false, out var actual))
+                {
+                    // Pivot is not yet rotated/scaled. Convert the actual local
+                    // geometry center to world for the existing framing calculation.
+                    bounds = new Bounds(pivot.transform.TransformPoint(actual.center), actual.size);
+                    hasBounds = true;
+                }
+#endif
                 float extent = bounds.size.magnitude;
                 if (!hasBounds || float.IsNaN(extent) || float.IsInfinity(extent) || extent < .001f || extent > 10000f) { Release(); return; }
                 float scale = 2.12f / extent;
                 Vector3 centerOffset = bounds.center - framing.position;
                 framing.localScale *= scale;
                 framing.position = pivot.transform.position - centerOffset * scale;
-                BuildPodium(-bounds.extents.y * scale);
+                float feet = -bounds.extents.y * scale;
+                BuildPodium(feet);
+#if UNITY_EDITOR
+                // Top cylinder center = feet - .007; half-height = .0125.
+                // Keep the platform fixed and correct the demo model, not the bones.
+                trialGroundY = feet + .0055f;
+                AlignTrialGround();
+#endif
                 texture = new RenderTexture(460, 690, 24, RenderTextureFormat.ARGB32)
                 { name = "Local profile avatar", hideFlags = HideFlags.HideAndDontSave };
                 if (!texture.Create()) { Release(); return; }
@@ -345,17 +366,46 @@ namespace CityHighways.Presentation
         void UpdateTrialLabel()
         {
             bool en = LocalizationService.Language == "en";
-            trialButton.text = trialRequested ? (en ? "V7 demo: fixed outfit (exit)" : "Демо V7: комплект (выход)") :
-                (en ? "V7 demo" : "Демо V7");
+            trialButton.text = trialRequested ? (en ? "Exit demo" : "Выйти из демо") :
+                (en ? "Worker demo" : "Демо рабочего");
             trialButton.tooltip = en ? "Editor only. Fixed outfit, not equipped or purchased." :
                 "Только редактор. Фиксированный комплект, не покупка и не примерка.";
         }
 #endif
 
+#if UNITY_EDITOR
+        void AlignTrialGround()
+        {
+            if (trialPlayer == null || trialFraming == null || pivot == null ||
+                !trialPlayer.TryGetGeometryBounds(pivot.transform, true, out var geometry)) return;
+            var position = trialFraming.localPosition;
+            position.y += trialGroundY - geometry.min.y;
+            trialFraming.localPosition = position;
+        }
+#endif
+
+        static void StylePreviewButton(Button button)
+        {
+            button.style.color = new Color(.95f, .96f, .98f);
+            button.style.backgroundColor = new Color(.08f, .13f, .19f, .96f);
+            button.style.fontSize = 12f;
+            button.style.unityFontStyleAndWeight = FontStyle.Bold;
+            button.style.minHeight = 24f;
+            button.style.paddingLeft = button.style.paddingRight = 8f;
+            button.style.paddingTop = button.style.paddingBottom = 3f;
+            Ui.Radius(button, 5f);
+            Ui.Border(button, 1f, new Color(.58f, .65f, .74f, .8f));
+        }
+
         void SampleMotion()
         {
 #if UNITY_EDITOR
-            if (trialPlayer != null) { trialPlayer.Sample(motionMode, phase); return; }
+            if (trialPlayer != null)
+            {
+                trialPlayer.Sample(motionMode, phase);
+                AlignTrialGround();
+                return;
+            }
 #endif
             if (humanoid != null) humanoid.Sample(motionMode,phase);
             else motion?.SampleValidated(motionMode,phase);
@@ -462,7 +512,9 @@ namespace CityHighways.Presentation
             humanoid?.Dispose();
             humanoid = null;
 #if UNITY_EDITOR
+            trialPlayer?.Dispose();
             trialPlayer = null;
+            trialFraming = null;
 #endif
             motion = null;
             motionMode = ProfileAvatarMotionMode.Still;
