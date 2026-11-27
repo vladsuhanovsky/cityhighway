@@ -28,7 +28,10 @@ namespace CityHighways.Presentation
 
             _cell = cell;
             _salt = salt;
-            float gy = y / cell;
+            // Explicit double-to-single conversion fixes the grid precision before
+            // subtracting its integer part. Mono may otherwise retain extra
+            // precision in a float local, depending on JIT/register allocation.
+            float gy = (float)((double)y / cell);
             float iy = Mathf.Floor(gy);
             float fy = gy - iy;
             _rowWeight = fy * fy * (3f - 2f * fy);
@@ -41,7 +44,7 @@ namespace CityHighways.Presentation
 
         public float Sample(float x)
         {
-            float gx = x / _cell;
+            float gx = (float)((double)x / _cell);
             float ix = Mathf.Floor(gx);
             float fx = gx - ix;
             fx = fx * fx * (3f - 2f * fx);

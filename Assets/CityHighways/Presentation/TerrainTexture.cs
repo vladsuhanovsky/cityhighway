@@ -113,7 +113,9 @@ namespace CityHighways.Presentation
 
         static float ValueNoise(float x, float y, float cell, int salt)
         {
-            float gx = x / cell, gy = y / cell;
+            // Match the row sampler's explicit single-precision grid coordinates.
+            // Keep the original smoothing, corner hashes and interpolation.
+            float gx = (float)((double)x / cell), gy = (float)((double)y / cell);
             float ix = Mathf.Floor(gx), iy = Mathf.Floor(gy);
             float fx = gx - ix, fy = gy - iy;
             fx = fx * fx * (3f - 2f * fx);
