@@ -30,7 +30,9 @@ namespace CityHighways.Tests
 
         static float OldValueNoise(float x, float y, float cell, int salt)
         {
-            float gx = x / cell, gy = y / cell;
+            // The reference uses the original float grid, with an explicit
+            // rounding boundary so that Mono cannot retain a double quotient.
+            float gx = (float)((double)x / cell), gy = (float)((double)y / cell);
             float ix = Mathf.Floor(gx), iy = Mathf.Floor(gy);
             float fx = gx - ix, fy = gy - iy;
             fx = fx * fx * (3f - 2f * fx);
@@ -63,6 +65,20 @@ namespace CityHighways.Tests
                     Assert.That(actual, Is.InRange(0f, 1f));
                 }
             }
+        }
+
+        [Test]
+        public void LargeRowCoordinateUsesSinglePrecisionGridBeforeInterpolation()
+        {
+            // Regression from Windows Unity Editor: the unrounded quotient
+            // produced ~0.81355745 instead of the original float-grid value.
+            const float expected = 0.81355894f;
+            var row = new TerrainNoiseRowSampler(966f, 11f, 13);
+            Assert.That(OldValueNoise(-117f, 966f, 11f, 13),
+                Is.EqualTo(expected).Within(2e-7f));
+            Assert.That(row.Sample(-117f), Is.EqualTo(expected).Within(2e-7f));
+            row.Sample(1779f);
+            Assert.That(row.Sample(-117f), Is.EqualTo(expected).Within(2e-7f));
         }
 
         [Test]
