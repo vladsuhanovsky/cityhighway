@@ -23,6 +23,7 @@ for gender, table in (('m',M),('f',F)):
     for id_, slot, name, price, tone in table:
         it={'id':id_,'slot':slot,'name':name,'price':price,'file':f'{slot}/{id_}','gender':gender}
         if tone: it['tone']=tone
+        if id_ == 'top_sweater': it['hides']=['acc_tie']
         items.append(it)
         os.makedirs(f'{OUT}/{slot}', exist_ok=True)
         for suffix in ('','_tan','_dark'):

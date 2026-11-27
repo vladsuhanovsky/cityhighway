@@ -24,7 +24,10 @@ FOOTL=(146,684,254,734); FOOTR=(258,684,366,734)
 
 items=[]
 def item(id,slot,name,price,draw):
-    img=canvas(); d=ImageDraw.Draw(img); draw(d); save(img,f'{slot}/{id}'); items.append(dict(id=id,slot=slot,name=name,price=price,file=f'{slot}/{id}'))
+    img=canvas(); d=ImageDraw.Draw(img); draw(d); save(img,f'{slot}/{id}')
+    entry=dict(id=id,slot=slot,name=name,price=price,file=f'{slot}/{id}')
+    if id == 'top_sweater': entry['hides']=['acc_tie']
+    items.append(entry)
 
 # --- Тело (кожа + лицо): бесплатно
 def body(skin):

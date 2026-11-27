@@ -7,6 +7,12 @@ namespace CityHighways.Tests
 {
     public sealed class TerrainNoiseRowSamplerTests
     {
+        // Cached and uncached paths can round intermediates differently on
+        // different Mono/JIT/CPU combinations. Noise is normalized to [0,1].
+        // Absolute tolerance covers sub-micro differences, not changed hashes,
+        // cells, smoothing or octave weights. Repeatability is checked exactly.
+        const float ReferenceTolerance = 1e-6f;
+
         // Exact pre-optimization TerrainTexture.ValueNoise formula,
         // deliberately kept separate from the optimized sampler.
         static float OldHash(long x, long y, int salt)
@@ -51,8 +57,10 @@ namespace CityHighways.Tests
                 for (int x = -117; x <= 1779; x++)
                 {
                     float expected = OldValueNoise(x, y, cell, salt);
-                    Assert.That(row.Sample(x), Is.EqualTo(expected).Within(1e-7f),
+                    float actual = row.Sample(x);
+                    Assert.That(actual, Is.EqualTo(expected).Within(ReferenceTolerance),
                         "Row " + y + ", x " + x + ", cell " + cell);
+                    Assert.That(actual, Is.InRange(0f, 1f));
                 }
             }
         }
@@ -68,8 +76,15 @@ namespace CityHighways.Tests
                 -0.01f, -34f, -34.01f, 35f, 35f, 1778f
             };
             foreach (float x in xs)
-                Assert.That(row.Sample(x),
-                    Is.EqualTo(OldValueNoise(x, y, cell, 12)).Within(1e-7f));
+            {
+                float actual = row.Sample(x);
+                Assert.That(actual,
+                    Is.EqualTo(OldValueNoise(x, y, cell, 12)).Within(ReferenceTolerance));
+                // Force the corner cache to change; the original sample must
+                // remain bit-for-bit equal within this runtime.
+                row.Sample(x + 2f * cell);
+                Assert.AreEqual(actual, row.Sample(x), "Cached repeat at " + x);
+            }
         }
 
         [Test]
@@ -88,7 +103,9 @@ namespace CityHighways.Tests
                     float result = large.Sample(x) * 0.5f +
                         medium.Sample(x) * 0.3f +
                         small.Sample(x) * 0.2f;
-                    Assert.That(result, Is.EqualTo(expected).Within(1e-7f));
+                    Assert.That(result, Is.EqualTo(expected).Within(ReferenceTolerance),
+                        "Grass row " + y + ", x " + x);
+                    Assert.That(result, Is.InRange(0f, 1f));
                 }
             }
         }

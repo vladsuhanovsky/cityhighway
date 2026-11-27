@@ -37,6 +37,25 @@ namespace CityHighways.Tests
             Assert.AreEqual("acc_tie", ProfileAppearance.FromOutfit(snapshot.ToOutfit().With("top", "top_shirt")).VisibleId("accessory"));
         }
 
+        [Test]
+        public void LegacySweaterWithoutHidesMetadataStillHidesOnlyTie()
+        {
+            var sweater = new CharacterItem { id = "top_sweater", slot = "top" };
+            var tie = new CharacterItem { id = "acc_tie", slot = "accessory" };
+            var radio = new CharacterItem { id = "acc_radio", slot = "accessory" };
+            Assert.IsTrue(sweater.Hides(tie));
+            Assert.IsFalse(sweater.Hides(radio));
+            sweater.hides = Array.Empty<string>();
+            Assert.IsTrue(sweater.Hides(tie));
+            sweater.hides = new[] { "acc_radio" };
+            Assert.IsFalse(sweater.Hides(tie));
+            Assert.IsTrue(sweater.Hides(radio));
+            sweater.hides = new[] { "accessory" };
+            Assert.IsTrue(sweater.Hides(tie));
+            Assert.IsTrue(sweater.Hides(radio));
+            Assert.IsFalse(new CharacterItem { id = "top_shirt", slot = "top" }.Hides(tie));
+        }
+
         [TestCase("body=unknown;top=../../secret;hat=unknown")]
         [TestCase("body=body_f_light;hat=hat_hardhat")]
         public void UnknownAndIncompatibleIdsNeverBecomeVisualReferences(string raw)
