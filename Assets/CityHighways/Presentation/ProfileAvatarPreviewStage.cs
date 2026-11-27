@@ -24,6 +24,11 @@ namespace CityHighways.Presentation
         readonly Button motionButton;
         ProfileAvatarMotion motion;
         ProfileHumanoidPreviewPlayer humanoid;
+#if UNITY_EDITOR
+        readonly Button trialButton;
+        bool trialRequested;
+        ProfileRoadWorkerPreviewPlayer trialPlayer;
+#endif
         ProfileAvatarMotionMode motionMode;
         float phase, lastMotionTime;
         readonly Func<string, ProfileAvatarRig> load;
@@ -90,6 +95,15 @@ namespace CityHighways.Presentation
             motionButton.style.right = 4f;
             motionButton.style.display = DisplayStyle.None;
             Add(motionButton);
+#if UNITY_EDITOR
+            trialButton = new Button(() => { trialRequested = !trialRequested; Refresh(); })
+                { name = "profile-road-worker-v7-demo" };
+            trialButton.style.position = Position.Absolute;
+            trialButton.style.top = 4f;
+            trialButton.style.left = 4f;
+            trialButton.style.display = DisplayStyle.None;
+            Add(trialButton);
+#endif
             UpdateMotionLabel();
             RegisterCallback<AttachToPanelEvent>(_ => { attached = true; Refresh(); });
             RegisterCallback<DetachFromPanelEvent>(_ => { attached = false; Release(); });
@@ -151,7 +165,7 @@ namespace CityHighways.Presentation
                     if (visible && HasMotion && motionMode != ProfileAvatarMotionMode.Still)
                     {
                         phase = Mathf.Repeat(phase + Mathf.Clamp(now - lastMotionTime, 0f, .1f) *
-                            (motionMode == ProfileAvatarMotionMode.Walk ? 1.1f : .35f), 1f);
+                            MotionRate(), 1f);
                         SampleMotion();
                     }
                     lastMotionTime = now;
@@ -161,6 +175,10 @@ namespace CityHighways.Presentation
 
         public void Show(ProfileAppearance look, bool force2D = false)
         {
+#if UNITY_EDITOR
+            // Selecting a different actual outfit must exit the fixed-look demo.
+            if (appearance?.Serialized != look?.Serialized || force2D) trialRequested = false;
+#endif
             appearance = look;
             debugFallback = force2D;
             Refresh();
@@ -170,37 +188,80 @@ namespace CityHighways.Presentation
         {
             if (debugFallback == value) return;
             debugFallback = value;
+#if UNITY_EDITOR
+            if (value) trialRequested = false;
+#endif
             Refresh();
         }
 
         void Refresh()
         {
             Release();
+#if UNITY_EDITOR
+            trialButton.style.display = DisplayStyle.None;
+#endif
             if (!attached || debugFallback || appearance == null || !Application.isPlaying) return;
             string path = ResourceFor(appearance.Gender);
             if (path == null) return;
             try
             {
-                var prefab = load(path);
-                if (prefab == null || !prefab.gameObject.activeSelf || !prefab.TryValidate(out _) || prefab.Gender != appearance.Gender) return;
+                ProfileAvatarRig prefab = null;
+#if UNITY_EDITOR
+                GameObject trialAsset = null;
+                AnimationClip trialIdle = null, trialWalk = null;
+                // Check local availability only while attached in Play Mode.
+                var localPath = ProfileRoadWorkerTrial.AssetPath(appearance.Gender == CharacterCatalog.Female, false);
+                bool localAvailable = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(localPath) != null;
+                trialButton.style.display = localAvailable ? DisplayStyle.Flex : DisplayStyle.None;
+                if (trialRequested && (!localAvailable ||
+                    !ProfileRoadWorkerPreviewPlayer.TryLoad(appearance.Gender, out trialAsset, out trialIdle, out trialWalk, out _)))
+                {
+                    trialRequested = false;
+                    Debug.LogWarning("Road Worker V7 demo unavailable: validate local GLB and Idle/Walk in Road Worker Trial.");
+                }
+                UpdateTrialLabel();
+                if (!trialRequested)
+#endif
+                {
+                    prefab = load(path);
+                    if (prefab == null || !prefab.gameObject.activeSelf || !prefab.TryValidate(out _) || prefab.Gender != appearance.Gender) return;
+                }
                 root = new GameObject("Local profile 3D preview") { hideFlags = HideFlags.HideAndDontSave };
                 root.SetActive(false);
                 // Separate from the existing role-avatar stages, with a short camera frustum.
                 root.transform.position = origin;
                 pivot = new GameObject("Pivot");
                 pivot.transform.SetParent(root.transform, false);
-                var rig = Object.Instantiate(prefab, pivot.transform, false);
-                if (!rig.TryApply(appearance, out _)) { Release(); return; }
-                foreach (var t in rig.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = Layer;
-                foreach (var animator in rig.GetComponentsInChildren<Animator>(true)) animator.enabled = false;
-                foreach (var collider in rig.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
-                foreach (var body in rig.GetComponentsInChildren<Rigidbody>(true)) { body.isKinematic = true; body.detectCollisions = false; }
+                ProfileAvatarRig rig = null;
+                GameObject model;
+                Transform framing;
+#if UNITY_EDITOR
+                if (trialRequested)
+                {
+                    // Animation can target the imported root; framing must live outside it.
+                    framing = new GameObject("Local demo framing").transform;
+                    framing.SetParent(pivot.transform, false);
+                    model = Object.Instantiate(trialAsset, framing, false);
+                    trialPlayer = new ProfileRoadWorkerPreviewPlayer(model, trialIdle, trialWalk);
+                }
+                else
+#endif
+                {
+                    rig = Object.Instantiate(prefab, pivot.transform, false);
+                    if (!rig.TryApply(appearance, out _)) { Release(); return; }
+                    model = rig.gameObject;
+                    framing = rig.transform;
+                }
+                foreach (var t in model.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = Layer;
+                foreach (var animator in model.GetComponentsInChildren<Animator>(true)) animator.enabled = false;
+                foreach (var collider in model.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
+                foreach (var body in model.GetComponentsInChildren<Rigidbody>(true)) { body.isKinematic = true; body.detectCollisions = false; }
                 root.SetActive(true);
-                var authored = rig.GetComponent<ProfileHumanoidArt>();
+                var authored = rig == null ? null : rig.GetComponent<ProfileHumanoidArt>();
                 if (authored != null && authored.TryValidate(out _))
                     humanoid = new ProfileHumanoidPreviewPlayer(authored);
                 // Only selected renderers determine framing; hidden items do not change bounds.
-                var renderers = rig.GetComponentsInChildren<Renderer>(true);
+                var renderers = model.GetComponentsInChildren<Renderer>(true);
                 bool hasBounds = false;
                 Bounds bounds = default;
                 foreach (var renderer in renderers)
@@ -212,9 +273,9 @@ namespace CityHighways.Presentation
                 float extent = bounds.size.magnitude;
                 if (!hasBounds || float.IsNaN(extent) || float.IsInfinity(extent) || extent < .001f || extent > 10000f) { Release(); return; }
                 float scale = 2.12f / extent;
-                Vector3 centerOffset = bounds.center - rig.transform.position;
-                rig.transform.localScale *= scale;
-                rig.transform.position = pivot.transform.position - centerOffset * scale;
+                Vector3 centerOffset = bounds.center - framing.position;
+                framing.localScale *= scale;
+                framing.position = pivot.transform.position - centerOffset * scale;
                 BuildPodium(-bounds.extents.y * scale);
                 texture = new RenderTexture(460, 690, 24, RenderTextureFormat.ARGB32)
                 { name = "Local profile avatar", hideFlags = HideFlags.HideAndDontSave };
@@ -246,7 +307,7 @@ namespace CityHighways.Presentation
                 surface.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(texture));
                 surface.style.display = DisplayStyle.Flex;
                 fallback.style.opacity = 0f;
-                motion = rig.GetComponent<ProfileAvatarMotion>();
+                motion = rig == null ? null : rig.GetComponent<ProfileAvatarMotion>();
                 if (motion != null && !motion.IsValid()) motion = null;
                 if (HasMotion)
                 {
@@ -258,14 +319,44 @@ namespace CityHighways.Presentation
             catch (Exception ex)
             {
                 Release();
+#if UNITY_EDITOR
+                trialRequested = false;
+                UpdateTrialLabel();
+#endif
                 Debug.LogWarning("Profile 3D preview fell back to 2D: " + ex.Message);
             }
         }
 
-        bool HasMotion => humanoid != null || motion != null;
+        bool HasMotion =>
+#if UNITY_EDITOR
+            trialPlayer != null ||
+#endif
+            humanoid != null || motion != null;
+
+        float MotionRate()
+        {
+#if UNITY_EDITOR
+            if (trialPlayer != null) return trialPlayer.Rate(motionMode);
+#endif
+            return motionMode == ProfileAvatarMotionMode.Walk ? 1.1f : .35f;
+        }
+
+#if UNITY_EDITOR
+        void UpdateTrialLabel()
+        {
+            bool en = LocalizationService.Language == "en";
+            trialButton.text = trialRequested ? (en ? "V7 demo: fixed outfit (exit)" : "Демо V7: комплект (выход)") :
+                (en ? "V7 demo" : "Демо V7");
+            trialButton.tooltip = en ? "Editor only. Fixed outfit, not equipped or purchased." :
+                "Только редактор. Фиксированный комплект, не покупка и не примерка.";
+        }
+#endif
 
         void SampleMotion()
         {
+#if UNITY_EDITOR
+            if (trialPlayer != null) { trialPlayer.Sample(motionMode, phase); return; }
+#endif
             if (humanoid != null) humanoid.Sample(motionMode,phase);
             else motion?.SampleValidated(motionMode,phase);
         }
@@ -370,6 +461,9 @@ namespace CityHighways.Presentation
             CancelPointer();
             humanoid?.Dispose();
             humanoid = null;
+#if UNITY_EDITOR
+            trialPlayer = null;
+#endif
             motion = null;
             motionMode = ProfileAvatarMotionMode.Still;
             phase = 0f;
