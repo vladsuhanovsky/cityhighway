@@ -88,6 +88,16 @@ namespace CityHighways.Presentation
             return true;
         }
 
+        // Shared animated bones must never be deactivated by changing wardrobe slots.
+        public bool IsStableSkeletonTransform(Transform bone)
+        {
+            if (bone == null || (bone != transform && !bone.IsChildOf(transform)) ||
+                !TryIndex(out var index, out _)) return false;
+            foreach (var visual in index.Values)
+                if (bone == visual.transform || bone.IsChildOf(visual.transform)) return false;
+            return true;
+        }
+
         public string[] MissingCatalogIds()
         {
             if (!TryIndex(out var index, out _)) return Array.Empty<string>();

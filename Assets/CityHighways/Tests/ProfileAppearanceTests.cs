@@ -311,20 +311,43 @@ namespace CityHighways.Tests
                     calls.Add(path);
                     return detailed;
                 }));
-                CollectionAssert.AreEqual(new[]{ProfileAvatarPreviewStage.MaleArtResource},calls);
+                CollectionAssert.AreEqual(new[]{ProfileAvatarPreviewStage.MaleHumanoidResource, ProfileAvatarPreviewStage.MaleArtResource},calls);
                 calls.Clear();
                 Assert.AreSame(legacy,ProfileAvatarPreviewStage.SelectPreviewRig("m",path=>
                 {
                     calls.Add(path);
                     return path == ProfileAvatarPreviewStage.MaleArtResource ? other : legacy;
                 }));
-                CollectionAssert.AreEqual(new[]{ProfileAvatarPreviewStage.MaleArtResource,
+                CollectionAssert.AreEqual(new[]{ProfileAvatarPreviewStage.MaleHumanoidResource, ProfileAvatarPreviewStage.MaleArtResource,
                     ProfileAvatarPreviewStage.MaleResource},calls);
                 Assert.IsNull(ProfileAvatarPreviewStage.SelectPreviewRig("m",_=>null));
                 Assert.IsNull(ProfileAvatarPreviewStage.SelectPreviewRig("unknown",
                     _=>throw new InvalidOperationException("Unexpected load")));
             }
             finally { Object.DestroyImmediate(art); Object.DestroyImmediate(old); Object.DestroyImmediate(wrong); }
+        }
+
+        [TestCase("m", ProfileAvatarPreviewStage.MaleHumanoidResource)]
+        [TestCase("f", ProfileAvatarPreviewStage.FemaleHumanoidResource)]
+        public void InvalidHumanoidContractCannotOverrideProceduralFallback(string gender, string path)
+        {
+            var invalid = ProfileAvatarPrototype.Build(gender,_=>null);
+            var fallback = ProfileAvatarPrototype.Build(gender,_=>null,true);
+            try
+            {
+                var art = invalid.AddComponent<ProfileHumanoidArt>();
+                Assert.IsFalse(art.TryValidate(out var error));
+                Assert.IsNotEmpty(error);
+                Assert.AreEqual(path,ProfileAvatarPreviewStage.HumanoidResourceFor(gender));
+                var selected = ProfileAvatarPreviewStage.SelectPreviewRig(gender,p=>
+                    p==path?invalid.GetComponent<ProfileAvatarRig>():fallback.GetComponent<ProfileAvatarRig>());
+                Assert.AreSame(fallback.GetComponent<ProfileAvatarRig>(),selected);
+                var rig = invalid.GetComponent<ProfileAvatarRig>();
+                Assert.IsTrue(rig.IsStableSkeletonTransform(invalid.transform));
+                Assert.IsFalse(rig.IsStableSkeletonTransform(invalid.transform.Find(Outfit.DefaultFor(gender).Get("body"))));
+                Assert.IsFalse(rig.IsStableSkeletonTransform(null));
+            }
+            finally { Object.DestroyImmediate(invalid); Object.DestroyImmediate(fallback); }
         }
 
         [Test]

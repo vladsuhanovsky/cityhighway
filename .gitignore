@@ -112,3 +112,10 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Licensed character source and authored local wrappers. Never publish vendor assets.
+# All imported dependencies must also stay private (including their .meta files).
+/Assets/CityHighwaysLicensedArt/
+/Assets/CityHighwaysLicensedArt.meta
+/Assets/CityHighways/Resources/CityHighways/Profile3DProfessional/
+/Assets/CityHighways/Resources/CityHighways/Profile3DProfessional.meta

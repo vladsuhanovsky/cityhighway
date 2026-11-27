@@ -16,11 +16,14 @@ namespace CityHighways.Presentation
         public const string FemaleResource = "CityHighways/Profile3D/Female";
         public const string MaleArtResource = "CityHighways/Profile3DArt/Male";
         public const string FemaleArtResource = "CityHighways/Profile3DArt/Female";
+        public const string MaleHumanoidResource = "CityHighways/Profile3DProfessional/Male";
+        public const string FemaleHumanoidResource = "CityHighways/Profile3DProfessional/Female";
         static int nextStage;
         readonly Vector3 origin = new Vector3(-8000f - 30f * (nextStage++ % 128), -8000f, -8000f);
         readonly VisualElement fallback, surface;
         readonly Button motionButton;
         ProfileAvatarMotion motion;
+        ProfileHumanoidPreviewPlayer humanoid;
         ProfileAvatarMotionMode motionMode;
         float phase, lastMotionTime;
         readonly Func<string, ProfileAvatarRig> load;
@@ -42,11 +45,21 @@ namespace CityHighways.Presentation
             gender == CharacterCatalog.Male ? MaleArtResource :
             gender == CharacterCatalog.Female ? FemaleArtResource : null;
 
+        public static string HumanoidResourceFor(string gender) =>
+            gender == CharacterCatalog.Male ? MaleHumanoidResource :
+            gender == CharacterCatalog.Female ? FemaleHumanoidResource : null;
+
         public static ProfileAvatarRig SelectPreviewRig(string gender, Func<string, ProfileAvatarRig> source)
         {
             if (source == null || ResourceFor(gender) == null) return null;
             bool Valid(ProfileAvatarRig rig) => rig != null && rig.gameObject.activeSelf &&
                 rig.Gender == gender && rig.TryValidate(out _) && rig.MissingCatalogIds().Length == 0;
+            var professional = source(HumanoidResourceFor(gender));
+            if (Valid(professional))
+            {
+                var contract = professional.GetComponent<ProfileHumanoidArt>();
+                if (contract != null && contract.TryValidate(out _)) return professional;
+            }
             var art = source(ArtResourceFor(gender));
             if (Valid(art)) return art;
             var legacy = source(ResourceFor(gender));
@@ -127,19 +140,19 @@ namespace CityHighways.Presentation
                     bool visible = attached && ProfileRenderVisibility.IsVisible(this);
                     camera.enabled = visible;
                     motionButton.SetEnabled(!Ui.ReducedMotion);
-                    if (Ui.ReducedMotion && motion != null && motionMode != ProfileAvatarMotionMode.Still)
+                    if (Ui.ReducedMotion && HasMotion && motionMode != ProfileAvatarMotionMode.Still)
                     {
                         motionMode = ProfileAvatarMotionMode.Still;
                         phase = 0f;
-                        motion.SampleValidated(motionMode, phase);
+                        SampleMotion();
                         UpdateMotionLabel();
                     }
                     float now = Time.realtimeSinceStartup;
-                    if (visible && motion != null && motionMode != ProfileAvatarMotionMode.Still)
+                    if (visible && HasMotion && motionMode != ProfileAvatarMotionMode.Still)
                     {
                         phase = Mathf.Repeat(phase + Mathf.Clamp(now - lastMotionTime, 0f, .1f) *
                             (motionMode == ProfileAvatarMotionMode.Walk ? 1.1f : .35f), 1f);
-                        motion.SampleValidated(motionMode, phase);
+                        SampleMotion();
                     }
                     lastMotionTime = now;
                 }
@@ -183,6 +196,9 @@ namespace CityHighways.Presentation
                 foreach (var collider in rig.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
                 foreach (var body in rig.GetComponentsInChildren<Rigidbody>(true)) { body.isKinematic = true; body.detectCollisions = false; }
                 root.SetActive(true);
+                var authored = rig.GetComponent<ProfileHumanoidArt>();
+                if (authored != null && authored.TryValidate(out _))
+                    humanoid = new ProfileHumanoidPreviewPlayer(authored);
                 // Only selected renderers determine framing; hidden items do not change bounds.
                 var renderers = rig.GetComponentsInChildren<Renderer>(true);
                 bool hasBounds = false;
@@ -231,13 +247,13 @@ namespace CityHighways.Presentation
                 surface.style.display = DisplayStyle.Flex;
                 fallback.style.opacity = 0f;
                 motion = rig.GetComponent<ProfileAvatarMotion>();
-                if (motion != null && motion.IsValid())
+                if (motion != null && !motion.IsValid()) motion = null;
+                if (HasMotion)
                 {
                     motionButton.style.display = DisplayStyle.Flex;
                     lastMotionTime = Time.realtimeSinceStartup;
                     UpdateMotionLabel();
                 }
-                else motion = null;
             }
             catch (Exception ex)
             {
@@ -246,14 +262,22 @@ namespace CityHighways.Presentation
             }
         }
 
+        bool HasMotion => humanoid != null || motion != null;
+
+        void SampleMotion()
+        {
+            if (humanoid != null) humanoid.Sample(motionMode,phase);
+            else motion?.SampleValidated(motionMode,phase);
+        }
+
         void CycleMotion()
         {
-            if (motion == null || Ui.ReducedMotion) return;
+            if (!HasMotion || Ui.ReducedMotion) return;
             motionMode = motionMode == ProfileAvatarMotionMode.Still ? ProfileAvatarMotionMode.Idle :
                 motionMode == ProfileAvatarMotionMode.Idle ? ProfileAvatarMotionMode.Walk : ProfileAvatarMotionMode.Still;
             phase = 0f;
             lastMotionTime = Time.realtimeSinceStartup;
-            motion.SampleValidated(motionMode, phase);
+            SampleMotion();
             UpdateMotionLabel();
         }
 
@@ -344,6 +368,8 @@ namespace CityHighways.Presentation
         public void Release()
         {
             CancelPointer();
+            humanoid?.Dispose();
+            humanoid = null;
             motion = null;
             motionMode = ProfileAvatarMotionMode.Still;
             phase = 0f;
