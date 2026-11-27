@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace CityHighways.Presentation
@@ -12,6 +13,28 @@ namespace CityHighways.Presentation
         public static string AssetPath(bool female, bool fbx) =>
             Folder + "/" + (female ? "F01" : "M02") + "_RoadWorker_ANIMATED_V4." + (fbx ? "fbx" : "glb");
 
+        // Fast container preflight only; the glTF importer must still validate JSON and buffers.
+        public static bool TryCheckGlbFile(string path, out string error)
+        {
+            error = null;
+            try
+            {
+                using (var stream = File.OpenRead(path))
+                using (var reader = new BinaryReader(stream))
+                {
+                    if (stream.Length < 20 || reader.ReadUInt32() != 0x46546C67u ||
+                        reader.ReadUInt32() != 2u || reader.ReadUInt32() != stream.Length)
+                    { error = "Invalid or incomplete GLB 2.0 container: " + path; return false; }
+                    uint jsonLength = reader.ReadUInt32();
+                    if (reader.ReadUInt32() != 0x4E4F534Au || jsonLength == 0 ||
+                        jsonLength % 4 != 0 || jsonLength > stream.Length - 20)
+                    { error = "Invalid GLB JSON chunk: " + path; return false; }
+                    return true;
+                }
+            }
+            catch (System.Exception ex) { error = "Cannot read GLB: " + ex.Message; return false; }
+        }
+
         public struct Inspection
         {
             public int Skins, Bones;
@@ -22,7 +45,8 @@ namespace CityHighways.Presentation
         public static bool TryInspect(GameObject root, out Inspection result, out string error)
         {
             result = default; error = null;
-            if (root == null || !root.activeSelf) { error = "Missing or inactive model root."; return false; }
+            if (root == null) { error = "Missing model root."; return false; }
+            if (!root.activeSelf) { error = "Imported model root is inactive."; return false; }
             if (root.GetComponentsInChildren<MonoBehaviour>(true).Length != 0 ||
                 root.GetComponentsInChildren<Camera>(true).Length != 0 ||
                 root.GetComponentsInChildren<Light>(true).Length != 0 ||

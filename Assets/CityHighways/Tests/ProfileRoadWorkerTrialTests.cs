@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using CityHighways.Presentation;
+using System.IO;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -56,6 +57,45 @@ namespace CityHighways.Tests
                 root.AddComponent<BoxCollider>();
                 Assert.IsFalse(ProfileRoadWorkerTrial.TryInspect(root, out _, out var error));
                 StringAssert.Contains("visual-only", error);
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
+        public void GlbPreflightDistinguishesValidHeaderFromTruncatedContainer()
+        {
+            string path = Path.GetTempFileName();
+            try
+            {
+                using (var stream = File.Create(path))
+                using (var writer = new BinaryWriter(stream))
+                {
+                    writer.Write(0x46546C67u); writer.Write(2u); writer.Write(24u);
+                    writer.Write(4u); writer.Write(0x4E4F534Au);
+                    writer.Write(new byte[] { 123, 125, 32, 32 });
+                }
+                Assert.IsTrue(ProfileRoadWorkerTrial.TryCheckGlbFile(path, out var error), error);
+                File.WriteAllBytes(path, new byte[] { 1, 2, 3 });
+                Assert.IsFalse(ProfileRoadWorkerTrial.TryCheckGlbFile(path, out error));
+                StringAssert.Contains("Invalid", error);
+                File.Delete(path);
+                Assert.IsFalse(ProfileRoadWorkerTrial.TryCheckGlbFile(path, out error));
+                StringAssert.Contains("Cannot read", error);
+            }
+            finally { File.Delete(path); }
+        }
+
+        [Test]
+        public void InactiveRootIsReportedSeparately()
+        {
+            var root = new GameObject("Inactive trial");
+            try
+            {
+                root.SetActive(false);
+                Assert.IsFalse(ProfileRoadWorkerTrial.TryInspect(root, out _, out var error));
+                StringAssert.Contains("inactive", error);
+                Assert.IsFalse(ProfileRoadWorkerTrial.TryInspect(null, out _, out error));
+                StringAssert.Contains("Missing", error);
             }
             finally { Object.DestroyImmediate(root); }
         }
