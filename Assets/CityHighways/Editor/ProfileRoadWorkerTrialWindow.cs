@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.IO;
 using CityHighways.Presentation;
 using UnityEditor;
 using UnityEngine;
@@ -69,6 +70,17 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             if (GUILayout.Button("Load / Reload")) Load(path);
             if (GUILayout.Button("Release")) { Release(); status = ""; }
         }
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            if (GUILayout.Button("Choose local file...")) ChooseFile(path);
+            if (GUILayout.Button("Reimport")) Reimport(path);
+        }
+        if (GUILayout.Button("Show asset in Project"))
+        {
+            var obj = AssetDatabase.LoadMainAssetAtPath(path);
+            if (obj != null) { Selection.activeObject = obj; EditorGUIUtility.PingObject(obj); }
+            else status = "Asset not present in the Unity Asset Database. Choose a file or Reimport.";
+        }
         if (fbx && GUILayout.Button("Configure local FBX as Humanoid")) ConfigureFbx(path);
         if (!string.IsNullOrEmpty(status))
             EditorGUILayout.HelpBox(status, loaded ? MessageType.Warning : MessageType.Info);
@@ -98,9 +110,29 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
     void Load(string path)
     {
         Release(); status = "";
+        string diskPath = FullPath(path);
+        if (!File.Exists(diskPath))
+        {
+            status = "File not found on disk: " + diskPath +
+                "\nUse Choose local file... to install the extracted " + (fbx ? "FBX" : "GLB") + ".";
+            return;
+        }
+        if (!fbx && !ProfileRoadWorkerTrial.TryCheckGlbFile(diskPath, out var fileError))
+        { status = fileError; return; }
         var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        if (asset == null)
+        {
+            var main = AssetDatabase.LoadMainAssetAtPath(path);
+            var importer = AssetImporter.GetAtPath(path);
+            status = "File exists but Unity has not imported a GameObject. " +
+                "Importer: " + (importer == null ? "none" : importer.GetType().Name) +
+                "; main asset: " + (main == null ? "none" : main.GetType().Name) +
+                ". Use Reimport; check Console and the GLB Inspector for import errors. " +
+                "Confirm glTFast is installed in Package Manager.";
+            return;
+        }
         if (!ProfileRoadWorkerTrial.TryInspect(asset, out inspection, out var error))
-        { status = error + " Import the approved file at the displayed path first."; return; }
+        { status = "Imported model failed validation: " + error; return; }
         try
         {
             clips = AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>()
@@ -137,6 +169,50 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
         }
         catch (Exception ex) { Release(); status = "Import preview failed: " + ex.Message; }
         Repaint();
+    }
+
+    static string FullPath(string assetPath) =>
+        Path.GetFullPath(Path.Combine(Application.dataPath, "..", assetPath));
+
+    void ChooseFile(string path)
+    {
+        string source = EditorUtility.OpenFilePanel("Select the approved " + (female ? "F01" : "M02") + " model",
+            "", fbx ? "fbx" : "glb");
+        if (string.IsNullOrEmpty(source)) return;
+        if (!string.Equals(Path.GetExtension(source), fbx ? ".fbx" : ".glb", StringComparison.OrdinalIgnoreCase))
+        { status = "Wrong file extension for the selected format."; return; }
+        if (!fbx && !ProfileRoadWorkerTrial.TryCheckGlbFile(source, out var fileError))
+        { status = fileError; return; }
+        string destination = FullPath(path);
+        if (string.Equals(Path.GetFullPath(source), destination,
+            Application.platform == RuntimePlatform.WindowsEditor ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+        { Reimport(path); return; }
+        if (File.Exists(destination))
+        { status = "A local model already exists. To protect it, remove or move it manually before choosing a replacement."; return; }
+        if (!EditorUtility.DisplayDialog("Install local trial model",
+            "Copy " + Path.GetFileName(source) + " to " + path +
+            "? Confirm the file matches the selected character. The original is not modified.", "Copy and import", "Cancel")) return;
+        Release();
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(destination));
+            File.Copy(source, destination, false);
+            Reimport(path);
+        }
+        catch (Exception ex) { status = "Local copy failed: " + ex.Message; }
+    }
+
+    void Reimport(string path)
+    {
+        Release();
+        if (!File.Exists(FullPath(path))) { Load(path); return; }
+        try
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            Load(path);
+        }
+        catch (Exception ex) { status = "Unity import failed: " + ex.Message; }
     }
 
     void ResetPose()

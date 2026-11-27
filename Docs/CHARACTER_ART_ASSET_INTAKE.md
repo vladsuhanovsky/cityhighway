@@ -34,3 +34,7 @@ The approved M02/F01 V4 GLB files contain one shared 66-joint skin, seven active
 4. Review the GLB and FBX preview against V4 screenshots. Check garment intersections (collar, knees, feet), finger deformation, loop endpoints, ground and camera framing. Existing complete-catalog production prefab contract remains unchanged. Do not export to Resources/Profile3DProfessional until all real variants and material/animation requirements are met. City LOD remains separate.
 
 The trial imports no packages, writes no game data, and does not contain any generated geometry or textures. Public CI checks code/synthetic contracts only; user must check actual assets in Unity.
+
+### Local import troubleshooting
+
+If Load / Reload cannot find the model, select M02 or F01 and the correct format, then **Choose local file...** and select the extracted GLB/FBX. The tool copies only the selected file to its exact ignored path, after explicit confirmation; it never replaces existing files or deletes sources. **Reimport** forces a synchronous Unity asset import. **Show asset in Project** reveals the imported asset in the Inspector. Diagnostics distinguish missing disk file, malformed GLB header, missing imported GameObject (with importer and main asset type), and invalid/inactive model root. GLB header preflight does not certify mesh or importer compatibility. Check Console for import failures. Imported art remains local; no new dependencies or runtime changes.
