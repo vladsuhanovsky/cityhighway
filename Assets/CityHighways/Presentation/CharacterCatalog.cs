@@ -57,10 +57,17 @@ namespace CityHighways.Presentation
         /// <summary>Скрывает ли эта вещь другую (по её слоту или id).</summary>
         public bool Hides(CharacterItem other)
         {
-            if (other == null || other == this || hides == null) return false;
-            foreach (var target in hides)
-                if (target == other.slot || target == other.id) return true;
-            return false;
+            if (other == null || other == this) return false;
+            if (hides != null && hides.Length != 0)
+            {
+                foreach (var target in hides)
+                    if (target == other.slot || target == other.id) return true;
+                return false;
+            }
+            // Older wardrobe catalogs produced by the art tools omitted hides.
+            // Retain the established sweater/tie rule when that metadata is absent.
+            return id == "top_sweater" && slot == "top" &&
+                other.id == "acc_tie" && other.slot == "accessory";
         }
     }
 
