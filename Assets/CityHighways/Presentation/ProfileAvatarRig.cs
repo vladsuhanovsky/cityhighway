@@ -62,6 +62,8 @@ namespace CityHighways.Presentation
                 for (var parent = visual.transform.parent; parent != null && parent != transform; parent = parent.parent)
                     if (objects.Contains(parent.gameObject))
                     { error = "Nested wardrobe variants: " + visual.name; return false; }
+            var coverage = GetComponent<ProfileBodyCoverage>();
+            if (coverage != null && !coverage.TryValidate(index, out error)) return false;
             return true;
         }
 
@@ -82,6 +84,8 @@ namespace CityHighways.Presentation
                 { error = "Missing visual binding: " + id; return false; }
                 selected.Add(id);
             }
+            var coverage = GetComponent<ProfileBodyCoverage>();
+            if (coverage != null) coverage.ApplyValidated(selected);
             foreach (var pair in index)
                 if (pair.Value.activeSelf != selected.Contains(pair.Key))
                     pair.Value.SetActive(selected.Contains(pair.Key));

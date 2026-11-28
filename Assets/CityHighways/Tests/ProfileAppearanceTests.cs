@@ -154,6 +154,120 @@ namespace CityHighways.Tests
             finally { Object.DestroyImmediate(owner); Object.DestroyImmediate(outside); }
         }
 
+        [TestCase("m")]
+        [TestCase("f")]
+        public void BodyCoverageCombinesVisibleItemsAndRestoresRegions(string gender)
+        {
+            var owner = new GameObject("Segmented body rig");
+            var mesh = new Mesh();
+            try
+            {
+                var rig = owner.AddComponent<ProfileAvatarRig>();
+                var ids = CharacterCatalog.Slots.SelectMany(s => CharacterCatalog.ItemsIn(s, gender)).Select(i => i.id).ToArray();
+                var visuals = Configure(rig, gender, ids);
+                var bone = new GameObject("Persistent bone").transform;
+                bone.SetParent(owner.transform, false);
+                mesh.vertices = new[] { Vector3.zero, Vector3.right, Vector3.up };
+                mesh.triangles = new[] {0, 1, 2};
+                mesh.bindposes = new[] { Matrix4x4.identity };
+                var regions = new List<ProfileBodyCoverage.RegionBinding>();
+                foreach (var item in CharacterCatalog.ItemsIn("body", gender))
+                    foreach (var region in new[] { ProfileBodyRegion.Torso, ProfileBodyRegion.Pelvis, ProfileBodyRegion.Feet })
+                    {
+                        var obj = new GameObject(region.ToString());
+                        obj.transform.SetParent(visuals[item.id].transform, false);
+                        var renderer = obj.AddComponent<SkinnedMeshRenderer>();
+                        renderer.sharedMesh = mesh; renderer.bones = new[] { bone }; renderer.rootBone = bone;
+                        regions.Add(new ProfileBodyCoverage.RegionBinding { bodyId = item.id, region = region, renderer = renderer });
+                    }
+                string vest = gender == "m" ? "top_vest" : "top_f_vest";
+                string trousers = CharacterCatalog.DefaultFor("bottom", gender);
+                var coverage = owner.AddComponent<ProfileBodyCoverage>();
+                ConfigureCoverage(coverage, regions.ToArray(), new[] {
+                    new ProfileBodyCoverage.ItemCoverage {itemId = vest, hides = ProfileBodyRegion.Torso | ProfileBodyRegion.Pelvis},
+                    new ProfileBodyCoverage.ItemCoverage {itemId = trousers, hides = ProfileBodyRegion.Pelvis}
+                });
+                var outfit = Outfit.DefaultFor(gender).With("top", vest);
+                var look = ProfileAppearance.FromOutfit(outfit);
+                Assert.IsTrue(rig.TryApply(look, out var error), error);
+                foreach (var region in regions)
+                    Assert.AreEqual(region.region == ProfileBodyRegion.Feet, region.renderer.enabled);
+                Assert.IsTrue(rig.TryApply(ProfileAppearance.FromOutfit(outfit.With("top", CharacterCatalog.DefaultFor("top", gender))), out error), error);
+                foreach (var region in regions)
+                    Assert.AreEqual(region.region != ProfileBodyRegion.Pelvis, region.renderer.enabled);
+                Assert.IsTrue(bone.gameObject.activeSelf);
+                Assert.AreEqual(vest, look.EquippedId("top"));
+
+                // Invalid mask targets must not mutate any previously applied outfit.
+                var previous = visuals.ToDictionary(pair => pair.Key, pair => pair.Value.activeSelf);
+                regions[0].region = ProfileBodyRegion.Torso | ProfileBodyRegion.Feet;
+                ConfigureCoverage(coverage, regions.ToArray(), new[] {
+                    new ProfileBodyCoverage.ItemCoverage {itemId = vest, hides = ProfileBodyRegion.Torso}
+                });
+                Assert.IsFalse(rig.TryApply(look, out error));
+                foreach (var pair in previous) Assert.AreEqual(pair.Value, visuals[pair.Key].activeSelf);
+                foreach (var region in regions.Skip(1))
+                    Assert.AreEqual(region.region != ProfileBodyRegion.Pelvis, region.renderer.enabled);
+            }
+            finally { Object.DestroyImmediate(owner); Object.DestroyImmediate(mesh); }
+        }
+
+        [Test]
+        public void HiddenAccessoryDoesNotContributeCoverage()
+        {
+            var owner = new GameObject("Coverage rig");
+            var mesh = new Mesh();
+            try
+            {
+                var rig = owner.AddComponent<ProfileAvatarRig>();
+                var ids = CharacterCatalog.Slots.SelectMany(s => CharacterCatalog.ItemsIn(s, "m")).Select(i => i.id).ToArray();
+                var visuals = Configure(rig, "m", ids);
+                var bone = new GameObject("Bone").transform;
+                bone.SetParent(owner.transform, false);
+                mesh.bindposes = new[] { Matrix4x4.identity };
+                var regions = CharacterCatalog.ItemsIn("body", "m").Select(item =>
+                {
+                    var renderer = visuals[item.id].AddComponent<SkinnedMeshRenderer>();
+                    renderer.sharedMesh = mesh; renderer.bones = new[] {bone}; renderer.rootBone = bone;
+                    return new ProfileBodyCoverage.RegionBinding { bodyId = item.id, region = ProfileBodyRegion.Torso, renderer = renderer };
+                }).ToArray();
+                var coverage = owner.AddComponent<ProfileBodyCoverage>();
+                ConfigureCoverage(coverage, regions, new[] {
+                    new ProfileBodyCoverage.ItemCoverage { itemId = "acc_tie", hides = ProfileBodyRegion.Torso }
+                });
+                var outfit = Outfit.Default.With("top", "top_shirt").With("accessory", "acc_tie");
+                Assert.IsTrue(rig.TryApply(ProfileAppearance.FromOutfit(outfit), out var error), error);
+                Assert.IsTrue(regions.All(x => !x.renderer.enabled));
+                var hidden = ProfileAppearance.FromOutfit(outfit.With("top", "top_sweater"));
+                Assert.IsTrue(rig.TryApply(hidden, out error), error);
+                Assert.IsTrue(regions.All(x => x.renderer.enabled));
+                Assert.AreEqual("acc_tie", hidden.EquippedId("accessory"));
+            }
+            finally { Object.DestroyImmediate(owner); Object.DestroyImmediate(mesh); }
+        }
+
+        static void ConfigureCoverage(ProfileBodyCoverage coverage, ProfileBodyCoverage.RegionBinding[] regions,
+            ProfileBodyCoverage.ItemCoverage[] items)
+        {
+            var data = new SerializedObject(coverage);
+            var r = data.FindProperty("regions"); r.arraySize = regions.Length;
+            for (int i = 0; i < regions.Length; i++)
+            {
+                var entry = r.GetArrayElementAtIndex(i);
+                entry.FindPropertyRelative("bodyId").stringValue = regions[i].bodyId;
+                entry.FindPropertyRelative("region").intValue = (int)regions[i].region;
+                entry.FindPropertyRelative("renderer").objectReferenceValue = regions[i].renderer;
+            }
+            var rules = data.FindProperty("items"); rules.arraySize = items.Length;
+            for (int i = 0; i < items.Length; i++)
+            {
+                var entry = rules.GetArrayElementAtIndex(i);
+                entry.FindPropertyRelative("itemId").stringValue = items[i].itemId;
+                entry.FindPropertyRelative("hides").intValue = (int)items[i].hides;
+            }
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         static Dictionary<string, GameObject> Configure(ProfileAvatarRig rig, string gender, string[] ids)
         {
             var visuals = new Dictionary<string, GameObject>();

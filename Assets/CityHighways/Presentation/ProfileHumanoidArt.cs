@@ -43,7 +43,8 @@ namespace CityHighways.Presentation
                     { error = "Bone outside shared Animator hierarchy: " + skin.name; return false; }
             }
             foreach (var behaviour in GetComponentsInChildren<MonoBehaviour>(true))
-                if (behaviour == null || !(behaviour is ProfileAvatarRig || behaviour is ProfileHumanoidArt))
+                if (behaviour == null || !(behaviour is ProfileAvatarRig || behaviour is ProfileHumanoidArt ||
+                    (behaviour is ProfileBodyCoverage && behaviour.transform == transform)))
                 { error = "Remove vendor runtime behaviours from the authored preview prefab."; return false; }
             if (GetComponentsInChildren<Camera>(true).Length != 0 ||
                 GetComponentsInChildren<Light>(true).Length != 0 ||
