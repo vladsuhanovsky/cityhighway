@@ -13,6 +13,38 @@ namespace CityHighways.Presentation
         public static string AssetPath(bool female, bool fbx) =>
             Folder + "/" + (female ? "F01" : "M02") + "_RoadWorker_ANIMATED_V4." + (fbx ? "fbx" : "glb");
 
+        public static string ModularAssetPath(bool female, bool restoredBase) =>
+            "Assets/CityHighwaysLicensedArt/RoadWorkerV9/" + (female ? "F01" : "M02") +
+            (restoredBase ? "_V9_RestoredBase.glb" : "_V9_Workwear.glb");
+
+        // Match authored node names, not arbitrary substrings or bone names.
+        public static string ModularGroup(string nodeName)
+        {
+            if (string.IsNullOrEmpty(nodeName) ||
+                !(nodeName.StartsWith("M02_", System.StringComparison.Ordinal) ||
+                  nodeName.StartsWith("F01_", System.StringComparison.Ordinal))) return null;
+            switch (nodeName.Substring(4))
+            {
+                case "V9_Base_HeadHair": return "Head / baked hair";
+                case "V9_Base_TorsoShirt": return "Torso / baked shirt";
+                case "V9_Base_UpperArms": return "Upper arms";
+                case "V9_Base_Forearms": return "Forearms";
+                case "V9_Base_Hands": return "Hands";
+                case "V9_Base_PelvisShorts": return "Pelvis / baked shorts";
+                case "V9_Base_Thighs": return "Thighs";
+                case "V9_Base_Calves": return "Calves";
+                case "V9_Base_Feet": return "Feet";
+                case "hardhat_BOUND_TRIAL": return "Hardhat";
+                case "vest_BOUND_TRIAL": return "Vest";
+                case "trousers_BOUND_TRIAL": return "Trousers";
+                case "V9_Shoes":
+                case "boot_L_BOUND_TRIAL":
+                case "boot_R_BOUND_TRIAL": return "Boots";
+                case "radio_BOUND_TRIAL": return "Radio";
+                default: return null;
+            }
+        }
+
         // Fast container preflight only; the glTF importer must still validate JSON and buffers.
         public static bool TryCheckGlbFile(string path, out string error)
         {

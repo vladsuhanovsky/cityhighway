@@ -12,6 +12,9 @@ using UnityEngine.Playables;
 public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
 {
     bool female, fbx, playing, loaded;
+    int assetSet, selectedModule;
+    string[] moduleNames = Array.Empty<string>();
+    Renderer[][] moduleRenderers = Array.Empty<Renderer[]>();
     float phase, yaw = 180f, zoom = 1f;
     double lastTick;
     int selectedClip;
@@ -52,7 +55,7 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
 
     void OnGUI()
     {
-        EditorGUILayout.HelpBox("Local fixed-outfit art trial only. GLB uses imported transform curves; a valid Unity Humanoid avatar and all wardrobe variants are separate acceptance gates.", MessageType.Info);
+        EditorGUILayout.HelpBox("Local art trial only. V9 separates existing surfaces for inspection; it is not a production wardrobe. GLB uses imported transform curves.", MessageType.Info);
         if (EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorGUILayout.HelpBox("Exit Play Mode to use this Editor-only preview.", MessageType.Warning);
@@ -60,9 +63,13 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
         }
         EditorGUI.BeginChangeCheck();
         female = EditorGUILayout.Popup("Character", female ? 1 : 0, new[] {"M02", "F01"}) == 1;
-        fbx = EditorGUILayout.Popup("Format", fbx ? 1 : 0, new[] {"GLB (direct)", "FBX (Humanoid trial)"}) == 1;
+        assetSet = EditorGUILayout.Popup("Asset set", assetSet, new[] {"V8 / original path", "V9 Workwear", "V9 Restored base"});
+        if (assetSet == 0)
+            fbx = EditorGUILayout.Popup("Format", fbx ? 1 : 0, new[] {"GLB (direct)", "FBX (Humanoid trial)"}) == 1;
+        else fbx = false;
         if (EditorGUI.EndChangeCheck()) { Release(); status = ""; }
-        string path = ProfileRoadWorkerTrial.AssetPath(female, fbx);
+        string path = assetSet == 0 ? ProfileRoadWorkerTrial.AssetPath(female, fbx) :
+            ProfileRoadWorkerTrial.ModularAssetPath(female, assetSet == 2);
         EditorGUILayout.LabelField("Local asset", EditorStyles.boldLabel);
         EditorGUILayout.SelectableLabel(path, EditorStyles.wordWrappedLabel, GUILayout.Height(35));
         using (new EditorGUILayout.HorizontalScope())
@@ -99,9 +106,26 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             phase = EditorGUILayout.Slider("Normalized time", phase, 0f, 1f);
             if (EditorGUI.EndChangeCheck()) playing = false;
         }
+        if (assetSet != 0 && moduleNames.Length != 0)
+        {
+            selectedModule = EditorGUILayout.Popup("Modules", selectedModule, moduleNames);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                var chosen = moduleRenderers[selectedModule];
+                bool visible = chosen.All(r => r.enabled);
+                if (GUILayout.Button(visible ? "Hide selected" : "Show selected"))
+                    foreach (var r in chosen) r.enabled = !visible;
+                if (GUILayout.Button("Isolate"))
+                    for (int i = 0; i < moduleRenderers.Length; i++)
+                        foreach (var r in moduleRenderers[i]) r.enabled = i == selectedModule;
+                if (GUILayout.Button("Show all"))
+                    foreach (var group in moduleRenderers)
+                        foreach (var r in group) r.enabled = true;
+            }
+        }
         yaw = EditorGUILayout.Slider("Orbit", yaw, 0f, 360f);
         zoom = EditorGUILayout.Slider("Zoom", zoom, .7f, 2f);
-        Rect rect = GUILayoutUtility.GetRect(100f, Mathf.Clamp(position.height - 310f, 180f, 900f), GUILayout.ExpandWidth(true));
+        Rect rect = GUILayoutUtility.GetRect(100f, Mathf.Clamp(position.height - (assetSet == 0 ? 330f : 370f), 180f, 900f), GUILayout.ExpandWidth(true));
         if (Event.current.type != EventType.Repaint || rect.width < 10 || rect.height < 10) return;
         try { Sample(); Draw(rect); }
         catch (Exception ex) { Release(); status = "Preview failed: " + ex.Message; Repaint(); }
@@ -163,8 +187,27 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             foreach (var r in renderers) bounds.Encapsulate(r.bounds);
             if (!(bounds.size.y > .001f) || float.IsInfinity(bounds.size.magnitude))
                 throw new InvalidOperationException("Invalid rest bounds.");
+            if (assetSet != 0)
+            {
+                string Group(Renderer renderer)
+                {
+                    for (var t = renderer.transform; t != null; t = t.parent)
+                    {
+                        string name = ProfileRoadWorkerTrial.ModularGroup(t.name);
+                        if (name != null) return name;
+                        if (t == instance.transform) break;
+                    }
+                    return "Other / unmatched";
+                }
+                var groups = renderers.GroupBy(Group).OrderBy(g => g.Key, StringComparer.Ordinal).ToArray();
+                moduleNames = groups.Select(g => g.Key).ToArray();
+                moduleRenderers = groups.Select(g => g.ToArray()).ToArray();
+                selectedModule = 0;
+            }
             selectedClip = 0; phase = 0f; playing = false; loaded = true;
             status = clips.Length == 0 ? "No imported animation clips. Check the importer's animation setting." :
+                assetSet == 2 ? "Full original surface; hair, shirt and shorts remain baked. Hiding segments reveals open boundaries." :
+                assetSet == 1 ? "V8 visible surfaces split into modules; hidden lower body is not present in this file. Inspect only." :
                 "Inspect clothing intersections, fingers, feet and cycle seams. This is not a production prefab.";
         }
         catch (Exception ex) { Release(); status = "Import preview failed: " + ex.Message; }
@@ -316,6 +359,7 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
         instance = null; animator = null;
         if (preview != null) { preview.Cleanup(); preview = null; }
         nodes = null; positions = null; rotations = null; scales = null;
+        moduleNames = Array.Empty<string>(); moduleRenderers = Array.Empty<Renderer[]>(); selectedModule = 0;
         clips = Array.Empty<AnimationClip>(); selectedClip = 0; phase = 0f;
     }
 }
