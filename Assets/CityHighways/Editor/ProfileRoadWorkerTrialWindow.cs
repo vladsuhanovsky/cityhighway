@@ -12,7 +12,8 @@ using UnityEngine.Playables;
 public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
 {
     bool female, fbx, playing, loaded;
-    int assetSet, selectedModule;
+    int assetSet, selectedModule, selectedHair;
+    bool hairHelmet;
     string[] moduleNames = Array.Empty<string>();
     Renderer[][] moduleRenderers = Array.Empty<Renderer[]>();
     float phase, yaw = 180f, zoom = 1f;
@@ -55,7 +56,7 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
 
     void OnGUI()
     {
-        EditorGUILayout.HelpBox("Local art trial only. V9 separates existing surfaces for inspection; it is not a production wardrobe. GLB uses imported transform curves.", MessageType.Info);
+        EditorGUILayout.HelpBox("Local art trial only. V9 inspects body regions; V11 previews experimental hairstyles. Neither is a production wardrobe.", MessageType.Info);
         if (EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorGUILayout.HelpBox("Exit Play Mode to use this Editor-only preview.", MessageType.Warning);
@@ -63,12 +64,13 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
         }
         EditorGUI.BeginChangeCheck();
         female = EditorGUILayout.Popup("Character", female ? 1 : 0, new[] {"M02", "F01"}) == 1;
-        assetSet = EditorGUILayout.Popup("Asset set", assetSet, new[] {"V8 / original path", "V9 Workwear", "V9 Restored base"});
+        assetSet = EditorGUILayout.Popup("Asset set", assetSet, new[] {"V8 / original path", "V9 Workwear", "V9 Restored base", "V11 Hair trial"});
         if (assetSet == 0)
             fbx = EditorGUILayout.Popup("Format", fbx ? 1 : 0, new[] {"GLB (direct)", "FBX (Humanoid trial)"}) == 1;
         else fbx = false;
         if (EditorGUI.EndChangeCheck()) { Release(); status = ""; }
         string path = assetSet == 0 ? ProfileRoadWorkerTrial.AssetPath(female, fbx) :
+            assetSet == 3 ? ProfileHairTrial.AssetPath(female) :
             ProfileRoadWorkerTrial.ModularAssetPath(female, assetSet == 2);
         EditorGUILayout.LabelField("Local asset", EditorStyles.boldLabel);
         EditorGUILayout.SelectableLabel(path, EditorStyles.wordWrappedLabel, GUILayout.Height(35));
@@ -106,7 +108,25 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             phase = EditorGUILayout.Slider("Normalized time", phase, 0f, 1f);
             if (EditorGUI.EndChangeCheck()) playing = false;
         }
-        if (assetSet != 0 && moduleNames.Length != 0)
+        if (assetSet == 3)
+        {
+            var ids = ProfileHairTrial.ItemIds(female);
+            var names = ids.Select(id => CharacterCatalog.Item(id)?.DisplayName ?? id).ToArray();
+            int requested = EditorGUILayout.Popup("Hairstyle", selectedHair, names);
+            if (requested != selectedHair)
+            {
+                if (ProfileHairTrial.TrySelect(instance, female, ids[requested], out var error))
+                    selectedHair = requested;
+                else status = error;
+            }
+            bool helmet = EditorGUILayout.Toggle("Show hardhat (fit test)", hairHelmet);
+            if (helmet != hairHelmet)
+            {
+                hairHelmet = helmet;
+                ProfileHairTrial.SetHardhatVisible(instance, female, helmet);
+            }
+        }
+        if ((assetSet == 1 || assetSet == 2) && moduleNames.Length != 0)
         {
             selectedModule = EditorGUILayout.Popup("Modules", selectedModule, moduleNames);
             using (new EditorGUILayout.HorizontalScope())
@@ -181,13 +201,22 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             positions = nodes.Select(n => n.localPosition).ToArray();
             rotations = nodes.Select(n => n.localRotation).ToArray();
             scales = nodes.Select(n => n.localScale).ToArray();
+            if (assetSet == 3)
+            {
+                selectedHair = 0;
+                hairHelmet = false;
+                if (!ProfileHairTrial.TrySelect(instance, female, ProfileHairTrial.ItemIds(female)[0], out var hairError))
+                    throw new InvalidOperationException(hairError);
+                ProfileHairTrial.SetHardhatVisible(instance, female, false);
+            }
             var renderers = instance.GetComponentsInChildren<Renderer>(false);
+            if (assetSet == 3) renderers = renderers.Where(r => r.enabled).ToArray();
             if (renderers.Length == 0) throw new InvalidOperationException("No visible renderers.");
             bounds = renderers[0].bounds;
             foreach (var r in renderers) bounds.Encapsulate(r.bounds);
             if (!(bounds.size.y > .001f) || float.IsInfinity(bounds.size.magnitude))
                 throw new InvalidOperationException("Invalid rest bounds.");
-            if (assetSet != 0)
+            if (assetSet == 1 || assetSet == 2)
             {
                 string Group(Renderer renderer)
                 {
@@ -206,6 +235,7 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             }
             selectedClip = 0; phase = 0f; playing = false; loaded = true;
             status = clips.Length == 0 ? "No imported animation clips. Check the importer's animation setting." :
+                assetSet == 3 ? "V11: seven hairstyle candidates, five are rough silhouette prototypes. Beard is baked into M02. Helmet fit is not corrected." :
                 assetSet == 2 ? "Full original surface; hair, shirt and shorts remain baked. Hiding segments reveals open boundaries." :
                 assetSet == 1 ? "V8 visible surfaces split into modules; hidden lower body is not present in this file. Inspect only." :
                 "Inspect clothing intersections, fingers, feet and cycle seams. This is not a production prefab.";
@@ -360,6 +390,7 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
         if (preview != null) { preview.Cleanup(); preview = null; }
         nodes = null; positions = null; rotations = null; scales = null;
         moduleNames = Array.Empty<string>(); moduleRenderers = Array.Empty<Renderer[]>(); selectedModule = 0;
+        selectedHair = 0; hairHelmet = false;
         clips = Array.Empty<AnimationClip>(); selectedClip = 0; phase = 0f;
     }
 }
