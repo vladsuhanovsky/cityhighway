@@ -14,6 +14,58 @@ namespace CityHighways.Presentation
             "Assets/CityHighwaysLicensedArt/RoadWorkerV11/" +
             (female ? "F01" : "M02") + "_V11_HairTrial.glb";
 
+        public static string AutoAssetPath(bool female) =>
+            "Assets/CityHighwaysLicensedArt/RoadWorkerV13/" +
+            (female ? "F01" : "M02") + "_V13_AutoHair.glb";
+
+        // Resolve every normal/fitted pair and helmet before any change, including
+        // a helmet toggle. Imported skeleton and source assets are never mutated.
+        public static bool TrySelectWithHat(GameObject root, bool female, string id, bool hat, out string error)
+        {
+            error = null;
+            var ids = ItemIds(female);
+            if (root == null || !ids.Contains(id))
+            { error = "Unsupported V13 hair variant."; return false; }
+            var character = female ? "F01" : "M02";
+            var prefix = character + "_V13_";
+            var nodes = root.GetComponentsInChildren<Transform>(true);
+            var variants = new Dictionary<string, Renderer[]>(StringComparer.Ordinal);
+            var used = new HashSet<Renderer>();
+            foreach (var item in ids)
+            {
+                var catalog = CharacterCatalog.Item(item);
+                if (catalog == null || catalog.slot != "hair" ||
+                    !catalog.Fits(female ? CharacterCatalog.Female : CharacterCatalog.Male))
+                { error = "Invalid hair catalog item: " + item; return false; }
+                foreach (var suffix in new[] {"", "_Hat"})
+                {
+                    var key = item + suffix;
+                    if (!TryGroup(nodes, prefix + key, used, out var renderers, out error)) return false;
+                    variants.Add(key, renderers);
+                }
+            }
+            if (!TryGroup(nodes, character + "_hardhat_BOUND_TRIAL", used, out var helmet, out error))
+                return false;
+            var selected = id + (hat ? "_Hat" : "");
+            foreach (var pair in variants)
+                foreach (var renderer in pair.Value) renderer.enabled = pair.Key == selected;
+            foreach (var renderer in helmet) renderer.enabled = hat;
+            return true;
+        }
+
+        static bool TryGroup(Transform[] nodes, string name, HashSet<Renderer> used,
+            out Renderer[] renderers, out string error)
+        {
+            renderers = Array.Empty<Renderer>(); error = null;
+            var matches = nodes.Where(n => n.name == name).ToArray();
+            if (matches.Length != 1)
+            { error = "Missing or duplicate visual group: " + name; return false; }
+            renderers = matches[0].GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0 || renderers.Any(r => !used.Add(r)))
+            { error = "Empty or overlapping visual group: " + name; return false; }
+            return true;
+        }
+
         public static string[] ItemIds(bool female) => female
             ? new[] { "hair_f_bob", "hair_f_long", "hair_f_ponytail", "hair_f_curly" }
             : new[] { "hair_short", "hair_long", "hair_bun" };

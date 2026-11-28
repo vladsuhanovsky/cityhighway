@@ -64,12 +64,13 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
         }
         EditorGUI.BeginChangeCheck();
         female = EditorGUILayout.Popup("Character", female ? 1 : 0, new[] {"M02", "F01"}) == 1;
-        assetSet = EditorGUILayout.Popup("Asset set", assetSet, new[] {"V8 / original path", "V9 Workwear", "V9 Restored base", "V11 Hair trial"});
+        assetSet = EditorGUILayout.Popup("Asset set", assetSet, new[] {"V8 / original path", "V9 Workwear", "V9 Restored base", "V11 Hair trial", "V13 Auto hair"});
         if (assetSet == 0)
             fbx = EditorGUILayout.Popup("Format", fbx ? 1 : 0, new[] {"GLB (direct)", "FBX (Humanoid trial)"}) == 1;
         else fbx = false;
         if (EditorGUI.EndChangeCheck()) { Release(); status = ""; }
         string path = assetSet == 0 ? ProfileRoadWorkerTrial.AssetPath(female, fbx) :
+            assetSet == 4 ? ProfileHairTrial.AutoAssetPath(female) :
             assetSet == 3 ? ProfileHairTrial.AssetPath(female) :
             ProfileRoadWorkerTrial.ModularAssetPath(female, assetSet == 2);
         EditorGUILayout.LabelField("Local asset", EditorStyles.boldLabel);
@@ -108,23 +109,27 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             phase = EditorGUILayout.Slider("Normalized time", phase, 0f, 1f);
             if (EditorGUI.EndChangeCheck()) playing = false;
         }
-        if (assetSet == 3)
+        if (assetSet == 3 || assetSet == 4)
         {
             var ids = ProfileHairTrial.ItemIds(female);
             var names = ids.Select(id => CharacterCatalog.Item(id)?.DisplayName ?? id).ToArray();
             int requested = EditorGUILayout.Popup("Hairstyle", selectedHair, names);
-            if (requested != selectedHair)
+            bool helmet = EditorGUILayout.Toggle(assetSet == 4 ? "Hardhat (auto fit)" : "Show hardhat (fit test)", hairHelmet);
+            if (requested != selectedHair || helmet != hairHelmet)
             {
-                if (ProfileHairTrial.TrySelect(instance, female, ids[requested], out var error))
-                    selectedHair = requested;
+                string error;
+                bool ok = assetSet == 4
+                    ? ProfileHairTrial.TrySelectWithHat(instance, female, ids[requested], helmet, out error)
+                    : ProfileHairTrial.TrySelect(instance, female, ids[requested], out error);
+                if (ok)
+                {
+                    selectedHair = requested; hairHelmet = helmet;
+                    if (assetSet == 3) ProfileHairTrial.SetHardhatVisible(instance, female, helmet);
+                }
                 else status = error;
             }
-            bool helmet = EditorGUILayout.Toggle("Show hardhat (fit test)", hairHelmet);
-            if (helmet != hairHelmet)
-            {
-                hairHelmet = helmet;
-                ProfileHairTrial.SetHardhatVisible(instance, female, helmet);
-            }
+            if (assetSet == 4)
+                EditorGUILayout.LabelField("Active mesh", hairHelmet ? "Hardhat fitted" : "Normal");
         }
         if ((assetSet == 1 || assetSet == 2) && moduleNames.Length != 0)
         {
@@ -201,16 +206,20 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             positions = nodes.Select(n => n.localPosition).ToArray();
             rotations = nodes.Select(n => n.localRotation).ToArray();
             scales = nodes.Select(n => n.localScale).ToArray();
-            if (assetSet == 3)
+            if (assetSet == 3 || assetSet == 4)
             {
                 selectedHair = 0;
                 hairHelmet = false;
-                if (!ProfileHairTrial.TrySelect(instance, female, ProfileHairTrial.ItemIds(female)[0], out var hairError))
-                    throw new InvalidOperationException(hairError);
-                ProfileHairTrial.SetHardhatVisible(instance, female, false);
+                var id = ProfileHairTrial.ItemIds(female)[0];
+                string hairError;
+                bool ok = assetSet == 4
+                    ? ProfileHairTrial.TrySelectWithHat(instance, female, id, false, out hairError)
+                    : ProfileHairTrial.TrySelect(instance, female, id, out hairError);
+                if (!ok) throw new InvalidOperationException(hairError);
+                if (assetSet == 3) ProfileHairTrial.SetHardhatVisible(instance, female, false);
             }
             var renderers = instance.GetComponentsInChildren<Renderer>(false);
-            if (assetSet == 3) renderers = renderers.Where(r => r.enabled).ToArray();
+            if (assetSet == 3 || assetSet == 4) renderers = renderers.Where(r => r.enabled).ToArray();
             if (renderers.Length == 0) throw new InvalidOperationException("No visible renderers.");
             bounds = renderers[0].bounds;
             foreach (var r in renderers) bounds.Encapsulate(r.bounds);
@@ -235,6 +244,7 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             }
             selectedClip = 0; phase = 0f; playing = false; loaded = true;
             status = clips.Length == 0 ? "No imported animation clips. Check the importer's animation setting." :
+                assetSet == 4 ? "V13: paired normal and fitted meshes on one skeleton. Hardhat toggles the mesh automatically. Prototype fit still needs visual acceptance." :
                 assetSet == 3 ? "V11: seven hairstyle candidates, five are rough silhouette prototypes. Beard is baked into M02. Helmet fit is not corrected." :
                 assetSet == 2 ? "Full original surface; hair, shirt and shorts remain baked. Hiding segments reveals open boundaries." :
                 assetSet == 1 ? "V8 visible surfaces split into modules; hidden lower body is not present in this file. Inspect only." :
