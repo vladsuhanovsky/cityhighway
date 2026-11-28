@@ -13,7 +13,7 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
 {
     bool female, fbx, playing, loaded;
     int assetSet, selectedModule, selectedHair;
-    bool hairHelmet;
+    bool hairHelmet, reducedBeard;
     string[] moduleNames = Array.Empty<string>();
     Renderer[][] moduleRenderers = Array.Empty<Renderer[]>();
     float phase, yaw = 180f, zoom = 1f;
@@ -64,12 +64,16 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
         }
         EditorGUI.BeginChangeCheck();
         female = EditorGUILayout.Popup("Character", female ? 1 : 0, new[] {"M02", "F01"}) == 1;
-        assetSet = EditorGUILayout.Popup("Asset set", assetSet, new[] {"V8 / original path", "V9 Workwear", "V9 Restored base", "V11 Hair trial", "V13 Auto hair"});
+        if (female && assetSet == 5) assetSet = 4;
+        assetSet = EditorGUILayout.Popup("Asset set", assetSet, female
+            ? new[] {"V8 / original path", "V9 Workwear", "V9 Restored base", "V11 Hair trial", "V13 Auto hair"}
+            : new[] {"V8 / original path", "V9 Workwear", "V9 Restored base", "V11 Hair trial", "V13 Auto hair", "V14 Face trial"});
         if (assetSet == 0)
             fbx = EditorGUILayout.Popup("Format", fbx ? 1 : 0, new[] {"GLB (direct)", "FBX (Humanoid trial)"}) == 1;
         else fbx = false;
         if (EditorGUI.EndChangeCheck()) { Release(); status = ""; }
         string path = assetSet == 0 ? ProfileRoadWorkerTrial.AssetPath(female, fbx) :
+            assetSet == 5 ? ProfileHairTrial.FaceAssetPath :
             assetSet == 4 ? ProfileHairTrial.AutoAssetPath(female) :
             assetSet == 3 ? ProfileHairTrial.AssetPath(female) :
             ProfileRoadWorkerTrial.ModularAssetPath(female, assetSet == 2);
@@ -109,26 +113,30 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             phase = EditorGUILayout.Slider("Normalized time", phase, 0f, 1f);
             if (EditorGUI.EndChangeCheck()) playing = false;
         }
-        if (assetSet == 3 || assetSet == 4)
+        if (assetSet >= 3)
         {
             var ids = ProfileHairTrial.ItemIds(female);
             var names = ids.Select(id => CharacterCatalog.Item(id)?.DisplayName ?? id).ToArray();
             int requested = EditorGUILayout.Popup("Hairstyle", selectedHair, names);
-            bool helmet = EditorGUILayout.Toggle(assetSet == 4 ? "Hardhat (auto fit)" : "Show hardhat (fit test)", hairHelmet);
-            if (requested != selectedHair || helmet != hairHelmet)
+            bool helmet = EditorGUILayout.Toggle(assetSet >= 4 ? "Hardhat (auto fit)" : "Show hardhat (fit test)", hairHelmet);
+            bool face = assetSet == 5 && EditorGUILayout.Popup("Beard", reducedBeard ? 1 : 0,
+                new[] {"Original", "Reduced (prototype)"}) == 1;
+            if (requested != selectedHair || helmet != hairHelmet || face != reducedBeard)
             {
                 string error;
-                bool ok = assetSet == 4
-                    ? ProfileHairTrial.TrySelectWithHat(instance, female, ids[requested], helmet, out error)
-                    : ProfileHairTrial.TrySelect(instance, female, ids[requested], out error);
+                bool ok = assetSet == 5
+                    ? ProfileHairTrial.TrySelectFaceWithHat(instance, ids[requested], helmet, face, out error)
+                    : assetSet == 4
+                        ? ProfileHairTrial.TrySelectWithHat(instance, female, ids[requested], helmet, out error)
+                        : ProfileHairTrial.TrySelect(instance, female, ids[requested], out error);
                 if (ok)
                 {
-                    selectedHair = requested; hairHelmet = helmet;
+                    selectedHair = requested; hairHelmet = helmet; reducedBeard = face;
                     if (assetSet == 3) ProfileHairTrial.SetHardhatVisible(instance, female, helmet);
                 }
                 else status = error;
             }
-            if (assetSet == 4)
+            if (assetSet >= 4)
                 EditorGUILayout.LabelField("Active mesh", hairHelmet ? "Hardhat fitted" : "Normal");
         }
         if ((assetSet == 1 || assetSet == 2) && moduleNames.Length != 0)
@@ -150,7 +158,7 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
         }
         yaw = EditorGUILayout.Slider("Orbit", yaw, 0f, 360f);
         zoom = EditorGUILayout.Slider("Zoom", zoom, .7f, 2f);
-        Rect rect = GUILayoutUtility.GetRect(100f, Mathf.Clamp(position.height - (assetSet == 0 ? 330f : 370f), 180f, 900f), GUILayout.ExpandWidth(true));
+        Rect rect = GUILayoutUtility.GetRect(100f, Mathf.Clamp(position.height - (assetSet == 0 ? 330f : assetSet == 5 ? 405f : 370f), 180f, 900f), GUILayout.ExpandWidth(true));
         if (Event.current.type != EventType.Repaint || rect.width < 10 || rect.height < 10) return;
         try { Sample(); Draw(rect); }
         catch (Exception ex) { Release(); status = "Preview failed: " + ex.Message; Repaint(); }
@@ -206,20 +214,23 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             positions = nodes.Select(n => n.localPosition).ToArray();
             rotations = nodes.Select(n => n.localRotation).ToArray();
             scales = nodes.Select(n => n.localScale).ToArray();
-            if (assetSet == 3 || assetSet == 4)
+            if (assetSet >= 3)
             {
                 selectedHair = 0;
                 hairHelmet = false;
+                reducedBeard = false;
                 var id = ProfileHairTrial.ItemIds(female)[0];
                 string hairError;
-                bool ok = assetSet == 4
-                    ? ProfileHairTrial.TrySelectWithHat(instance, female, id, false, out hairError)
-                    : ProfileHairTrial.TrySelect(instance, female, id, out hairError);
+                bool ok = assetSet == 5
+                    ? ProfileHairTrial.TrySelectFaceWithHat(instance, id, false, false, out hairError)
+                    : assetSet == 4
+                        ? ProfileHairTrial.TrySelectWithHat(instance, female, id, false, out hairError)
+                        : ProfileHairTrial.TrySelect(instance, female, id, out hairError);
                 if (!ok) throw new InvalidOperationException(hairError);
                 if (assetSet == 3) ProfileHairTrial.SetHardhatVisible(instance, female, false);
             }
             var renderers = instance.GetComponentsInChildren<Renderer>(false);
-            if (assetSet == 3 || assetSet == 4) renderers = renderers.Where(r => r.enabled).ToArray();
+            if (assetSet >= 3) renderers = renderers.Where(r => r.enabled).ToArray();
             if (renderers.Length == 0) throw new InvalidOperationException("No visible renderers.");
             bounds = renderers[0].bounds;
             foreach (var r in renderers) bounds.Encapsulate(r.bounds);
@@ -244,6 +255,7 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
             }
             selectedClip = 0; phase = 0f; playing = false; loaded = true;
             status = clips.Length == 0 ? "No imported animation clips. Check the importer's animation setting." :
+                assetSet == 5 ? "V14: original or reduced-beard material on identical face geometry. Not a clean scalp or finished shave; artistic work remains." :
                 assetSet == 4 ? "V13: paired normal and fitted meshes on one skeleton. Hardhat toggles the mesh automatically. Prototype fit still needs visual acceptance." :
                 assetSet == 3 ? "V11: seven hairstyle candidates, five are rough silhouette prototypes. Beard is baked into M02. Helmet fit is not corrected." :
                 assetSet == 2 ? "Full original surface; hair, shirt and shorts remain baked. Hiding segments reveals open boundaries." :
@@ -400,7 +412,7 @@ public sealed class ProfileRoadWorkerTrialWindow : EditorWindow
         if (preview != null) { preview.Cleanup(); preview = null; }
         nodes = null; positions = null; rotations = null; scales = null;
         moduleNames = Array.Empty<string>(); moduleRenderers = Array.Empty<Renderer[]>(); selectedModule = 0;
-        selectedHair = 0; hairHelmet = false;
+        selectedHair = 0; hairHelmet = false; reducedBeard = false;
         clips = Array.Empty<AnimationClip>(); selectedClip = 0; phase = 0f;
     }
 }

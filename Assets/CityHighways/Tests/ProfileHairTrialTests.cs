@@ -143,6 +143,78 @@ namespace CityHighways.Tests
             Assert.AreNotEqual(ProfileHairTrial.AssetPath(female), ProfileHairTrial.AutoAssetPath(female));
         }
 
+        [Test]
+        public void FaceMaterialChoiceSurvivesHairAndHatChanges()
+        {
+            var root = new GameObject("Face trial");
+            try
+            {
+                var ids = ProfileHairTrial.ItemIds(false);
+                var normal = ids.Select(id => Child(root, "M02_V13_" + id).AddComponent<MeshRenderer>()).ToArray();
+                var fitted = ids.Select(id => Child(root, "M02_V13_" + id + "_Hat").AddComponent<MeshRenderer>()).ToArray();
+                var helmet = Child(root, "M02_hardhat_BOUND_TRIAL").AddComponent<MeshRenderer>();
+                var original = Child(root, "M02_V10_HeadFace").AddComponent<MeshRenderer>();
+                var reduced = Child(root, "M02_V14_FaceReducedBeard").AddComponent<MeshRenderer>();
+                var bone = Child(root, "Head");
+                var clothing = Child(root, "Vest").AddComponent<MeshRenderer>();
+                foreach (bool beard in new[] {false, true, false})
+                    for (int i = 0; i < ids.Length; i++)
+                        foreach (bool hat in new[] {false, true})
+                        {
+                            Assert.IsTrue(ProfileHairTrial.TrySelectFaceWithHat(root, ids[i], hat, beard, out var error), error);
+                            Assert.AreEqual(!beard, original.enabled);
+                            Assert.AreEqual(beard, reduced.enabled);
+                            Assert.AreEqual(hat, helmet.enabled);
+                            Assert.AreEqual(!hat, normal[i].enabled);
+                            Assert.AreEqual(hat, fitted[i].enabled);
+                            Assert.AreEqual(1, normal.Concat(fitted).Count(r => r.enabled));
+                            Assert.IsTrue(clothing.enabled);
+                            Assert.IsTrue(bone.activeSelf);
+                            Assert.IsTrue(original.gameObject.activeSelf);
+                            Assert.IsTrue(reduced.gameObject.activeSelf);
+                        }
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [TestCase("missing")]
+        [TestCase("duplicate")]
+        [TestCase("overlap")]
+        public void InvalidFacePairRejectsEntireSelection(string problem)
+        {
+            var root = new GameObject("Face trial");
+            try
+            {
+                var ids = ProfileHairTrial.ItemIds(false);
+                foreach (var id in ids)
+                {
+                    Child(root, "M02_V13_" + id).AddComponent<MeshRenderer>();
+                    Child(root, "M02_V13_" + id + "_Hat").AddComponent<MeshRenderer>();
+                }
+                var helmet = Child(root, "M02_hardhat_BOUND_TRIAL").AddComponent<MeshRenderer>();
+                var original = Child(root, "M02_V10_HeadFace").AddComponent<MeshRenderer>();
+                if (problem != "missing")
+                {
+                    var reduced = Child(root, "M02_V14_FaceReducedBeard").AddComponent<MeshRenderer>();
+                    if (problem == "overlap") reduced.transform.SetParent(original.transform);
+                    if (problem == "duplicate") Child(root, reduced.name).AddComponent<MeshRenderer>();
+                }
+                var all = root.GetComponentsInChildren<Renderer>(true);
+                for (int i = 0; i < all.Length; i++) all[i].enabled = i % 2 == 0;
+                var before = all.Select(r => r.enabled).ToArray();
+                Assert.IsFalse(ProfileHairTrial.TrySelectFaceWithHat(root, ids[0], true, true, out _));
+                CollectionAssert.AreEqual(before, all.Select(r => r.enabled).ToArray());
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
+        public void FaceTrialPathIsSeparateFromV13()
+        {
+            Assert.AreEqual("Assets/CityHighwaysLicensedArt/RoadWorkerV14/M02_V14_FaceTrial.glb", ProfileHairTrial.FaceAssetPath);
+            Assert.AreNotEqual(ProfileHairTrial.AutoAssetPath(false), ProfileHairTrial.FaceAssetPath);
+        }
+
         static GameObject Child(GameObject root, string name)
         {
             var child = new GameObject(name);
