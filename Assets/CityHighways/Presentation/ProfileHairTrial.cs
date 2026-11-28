@@ -20,7 +20,16 @@ namespace CityHighways.Presentation
 
         // Resolve every normal/fitted pair and helmet before any change, including
         // a helmet toggle. Imported skeleton and source assets are never mutated.
-        public static bool TrySelectWithHat(GameObject root, bool female, string id, bool hat, out string error)
+        public const string FaceAssetPath = "Assets/CityHighwaysLicensedArt/RoadWorkerV14/M02_V14_FaceTrial.glb";
+
+        public static bool TrySelectWithHat(GameObject root, bool female, string id, bool hat, out string error) =>
+            TrySelectPaired(root, female, id, hat, null, out error);
+
+        // This is a material experiment on M02, not a catalog item or a new saved slot.
+        public static bool TrySelectFaceWithHat(GameObject root, string id, bool hat, bool reducedBeard, out string error) =>
+            TrySelectPaired(root, false, id, hat, reducedBeard, out error);
+
+        static bool TrySelectPaired(GameObject root, bool female, string id, bool hat, bool? reducedBeard, out string error)
         {
             error = null;
             var ids = ItemIds(female);
@@ -46,10 +55,22 @@ namespace CityHighways.Presentation
             }
             if (!TryGroup(nodes, character + "_hardhat_BOUND_TRIAL", used, out var helmet, out error))
                 return false;
+            Renderer[] originalFace = null, reducedFace = null;
+            if (reducedBeard.HasValue)
+            {
+                if (!TryGroup(nodes, "M02_V10_HeadFace", used, out originalFace, out error) ||
+                    !TryGroup(nodes, "M02_V14_FaceReducedBeard", used, out reducedFace, out error))
+                    return false;
+            }
             var selected = id + (hat ? "_Hat" : "");
             foreach (var pair in variants)
                 foreach (var renderer in pair.Value) renderer.enabled = pair.Key == selected;
             foreach (var renderer in helmet) renderer.enabled = hat;
+            if (reducedBeard.HasValue)
+            {
+                foreach (var renderer in originalFace) renderer.enabled = !reducedBeard.Value;
+                foreach (var renderer in reducedFace) renderer.enabled = reducedBeard.Value;
+            }
             return true;
         }
 
